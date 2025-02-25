@@ -8,6 +8,8 @@ services:
       - DOPPLER_TOKEN
     volumes:
       - ./src:/usr/src/app/src
+      - ./pnpm-lock.yaml:/usr/src/app/.pnpm-lock.yaml
+      - ./package.json:/usr/src/app/package.json
     ports:
       - '3000:3000'
       - '5555:5555'
