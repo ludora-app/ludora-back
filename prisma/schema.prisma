@@ -47,7 +47,7 @@ model Users {
   image_url         String?
   bio               String?
   provider          Provider  @default(LUDORA)
-  is_connected      Boolean   @default(true)
+  is_connected      Boolean   @default(true) //? ça sert à quoi ?
   stripe_account_id String?   @unique
   created_at        DateTime  @default(now())
   updated_at        DateTime  @updatedAt
@@ -79,6 +79,30 @@ model Users {
   Evaluated_rating User_ratings[] @relation(name: "EvaluatedRelation")
 
   User_global_rating User_global_ratings[]
+  Email_verification Email_verification[]
+
+  User_tokens User_tokens[]
+}
+
+model Email_verification {
+  id         String   @id @default(cuid())
+  user_id    String
+  code       String
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  user Users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model User_tokens {
+  id         String   @id @default(cuid())
+  user_id    String
+  device_id  String?
+  token      String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user Users @relation(fields: [user_id], references: [id])
 }
 
 model User_ratings {

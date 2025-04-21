@@ -1,0 +1,31 @@
+import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+
+export class UserFilterDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @ApiProperty({
+    description: 'Limite de users à retourner',
+    example: 10,
+    required: false,
+    type: Number,
+  })
+  limit?: number;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    description: 'Curseur pour la pagination',
+    example: 'fcacfaca3c2a323bhf',
+    required: false,
+    type: String,
+  })
+  cursor?: string;
+}
