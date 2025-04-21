@@ -31,7 +31,6 @@ import {
 
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
-import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { VerifyEmailCodeDto } from './dto/input/verify-email-code.dto';
 
 @Controller('auth')
@@ -127,22 +126,5 @@ export class AuthController {
   })
   async googleLogin(@Body() googleUser: CreateGoogleUserDto): Promise<any> {
     return this.authService.validateGoogleUser(googleUser);
-  }
-  @Public() // ? décorateur @Public() pour ignorer le middleware d'authentification
-  @UseGuards(GoogleAuthGuard)
-  @Get('google/callback')
-  async googleCallback(@Req() req, @Res() res): Promise<any> {
-    try {
-      if (req?.user || req?.user.id) {
-        throw new NotFoundException('User not found in request');
-      }
-
-      const response = await this.authService.googleLogin(req.user.id);
-      // !! changerS l'addresse de redirection pour le front
-      return res.redirect(`http://localhost:3000?token=${response.access_token}`);
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(error.message);
-    }
   }
 }

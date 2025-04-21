@@ -1,2 +1,2 @@
 nest-sh:
-	docker compose exec nest /bin/sh
+	docker compose exec ludora-api /bin/sh

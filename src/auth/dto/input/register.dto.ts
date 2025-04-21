@@ -16,7 +16,7 @@ import {
 export class RegisterUserDto {
   @IsEnum(User_type)
   @ApiProperty({
-    description: 'user type (USER or ORGANISATION)',
+    description: 'user type (USER or ADMIN)',
     enum: User_type,
     example: User_type.USER,
   })
@@ -59,14 +59,6 @@ export class RegisterUserDto {
   readonly lastname?: string;
 
   @IsOptional()
-  @IsString()
-  @ApiProperty({
-    description: 'name of organisation (required if ORGANISATION)',
-    example: 'Nysa',
-  })
-  readonly name?: string;
-
-  @IsOptional()
   @IsPhoneNumber('FR')
   @ApiProperty({ description: 'phone number', example: '+33612345678' })
   readonly phone?: string;
@@ -100,17 +92,6 @@ export class RegisterUserDto {
     required: false,
   })
   readonly sex?: Sex;
-
-  // Champs spécifiques à ORGANISATION
-  @ValidateIf((dto) => dto.type === User_type.ORGANISATION)
-  @IsString()
-  @IsOptional()
-  @ApiProperty({
-    description: 'city of organisation (ORGANISATION only)',
-    example: 'Paris',
-    required: false,
-  })
-  readonly city?: string;
 }
 
 export class RegisterUserWithFileDto extends RegisterUserDto {
