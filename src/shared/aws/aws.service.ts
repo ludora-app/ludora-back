@@ -8,10 +8,10 @@ import { PutObjectCommand, S3Client, GetObjectCommand } from '@aws-sdk/client-s3
 export class AwsService {
   private readonly s3Client = new S3Client({
     credentials: {
-      accessKeyId: this.configService.getOrThrow('AWS_ACCESS_KEY'),
-      secretAccessKey: this.configService.getOrThrow('AWS_SECRET_ACCESS_KEY'),
+      accessKeyId: this.configService.get('AWS_ACCESS_KEY'),
+      secretAccessKey: this.configService.get('AWS_SECRET_ACCESS_KEY'),
     },
-    region: this.configService.getOrThrow('AWS_S3_REGION'),
+    region: this.configService.get('AWS_S3_REGION'),
   });
 
   constructor(private readonly configService: ConfigService) {}

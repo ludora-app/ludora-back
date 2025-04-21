@@ -5,9 +5,10 @@ import { EmailsService } from './emails/emails.service';
 import { ImagesService } from './images/images.service';
 import { WebsocketsService } from './websockets/websockets.service';
 import { WebsocketsGateway } from './websockets/websockets.gateway';
+import { EmailsController } from './emails/emails.controller';
 
 @Module({
-  controllers: [],
+  controllers: [EmailsController],
   exports: [EmailsService, AwsService, ImagesService, WebsocketsGateway, WebsocketsService],
   imports: [],
   providers: [EmailsService, AwsService, ImagesService, WebsocketsGateway, WebsocketsService],

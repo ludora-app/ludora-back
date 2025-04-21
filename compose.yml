@@ -1,22 +1,23 @@
 services:
-  nest:
+  ludora-api:
     build:
       context: .
       dockerfile: docker/nest-api/Dockerfile
-    container_name: nest
+    container_name: ludora-api
     environment:
       - DOPPLER_TOKEN
     volumes:
       - ./src:/usr/src/app/src
-      - ./pnpm-lock.yaml:/usr/src/app/.pnpm-lock.yaml
-      - ./package.json:/usr/src/app/package.json
+      - ./prisma:/usr/src/app/prisma
+      - ./test:/usr/src/app/test
+
     ports:
-      - '3000:3000'
+      - '2424:2424'
       - '5555:5555'
     depends_on:
-      - postgres
+      - ludora-db
 
-  postgres:
+  ludora-db:
     build:
       context: .
       dockerfile: docker/postgres/Dockerfile

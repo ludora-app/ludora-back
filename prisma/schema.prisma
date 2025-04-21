@@ -1,0 +1,241 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Provider {
+  FACEBOOK
+  GOOGLE
+  LUDORA
+}
+
+enum Sex {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum User_type {
+  USER
+  ADMIN
+}
+
+enum Invitation_status {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum Team_label {
+  A
+  B
+}
+
+model Users {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  password          String?
+  firstname         String?
+  lastname          String?
+  birthdate         DateTime?
+  sex               Sex?      @map("sex")
+  phone             String?
+  image_url         String?
+  bio               String?
+  provider          Provider  @default(LUDORA)
+  is_connected      Boolean   @default(true)
+  stripe_account_id String?   @unique
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  email_verified    Boolean   @default(false)
+  type              User_type @default(USER) @map("type")
+
+  // Event_member        Event_members[]
+  // Message             Messages[]
+  // Event               Events[]
+  // Conversation_member Conversation_members[]
+  // Get_notification    Get_notifications[]
+
+  // Event_Invitations Event_Invitations[]
+
+  // Friends_sent     Friends[] @relation("friend1")
+  // Friends_received Friends[] @relation("friend2")
+
+  // User_tokens User_tokens[]
+
+  // Conversation_options Conversation_options[]
+  // EmailVerification    EmailVerification[]
+
+  Session_invitations Session_invitations[]
+
+  Session_players Session_players[]
+
+  Evaluator_rating User_ratings[] @relation(name: "EvaluatorRelation")
+
+  Evaluated_rating User_ratings[] @relation(name: "EvaluatedRelation")
+
+  User_global_rating User_global_ratings[]
+}
+
+model User_ratings {
+  evaluator_id String
+  evaluated_id String
+  note_1       Int
+  note_2       Int
+  note_3       Int
+  note_4       Int
+  note_5       Int
+  // comment      String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  evaluator Users @relation(fields: [evaluator_id], references: [id], name: "EvaluatorRelation")
+  evaluated Users @relation(fields: [evaluated_id], references: [id], name: "EvaluatedRelation")
+
+  @@id([evaluator_id, evaluated_id])
+}
+
+model User_global_ratings {
+  user_id    String
+  sport_id   String
+  rating     Float
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user  Users  @relation(fields: [user_id], references: [id])
+  sport Sports @relation(fields: [sport_id], references: [id])
+
+  @@id([user_id, sport_id])
+}
+
+model Partners {
+  id         String   @id @default(cuid())
+  sport_id   String
+  name       String
+  image_url  String?
+  address    String
+  latitude   Float
+  longitude  Float
+  phone      String
+  email      String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Fields Fields[]
+}
+
+model Sports {
+  id         String   @id @default(cuid())
+  name       String
+  image_url  String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Fields Fields[]
+
+  User_global_rating User_global_ratings[]
+}
+
+model Fields {
+  id         String @id @default(cuid())
+  sport_id   String
+  partner_id String
+  name       String
+  address    String
+  latitude   Float
+  longitude  Float
+  // ? le prix devrait être stocké dans cette table plutôt ?
+
+  Field_images Field_images[]
+  partner      Partners       @relation(fields: [partner_id], references: [id])
+  sport        Sports         @relation(fields: [sport_id], references: [id])
+}
+
+model Field_images {
+  id         String   @id @default(cuid())
+  field_id   String
+  image_url  String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  field Fields @relation(fields: [field_id], references: [id])
+}
+
+model Sessions {
+  id                   String   @id @default(cuid())
+  creator_id           String
+  title                String
+  date                 DateTime
+  // visibility        Visibility
+  max_players_per_team Int
+  max_teams_per_game   Int
+  min_players_per_team Int
+  min_teams_per_game   Int
+  entry_fee            Float
+  description          String?
+  // view_count Int @default(0)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  Session_invitations Session_invitations[]
+
+  Session_images Session_images[]
+
+  Session_teams Session_teams[]
+
+  Session_players Session_players[]
+}
+
+model Session_invitations {
+  session_id String
+  user_id    String
+  status     Invitation_status @default(PENDING)
+  created_at DateTime          @default(now())
+  updated_at DateTime          @updatedAt
+
+  session Sessions @relation(fields: [session_id], references: [id])
+  user    Users    @relation(fields: [user_id], references: [id])
+
+  @@id([session_id, user_id])
+}
+
+model Session_images {
+  id         String   @id @default(cuid())
+  session_id String
+  image_url  String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  session Sessions @relation(fields: [session_id], references: [id])
+}
+
+model Session_teams {
+  id         String     @id @default(cuid())
+  session_id String
+  team_label Team_label
+  team_name  String
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+
+  session Sessions @relation(fields: [session_id], references: [id])
+
+  Session_players Session_players[]
+}
+
+model Session_players {
+  session_id String
+  team_id    String
+  user_id    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  session Sessions      @relation(fields: [session_id], references: [id])
+  team    Session_teams @relation(fields: [team_id], references: [id])
+  user    Users         @relation(fields: [user_id], references: [id])
+
+  @@id([session_id, team_id, user_id])
+}

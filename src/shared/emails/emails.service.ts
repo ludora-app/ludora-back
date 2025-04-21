@@ -88,4 +88,14 @@ export class EmailsService {
       throw error;
     }
   }
+
+  async testEmail() {
+    await this.sendEmail({
+      recipients: ['ganafall9498@gmail.com'],
+      template: 'welcomeEmail',
+      data: {
+        name: 'John Doe',
+      },
+    });
+  }
 }
