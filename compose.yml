@@ -6,13 +6,10 @@ services:
     container_name: ludora-api
     environment:
       - DOPPLER_TOKEN
-      - CHOKIDAR_USEPOLLING=true
-      - WATCHPACK_POLLING=true
     volumes:
       - ./src:/usr/src/app/src
       - ./prisma:/usr/src/app/prisma
       - ./test:/usr/src/app/test
-      - ./node_modules:/usr/src/app/node_modules
 
     ports:
       - '2424:2424'

@@ -1,52 +1,60 @@
-const tseslint = require('@typescript-eslint/eslint-plugin');
 const tsParser = require('@typescript-eslint/parser');
 const prettierPlugin = require('eslint-plugin-prettier');
+const prettierConfig = require('eslint-config-prettier');
+const tseslint = require('@typescript-eslint/eslint-plugin');
 const perfectionist = require('eslint-plugin-perfectionist');
 const unusedImports = require('eslint-plugin-unused-imports');
-const prettierConfig = require('eslint-config-prettier');
 
 module.exports = [
   {
     files: ['src/**/*.ts', 'apps/**/*.ts', 'libs/**/*.ts'],
     ignores: ['**/*.spec.ts', '**/*.e2e-spec.ts'],
     languageOptions: {
+      ecmaVersion: 'latest',
+      globals: {
+        afterEach: 'readonly',
+        beforeEach: 'readonly',
+        Buffer: 'readonly',
+        console: 'readonly',
+        describe: 'readonly',
+        expect: 'readonly',
+        it: 'readonly',
+        jest: 'readonly',
+        process: 'readonly',
+      },
       parser: tsParser,
       parserOptions: {
         project: 'tsconfig.json',
-        tsconfigRootDir: __dirname,
         sourceType: 'module',
+        tsconfigRootDir: __dirname,
       },
-      ecmaVersion: 'latest',
       sourceType: 'module',
-      globals: {
-        process: 'readonly',
-        console: 'readonly',
-        Buffer: 'readonly',
-        jest: 'readonly',
-        describe: 'readonly',
-        it: 'readonly',
-        expect: 'readonly',
-        beforeEach: 'readonly',
-        afterEach: 'readonly',
-      },
     },
   },
   {
     plugins: {
       '@typescript-eslint': tseslint,
-      prettier: prettierPlugin,
       perfectionist: perfectionist,
+      prettier: prettierPlugin,
       'unused-imports': unusedImports,
     },
   },
   prettierConfig,
   {
     rules: {
-      '@typescript-eslint/interface-name-prefix': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@typescript-eslint/interface-name-prefix': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
-      'prettier/prettier': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          args: 'all',
+          argsIgnorePattern: '^_',
+          vars: 'all',
+          varsIgnorePattern: '^_',
+        },
+      ],
       'perfectionist/sort-imports': ['error'],
       'perfectionist/sort-interfaces': ['error'],
       'perfectionist/sort-objects': [
@@ -55,22 +63,14 @@ module.exports = [
           type: 'alphabetical',
         },
       ],
+      'prettier/prettier': 'error',
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
         'warn',
         {
-          vars: 'all',
-          varsIgnorePattern: '^_',
           args: 'after-used',
           argsIgnorePattern: '^_',
-        },
-      ],
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        {
           vars: 'all',
-          args: 'all',
-          argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
         },
       ],

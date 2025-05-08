@@ -2,6 +2,7 @@ import { Sex } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { PartialType } from '@nestjs/mapped-types';
 import { IsString, IsPhoneNumber, IsUrl, IsOptional, IsEnum, IsDateString } from 'class-validator';
+
 import { CreateUserDto } from './create-user.dto';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {

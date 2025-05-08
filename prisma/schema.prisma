@@ -1,38 +1,75 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["auth", "ratings", "infrastructure", "sessions", "social", "shared"]
 }
 
 enum Provider {
   FACEBOOK
   GOOGLE
   LUDORA
+
+  @@schema("auth")
 }
 
 enum Sex {
   MALE
   FEMALE
   OTHER
+
+  @@schema("auth")
 }
 
 enum User_type {
   USER
   ADMIN
+
+  @@schema("auth")
 }
 
 enum Invitation_status {
   PENDING
   ACCEPTED
   REJECTED
+
+  @@schema("shared")
 }
 
 enum Team_label {
   A
   B
+
+  @@schema("sessions")
+}
+
+enum Message_status {
+  SENT
+  DELIVERED
+  READ
+
+  @@schema("social")
+}
+
+enum Message_type {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+
+  @@schema("social")
+}
+
+enum Conversation_type {
+  PRIVATE
+  GROUP
+  EVENT
+
+  @@schema("social")
 }
 
 model Users {
@@ -54,21 +91,15 @@ model Users {
   email_verified    Boolean   @default(false)
   type              User_type @default(USER) @map("type")
 
-  // Event_member        Event_members[]
-  // Message             Messages[]
+  Message             Messages[]
   // Event               Events[]
-  // Conversation_member Conversation_members[]
+  Conversation_member Conversation_members[]
   // Get_notification    Get_notifications[]
 
-  // Event_Invitations Event_Invitations[]
+  Friends_sent     Friends[] @relation("friend1")
+  Friends_received Friends[] @relation("friend2")
 
-  // Friends_sent     Friends[] @relation("friend1")
-  // Friends_received Friends[] @relation("friend2")
-
-  // User_tokens User_tokens[]
-
-  // Conversation_options Conversation_options[]
-  // EmailVerification    EmailVerification[]
+  Conversation_options Conversation_options[]
 
   Session_invitations Session_invitations[]
 
@@ -82,6 +113,8 @@ model Users {
   Email_verification Email_verification[]
 
   User_tokens User_tokens[]
+
+  @@schema("auth")
 }
 
 model Email_verification {
@@ -92,6 +125,8 @@ model Email_verification {
   created_at DateTime @default(now())
 
   user Users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@schema("auth")
 }
 
 model User_tokens {
@@ -103,6 +138,8 @@ model User_tokens {
   updated_at DateTime @updatedAt
 
   user Users @relation(fields: [user_id], references: [id])
+
+  @@schema("auth")
 }
 
 model User_ratings {
@@ -121,6 +158,7 @@ model User_ratings {
   evaluated Users @relation(fields: [evaluated_id], references: [id], name: "EvaluatedRelation")
 
   @@id([evaluator_id, evaluated_id])
+  @@schema("ratings")
 }
 
 model User_global_ratings {
@@ -134,6 +172,7 @@ model User_global_ratings {
   sport Sports @relation(fields: [sport_id], references: [id])
 
   @@id([user_id, sport_id])
+  @@schema("ratings")
 }
 
 model Partners {
@@ -150,6 +189,8 @@ model Partners {
   updated_at DateTime @updatedAt
 
   Fields Fields[]
+
+  @@schema("infrastructure")
 }
 
 model Sports {
@@ -162,6 +203,8 @@ model Sports {
   Fields Fields[]
 
   User_global_rating User_global_ratings[]
+
+  @@schema("infrastructure")
 }
 
 model Fields {
@@ -177,6 +220,8 @@ model Fields {
   Field_images Field_images[]
   partner      Partners       @relation(fields: [partner_id], references: [id])
   sport        Sports         @relation(fields: [sport_id], references: [id])
+
+  @@schema("infrastructure")
 }
 
 model Field_images {
@@ -187,6 +232,8 @@ model Field_images {
   updated_at DateTime @updatedAt
 
   field Fields @relation(fields: [field_id], references: [id])
+
+  @@schema("infrastructure")
 }
 
 model Sessions {
@@ -212,6 +259,8 @@ model Sessions {
   Session_teams Session_teams[]
 
   Session_players Session_players[]
+
+  @@schema("sessions")
 }
 
 model Session_invitations {
@@ -225,6 +274,7 @@ model Session_invitations {
   user    Users    @relation(fields: [user_id], references: [id])
 
   @@id([session_id, user_id])
+  @@schema("sessions")
 }
 
 model Session_images {
@@ -235,6 +285,8 @@ model Session_images {
   updated_at DateTime @updatedAt
 
   session Sessions @relation(fields: [session_id], references: [id])
+
+  @@schema("sessions")
 }
 
 model Session_teams {
@@ -248,6 +300,8 @@ model Session_teams {
   session Sessions @relation(fields: [session_id], references: [id])
 
   Session_players Session_players[]
+
+  @@schema("sessions")
 }
 
 model Session_players {
@@ -262,4 +316,80 @@ model Session_players {
   user    Users         @relation(fields: [user_id], references: [id])
 
   @@id([session_id, team_id, user_id])
+  @@schema("sessions")
+}
+
+model Conversations {
+  id                  String                 @id @default(cuid())
+  event_id            String?
+  name                String?
+  type                Conversation_type
+  created_at          DateTime               @default(now())
+  updated_at          DateTime               @updatedAt
+  // todo: image_url
+  Message             Messages[]
+  Conversation_member Conversation_members[]
+
+  Conversation_options Conversation_options[]
+
+  @@schema("social")
+}
+
+model Messages {
+  id              String         @id @default(cuid())
+  conversation_id String
+  sender_id       String
+  content         String
+  status          Message_status @default(SENT)
+  type            Message_type
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+
+  sender       Users         @relation(fields: [sender_id], references: [id])
+  conversation Conversations @relation(fields: [conversation_id], references: [id])
+
+  @@schema("social")
+}
+
+model Conversation_options {
+  conversation_id String
+  user_id         String
+  is_admin        Boolean  @default(false)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  archived        Boolean  @default(false)
+  muted           Boolean  @default(false)
+  deleted         Boolean  @default(false)
+
+  user         Users         @relation(fields: [user_id], references: [id])
+  conversation Conversations @relation(fields: [conversation_id], references: [id])
+
+  @@unique([conversation_id, user_id])
+  @@schema("social")
+}
+
+model Conversation_members {
+  conversation_id String
+  user_id         String
+  is_admin        Boolean @default(false)
+
+  conversation Conversations @relation(fields: [conversation_id], references: [id])
+  user         Users         @relation(fields: [user_id], references: [id])
+
+  @@id([conversation_id, user_id])
+  @@schema("social")
+}
+
+model Friends {
+  user_id1   String
+  user_id2   String
+  status     Invitation_status @map("status")
+  created_at DateTime          @default(now())
+  updated_at DateTime          @updatedAt
+  user1      Users             @relation("friend1", fields: [user_id1], references: [id])
+  user2      Users             @relation("friend2", fields: [user_id2], references: [id])
+
+  @@id([user_id1, user_id2])
+  @@unique([user_id1, user_id2])
+  @@schema("social")
 }
