@@ -1,10 +1,10 @@
 import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { Provider, User_type } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
-import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
+import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
 import {
   Injectable,
   NotFoundException,

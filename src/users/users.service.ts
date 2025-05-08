@@ -110,11 +110,11 @@ export class UsersService {
 
     const query = {
       select: {
+        email: true,
         firstname: true,
-        lastname: true,
         id: true,
         image_url: true,
-        email: true,
+        lastname: true,
       },
     };
 

@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 // import { Message_type } from '@prisma/client';

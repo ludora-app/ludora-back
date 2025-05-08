@@ -6,14 +6,9 @@ import {
   Post,
   Body,
   Get,
-  UseGuards,
   Req,
-  Res,
-  NotFoundException,
   UseInterceptors,
   UploadedFile,
-  HttpException,
-  InternalServerErrorException,
   Request,
 } from '@nestjs/common';
 import {

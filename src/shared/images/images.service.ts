@@ -1,5 +1,5 @@
-import { AwsService } from 'src/shared/aws/aws.service';
 import { Injectable } from '@nestjs/common';
+import { AwsService } from 'src/shared/aws/aws.service';
 
 // import { CreateImageDto } from './dto/create-image.dto';
 // import { UpdateImageDto } from './dto/update-image.dto';
