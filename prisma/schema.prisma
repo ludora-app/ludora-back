@@ -72,6 +72,32 @@ enum Conversation_type {
   @@schema("social")
 }
 
+enum Game_modes {
+  TWO_V_TWO
+  THREE_V_THREE
+  FOUR_V_FOUR
+  FIVE_V_FIVE
+  SIX_V_SIX
+  SEVEN_V_SEVEN
+  EIGHT_V_EIGHT
+  TEN_V_TEN
+  ELEVEN_V_ELEVEN
+
+  @@schema("sessions")
+}
+
+enum Day_of_week {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+
+  @@schema("infrastructure")
+}
+
 model Users {
   id                String    @id @default(cuid())
   email             String    @unique
@@ -177,7 +203,6 @@ model User_global_ratings {
 
 model Partners {
   id         String   @id @default(cuid())
-  sport_id   String
   name       String
   image_url  String?
   address    String
@@ -188,14 +213,45 @@ model Partners {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  Fields Fields[]
+  Fields                Fields[]
+  Partner_sports        Partner_sports[]
+  Partner_opening_hours Partner_opening_hours[]
 
+  @@schema("infrastructure")
+}
+
+model Partner_opening_hours {
+  id          String      @id @default(cuid())
+  partner_id  String
+  day_of_week Day_of_week @map("day_of_week")
+  open_time   String // Format "HH:MM"
+  close_time  String // Format "HH:MM"
+  is_closed   Boolean     @default(false)
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+
+  partner Partners @relation(fields: [partner_id], references: [id], onDelete: Cascade)
+
+  @@unique([partner_id, day_of_week])
+  @@schema("infrastructure")
+}
+
+model Partner_sports {
+  partner_id String
+  sport_id   String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  partner Partners @relation(fields: [partner_id], references: [id])
+  sport   Sports   @relation(fields: [sport_id], references: [id])
+
+  @@id([partner_id, sport_id])
   @@schema("infrastructure")
 }
 
 model Sports {
   id         String   @id @default(cuid())
-  name       String
+  name       String   @unique
   image_url  String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -203,19 +259,21 @@ model Sports {
   Fields Fields[]
 
   User_global_rating User_global_ratings[]
+  Partner_sports     Partner_sports[]
 
   @@schema("infrastructure")
 }
 
 model Fields {
-  id         String @id @default(cuid())
+  id         String     @id @default(cuid())
   sport_id   String
   partner_id String
-  name       String
+  name       String?
   address    String
   latitude   Float
   longitude  Float
-  // ? le prix devrait être stocké dans cette table plutôt ?
+  entry_fee  Float
+  game_mode  Game_modes @map("game_mode")
 
   Field_images Field_images[]
   partner      Partners       @relation(fields: [partner_id], references: [id])
@@ -246,7 +304,6 @@ model Sessions {
   max_teams_per_game   Int
   min_players_per_team Int
   min_teams_per_game   Int
-  entry_fee            Float
   description          String?
   // view_count Int @default(0)
   created_at           DateTime @default(now())
