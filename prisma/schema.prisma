@@ -86,18 +86,6 @@ enum Game_modes {
   @@schema("sessions")
 }
 
-enum Day_of_week {
-  MONDAY
-  TUESDAY
-  WEDNESDAY
-  THURSDAY
-  FRIDAY
-  SATURDAY
-  SUNDAY
-
-  @@schema("infrastructure")
-}
-
 model Users {
   id                String    @id @default(cuid())
   email             String    @unique
@@ -202,17 +190,17 @@ model User_global_ratings {
 }
 
 model Partners {
-  id         String   @id @default(cuid())
-  name       String
-  image_url  String?
-  address    String
-  latitude   Float
-  longitude  Float
-  phone      String
-  email      String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
+  id                    String                  @id @default(cuid())
+  name                  String
+  image_url             String?
+  address               String
+  latitude              Float
+  longitude             Float
+  phone                 String
+  email                 String
+  created_at            DateTime                @default(now())
+  updated_at            DateTime                @updatedAt
+  //todo: add stripe account id
   Fields                Fields[]
   Partner_sports        Partner_sports[]
   Partner_opening_hours Partner_opening_hours[]
@@ -221,14 +209,14 @@ model Partners {
 }
 
 model Partner_opening_hours {
-  id          String      @id @default(cuid())
+  id          String   @id @default(cuid())
   partner_id  String
-  day_of_week Day_of_week @map("day_of_week")
+  day_of_week Int // 0 = dimanche, 1 = lundi, 2 = mardi, 3 = mercredi, 4 = jeudi, 5 = vendredi, 6 = samedi
   open_time   String // Format "HH:MM"
   close_time  String // Format "HH:MM"
-  is_closed   Boolean     @default(false)
-  created_at  DateTime    @default(now())
-  updated_at  DateTime    @updatedAt
+  is_closed   Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
   partner Partners @relation(fields: [partner_id], references: [id], onDelete: Cascade)
 
@@ -298,16 +286,15 @@ model Field_images {
 model Sessions {
   id                   String     @id @default(cuid())
   field_id             String
-  title                String
+  title                String?
   start_date           DateTime
   end_date             DateTime
   sport                String
   game_mode            Game_modes @map("game_mode")
   // visibility        Visibility
   max_players_per_team Int
-  max_teams_per_game   Int
+  teams_per_game       Int
   min_players_per_team Int
-  min_teams_per_game   Int
   description          String?
   created_at           DateTime   @default(now())
   updated_at           DateTime   @updatedAt

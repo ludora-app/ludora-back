@@ -5,14 +5,21 @@ import { IsDate, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'clas
 
 export class SessionFilterDto {
   @IsOptional()
-  @IsEnum(Sport)
+  @Transform(({ value }) => {
+    // ? Si c'est déjà un tableau, on le retourne tel quel
+    if (Array.isArray(value)) return value;
+    // ? Si c'est une string, on la met dans un tableau
+    return [value];
+  })
+  @IsEnum(Sport, { each: true })
   @ApiProperty({
-    description: 'Sport de la session',
+    description: 'Sports de la session',
     enum: Sport,
-    example: Sport.BASKETBALL,
+    example: [Sport.BASKETBALL, Sport.FOOTBALL],
+    isArray: true,
     required: false,
   })
-  sport?: Sport;
+  sports?: Sport[];
 
   @IsOptional()
   @Type(() => Number)
