@@ -189,15 +189,15 @@ model User_ratings {
 
 model User_global_ratings {
   user_id    String
-  sport_id   String
+  sport_name String
   rating     Float
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   user  Users  @relation(fields: [user_id], references: [id])
-  sport Sports @relation(fields: [sport_id], references: [id])
+  sport Sports @relation(fields: [sport_name], references: [name])
 
-  @@id([user_id, sport_id])
+  @@id([user_id, sport_name])
   @@schema("ratings")
 }
 
@@ -238,14 +238,14 @@ model Partner_opening_hours {
 
 model Partner_sports {
   partner_id String
-  sport_id   String
+  sport      String
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  partner Partners @relation(fields: [partner_id], references: [id])
-  sport   Sports   @relation(fields: [sport_id], references: [id])
+  partner        Partners @relation(fields: [partner_id], references: [id])
+  sport_relation Sports   @relation(fields: [sport], references: [name])
 
-  @@id([partner_id, sport_id])
+  @@id([partner_id, sport])
   @@schema("infrastructure")
 }
 
@@ -266,7 +266,7 @@ model Sports {
 
 model Fields {
   id         String     @id @default(cuid())
-  sport_id   String
+  sport      String
   partner_id String
   name       String?
   address    String
@@ -275,9 +275,10 @@ model Fields {
   entry_fee  Float
   game_mode  Game_modes @map("game_mode")
 
-  Field_images Field_images[]
-  partner      Partners       @relation(fields: [partner_id], references: [id])
-  sport        Sports         @relation(fields: [sport_id], references: [id])
+  Field_images   Field_images[]
+  partner        Partners       @relation(fields: [partner_id], references: [id])
+  sport_relation Sports         @relation(fields: [sport], references: [name])
+  sessions       Sessions[]
 
   @@schema("infrastructure")
 }
@@ -295,19 +296,21 @@ model Field_images {
 }
 
 model Sessions {
-  id                   String   @id @default(cuid())
-  creator_id           String
+  id                   String     @id @default(cuid())
+  field_id             String
   title                String
-  date                 DateTime
+  start_date           DateTime
+  end_date             DateTime
+  sport                String
+  game_mode            Game_modes @map("game_mode")
   // visibility        Visibility
   max_players_per_team Int
   max_teams_per_game   Int
   min_players_per_team Int
   min_teams_per_game   Int
   description          String?
-  // view_count Int @default(0)
-  created_at           DateTime @default(now())
-  updated_at           DateTime @updatedAt
+  created_at           DateTime   @default(now())
+  updated_at           DateTime   @updatedAt
 
   Session_invitations Session_invitations[]
 
@@ -316,6 +319,7 @@ model Sessions {
   Session_teams Session_teams[]
 
   Session_players Session_players[]
+  field           Fields            @relation(fields: [field_id], references: [id])
 
   @@schema("sessions")
 }
