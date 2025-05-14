@@ -7,6 +7,7 @@ import { AppController } from './app.controller';
 import { UsersModule } from './users/users.module';
 import { SharedModule } from './shared/shared.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { SessionsModule } from './sessions/sessions.module';
 
 @Module({
   controllers: [AppController],
@@ -16,6 +17,7 @@ import { PrismaModule } from './prisma/prisma.module';
     PrismaModule,
     AuthModule,
     UsersModule,
+    SessionsModule,
   ],
 
   providers: [AppService],

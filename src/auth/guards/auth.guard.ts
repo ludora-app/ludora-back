@@ -2,7 +2,6 @@ import { Request } from 'express';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
@@ -13,7 +12,6 @@ export class AuthGuard implements CanActivate {
     private readonly jwtService: JwtService,
     private readonly reflector: Reflector,
     private readonly configService: ConfigService,
-    private readonly prisma: PrismaService, // Injecte Prisma pour accéder à la base
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

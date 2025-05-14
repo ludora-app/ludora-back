@@ -20,11 +20,13 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed": "doppler run -- ts-node prisma/seed.ts",
+    "seed-infra": "doppler run -- ts-node prisma/seed-infrastructure.ts",
+    "seed-users": "doppler run -- ts-node prisma/seed-users.ts",
     "migrate-dev": "doppler run -- pnpm dlx prisma migrate dev",
     "db-push": "doppler run -- pnpm dlx prisma db push",
     "studio": "doppler run -- pnpm dlx prisma studio",
-    "prepare": "husky"
+    "prepare": "husky",
+    "prisma-gen": "rm -rf node_modules && pnpm install && pnpm prisma generate"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.787.0",
@@ -44,6 +46,7 @@
     "argon2": "^0.41.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "dayjs": "^1.11.13",
     "firebase-admin": "^13.2.0",
     "nodemailer": "^6.10.1",
     "passport": "^0.7.0",

@@ -72,6 +72,20 @@ enum Conversation_type {
   @@schema("social")
 }
 
+enum Game_modes {
+  TWO_V_TWO
+  THREE_V_THREE
+  FOUR_V_FOUR
+  FIVE_V_FIVE
+  SIX_V_SIX
+  SEVEN_V_SEVEN
+  EIGHT_V_EIGHT
+  TEN_V_TEN
+  ELEVEN_V_ELEVEN
+
+  @@schema("sessions")
+}
+
 model Users {
   id                String    @id @default(cuid())
   email             String    @unique
@@ -163,39 +177,69 @@ model User_ratings {
 
 model User_global_ratings {
   user_id    String
-  sport_id   String
+  sport_name String
   rating     Float
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   user  Users  @relation(fields: [user_id], references: [id])
-  sport Sports @relation(fields: [sport_id], references: [id])
+  sport Sports @relation(fields: [sport_name], references: [name])
 
-  @@id([user_id, sport_id])
+  @@id([user_id, sport_name])
   @@schema("ratings")
 }
 
 model Partners {
-  id         String   @id @default(cuid())
-  sport_id   String
-  name       String
-  image_url  String?
-  address    String
-  latitude   Float
-  longitude  Float
-  phone      String
-  email      String
+  id                    String                  @id @default(cuid())
+  name                  String
+  image_url             String?
+  address               String
+  latitude              Float
+  longitude             Float
+  phone                 String
+  email                 String
+  created_at            DateTime                @default(now())
+  updated_at            DateTime                @updatedAt
+  //todo: add stripe account id
+  Fields                Fields[]
+  Partner_sports        Partner_sports[]
+  Partner_opening_hours Partner_opening_hours[]
+
+  @@schema("infrastructure")
+}
+
+model Partner_opening_hours {
+  id          String   @id @default(cuid())
+  partner_id  String
+  day_of_week Int // 0 = dimanche, 1 = lundi, 2 = mardi, 3 = mercredi, 4 = jeudi, 5 = vendredi, 6 = samedi
+  open_time   String // Format "HH:MM"
+  close_time  String // Format "HH:MM"
+  is_closed   Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  partner Partners @relation(fields: [partner_id], references: [id], onDelete: Cascade)
+
+  @@unique([partner_id, day_of_week])
+  @@schema("infrastructure")
+}
+
+model Partner_sports {
+  partner_id String
+  sport      String
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  Fields Fields[]
+  partner        Partners @relation(fields: [partner_id], references: [id])
+  sport_relation Sports   @relation(fields: [sport], references: [name])
 
+  @@id([partner_id, sport])
   @@schema("infrastructure")
 }
 
 model Sports {
   id         String   @id @default(cuid())
-  name       String
+  name       String   @unique
   image_url  String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -203,23 +247,26 @@ model Sports {
   Fields Fields[]
 
   User_global_rating User_global_ratings[]
+  Partner_sports     Partner_sports[]
 
   @@schema("infrastructure")
 }
 
 model Fields {
-  id         String @id @default(cuid())
-  sport_id   String
+  id         String     @id @default(cuid())
+  sport      String
   partner_id String
-  name       String
+  name       String?
   address    String
   latitude   Float
   longitude  Float
-  // ? le prix devrait être stocké dans cette table plutôt ?
+  entry_fee  Float
+  game_mode  Game_modes @map("game_mode")
 
-  Field_images Field_images[]
-  partner      Partners       @relation(fields: [partner_id], references: [id])
-  sport        Sports         @relation(fields: [sport_id], references: [id])
+  Field_images   Field_images[]
+  partner        Partners       @relation(fields: [partner_id], references: [id])
+  sport_relation Sports         @relation(fields: [sport], references: [name])
+  sessions       Sessions[]
 
   @@schema("infrastructure")
 }
@@ -237,20 +284,20 @@ model Field_images {
 }
 
 model Sessions {
-  id                   String   @id @default(cuid())
-  creator_id           String
-  title                String
-  date                 DateTime
+  id                   String     @id @default(cuid())
+  field_id             String
+  title                String?
+  start_date           DateTime
+  end_date             DateTime
+  sport                String
+  game_mode            Game_modes @map("game_mode")
   // visibility        Visibility
   max_players_per_team Int
-  max_teams_per_game   Int
+  teams_per_game       Int
   min_players_per_team Int
-  min_teams_per_game   Int
-  entry_fee            Float
   description          String?
-  // view_count Int @default(0)
-  created_at           DateTime @default(now())
-  updated_at           DateTime @updatedAt
+  created_at           DateTime   @default(now())
+  updated_at           DateTime   @updatedAt
 
   Session_invitations Session_invitations[]
 
@@ -259,6 +306,7 @@ model Sessions {
   Session_teams Session_teams[]
 
   Session_players Session_players[]
+  field           Fields            @relation(fields: [field_id], references: [id])
 
   @@schema("sessions")
 }
