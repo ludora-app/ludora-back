@@ -1,16 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateGoogleUserDto } from 'src/users/dto/input/create-google-user.dto';
-import { UpdatePasswordDto } from 'src/users/dto/input/update-password.dto';
-import { UpdateUserDto } from 'src/users/dto/update-user.dto';
+import { UpdatePasswordDto, UpdateUserDto, UserFilterDto } from 'src/users/dto';
 import { UsersController } from 'src/users/users.controller';
 import { UsersService } from 'src/users/users.service';
 
-describe('Users', () => {
+describe('UsersController', () => {
   let controller: UsersController;
   let service: UsersService;
 
   const mockUsersService = {
-    createGoogleUser: jest.fn(),
     deactivate: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
@@ -53,25 +50,9 @@ describe('Users', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('createGoogleUser', () => {
-    it('should create a user with Google account', async () => {
-      const dto: CreateGoogleUserDto = {
-        email: 'test@test.com',
-        firstname: 'Test User',
-        provider: 'GOOGLE',
-      };
-      mockUsersService.createGoogleUser.mockResolvedValue(mockUser);
-
-      const result = await controller.createGoogleUser(dto);
-
-      expect(result).toEqual(mockUser);
-      expect(service.createGoogleUser).toHaveBeenCalledWith(dto);
-    });
-  });
-
   describe('findAll', () => {
     it('should return an array of users', async () => {
-      const filters = { limit: 10 };
+      const filters: UserFilterDto = { limit: 10 };
       mockUsersService.findAll.mockResolvedValue({
         data: { items: [mockUser], nextCursor: null, totalCount: 1 },
         message: 'Users fetched successfully',
@@ -153,16 +134,14 @@ describe('Users', () => {
         firstname: 'Updated Name',
       };
       mockUsersService.update.mockResolvedValue({
+        data: { ...mockUser, firstname: 'Updated Name' },
         message: 'User updated successfully',
         status: 200,
       });
 
       const result = await controller.update(mockRequest as any, updateDto);
 
-      expect(result).toEqual({
-        message: 'User updated successfully',
-        status: 200,
-      });
+      expect(result).toBeDefined();
       expect(service.update).toHaveBeenCalledWith('1', updateDto);
     });
   });

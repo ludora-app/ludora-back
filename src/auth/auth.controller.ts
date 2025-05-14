@@ -1,6 +1,11 @@
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ErrorResponseDto } from 'src/interfaces/error-response-type';
-import { ApiBadRequestResponse, ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiConflictResponse,
+  ApiConsumes,
+  ApiOperation,
+} from '@nestjs/swagger';
 import {
   Controller,
   Post,
@@ -10,12 +15,13 @@ import {
   UseInterceptors,
   UploadedFile,
   Request,
+  BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import {
   VerifyMailDto,
   LoginDto,
   RegisterUserDto,
-  CreateGoogleUserDto,
   CreateImageDto,
   RegisterUserWithFileDto,
   RegisterResponseDto,
@@ -35,12 +41,16 @@ export class AuthController {
   @Public()
   @Post('register')
   @UseInterceptors(FileInterceptor('file'))
-  @ApiOperation({ summary: 'Create a user or organisation account' })
+  @ApiOperation({ summary: 'Create a user account' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: RegisterUserWithFileDto })
   @ApiBadRequestResponse({
     description: 'Error during registration',
-    type: ErrorResponseDto,
+    type: BadRequestException,
+  })
+  @ApiConflictResponse({
+    description: 'User already exists',
+    type: ConflictException,
   })
   async register(
     @Body() registerDto: RegisterUserDto,
@@ -65,8 +75,7 @@ export class AuthController {
     summary: 'Allow the user to login',
   })
   @ApiBadRequestResponse({
-    description: 'Error during login',
-    type: ErrorResponseDto,
+    type: BadRequestException,
   })
   login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
     return this.authService.login(loginDto);
@@ -79,7 +88,7 @@ export class AuthController {
   })
   @ApiBadRequestResponse({
     description: 'Error during email verification',
-    type: ErrorResponseDto,
+    type: BadRequestException,
   })
   async verifyEmail(@Body() verifyMailDto: VerifyMailDto): Promise<VerifyEmailResponseDto> {
     return this.authService.verifyEmail(verifyMailDto);
@@ -91,7 +100,7 @@ export class AuthController {
   })
   @ApiBadRequestResponse({
     description: 'Error during token verification',
-    type: ErrorResponseDto,
+    type: BadRequestException,
   })
   async verifyToken(@Req() request: Request): Promise<VerifyTokenResponseDto> {
     const id = request['user'].id;
@@ -113,13 +122,13 @@ export class AuthController {
   // ** GOOGLE AUTHENTICATION *
   // **************************/
 
-  @Public() // ? décorateur @Public() pour ignorer le middleware d'authentification
-  // @UseGuards(GoogleAuthGuard)
-  @Post('google/login')
-  @ApiOperation({
-    summary: "Permet à l'utilisateur de se connecter avec Google",
-  })
-  async googleLogin(@Body() googleUser: CreateGoogleUserDto): Promise<any> {
-    return this.authService.validateGoogleUser(googleUser);
-  }
+  // @Public() // ? décorateur @Public() pour ignorer le middleware d'authentification
+  // // @UseGuards(GoogleAuthGuard)
+  // @Post('google/login')
+  // @ApiOperation({
+  //   summary: "Permet à l'utilisateur de se connecter avec Google",
+  // })
+  // async googleLogin(@Body() googleUser: CreateGoogleUserDto): Promise<any> {
+  //   return this.authService.validateGoogleUser(googleUser);
+  // }
 }

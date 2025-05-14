@@ -67,7 +67,7 @@ export class RegisterUserDto {
   @IsString()
   @ApiProperty({
     description: 'Bio',
-    example: 'Je suis un utilisateur ou une organisation.',
+    example: "Je suis un utilisateur de l'application.",
   })
   readonly bio?: string;
 

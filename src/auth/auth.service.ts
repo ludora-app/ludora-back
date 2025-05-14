@@ -1,6 +1,6 @@
 import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
-import { Provider, User_type } from '@prisma/client';
+import { User_type } from '@prisma/client';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
@@ -10,14 +10,11 @@ import {
   NotFoundException,
   BadRequestException,
   UnauthorizedException,
-  HttpException,
-  InternalServerErrorException,
 } from '@nestjs/common';
 import {
   LoginResponseDto,
   RegisterResponseDto,
   VerifyMailDto,
-  CreateGoogleUserDto,
   RegisterUserDto,
   LoginDto,
   VerifyTokenResponseDto,
@@ -174,28 +171,28 @@ export class AuthService {
     };
   }
 
-  async validateGoogleUser(googleUser: CreateGoogleUserDto) {
-    try {
-      let user = await this.prismaService.users.findUnique({
-        where: { email: googleUser.email },
-      });
+  // async validateGoogleUser(googleUser: CreateGoogleUserDto) {
+  //   try {
+  //     let user = await this.prismaService.users.findUnique({
+  //       where: { email: googleUser.email },
+  //     });
 
-      if (!user) {
-        user = await this.userService.createGoogleUser(googleUser);
-      }
+  //     if (!user) {
+  //       user = await this.userService.createGoogleUser(googleUser);
+  //     }
 
-      const payload = { id: user.id };
+  //     const payload = { id: user.id };
 
-      if (user.provider !== Provider.GOOGLE) {
-        throw new BadRequestException('User already exists');
-      }
+  //     if (user.provider !== Provider.GOOGLE) {
+  //       throw new BadRequestException('User already exists');
+  //     }
 
-      return { access_token: this.jwt.sign(payload) };
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(error.message);
-    }
-  }
+  //     return { access_token: this.jwt.sign(payload) };
+  //   } catch (error) {
+  //     if (error instanceof HttpException) throw error;
+  //     throw new InternalServerErrorException(error.message);
+  //   }
+  // }
 
   async googleLogin(id: string) {
     const user = await this.prismaService.users.findUnique({ where: { id } });

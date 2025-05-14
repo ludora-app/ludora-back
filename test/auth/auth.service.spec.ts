@@ -1,28 +1,37 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { User_type, Provider } from '@prisma/client';
+import { Sex, User_type } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { AuthService } from 'src/auth/auth.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { EmailsService } from 'src/shared/emails/emails.service';
 import { UsersService } from 'src/users/users.service';
 
 describe('AuthService', () => {
   let service: AuthService;
 
   const mockPrismaService = {
-    $transaction: jest.fn().mockImplementation((callback) =>
-      callback({
-        user_tokens: {
-          findMany: jest.fn().mockResolvedValue([]),
-          create: jest.fn().mockResolvedValue({ id: '1', token: 'mock_token' }),
-          update: jest.fn().mockResolvedValue({ id: '1', token: 'mock_token' }),
-          delete: jest.fn().mockResolvedValue({ id: '1' }),
-        },
-      }),
-    ),
+    $transaction: jest.fn().mockImplementation((callback) => {
+      if (typeof callback === 'function') {
+        return callback({
+          email_verification: {
+            create: jest.fn().mockResolvedValue({ id: '1', code: '123456' }),
+            deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+          },
+          user_tokens: {
+            create: jest.fn().mockResolvedValue({ id: '1', token: 'mock_token' }),
+            update: jest.fn().mockResolvedValue({ id: '1', token: 'mock_token' }),
+            delete: jest.fn().mockResolvedValue({ id: '1' }),
+            findMany: jest.fn().mockResolvedValue([]),
+          },
+        });
+      }
+      return Promise.all(callback);
+    }),
     users: {
       findUnique: jest.fn(),
+      update: jest.fn().mockResolvedValue({ id: '1', email_verified: true }),
     },
     user_tokens: {
       findMany: jest.fn().mockResolvedValue([]),
@@ -30,17 +39,25 @@ describe('AuthService', () => {
       update: jest.fn().mockResolvedValue({ id: '1', token: 'mock_token' }),
       delete: jest.fn().mockResolvedValue({ id: '1' }),
     },
+    email_verification: {
+      create: jest.fn().mockResolvedValue({ id: '1', code: '123456' }),
+      delete: jest.fn().mockResolvedValue({ id: '1' }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+      findFirst: jest.fn(),
+    },
   };
 
   const mockJwtService = {
-    sign: jest.fn(),
+    sign: jest.fn().mockReturnValue('mock_token'),
   };
 
   const mockUsersService = {
-    createGoogleUser: jest.fn(),
-    createOrganisation: jest.fn(),
     createUser: jest.fn(),
     findOneByEmail: jest.fn(),
+  };
+
+  const mockEmailsService = {
+    sendEmail: jest.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(async () => {
@@ -59,6 +76,10 @@ describe('AuthService', () => {
           provide: UsersService,
           useValue: mockUsersService,
         },
+        {
+          provide: EmailsService,
+          useValue: mockEmailsService,
+        },
       ],
     }).compile();
 
@@ -66,6 +87,7 @@ describe('AuthService', () => {
     module.get<PrismaService>(PrismaService);
     module.get<JwtService>(JwtService);
     module.get<UsersService>(UsersService);
+    module.get<EmailsService>(EmailsService);
   });
 
   afterEach(() => {
@@ -75,17 +97,28 @@ describe('AuthService', () => {
   describe('register', () => {
     it('should register a new user', async () => {
       const registerDto = {
+        bio: 'test bio',
         birthdate: new Date().toString(),
         email: 'test@test.com',
         firstname: 'John',
         lastname: 'Doe',
         password: 'password',
+        phone: '1234567890',
+        sex: Sex.MALE,
         type: User_type.USER,
       };
 
-      const mockUser = { id: '1', ...registerDto };
+      const mockUser = {
+        id: '1',
+        email: 'test@test.com',
+        firstname: 'John',
+        lastname: 'Doe',
+        ...registerDto,
+      };
+
       mockUsersService.createUser.mockResolvedValue(mockUser);
-      mockJwtService.sign.mockReturnValue('mock_token');
+
+      jest.spyOn(service, 'sendVerificationEmail').mockResolvedValue();
 
       const result = await service.register(registerDto);
 
@@ -95,28 +128,17 @@ describe('AuthService', () => {
         status: 201,
       });
       expect(mockUsersService.createUser).toHaveBeenCalled();
+      expect(service.sendVerificationEmail).toHaveBeenCalledWith('1', 'test@test.com');
     });
 
-    it('should register a new organisation', async () => {
+    it('should throw BadRequestException for invalid user type', async () => {
       const registerDto = {
-        email: 'org@test.com',
-        name: 'Test Org',
+        email: 'test@test.com',
         password: 'password',
-        type: User_type.ORGANISATION,
+        type: 'INVALID_TYPE' as User_type,
       };
 
-      const mockOrg = { id: '1', ...registerDto };
-      mockUsersService.createOrganisation.mockResolvedValue(mockOrg);
-      mockJwtService.sign.mockReturnValue('mock_token');
-
-      const result = await service.register(registerDto);
-
-      expect(result).toEqual({
-        data: { access_token: 'mock_token' },
-        message: 'User created successfully',
-        status: 201,
-      });
-      expect(mockUsersService.createOrganisation).toHaveBeenCalled();
+      await expect(service.register(registerDto)).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -135,7 +157,6 @@ describe('AuthService', () => {
       };
 
       mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
-      mockJwtService.sign.mockReturnValue('mock_token');
 
       const result = await service.login(loginDto);
 
@@ -179,26 +200,114 @@ describe('AuthService', () => {
     });
   });
 
-  describe('validateGoogleUser', () => {
-    it('should validate and return token for new Google user', async () => {
-      const googleUser = {
-        email: 'google@test.com',
-        firstname: 'Google',
-        lastname: 'User',
-        provider: Provider.GOOGLE,
-      };
-
-      mockPrismaService.users.findUnique.mockResolvedValue(null);
-      mockUsersService.createGoogleUser.mockResolvedValue({
+  describe('verifyToken', () => {
+    it('should return isValid=true for a valid user', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValue({
         id: '1',
-        provider: Provider.GOOGLE,
-        ...googleUser,
+        is_connected: true,
       });
-      mockJwtService.sign.mockReturnValue('mock_token');
 
-      const result = await service.validateGoogleUser(googleUser);
+      const result = await service.verifyToken('1');
 
-      expect(result).toEqual({ access_token: 'mock_token' });
+      expect(result).toEqual({
+        data: { isValid: true },
+        message: 'token is valid',
+      });
+    });
+
+    it('should throw NotFoundException when user not found', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValue(null);
+
+      await expect(service.verifyToken('1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw UnauthorizedException when user is not active', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValue({
+        id: '1',
+        is_connected: false,
+      });
+
+      await expect(service.verifyToken('1')).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('sendVerificationEmail', () => {
+    it('should send a verification email successfully', async () => {
+      await service.sendVerificationEmail('1', 'test@test.com');
+
+      expect(mockPrismaService.$transaction).toHaveBeenCalled();
+      expect(mockEmailsService.sendEmail).toHaveBeenCalledWith({
+        data: { code: expect.any(String) },
+        recipients: ['test@test.com'],
+        template: 'verificationCode',
+      });
+    });
+  });
+
+  describe('verifyEmailCode', () => {
+    it('should verify email code successfully', async () => {
+      const now = new Date();
+      const futureDate = new Date(now.getTime() + 60000); // 1 minute in the future
+
+      mockPrismaService.email_verification.findFirst.mockResolvedValue({
+        id: '1',
+        code: '123456',
+        expires_at: futureDate,
+        user_id: '1',
+      });
+
+      const result = await service.verifyEmailCode('1', '123456');
+
+      expect(result).toEqual({
+        message: 'Email vérifié avec succès',
+        status: 200,
+      });
+      expect(mockPrismaService.users.update).toHaveBeenCalledWith({
+        data: { email_verified: true },
+        where: { id: '1' },
+      });
+    });
+
+    it('should throw BadRequestException for invalid or expired code', async () => {
+      mockPrismaService.email_verification.findFirst.mockResolvedValue(null);
+
+      await expect(service.verifyEmailCode('1', '123456')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('resendVerificationCode', () => {
+    it('should resend verification code', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValue({
+        id: '1',
+        email: 'test@test.com',
+        email_verified: false,
+      });
+
+      jest.spyOn(service, 'sendVerificationEmail').mockResolvedValue();
+
+      const result = await service.resendVerificationCode('1');
+
+      expect(result).toEqual({
+        message: 'Nouveau code de vérification envoyé',
+        status: 200,
+      });
+      expect(service.sendVerificationEmail).toHaveBeenCalledWith('1', 'test@test.com');
+    });
+
+    it('should throw NotFoundException when user not found', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValue(null);
+
+      await expect(service.resendVerificationCode('1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when email is already verified', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValue({
+        id: '1',
+        email: 'test@test.com',
+        email_verified: true,
+      });
+
+      await expect(service.resendVerificationCode('1')).rejects.toThrow(BadRequestException);
     });
   });
 });

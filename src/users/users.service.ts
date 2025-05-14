@@ -3,6 +3,7 @@ import { CreateImageDto } from 'src/auth/dto';
 import { Prisma, Users } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SuccessTypeDto } from 'src/interfaces/success-type';
+import { ResponseTypeDto } from 'src/interfaces/response-type';
 import { ImagesService } from 'src/shared/images/images.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
@@ -16,7 +17,6 @@ import {
 import {
   UserFilterDto,
   CreateUserDto,
-  CreateGoogleUserDto,
   UpdateUserDto,
   UpdatePasswordDto,
   FindAllUsersResponseDataDto,
@@ -75,34 +75,6 @@ export class UsersService {
     return newUser;
   }
 
-  async createGoogleUser(createGoogleUserDto: CreateGoogleUserDto) {
-    const { email, firstname, image_url, lastname, provider } = createGoogleUserDto;
-
-    try {
-      const existingUser = await this.prismaService.users.findUnique({
-        where: { email },
-      });
-
-      if (existingUser) {
-        throw new ConflictException(`User already exists: ${JSON.stringify(existingUser)}`);
-      }
-
-      const newUser = await this.prismaService.users.create({
-        data: {
-          email,
-          firstname,
-          image_url,
-          lastname,
-          provider,
-        },
-      });
-
-      return newUser;
-    } catch (error) {
-      throw new BadRequestException(`Error creating Google user: ${error.message}`);
-    }
-  }
-
   async findAll(
     filters: UserFilterDto,
   ): Promise<PaginationResponseTypeDto<FindAllUsersResponseDataDto>> {
@@ -155,7 +127,7 @@ export class UsersService {
     };
   }
 
-  async findOne(id: string, select: Prisma.UsersSelect) {
+  async findOne(id: string, select: Prisma.UsersSelect): Promise<ResponseTypeDto<Users>> {
     const existingUser = await this.prismaService.users.findUnique({
       select,
       where: { id },
@@ -172,6 +144,12 @@ export class UsersService {
     return { data: user, status: 200 };
   }
 
+  /**
+   * Find a user by email
+   * @param email - The email of the user
+   * @description This method is used in the auth service to find a user by email
+   * @returns The user
+   */
   async findOneByEmail(email: string): Promise<Users> {
     try {
       const user = await this.prismaService.users.findUnique({
@@ -184,7 +162,7 @@ export class UsersService {
     }
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<SuccessTypeDto> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<ResponseTypeDto<Users>> {
     const existingUser = await this.prismaService.users.findUnique({
       where: { id },
     });
@@ -199,7 +177,7 @@ export class UsersService {
     });
 
     if (updatedUser) {
-      return { message: 'User updated successfully', status: 200 };
+      return { data: updatedUser, message: 'User updated successfully', status: 200 };
     } else {
       throw new BadRequestException('User not updated');
     }
@@ -266,24 +244,12 @@ export class UsersService {
 
     if (!existingUser) throw new NotFoundException('User not found');
 
-    if (!existingUser) {
-      throw new NotFoundException('User not found');
-    }
-
     await this.prismaService.users.delete({
       where: { id },
     });
 
     return { message: `User ${id} has been deleted`, status: 200 };
   }
-
-  /**
-   * ! workflow update password
-   * 1. Click on update password
-   * 2. Send verification email
-   * 2. verify email
-   * 3. update password
-   */
 
   /**
    * Send a verification email to the user with a 6 digits verfication code that expires in 15 minutes

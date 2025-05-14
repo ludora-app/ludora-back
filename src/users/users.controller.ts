@@ -1,10 +1,24 @@
-import { ErrorResponseDto } from 'src/interfaces/error-response-type';
-import { ApiBadRequestResponse, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
-import { Controller, Get, Body, Patch, Param, Delete, Req, Post, Query } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+} from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Req,
+  Query,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { UsersService } from './users.service';
 import {
-  CreateGoogleUserDto,
   UpdatePasswordDto,
   UserFilterDto,
   FindMeUserResponseDto,
@@ -17,14 +31,6 @@ import {
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post('/google')
-  @ApiOperation({
-    summary: 'Crée un utilisateur avec un compte Google',
-  })
-  createGoogleUser(@Body() createGoogleUserDto: CreateGoogleUserDto) {
-    return this.usersService.createGoogleUser(createGoogleUserDto);
-  }
-
   @Get('/all')
   @ApiOperation({
     summary: 'Récupère tous les utilisateurs',
@@ -35,7 +41,7 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error fetching users',
-    type: ErrorResponseDto,
+    type: BadRequestException,
   })
   findAll(@Query() filters: UserFilterDto) {
     return this.usersService.findAll(filters);
@@ -51,7 +57,11 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error fetching user',
-    type: ErrorResponseDto,
+    type: BadRequestException,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundException,
   })
   findOne(@Param('id') id: string) {
     const select = {
@@ -76,7 +86,11 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error fetching user',
-    type: ErrorResponseDto,
+    type: BadRequestException,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundException,
   })
   findMe(@Req() request: Request) {
     const id = request['user'].id;
@@ -106,7 +120,11 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error fetching user',
-    type: ErrorResponseDto,
+    type: BadRequestException,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundException,
   })
   async findOneByEmail(@Body('email') email: string) {
     return this.usersService.findOneByEmail(email);
@@ -118,7 +136,11 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error updating user',
-    type: ErrorResponseDto,
+    type: BadRequestException,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundException,
   })
   update(@Req() request: Request, @Body() updateUserDto: UpdateUserDto) {
     const id = request['user'].id;
@@ -131,7 +153,11 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error updating password',
-    type: ErrorResponseDto,
+    type: BadRequestException,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundException,
   })
   updatePassword(@Req() request: Request, @Body() updatePasswordDto: UpdatePasswordDto) {
     const id = request['user'].id;
@@ -144,7 +170,11 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error deactivating user',
-    type: ErrorResponseDto,
+    type: BadRequestException,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundException,
   })
   deactivate(@Req() request: Request) {
     const id = request['user'].id;
@@ -157,7 +187,11 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error deleting user',
-    type: ErrorResponseDto,
+    type: BadRequestException,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundException,
   })
   remove(@Req() request: Request) {
     const id = request['user'].id;
