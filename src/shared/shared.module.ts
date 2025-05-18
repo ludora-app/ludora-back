@@ -14,4 +14,3 @@ import { WebsocketsGateway } from './websockets/websockets.gateway';
   providers: [EmailsService, AwsService, ImagesService, WebsocketsGateway, WebsocketsService],
 })
 export class SharedModule {}
-// TODO: services à ajouter:  websocket

@@ -1,7 +1,7 @@
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseType } from 'src/interfaces/response-type';
+import { DtoMapperUtil } from 'src/shared/utils/dto-mapper.util';
 import { formatDate, timeStringToMinutes } from 'src/shared/utils/date.utils';
-import { transformSnakeToCamel } from 'src/shared/utils/snake-to-camel-case.util';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 
@@ -98,7 +98,7 @@ export class SessionsService {
       },
     });
 
-    const mappedSession = transformSnakeToCamel(SessionResponse, newSession) as SessionResponse;
+    const mappedSession = DtoMapperUtil.toCamelCase(SessionResponse, newSession) as SessionResponse;
 
     return {
       data: mappedSession,
@@ -205,7 +205,10 @@ export class SessionsService {
       throw new BadRequestException('No sessions found with the given parameters');
     }
 
-    const mappedSessions = transformSnakeToCamel(SessionResponse, sessions) as SessionResponse[];
+    const mappedSessions = DtoMapperUtil.toCamelCase(
+      SessionResponse,
+      sessions,
+    ) as SessionResponse[];
 
     return {
       data: { items: mappedSessions, nextCursor, totalCount: sessions.length },
@@ -220,7 +223,7 @@ export class SessionsService {
     if (!session) {
       throw new NotFoundException('Session not found');
     }
-    const mappedSession = transformSnakeToCamel(SessionResponse, session);
+    const mappedSession = DtoMapperUtil.toCamelCase(SessionResponse, session);
 
     return {
       data: mappedSession,
@@ -290,7 +293,10 @@ export class SessionsService {
       where: { id: session.id },
     });
 
-    const mappedSession = transformSnakeToCamel(SessionResponse, updatedSession) as SessionResponse;
+    const mappedSession = DtoMapperUtil.toCamelCase(
+      SessionResponse,
+      updatedSession,
+    ) as SessionResponse;
 
     return {
       data: mappedSession,
