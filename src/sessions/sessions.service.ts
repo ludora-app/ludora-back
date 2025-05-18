@@ -1,10 +1,10 @@
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseType } from 'src/interfaces/response-type';
 import { DtoMapperUtil } from 'src/shared/utils/dto-mapper.util';
-import { formatDate, timeStringToMinutes } from 'src/shared/utils/date.utils';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 
+import { DateUtils } from './../shared/utils/date.utils';
 import { SessionResponse } from './dto/output/session-response';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { CreateSessionDto } from './dto/input/create-session.dto';
@@ -45,8 +45,8 @@ export class SessionsService {
     // ? convert start and end to minutes
     const sessionStartMinutes = start.getUTCHours() * 60 + start.getUTCMinutes();
     const sessionEndMinutes = end.getUTCHours() * 60 + end.getUTCMinutes();
-    const openMinutes = timeStringToMinutes(openingHours.open_time);
-    const closeMinutes = timeStringToMinutes(openingHours.close_time);
+    const openMinutes = DateUtils.timeStringToMinutes(openingHours.open_time);
+    const closeMinutes = DateUtils.timeStringToMinutes(openingHours.close_time);
 
     if (sessionStartMinutes < openMinutes || sessionEndMinutes > closeMinutes) {
       throw new BadRequestException('The session is outside the opening hours of the field');
@@ -80,7 +80,7 @@ export class SessionsService {
     let autoTitle = '';
 
     if (!createSessionDto.title) {
-      autoTitle = `Session de ${field.sport} le ${formatDate(startDate)}`;
+      autoTitle = `Session de ${field.sport} le ${DateUtils.formatDate(startDate)}`;
     }
 
     const newSession = await this.prisma.sessions.create({
@@ -271,8 +271,8 @@ export class SessionsService {
 
     const sessionStartMinutes = start.getUTCHours() * 60 + start.getUTCMinutes();
     const sessionEndMinutes = end.getUTCHours() * 60 + end.getUTCMinutes();
-    const openMinutes = timeStringToMinutes(openingHours.open_time);
-    const closeMinutes = timeStringToMinutes(openingHours.close_time);
+    const openMinutes = DateUtils.timeStringToMinutes(openingHours.open_time);
+    const closeMinutes = DateUtils.timeStringToMinutes(openingHours.close_time);
 
     if (sessionStartMinutes < openMinutes || sessionEndMinutes > closeMinutes) {
       throw new BadRequestException('The session is outside the opening hours of the field');

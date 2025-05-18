@@ -274,7 +274,8 @@ model Fields {
 model Field_images {
   id         String   @id @default(cuid())
   field_id   String
-  image_url  String
+  url        String
+  order      Int
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -328,7 +329,8 @@ model Session_invitations {
 model Session_images {
   id         String   @id @default(cuid())
   session_id String
-  image_url  String
+  url        String
+  order      Int
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 

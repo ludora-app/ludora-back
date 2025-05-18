@@ -4,6 +4,7 @@ import { Prisma, Users } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SuccessTypeDto } from 'src/interfaces/success-type';
 import { ResponseTypeDto } from 'src/interfaces/response-type';
+import { S3FoldersName } from 'src/shared/constants/constants';
 import { ImagesService } from 'src/shared/images/images.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
@@ -55,7 +56,7 @@ export class UsersService {
     let image_url = { data: '' };
 
     if (createImageDto) {
-      // image_url = await this.imageService.createUserImage(createImageDto);
+      image_url = await this.imageService.create(S3FoldersName.USERS, createImageDto);
     }
 
     const newUser = await prisma.users.create({
@@ -135,11 +136,10 @@ export class UsersService {
 
     if (!existingUser) throw new NotFoundException('User not found');
 
-    // let image_url = await this.imageService.getProfilePic(existingUser.id);
-    // if (!image_url) {
-    //   image_url = '';
-    // }
-    let image_url = '';
+    let image_url = await this.imageService.getProfilePic(existingUser.id);
+    if (!image_url) {
+      image_url = '';
+    }
     const user = { ...existingUser, image_url };
     return { data: user, status: 200 };
   }

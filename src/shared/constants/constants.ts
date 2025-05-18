@@ -13,3 +13,10 @@ export enum Sport {
   BADMINTON = 'BADMINTON',
   PING_PONG = 'PING-PONG',
 }
+
+export enum S3FoldersName {
+  SESSIONS = 'sessions',
+  USERS = 'users',
+  PARTNERS = 'partners',
+  FIELDS = 'fields',
+}
