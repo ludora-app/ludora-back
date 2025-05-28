@@ -32,5 +32,5 @@ export class LoginDto {
     example: '123456',
     type: String,
   })
-  readonly device_id?: string;
+  readonly deviceId?: string;
 }

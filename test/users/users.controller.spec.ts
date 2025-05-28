@@ -21,7 +21,7 @@ describe('UsersController', () => {
     bio: 'test bio',
     firstname: 'John',
     id: '1',
-    image_url: 'test-url',
+    imageUrl: 'test-url',
     lastname: 'Doe',
     name: 'Test User',
   };
@@ -72,7 +72,7 @@ describe('UsersController', () => {
         bio: true,
         firstname: true,
         id: true,
-        image_url: true,
+        imageUrl: true,
         lastname: true,
         name: true,
       };
@@ -97,7 +97,7 @@ describe('UsersController', () => {
         email: true,
         firstname: true,
         id: true,
-        image_url: true,
+        imageUrl: true,
         lastname: true,
         name: true,
         phone: true,

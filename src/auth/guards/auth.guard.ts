@@ -37,7 +37,7 @@ export class AuthGuard implements CanActivate {
       // const { deviceId, id: userId } = payload;
 
       // const tokenRecord = await this.prisma.user_tokens.findFirst({
-      //   where: { device_id: deviceId, token, user_id: userId },
+      //   where: { deviceId: deviceId, token, userId: userId },
       // });
 
       // if (!tokenRecord) {

@@ -31,7 +31,7 @@ describe('AuthService', () => {
     }),
     users: {
       findUnique: jest.fn(),
-      update: jest.fn().mockResolvedValue({ id: '1', email_verified: true }),
+      update: jest.fn().mockResolvedValue({ id: '1', emailVerified: true }),
     },
     user_tokens: {
       findMany: jest.fn().mockResolvedValue([]),
@@ -204,7 +204,7 @@ describe('AuthService', () => {
     it('should return isValid=true for a valid user', async () => {
       mockPrismaService.users.findUnique.mockResolvedValue({
         id: '1',
-        is_connected: true,
+        isConnected: true,
       });
 
       const result = await service.verifyToken('1');
@@ -224,7 +224,7 @@ describe('AuthService', () => {
     it('should throw UnauthorizedException when user is not active', async () => {
       mockPrismaService.users.findUnique.mockResolvedValue({
         id: '1',
-        is_connected: false,
+        isConnected: false,
       });
 
       await expect(service.verifyToken('1')).rejects.toThrow(UnauthorizedException);
@@ -252,8 +252,8 @@ describe('AuthService', () => {
       mockPrismaService.email_verification.findFirst.mockResolvedValue({
         id: '1',
         code: '123456',
-        expires_at: futureDate,
-        user_id: '1',
+        expiresAt: futureDate,
+        userId: '1',
       });
 
       const result = await service.verifyEmailCode('1', '123456');
@@ -263,7 +263,7 @@ describe('AuthService', () => {
         status: 200,
       });
       expect(mockPrismaService.users.update).toHaveBeenCalledWith({
-        data: { email_verified: true },
+        data: { emailVerified: true },
         where: { id: '1' },
       });
     });
@@ -280,7 +280,7 @@ describe('AuthService', () => {
       mockPrismaService.users.findUnique.mockResolvedValue({
         id: '1',
         email: 'test@test.com',
-        email_verified: false,
+        emailVerified: false,
       });
 
       jest.spyOn(service, 'sendVerificationEmail').mockResolvedValue();
@@ -304,7 +304,7 @@ describe('AuthService', () => {
       mockPrismaService.users.findUnique.mockResolvedValue({
         id: '1',
         email: 'test@test.com',
-        email_verified: true,
+        emailVerified: true,
       });
 
       await expect(service.resendVerificationCode('1')).rejects.toThrow(BadRequestException);

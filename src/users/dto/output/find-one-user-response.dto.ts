@@ -19,7 +19,7 @@ export class FindOneUserResponseDataDto {
   readonly bio?: string;
 
   @ApiProperty({ example: 'https://example.com/image.jpg', nullable: true, readOnly: true })
-  readonly image_url?: string;
+  readonly imageUrl?: string;
 }
 
 export class FindMeUserResponseDataDto {
@@ -39,7 +39,7 @@ export class FindMeUserResponseDataDto {
   readonly bio?: string;
 
   @ApiProperty({ example: 'https://example.com/image.jpg', nullable: true, readOnly: true })
-  readonly image_url?: string;
+  readonly imageUrl?: string;
 
   @ApiProperty({ example: 'toto@gmail.com', nullable: true, readOnly: true })
   readonly email?: string;

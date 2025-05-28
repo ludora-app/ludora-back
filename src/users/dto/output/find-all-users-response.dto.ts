@@ -15,7 +15,7 @@ export class FindAllUsersResponseDataDto {
   readonly name?: string;
 
   @ApiProperty({ example: 'https://example.com/image.jpg', nullable: true, readOnly: true })
-  readonly image_url?: string;
+  readonly imageUrl?: string;
 }
 
 export const FindAllUsersResponseDto = PaginationResponseDto(FindAllUsersResponseDataDto);

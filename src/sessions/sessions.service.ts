@@ -1,6 +1,6 @@
+import { Sport } from 'src/shared/constants/constants';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseType } from 'src/interfaces/response-type';
-import { DtoMapperUtil } from 'src/shared/utils/dto-mapper.util';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 
@@ -31,22 +31,22 @@ export class SessionsService {
 
     const openingHours = await this.prisma.partner_opening_hours.findUnique({
       where: {
-        partner_id_day_of_week: {
-          day_of_week: dayOfWeek,
-          partner_id: field.partner_id,
+        partnerId_dayOfWeek: {
+          dayOfWeek: dayOfWeek,
+          partnerId: field.partnerId,
         },
       },
     });
 
-    if (!openingHours || openingHours.is_closed) {
+    if (!openingHours || openingHours.isClosed) {
       throw new BadRequestException('The field is closed on this date');
     }
 
     // ? convert start and end to minutes
     const sessionStartMinutes = start.getUTCHours() * 60 + start.getUTCMinutes();
     const sessionEndMinutes = end.getUTCHours() * 60 + end.getUTCMinutes();
-    const openMinutes = DateUtils.timeStringToMinutes(openingHours.open_time);
-    const closeMinutes = DateUtils.timeStringToMinutes(openingHours.close_time);
+    const openMinutes = DateUtils.timeStringToMinutes(openingHours.openTime);
+    const closeMinutes = DateUtils.timeStringToMinutes(openingHours.closeTime);
 
     if (sessionStartMinutes < openMinutes || sessionEndMinutes > closeMinutes) {
       throw new BadRequestException('The session is outside the opening hours of the field');
@@ -65,9 +65,9 @@ export class SessionsService {
     // ? check if there is no session at this time
     const conflict = await this.prisma.sessions.findFirst({
       where: {
-        end_date: { gt: start },
-        field_id: fieldId,
-        start_date: { lt: end },
+        endDate: { gt: start },
+        fieldId: fieldId,
+        startDate: { lt: end },
       },
     });
 
@@ -86,22 +86,20 @@ export class SessionsService {
     const newSession = await this.prisma.sessions.create({
       data: {
         description: createSessionDto.description,
-        end_date: endDate,
-        field_id: field.id,
-        game_mode: field.game_mode,
-        max_players_per_team: createSessionDto.maxPlayersPerTeam,
-        min_players_per_team: createSessionDto.minPlayersPerTeam,
-        sport: field.sport,
-        start_date: startDate,
-        teams_per_game: createSessionDto.teamsPerGame,
+        endDate: endDate,
+        fieldId: field.id,
+        gameMode: field.gameMode,
+        maxPlayersPerTeam: createSessionDto.maxPlayersPerTeam,
+        minPlayersPerTeam: createSessionDto.minPlayersPerTeam,
+        sport: field.sport as Sport,
+        startDate: startDate,
+        teamsPerGame: createSessionDto.teamsPerGame,
         title: createSessionDto.title ? createSessionDto.title : autoTitle,
       },
     });
 
-    const mappedSession = DtoMapperUtil.toCamelCase(SessionResponse, newSession) as SessionResponse;
-
     return {
-      data: mappedSession,
+      data: newSession,
       message: 'Session created successfully',
       status: 201,
     };
@@ -127,7 +125,7 @@ export class SessionsService {
         id: string;
       };
       where: {
-        start_date?: Record<string, Date>;
+        startDate?: Record<string, Date>;
         sport?: { in: string[] } | string;
         distance?: {
           from: { latitude: number; longitude: number };
@@ -149,20 +147,20 @@ export class SessionsService {
     const now = new Date();
 
     if (scope === 'PAST') {
-      query.where.start_date = { lt: now };
+      query.where.startDate = { lt: now };
     } else if (scope === 'UPCOMING') {
-      query.where.start_date = { gte: now };
+      query.where.startDate = { gte: now };
     }
 
     if (minStart) {
-      query.where.start_date = {
-        ...(query.where.start_date || {}),
+      query.where.startDate = {
+        ...(query.where.startDate || {}),
         gte: minStart,
       };
     }
     if (maxStart) {
-      query.where.start_date = {
-        ...(query.where.start_date || {}),
+      query.where.startDate = {
+        ...(query.where.startDate || {}),
         lte: maxStart,
       };
     }
@@ -181,17 +179,19 @@ export class SessionsService {
     const sessions = await this.prisma.sessions.findMany({
       ...query,
       select: {
-        created_at: true,
+        createdAt: true,
         description: true,
-        end_date: true,
+        endDate: true,
+        fieldId: true,
+        gameMode: true,
         id: true,
-        max_players_per_team: true,
-        min_players_per_team: true,
+        maxPlayersPerTeam: true,
+        minPlayersPerTeam: true,
         sport: true,
-        start_date: true,
-        teams_per_game: true,
+        startDate: true,
+        teamsPerGame: true,
         title: true,
-        updated_at: true,
+        updatedAt: true,
       },
     });
 
@@ -205,28 +205,22 @@ export class SessionsService {
       throw new BadRequestException('No sessions found with the given parameters');
     }
 
-    const mappedSessions = DtoMapperUtil.toCamelCase(
-      SessionResponse,
-      sessions,
-    ) as SessionResponse[];
-
     return {
-      data: { items: mappedSessions, nextCursor, totalCount: sessions.length },
+      data: { items: sessions, nextCursor, totalCount: sessions.length },
       message: 'Sessions fetched successfully',
       status: 200,
     };
   }
 
-  async findOne(id: string): Promise<ResponseType<any>> {
+  async findOne(id: string): Promise<ResponseType<SessionResponse>> {
     const session = await this.prisma.sessions.findUnique({ where: { id } });
 
     if (!session) {
       throw new NotFoundException('Session not found');
     }
-    const mappedSession = DtoMapperUtil.toCamelCase(SessionResponse, session);
 
     return {
-      data: mappedSession,
+      data: session,
       message: 'Session fetched successfully',
       status: 200,
     };
@@ -251,7 +245,7 @@ export class SessionsService {
     }
 
     const field = await this.prisma.fields.findUnique({
-      where: { id: session.field_id },
+      where: { id: session.fieldId },
     });
     if (!field) {
       throw new NotFoundException('Field not found');
@@ -259,20 +253,20 @@ export class SessionsService {
 
     const openingHours = await this.prisma.partner_opening_hours.findUnique({
       where: {
-        partner_id_day_of_week: {
-          day_of_week: dayOfWeek,
-          partner_id: field.partner_id,
+        partnerId_dayOfWeek: {
+          dayOfWeek: dayOfWeek,
+          partnerId: field.partnerId,
         },
       },
     });
-    if (!openingHours || openingHours.is_closed) {
+    if (!openingHours || openingHours.isClosed) {
       throw new BadRequestException('The field is closed on this date');
     }
 
     const sessionStartMinutes = start.getUTCHours() * 60 + start.getUTCMinutes();
     const sessionEndMinutes = end.getUTCHours() * 60 + end.getUTCMinutes();
-    const openMinutes = DateUtils.timeStringToMinutes(openingHours.open_time);
-    const closeMinutes = DateUtils.timeStringToMinutes(openingHours.close_time);
+    const openMinutes = DateUtils.timeStringToMinutes(openingHours.openTime);
+    const closeMinutes = DateUtils.timeStringToMinutes(openingHours.closeTime);
 
     if (sessionStartMinutes < openMinutes || sessionEndMinutes > closeMinutes) {
       throw new BadRequestException('The session is outside the opening hours of the field');
@@ -281,25 +275,20 @@ export class SessionsService {
     const updatedSession = await this.prisma.sessions.update({
       data: {
         description: updateSessionDto.description,
-        end_date: endDate,
-        game_mode: updateSessionDto.gameMode,
-        max_players_per_team: updateSessionDto.maxPlayersPerTeam,
-        min_players_per_team: updateSessionDto.minPlayersPerTeam,
+        endDate: endDate,
+        gameMode: updateSessionDto.gameMode,
+        maxPlayersPerTeam: updateSessionDto.maxPlayersPerTeam,
+        minPlayersPerTeam: updateSessionDto.minPlayersPerTeam,
         sport: field.sport,
-        start_date: startDate,
-        teams_per_game: updateSessionDto.teamsPerGame,
+        startDate: startDate,
+        teamsPerGame: updateSessionDto.teamsPerGame,
         title: updateSessionDto.title,
       },
       where: { id: session.id },
     });
 
-    const mappedSession = DtoMapperUtil.toCamelCase(
-      SessionResponse,
-      updatedSession,
-    ) as SessionResponse;
-
     return {
-      data: mappedSession,
+      data: updatedSession,
       message: 'Session updated successfully',
       status: 200,
     };

@@ -29,7 +29,7 @@ export class RegisterUserDto {
     description: 'device id, only for phones',
     example: '123456',
   })
-  readonly device_id?: string;
+  readonly deviceId?: string;
 
   @IsString()
   @IsEmail()

@@ -35,7 +35,7 @@ export class AuthService {
     registerDto: RegisterUserDto,
     createImageDto?: CreateImageDto,
   ): Promise<RegisterResponseDto> {
-    const { device_id, type } = registerDto;
+    const { deviceId, type } = registerDto;
 
     const result = await this.prismaService.$transaction(async (tx) => {
       let newUser;
@@ -59,16 +59,16 @@ export class AuthService {
         throw new BadRequestException('Invalid user type');
       }
 
-      const payload: { id: string; device_id?: string } = { id: newUser.id };
-      if (device_id) payload.device_id = device_id;
+      const payload: { id: string; deviceId?: string } = { id: newUser.id };
+      if (deviceId) payload.deviceId = deviceId;
 
       const access_token = this.jwt.sign(payload);
 
       await tx.user_tokens.create({
         data: {
-          device_id,
+          deviceId,
           token: access_token,
-          user_id: newUser.id,
+          userId: newUser.id,
         },
       });
 
@@ -86,7 +86,7 @@ export class AuthService {
 
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
     try {
-      const { device_id, email, password } = loginDto;
+      const { deviceId, email, password } = loginDto;
       const formattedEmail = email.toLowerCase();
 
       const user = await this.userService.findOneByEmail(formattedEmail);
@@ -99,50 +99,50 @@ export class AuthService {
         throw new NotFoundException('User not found');
       }
 
-      const payload = { id: user.id, ...(device_id && { device_id }) };
+      const payload = { id: user.id, ...(deviceId && { deviceId }) };
       const access_token = this.jwt.sign(payload);
 
       const existingTokens = await this.prismaService.user_tokens.findMany({
-        orderBy: { created_at: 'asc' },
-        where: { user_id: user.id },
+        orderBy: { createdAt: 'asc' },
+        where: { userId: user.id },
       });
 
-      const tokenWithDeviceId = existingTokens.find((token) => token.device_id !== null);
-      const tokensWithoutDeviceId = existingTokens.filter((token) => !token.device_id);
+      const tokenWithDeviceId = existingTokens.find((token) => token.deviceId !== null);
+      const tokensWithoutDeviceId = existingTokens.filter((token) => !token.deviceId);
 
       // Gestion des tokens avec transaction pour garantir l'atomicité
       await this.prismaService.$transaction(async (prisma) => {
-        if (device_id) {
+        if (deviceId) {
           if (tokenWithDeviceId) {
-            // Mise à jour du token existant avec device_id
+            // Mise à jour du token existant avec deviceId
             await prisma.user_tokens.update({
               data: { token: access_token },
               where: { id: tokenWithDeviceId.id },
             });
           } else {
-            // Création d'un nouveau token avec device_id
+            // Création d'un nouveau token avec deviceId
             await prisma.user_tokens.create({
               data: {
-                device_id,
+                deviceId,
                 token: access_token,
-                user_id: user.id,
+                userId: user.id,
               },
             });
           }
         } else {
-          // Gestion du token sans device_id
+          // Gestion du token sans deviceId
           if (tokensWithoutDeviceId.length >= 1) {
-            //? on supprime le token le plus ancien sans device_id
+            //? on supprime le token le plus ancien sans deviceId
             await prisma.user_tokens.delete({
               where: { id: tokensWithoutDeviceId[0].id },
             });
           }
 
-          // Création du nouveau token sans device_id
+          // Création du nouveau token sans deviceId
           await prisma.user_tokens.create({
             data: {
               token: access_token,
-              user_id: user.id,
+              userId: user.id,
             },
           });
         }
@@ -210,7 +210,7 @@ export class AuthService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    if (user.is_connected !== true) {
+    if (user.isConnected !== true) {
       throw new UnauthorizedException('User is not active');
     }
     return { data: { isValid: true }, message: 'token is valid' };
@@ -224,21 +224,21 @@ export class AuthService {
    */
   async sendVerificationEmail(userId: string, email: string) {
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expires_at = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     // Utiliser une transaction pour garantir l'atomicité
     await this.prismaService.$transaction(async (tx) => {
       // Supprimer les anciens codes de vérification
       await tx.email_verification.deleteMany({
-        where: { user_id: userId },
+        where: { userId: userId },
       });
 
       // Créer le nouveau code
       await tx.email_verification.create({
         data: {
           code: verificationCode,
-          expires_at,
-          user_id: userId,
+          expiresAt,
+          userId: userId,
         },
       });
     });
@@ -261,14 +261,14 @@ export class AuthService {
       where: { code },
     });
 
-    if (!verification || verification.expires_at < new Date()) {
+    if (!verification || verification.expiresAt < new Date()) {
       throw new BadRequestException('Token invalide ou expiré');
     }
 
     await this.prismaService.$transaction([
       this.prismaService.users.update({
-        data: { email_verified: true },
-        where: { id: verification.user_id },
+        data: { emailVerified: true },
+        where: { id: verification.userId },
       }),
       this.prismaService.email_verification.delete({
         where: { id: verification.id },
@@ -282,10 +282,10 @@ export class AuthService {
     const verification = await this.prismaService.email_verification.findFirst({
       where: {
         code,
-        expires_at: {
+        expiresAt: {
           gt: new Date(), // vérifie que le code n'est pas expiré
         },
-        user_id: userId,
+        userId: userId,
       },
     });
 
@@ -296,12 +296,12 @@ export class AuthService {
     // Mise à jour du statut de vérification de l'utilisateur
     await this.prismaService.$transaction([
       this.prismaService.users.update({
-        data: { email_verified: true },
+        data: { emailVerified: true },
         where: { id: userId },
       }),
       // Supprime tous les codes de vérification de l'utilisateur
       this.prismaService.email_verification.deleteMany({
-        where: { user_id: userId },
+        where: { userId: userId },
       }),
     ]);
 
@@ -320,12 +320,12 @@ export class AuthService {
       throw new NotFoundException('Utilisateur non trouvé');
     }
 
-    if (user.email_verified) {
+    if (user.emailVerified) {
       throw new BadRequestException('Email déjà vérifié');
     }
 
     await this.prismaService.email_verification.deleteMany({
-      where: { user_id: userId },
+      where: { userId: userId },
     });
 
     // Envoyer un nouveau code

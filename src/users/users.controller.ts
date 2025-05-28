@@ -68,7 +68,7 @@ export class UsersController {
       bio: true,
       firstname: true,
       id: true,
-      image_url: true,
+      imageUrl: true,
       lastname: true,
       name: true,
     };
@@ -102,7 +102,7 @@ export class UsersController {
       email: true,
       firstname: true,
       id: true,
-      image_url: true,
+      imageUrl: true,
       lastname: true,
       name: true,
       phone: true,

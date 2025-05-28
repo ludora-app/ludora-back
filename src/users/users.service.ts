@@ -53,10 +53,10 @@ export class UsersService {
 
     const hashedPassword = await argon2.hash(password);
 
-    let image_url = { data: '' };
+    let imageUrl = { data: '' };
 
     if (createImageDto) {
-      image_url = await this.imageService.create(S3FoldersName.USERS, createImageDto);
+      imageUrl = await this.imageService.create(S3FoldersName.USERS, createImageDto);
     }
 
     const newUser = await prisma.users.create({
@@ -65,7 +65,7 @@ export class UsersService {
         birthdate: new Date(createUserDto.birthdate),
         email: formattedEmail,
         firstname: formattedFirst,
-        image_url: image_url.data,
+        imageUrl: imageUrl.data,
         lastname: formattedLast,
         password: hashedPassword,
         phone: createUserDto.phone,
@@ -86,7 +86,7 @@ export class UsersService {
         email: true,
         firstname: true,
         id: true,
-        image_url: true,
+        imageUrl: true,
         lastname: true,
       },
     };
@@ -136,11 +136,11 @@ export class UsersService {
 
     if (!existingUser) throw new NotFoundException('User not found');
 
-    let image_url = await this.imageService.getProfilePic(existingUser.id);
-    if (!image_url) {
-      image_url = '';
+    let imageUrl = await this.imageService.getProfilePic(existingUser.id);
+    if (!imageUrl) {
+      imageUrl = '';
     }
-    const user = { ...existingUser, image_url };
+    const user = { ...existingUser, imageUrl };
     return { data: user, status: 200 };
   }
 
@@ -229,7 +229,7 @@ export class UsersService {
 
     await this.prismaService.users.update({
       data: {
-        is_connected: false,
+        isConnected: false,
       },
       where: { id },
     });
@@ -259,21 +259,21 @@ export class UsersService {
    */
   async sendVerificationEmail(userId: string, email: string) {
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expires_at = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     // Utiliser une transaction pour garantir l'atomicité
     await this.prismaService.$transaction(async (tx) => {
       // Supprimer les anciens codes de vérification
       await tx.email_verification.deleteMany({
-        where: { user_id: userId },
+        where: { userId: userId },
       });
 
       // Créer le nouveau code
       await tx.email_verification.create({
         data: {
           code: verificationCode,
-          expires_at,
-          user_id: userId,
+          expiresAt,
+          userId: userId,
         },
       });
     });

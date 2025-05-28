@@ -10,40 +10,40 @@ export class WebsocketsService {
   private readonly socketUserMap = new Map<string, string>();
   private readonly groupUsers = new Map<string, Set<string>>();
 
-  // addUser(user_id: string, socket_id: string) {
-  //   this.userSocketMap.set(user_id, socket_id);
-  //   this.socketUserMap.set(socket_id, user_id);
+  // addUser(userId: string, socket_id: string) {
+  //   this.userSocketMap.set(userId, socket_id);
+  //   this.socketUserMap.set(socket_id, userId);
   // }
 
   // removeUser(socket_id: string) {
-  //   const user_id = this.socketUserMap.get(socket_id);
-  //   if (user_id) {
-  //     this.userSocketMap.delete(user_id);
+  //   const userId = this.socketUserMap.get(socket_id);
+  //   if (userId) {
+  //     this.userSocketMap.delete(userId);
   //     this.socketUserMap.delete(socket_id);
   //   }
   // }
 
-  // getUserSocketId(user_id: string): string | undefined {
-  //   return this.userSocketMap.get(user_id);
+  // getUserSocketId(userId: string): string | undefined {
+  //   return this.userSocketMap.get(userId);
   // }
 
-  // addUserToGroup(user_id: string, group_id: string) {
+  // addUserToGroup(userId: string, group_id: string) {
   //   if (!this.groupUsers.has(group_id)) {
   //     this.groupUsers.set(group_id, new Set());
   //   }
-  //   this.groupUsers.get(group_id).add(user_id);
+  //   this.groupUsers.get(group_id).add(userId);
   // }
 
-  // removeUserFromGroup(user_id: string, group_id: string) {
+  // removeUserFromGroup(userId: string, group_id: string) {
   //   const group = this.groupUsers.get(group_id);
   //   if (group) {
-  //     group.delete(user_id);
+  //     group.delete(userId);
   //   }
   // }
 
-  // isUserInGroup(user_id: string, group_id: string): boolean {
+  // isUserInGroup(userId: string, group_id: string): boolean {
   //   const group = this.groupUsers.get(group_id);
-  //   return group ? group.has(user_id) : false;
+  //   return group ? group.has(userId) : false;
   // }
 
   // async createGroup(name: string): Promise<string> {
@@ -82,7 +82,7 @@ export class WebsocketsService {
   //     });
   //     //? Update the conversation so that the most recent one is at the top
   //     await this.prisma.conversations.update({
-  //       data: { updated_at: new Date() },
+  //       data: { updatedAt: new Date() },
   //       where: { id: conversation_id },
   //     });
   //   });

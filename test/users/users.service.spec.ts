@@ -117,8 +117,8 @@ describe('UsersService', () => {
   describe('findAll', () => {
     it('should return a list of users', async () => {
       const mockUsers = [
-        { id: '1', firstname: 'John', lastname: 'Doe', email: 'john@example.com', image_url: '' },
-        { id: '2', firstname: 'Jane', lastname: 'Doe', email: 'jane@example.com', image_url: '' },
+        { id: '1', firstname: 'John', lastname: 'Doe', email: 'john@example.com', imageUrl: '' },
+        { id: '2', firstname: 'Jane', lastname: 'Doe', email: 'jane@example.com', imageUrl: '' },
       ];
 
       mockPrismaService.users.findMany.mockResolvedValueOnce(mockUsers);
@@ -133,9 +133,9 @@ describe('UsersService', () => {
 
     it('should handle pagination correctly', async () => {
       const mockUsers = [
-        { id: '1', firstname: 'John', lastname: 'Doe', email: 'john@example.com', image_url: '' },
-        { id: '2', firstname: 'Jane', lastname: 'Doe', email: 'jane@example.com', image_url: '' },
-        { id: '3', firstname: 'Bob', lastname: 'Smith', email: 'bob@example.com', image_url: '' },
+        { id: '1', firstname: 'John', lastname: 'Doe', email: 'john@example.com', imageUrl: '' },
+        { id: '2', firstname: 'Jane', lastname: 'Doe', email: 'jane@example.com', imageUrl: '' },
+        { id: '3', firstname: 'Bob', lastname: 'Smith', email: 'bob@example.com', imageUrl: '' },
       ];
 
       mockPrismaService.users.findMany.mockResolvedValueOnce(mockUsers);
@@ -160,7 +160,7 @@ describe('UsersService', () => {
         bio: true,
         firstname: true,
         id: true,
-        image_url: true,
+        imageUrl: true,
         lastname: true,
         name: true,
       };
@@ -183,7 +183,7 @@ describe('UsersService', () => {
         email: true,
         firstname: true,
         id: true,
-        image_url: true,
+        imageUrl: true,
         lastname: true,
         name: true,
         phone: true,
@@ -297,7 +297,7 @@ describe('UsersService', () => {
       mockPrismaService.users.findUnique.mockResolvedValueOnce({ id: '1' });
       mockPrismaService.users.update.mockResolvedValueOnce({
         id: '1',
-        is_connected: false,
+        isConnected: false,
       });
 
       const result = await service.deactivate('1');
@@ -307,7 +307,7 @@ describe('UsersService', () => {
         status: 200,
       });
       expect(mockPrismaService.users.update).toHaveBeenCalledWith({
-        data: { is_connected: false },
+        data: { isConnected: false },
         where: { id: '1' },
       });
     });
@@ -348,13 +348,13 @@ describe('UsersService', () => {
 
       expect(mockPrismaService.$transaction).toHaveBeenCalled();
       expect(mockPrismaService.email_verification.deleteMany).toHaveBeenCalledWith({
-        where: { user_id: '1' },
+        where: { userId: '1' },
       });
       expect(mockPrismaService.email_verification.create).toHaveBeenCalledWith({
         data: {
           code: expect.any(String),
-          expires_at: expect.any(Date),
-          user_id: '1',
+          expiresAt: expect.any(Date),
+          userId: '1',
         },
       });
       expect(mockEmailsService.sendEmail).toHaveBeenCalledWith({

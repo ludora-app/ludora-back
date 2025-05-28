@@ -17,18 +17,18 @@ export class ImagesService {
     private readonly awsService: AwsService,
   ) {}
 
-  async getImagesBySessionId(session_id: string) {
+  async getImagesBySessionId(sessionId: string) {
     const existingSession = await this.prisma.sessions.findUnique({
-      where: { id: session_id },
+      where: { id: sessionId },
     });
 
     if (!existingSession) {
-      throw new NotFoundException(`Session with id ${session_id} not found`);
+      throw new NotFoundException(`Session with id ${sessionId} not found`);
     }
 
     const images = await this.prisma.session_images.findMany({
-      orderBy: { created_at: 'asc' },
-      where: { session_id: session_id },
+      orderBy: { createdAt: 'asc' },
+      where: { sessionId: sessionId },
     });
 
     if (!images || images.length === 0) {
@@ -45,17 +45,17 @@ export class ImagesService {
     return response;
   }
 
-  async getFirstImageBySessionId(session_id: string) {
+  async getFirstImageBySessionId(sessionId: string) {
     const existingSession = await this.prisma.sessions.findUnique({
-      where: { id: session_id },
+      where: { id: sessionId },
     });
 
     if (!existingSession) {
-      throw new NotFoundException(`Session with id ${session_id} not found`);
+      throw new NotFoundException(`Session with id ${sessionId} not found`);
     }
 
     const image = await this.prisma.session_images.findFirst({
-      where: { order: 1, session_id },
+      where: { order: 1, sessionId },
     });
 
     if (!image) {
@@ -68,17 +68,17 @@ export class ImagesService {
     return response;
   }
 
-  async getProfilePic(user_id: string) {
+  async getProfilePic(userId: string) {
     const profilePic = await this.prisma.users.findUnique({
-      select: { image_url: true },
-      where: { id: user_id },
+      select: { imageUrl: true },
+      where: { id: userId },
     });
 
     if (!profilePic) {
-      throw new NotFoundException(`User with id ${user_id} not found`);
+      throw new NotFoundException(`User with id ${userId} not found`);
     }
     const folder = 'users';
-    const response = await this.awsService.getSignedUrl(folder, profilePic.image_url);
+    const response = await this.awsService.getSignedUrl(folder, profilePic.imageUrl);
 
     return response;
   }

@@ -1,51 +1,24 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { formatDate, timeStringToMinutes } from 'src/shared/utils/date.utils';
-import { transformSnakeToCamel } from 'src/shared/utils/snake-to-camel-case.util';
 import { SessionsService } from './../../src/sessions/sessions.service';
 import { CreateSessionDto } from '../../src/sessions/dto/input/create-session.dto';
 import { UpdateSessionDto } from '../../src/sessions/dto/input/update-session.dto';
 import { SessionFilterDto } from '../../src/sessions/dto/input/session-filter.dto';
 import { Sport } from 'src/shared/constants/constants';
 import { Game_modes } from '@prisma/client';
+import { DateUtils } from 'src/shared/utils/date.utils';
 
-// Mock the utility functions
 jest.mock('src/shared/utils/date.utils', () => ({
-  formatDate: jest.fn().mockReturnValue('2023-01-01'),
-  timeStringToMinutes: jest.fn().mockImplementation((time) => {
-    if (time === '08:00:00') return 480; // 8 hours * 60 minutes
-    if (time === '22:00:00') return 1320; // 22 hours * 60 minutes
-    if (time === '16:00:00') return 960; // 16 hours * 60 minutes
-    return 0;
-  }),
-}));
-
-jest.mock('src/shared/utils/snake-to-camel-case.util', () => ({
-  transformSnakeToCamel: jest.fn().mockImplementation((_, data) => {
-    if (Array.isArray(data)) {
-      return data.map((item) => ({
-        ...item,
-        endDate: item.end_date,
-        startDate: item.start_date,
-        maxPlayersPerTeam: item.max_players_per_team,
-        minPlayersPerTeam: item.min_players_per_team,
-        teamsPerGame: item.teams_per_game,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at,
-      }));
-    }
-    return {
-      ...data,
-      endDate: data.end_date,
-      startDate: data.start_date,
-      maxPlayersPerTeam: data.max_players_per_team,
-      minPlayersPerTeam: data.min_players_per_team,
-      teamsPerGame: data.teams_per_game,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
-    };
-  }),
+  DateUtils: {
+    formatDate: jest.fn().mockReturnValue('2023-01-01'),
+    timeStringToMinutes: jest.fn().mockImplementation((time) => {
+      if (time === '08:00:00') return 480; // 8 hours * 60 minutes
+      if (time === '22:00:00') return 1320; // 22 hours * 60 minutes
+      if (time === '16:00:00') return 960; // 16 hours * 60 minutes
+      return 0;
+    }),
+  },
 }));
 
 describe('SessionsService', () => {
@@ -120,32 +93,32 @@ describe('SessionsService', () => {
     const mockField = {
       id: 'field-id-1',
       sport: Sport.FOOTBALL,
-      game_mode: '5v5',
-      partner_id: 'partner-id-1',
+      gameMode: '5v5',
+      partnerId: 'partner-id-1',
     };
 
     const mockOpeningHours = {
-      partner_id: 'partner-id-1',
-      day_of_week: 2, // Tuesday
-      open_time: '08:00:00',
-      close_time: '22:00:00',
-      is_closed: false,
+      partnerId: 'partner-id-1',
+      dayOfWeek: 2, // Tuesday
+      openTime: '08:00:00',
+      closeTime: '22:00:00',
+      isClosed: false,
     };
 
     const mockCreatedSession = {
       id: 'session-id-1',
       description: 'Test session',
-      end_date: mockFutureEndDate,
-      field_id: 'field-id-1',
-      game_mode: '5v5',
-      max_players_per_team: 5,
-      min_players_per_team: 3,
+      endDate: mockFutureEndDate,
+      fieldId: 'field-id-1',
+      gameMode: '5v5',
+      maxPlayersPerTeam: 5,
+      minPlayersPerTeam: 3,
       sport: Sport.FOOTBALL,
-      start_date: mockFutureDate,
-      teams_per_game: 2,
+      startDate: mockFutureDate,
+      teamsPerGame: 2,
       title: 'Test Session Title',
-      created_at: mockCurrentDate,
-      updated_at: mockCurrentDate,
+      createdAt: mockCurrentDate,
+      updatedAt: mockCurrentDate,
     };
 
     it('should create a session successfully', async () => {
@@ -174,7 +147,7 @@ describe('SessionsService', () => {
       });
       expect(prismaService.sessions.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          field_id: 'field-id-1',
+          fieldId: 'field-id-1',
           title: 'Test Session Title',
         }),
       });
@@ -197,7 +170,7 @@ describe('SessionsService', () => {
       await service.create(dtoWithoutTitle);
 
       // Assert
-      expect(formatDate).toHaveBeenCalledWith(mockFutureDate.toISOString());
+      expect(DateUtils.formatDate).toHaveBeenCalledWith(mockFutureDate.toISOString());
       expect(prismaService.sessions.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           title: `Session de FOOTBALL le 2023-01-01`,
@@ -220,7 +193,7 @@ describe('SessionsService', () => {
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
       (prismaService.partner_opening_hours.findUnique as jest.Mock).mockResolvedValue({
         ...mockOpeningHours,
-        is_closed: true,
+        isClosed: true,
       });
 
       // Act & Assert
@@ -234,9 +207,9 @@ describe('SessionsService', () => {
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
       (prismaService.partner_opening_hours.findUnique as jest.Mock).mockResolvedValue({
         ...mockOpeningHours,
-        open_time: '16:00:00', // After session start time
+        openTime: '16:00:00', // After session start time
       });
-      (timeStringToMinutes as jest.Mock).mockReturnValueOnce(960); // 16 * 60
+      (DateUtils.timeStringToMinutes as jest.Mock).mockReturnValueOnce(960); // 16 * 60
 
       // Act & Assert
       await expect(service.create(createSessionDto)).rejects.toThrow(
@@ -305,28 +278,28 @@ describe('SessionsService', () => {
       {
         id: 'session-id-1',
         description: 'Session 1',
-        end_date: new Date('2023-01-10T16:00:00Z'),
-        start_date: new Date('2023-01-10T14:00:00Z'),
+        endDate: new Date('2023-01-10T16:00:00Z'),
+        startDate: new Date('2023-01-10T14:00:00Z'),
         sport: Sport.FOOTBALL,
         title: 'Session 1 Title',
-        max_players_per_team: 5,
-        min_players_per_team: 3,
-        teams_per_game: 2,
-        created_at: new Date('2023-01-01T12:00:00Z'),
-        updated_at: new Date('2023-01-01T12:00:00Z'),
+        maxPlayersPerTeam: 5,
+        minPlayersPerTeam: 3,
+        teamsPerGame: 2,
+        createdAt: new Date('2023-01-01T12:00:00Z'),
+        updatedAt: new Date('2023-01-01T12:00:00Z'),
       },
       {
         id: 'session-id-2',
         description: 'Session 2',
-        end_date: new Date('2023-01-11T16:00:00Z'),
-        start_date: new Date('2023-01-11T14:00:00Z'),
+        endDate: new Date('2023-01-11T16:00:00Z'),
+        startDate: new Date('2023-01-11T14:00:00Z'),
         sport: 'BASKETBALL',
         title: 'Session 2 Title',
-        max_players_per_team: 5,
-        min_players_per_team: 3,
-        teams_per_game: 2,
-        created_at: new Date('2023-01-01T12:00:00Z'),
-        updated_at: new Date('2023-01-01T12:00:00Z'),
+        maxPlayersPerTeam: 5,
+        minPlayersPerTeam: 3,
+        teamsPerGame: 2,
+        createdAt: new Date('2023-01-01T12:00:00Z'),
+        updatedAt: new Date('2023-01-01T12:00:00Z'),
       },
     ];
 
@@ -404,7 +377,7 @@ describe('SessionsService', () => {
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
-            start_date: { gte: mockCurrentDate },
+            startDate: { gte: mockCurrentDate },
           },
         }),
       );
@@ -422,7 +395,7 @@ describe('SessionsService', () => {
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
-            start_date: { lt: mockCurrentDate },
+            startDate: { lt: mockCurrentDate },
           },
         }),
       );
@@ -463,7 +436,7 @@ describe('SessionsService', () => {
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
-            start_date: {
+            startDate: {
               gte: minStart,
               lte: maxStart,
             },
@@ -502,17 +475,17 @@ describe('SessionsService', () => {
     const mockSession = {
       id: 'session-id-1',
       description: 'Test session',
-      end_date: new Date('2023-01-10T16:00:00Z'),
-      field_id: 'field-id-1',
-      game_mode: '5v5',
-      max_players_per_team: 5,
-      min_players_per_team: 3,
+      endDate: new Date('2023-01-10T16:00:00Z'),
+      fieldId: 'field-id-1',
+      gameMode: '5v5',
+      maxPlayersPerTeam: 5,
+      minPlayersPerTeam: 3,
       sport: Sport.FOOTBALL,
-      start_date: new Date('2023-01-10T14:00:00Z'),
-      teams_per_game: 2,
+      startDate: new Date('2023-01-10T14:00:00Z'),
+      teamsPerGame: 2,
       title: 'Test Session Title',
-      created_at: new Date('2023-01-01T12:00:00Z'),
-      updated_at: new Date('2023-01-01T12:00:00Z'),
+      createdAt: new Date('2023-01-01T12:00:00Z'),
+      updatedAt: new Date('2023-01-01T12:00:00Z'),
     };
 
     it('should return a session by id', async () => {
@@ -560,38 +533,38 @@ describe('SessionsService', () => {
 
     const mockSession = {
       id: 'session-id-1',
-      field_id: 'field-id-1',
+      fieldId: 'field-id-1',
     };
 
     const mockField = {
       id: 'field-id-1',
       sport: Sport.FOOTBALL,
-      game_mode: '5v5',
-      partner_id: 'partner-id-1',
+      gameMode: '5v5',
+      partnerId: 'partner-id-1',
     };
 
     const mockOpeningHours = {
-      partner_id: 'partner-id-1',
-      day_of_week: 2, // Tuesday
-      open_time: '08:00:00',
-      close_time: '22:00:00',
-      is_closed: false,
+      partnerId: 'partner-id-1',
+      dayOfWeek: 2, // Tuesday
+      openTime: '08:00:00',
+      closeTime: '22:00:00',
+      isClosed: false,
     };
 
     const mockUpdatedSession = {
       id: 'session-id-1',
       description: 'Updated session',
-      end_date: mockFutureEndDate,
-      field_id: 'field-id-1',
-      game_mode: '5v5',
-      max_players_per_team: 6,
-      min_players_per_team: 4,
+      endDate: mockFutureEndDate,
+      fieldId: 'field-id-1',
+      gameMode: '5v5',
+      maxPlayersPerTeam: 6,
+      minPlayersPerTeam: 4,
       sport: Sport.FOOTBALL,
-      start_date: mockFutureDate,
-      teams_per_game: 2,
+      startDate: mockFutureDate,
+      teamsPerGame: 2,
       title: 'Updated Session Title',
-      created_at: mockCurrentDate,
-      updated_at: mockCurrentDate,
+      createdAt: mockCurrentDate,
+      updatedAt: mockCurrentDate,
     };
 
     it('should update a session successfully', async () => {
@@ -650,7 +623,7 @@ describe('SessionsService', () => {
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
       (prismaService.partner_opening_hours.findUnique as jest.Mock).mockResolvedValue({
         ...mockOpeningHours,
-        is_closed: true,
+        isClosed: true,
       });
 
       // Act & Assert
@@ -665,9 +638,9 @@ describe('SessionsService', () => {
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
       (prismaService.partner_opening_hours.findUnique as jest.Mock).mockResolvedValue({
         ...mockOpeningHours,
-        open_time: '16:00:00', // After session start time
+        openTime: '16:00:00', // After session start time
       });
-      (timeStringToMinutes as jest.Mock).mockReturnValueOnce(960); // 16 * 60
+      (DateUtils.timeStringToMinutes as jest.Mock).mockReturnValueOnce(960); // 16 * 60
 
       // Act & Assert
       await expect(service.update('session-id-1', updateSessionDto)).rejects.toThrow(

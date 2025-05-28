@@ -40,7 +40,7 @@ export class SessionResponse {
     example: 'FOOTBALL',
     readOnly: true,
   })
-  sport: Sport;
+  sport: Sport | string;
 
   @ApiProperty({
     description: 'Session start date',

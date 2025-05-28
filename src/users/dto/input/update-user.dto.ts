@@ -64,7 +64,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
     required: false,
     type: String,
   })
-  image_url?: string;
+  imageUrl?: string;
 
   @IsString()
   @IsOptional()
