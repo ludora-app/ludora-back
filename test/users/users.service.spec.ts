@@ -5,7 +5,7 @@ import * as argon2 from 'argon2';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ImagesService } from 'src/shared/images/images.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/domain/services/old.users.service';
 
 // Mock argon2
 jest.mock('argon2', () => ({

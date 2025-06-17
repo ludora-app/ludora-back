@@ -6,7 +6,7 @@ import * as argon2 from 'argon2';
 import { AuthService } from 'src/auth/auth.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/domain/services/old.users.service';
 
 describe('AuthService', () => {
   let service: AuthService;

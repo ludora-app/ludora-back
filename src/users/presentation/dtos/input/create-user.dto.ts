@@ -1,6 +1,6 @@
-import { Sex } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsStrongPassword } from 'src/users/password.validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { Sex } from 'src/users/domain/value-objects/sex';
 import {
   IsString,
   IsNotEmpty,
@@ -8,13 +8,14 @@ import {
   IsOptional,
   IsEnum,
   IsEmail,
-  Validate,
-  MinLength,
   IsAlpha,
   IsDateString,
+  IsStrongPassword,
 } from 'class-validator';
 
-export class CreateUserDto {
+import { UserDto } from '../user.dto';
+
+export class CreateUserDto extends PartialType(UserDto) {
   @IsEmail()
   @ApiProperty({
     description: "L'email de l'utilisateur",
@@ -23,14 +24,14 @@ export class CreateUserDto {
   })
   readonly email: string;
 
-  @Validate(IsStrongPassword)
-  @MinLength(8)
-  @ApiProperty({
-    description: "Le mot de passe de l'utilisateur",
-    example: 'Test!1234',
-    readOnly: true,
-    type: String,
+  @IsStrongPassword({
+    minLength: 8,
+    minLowercase: 1,
+    minNumbers: 1,
+    minSymbols: 1,
+    minUppercase: 1,
   })
+  @ApiProperty({ description: 'password', example: 'Test!1234' })
   readonly password: string;
 
   @IsAlpha('fr-FR')
@@ -61,7 +62,7 @@ export class CreateUserDto {
     oneOf: [{ type: 'string' }, { type: 'Date' }],
     readOnly: true,
   })
-  readonly birthdate?: string | Date;
+  readonly birthdate?: string;
 
   @IsEnum(Sex, { message: 'Unknown Sex' })
   @IsOptional()

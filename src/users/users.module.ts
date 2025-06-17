@@ -3,8 +3,10 @@ import { SharedModule } from 'src/shared/shared.module';
 import { MetricsController } from 'src/shared/metrics/metrics.controller';
 import { makeCounterProvider, PrometheusModule } from '@willsoto/nestjs-prometheus';
 
-import { UsersService } from './users.service';
-import { UsersController } from './users.controller';
+import { UsersService } from './application/services/users.service';
+import { UsersController } from './presentation/http/users.controller';
+import { UsersRepository } from './domain/repositories/users.repository.port';
+import { PrismaUserRepository } from './infrastructure/persistance/prisma/prisma-user.repository';
 
 @Module({
   controllers: [UsersController],
@@ -21,6 +23,10 @@ import { UsersController } from './users.controller';
       help: 'Active users',
       name: 'active_users',
     }),
+    {
+      provide: UsersRepository,
+      useClass: PrismaUserRepository,
+    },
   ],
 })
 export class UsersModule {}

@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsStrongPassword } from 'src/users/password.validator';
-import { IsEmail, IsOptional, MinLength, Validate } from 'class-validator';
+import { IsEmail, IsOptional, IsStrongPassword } from 'class-validator';
 
 export class LoginDto {
   @IsEmail()
@@ -11,19 +10,14 @@ export class LoginDto {
   })
   readonly email: string;
 
-  @Validate(IsStrongPassword)
-  @MinLength(8)
-  @ApiProperty({
-    description: `User Password.
-      Must contain at least:
-        - 8 characters
-        - 1 uppercase letter
-        - 1 special character`,
-    example: 'Test!1234',
+  @IsStrongPassword({
     minLength: 8,
-    pattern: '^(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$',
-    type: String,
+    minLowercase: 1,
+    minNumbers: 1,
+    minSymbols: 1,
+    minUppercase: 1,
   })
+  @ApiProperty({ description: 'password', example: 'Test!1234' })
   readonly password: string;
 
   @IsOptional()

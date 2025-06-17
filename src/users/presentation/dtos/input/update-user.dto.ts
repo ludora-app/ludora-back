@@ -1,6 +1,6 @@
-import { Sex } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { PartialType } from '@nestjs/mapped-types';
+import { Sex } from 'src/users/domain/value-objects/sex';
 import { IsString, IsPhoneNumber, IsUrl, IsOptional, IsEnum, IsDateString } from 'class-validator';
 
 import { CreateUserDto } from './create-user.dto';

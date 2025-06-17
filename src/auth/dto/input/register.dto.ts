@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Sex, User_type } from '@prisma/client';
-import { IsStrongPassword } from 'src/users/password.validator';
 import {
   IsEnum,
   IsString,
@@ -8,9 +7,8 @@ import {
   ValidateIf,
   IsDateString,
   IsEmail,
-  MinLength,
   IsPhoneNumber,
-  Validate,
+  IsStrongPassword,
 } from 'class-validator';
 
 export class RegisterUserDto {
@@ -36,9 +34,13 @@ export class RegisterUserDto {
   @ApiProperty({ description: 'email', example: 'test@mail.com' })
   readonly email: string;
 
-  @Validate(IsStrongPassword)
-  @IsString()
-  @MinLength(8)
+  @IsStrongPassword({
+    minLength: 8,
+    minLowercase: 1,
+    minNumbers: 1,
+    minSymbols: 1,
+    minUppercase: 1,
+  })
   @ApiProperty({ description: 'password', example: 'Test!1234' })
   readonly password: string;
 
