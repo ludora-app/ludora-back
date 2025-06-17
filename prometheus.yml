@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'ludora-api'
+    static_configs:
+      - targets: ['ludora-api:2424']
