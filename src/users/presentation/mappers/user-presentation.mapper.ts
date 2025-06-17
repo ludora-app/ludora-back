@@ -4,9 +4,11 @@ import { Phone } from 'src/users/domain/value-objects/phone';
 import { UserId } from 'src/users/domain/value-objects/user-id';
 import { Provider } from 'src/users/domain/value-objects/provider';
 import { UserType } from 'src/users/domain/value-objects/user-type';
+import { PaginationResponseType } from 'src/interfaces/pagination-response-type';
 
 import { UserDto } from '../dtos/user.dto';
 import { User } from '../../domain/entities/user';
+import { FindAllUsersResponseDtoType } from '../dtos/output/find-all-users-response.dto';
 import {
   FindMeUserResponseDataDto,
   FindOneUserResponseDataDto,
@@ -72,6 +74,18 @@ export class UserPresentationMapper {
       lastname: user?.getProfile().lastname ?? '',
       phone: user?.getPhone() ?? '',
       stripeAccountId: user?.getStripeAccountId() ?? '',
+    };
+  }
+
+  static toFindAllUsersResponse(users: PaginationResponseType<User>): FindAllUsersResponseDtoType {
+    return {
+      data: {
+        items: users.data.items.map((user) => this.toFindOneUserResponse(user)),
+        nextCursor: users.data.nextCursor,
+        totalCount: users.data.totalCount,
+      },
+      message: users.message ?? 'Users fetched successfully',
+      status: users.status ?? 200,
     };
   }
 }

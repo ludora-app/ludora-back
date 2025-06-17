@@ -3,6 +3,8 @@ import { User } from 'src/users/domain/entities/user';
 import { PrismaService } from 'src/prisma/prisma.service';
 // import { UserFilterDto } from 'src/users/presentation/dtos/input/user-filter.dto';
 // import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
+import { UserFilter } from 'src/users/domain/value-objects/user-filter';
+import { PaginationResponseType } from 'src/interfaces/pagination-response-type';
 import { UsersRepository } from 'src/users/domain/repositories/users.repository.port';
 import { UserNotFoundDomainError } from 'src/users/domain/errors/user-not-found.error';
 
@@ -17,7 +19,6 @@ export class PrismaUserRepository implements UsersRepository {
     await this.prisma.users.create({
       data: prismaUser,
     });
-    console.log('prismaUser from repository', prismaUser);
     return;
   }
 
@@ -40,15 +41,56 @@ export class PrismaUserRepository implements UsersRepository {
   //     });
   //   }
 
-  //   findByEmail(email: string): Promise<User | null> {
-  //     return this.prisma.users.findUnique({
-  //       where: { email },
-  //     });
-  //   }
+  async findByEmail(email: string): Promise<User | null> {
+    const user = await this.prisma.users.findUnique({
+      where: { email },
+    });
 
-  //   findAll(filters: UserFilterDto): Promise<PaginationResponseTypeDto<User>> {
-  //     return this.prisma.users.findMany({
-  //       where: filters,
-  //     });
-  //   }
+    if (!user) {
+      throw new UserNotFoundDomainError(email);
+    }
+    return PrismaUserMapper.toDomain(user);
+  }
+
+  async findAll(filters: UserFilter): Promise<PaginationResponseType<User>> {
+    const { cursor, limit, name } = filters;
+    console.log('filters', filters);
+
+    const query = {};
+
+    if (name) {
+      query['where'] = {
+        OR: [
+          { firstname: { contains: name, mode: 'insensitive' } },
+          { lastname: { contains: name, mode: 'insensitive' } },
+        ],
+      };
+    }
+
+    if (limit) {
+      query['take'] = limit + 1;
+    }
+
+    if (cursor) {
+      query['cursor'] = cursor;
+    }
+
+    const users = await this.prisma.users.findMany(query);
+
+    let nextCursor: string | null = null;
+    if (users.length > limit) {
+      const nextItem = users.pop();
+      nextCursor = nextItem!.id;
+    }
+
+    const usersMapped = users.map((user) => PrismaUserMapper.toDomain(user));
+
+    return {
+      data: {
+        items: usersMapped,
+        nextCursor,
+        totalCount: usersMapped.length,
+      },
+    };
+  }
 }

@@ -5,6 +5,12 @@ import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 export class UserFilterDto {
   @IsOptional()
   @IsString()
+  @ApiProperty({
+    description: "User's firstname or lastname",
+    example: 'John',
+    required: false,
+    type: String,
+  })
   name?: string;
 
   @IsOptional()
@@ -12,7 +18,7 @@ export class UserFilterDto {
   @IsInt()
   @Min(1)
   @ApiProperty({
-    description: 'Limite de users à retourner',
+    description: 'Limit of users to return',
     example: 10,
     required: false,
     type: Number,
@@ -22,7 +28,7 @@ export class UserFilterDto {
   @IsOptional()
   @IsString()
   @ApiProperty({
-    description: 'Curseur pour la pagination',
+    description: 'Cursor for pagination',
     example: 'fcacfaca3c2a323bhf',
     required: false,
     type: String,

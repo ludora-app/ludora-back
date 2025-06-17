@@ -1,6 +1,6 @@
 export class UserNotFoundDomainError extends Error {
-  constructor(userId: string) {
-    super(`User with ID ${userId} not found`);
+  constructor(resource?: string) {
+    super(`User [${resource}] not found`);
     this.name = 'UserNotFoundError';
   }
 }

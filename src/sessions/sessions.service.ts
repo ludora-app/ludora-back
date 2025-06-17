@@ -1,8 +1,8 @@
 import { Sport } from 'src/shared/constants/constants';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseType } from 'src/interfaces/response-type';
+import { PaginationResponseType } from 'src/interfaces/pagination-response-type';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 
 import { DateUtils } from './../shared/utils/date.utils';
 import { SessionResponse } from './dto/output/session-response';
@@ -105,7 +105,7 @@ export class SessionsService {
     };
   }
 
-  async findAll(filter: SessionFilterDto): Promise<PaginationResponseTypeDto<SessionResponse>> {
+  async findAll(filter: SessionFilterDto): Promise<PaginationResponseType<SessionResponse>> {
     const {
       cursor,
       latitude,

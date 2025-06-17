@@ -1,3 +1,4 @@
+// import { AuthGuard } from 'src/auth/guards/auth.guard';
 import { UsersService } from 'src/users/application/services/users.service';
 import { UserNotFoundDomainError } from 'src/users/domain/errors/user-not-found.error';
 import {
@@ -14,12 +15,21 @@ import {
   BadRequestException,
   NotFoundException,
   Param,
+  Req,
+  Query,
+  // UseGuards,
 } from '@nestjs/common';
 
 import { CreateUserDto } from '../dtos/input/create-user.dto';
+import { UserFilterDto } from '../dtos/input/user-filter.dto';
 import { UserPresentationMapper } from '../mappers/user-presentation.mapper';
-import { FindOneUserResponseDto } from '../dtos/output/find-one-user-response.dto';
+import { FindAllUsersResponseDto } from '../dtos/output/find-all-users-response.dto';
+import {
+  FindMeUserResponseDto,
+  FindOneUserResponseDto,
+} from '../dtos/output/find-one-user-response.dto';
 
+// @UseGuards(AuthGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -29,25 +39,25 @@ export class UsersController {
     summary: 'Register a new user',
   })
   register(@Body() dto: CreateUserDto) {
-    console.log('dto from controller', dto);
     return this.usersService.save(dto);
   }
 
-  // @Get('/all')
-  // @ApiOperation({
-  //   summary: 'Récupère tous les utilisateurs',
-  // })
-  // @ApiOkResponse({
-  //   description: 'Successfully fetched users',
-  //   type: FindAllUsersResponseDto,
-  // })
-  // @ApiBadRequestResponse({
-  //   description: 'Error fetching users',
-  //   type: BadRequestException,
-  // })
-  // findAll(@Query() filters: UserFilterDto) {
-  //   return this.usersService.findAll(filters);
-  // }
+  @Get('/all')
+  @ApiOperation({
+    summary: 'Récupère tous les utilisateurs',
+  })
+  @ApiOkResponse({
+    description: 'Successfully fetched users',
+    type: FindAllUsersResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Error fetching users',
+    type: BadRequestException,
+  })
+  async findAll(@Query() filters: UserFilterDto) {
+    const users = await this.usersService.findAll(filters);
+    return UserPresentationMapper.toFindAllUsersResponse(users);
+  }
 
   @Get(':id')
   @ApiOperation({
@@ -82,59 +92,69 @@ export class UsersController {
     }
   }
 
-  // @Get('/')
-  // @ApiOperation({
-  //   summary: 'get user by token requires to be connected',
-  // })
-  // @ApiOkResponse({
-  //   description: 'Successfully fetched user',
-  //   type: FindMeUserResponseDto,
-  // })
-  // @ApiBadRequestResponse({
-  //   description: 'Error fetching user',
-  //   type: BadRequestException,
-  // })
-  // @ApiNotFoundResponse({
-  //   description: 'User not found',
-  //   type: NotFoundException,
-  // })
-  // findMe(@Req() request: Request) {
-  //   const id = request['user'].id;
+  @Get('/')
+  @ApiOperation({
+    summary: 'get user by token requires to be connected',
+  })
+  @ApiOkResponse({
+    description: 'Successfully fetched user',
+    type: FindMeUserResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Error fetching user',
+    type: BadRequestException,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundException,
+  })
+  async findMe(@Req() request: Request) {
+    const id = request['user'].id;
 
-  //   const select = {
-  //     active: true,
-  //     bio: true,
-  //     birthdate: true,
-  //     email: true,
-  //     firstname: true,
-  //     id: true,
-  //     imageUrl: true,
-  //     lastname: true,
-  //     name: true,
-  //     phone: true,
-  //     sex: true,
-  //     stripe_account_id: true,
-  //     type: true,
-  //   };
+    try {
+      const user = await this.usersService.findById(id);
+      return {
+        data: UserPresentationMapper.toFindMeUserResponse(user),
+        message: 'User fetched successfully',
+        status: 200,
+      };
+    } catch (error) {
+      if (error instanceof UserNotFoundDomainError) {
+        throw new NotFoundException('User not found');
+      }
 
-  //   return this.usersService.findOne(id, select);
-  // }
+      throw error;
+    }
+  }
 
-  // @Get('/email')
-  // @ApiOperation({
-  //   summary: 'get user by email',
-  // })
-  // @ApiBadRequestResponse({
-  //   description: 'Error fetching user',
-  //   type: BadRequestException,
-  // })
-  // @ApiNotFoundResponse({
-  //   description: 'User not found',
-  //   type: NotFoundException,
-  // })
-  // async findOneByEmail(@Body('email') email: string) {
-  //   return this.usersService.findOneByEmail(email);
-  // }
+  @Get('/email/:email')
+  @ApiOperation({
+    summary: 'get user by email',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error fetching user',
+    type: BadRequestException,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundException,
+  })
+  async findOneByEmail(@Param('email') email: string) {
+    try {
+      const user = await this.usersService.findByEmail(email);
+      return {
+        data: UserPresentationMapper.toFindOneUserResponse(user),
+        message: 'User fetched successfully',
+        status: 200,
+      };
+    } catch (error) {
+      if (error instanceof UserNotFoundDomainError) {
+        throw new NotFoundException('User not found');
+      }
+
+      throw error;
+    }
+  }
 
   // @Patch('/update')
   // @ApiOperation({
