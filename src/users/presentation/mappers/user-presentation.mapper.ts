@@ -7,6 +7,10 @@ import { UserType } from 'src/users/domain/value-objects/user-type';
 
 import { UserDto } from '../dtos/user.dto';
 import { User } from '../../domain/entities/user';
+import {
+  FindMeUserResponseDataDto,
+  FindOneUserResponseDataDto,
+} from '../dtos/output/find-one-user-response.dto';
 
 export class UserPresentationMapper {
   static toPresentation(user: User): UserDto {
@@ -46,5 +50,28 @@ export class UserPresentationMapper {
       sex: user.sex as Sex,
       type: user.type as UserType,
     });
+  }
+
+  static toFindOneUserResponse(user: User): FindOneUserResponseDataDto {
+    return {
+      email: user.getEmail(),
+      firstname: user.getProfile().firstname,
+      id: user.getId(),
+      imageUrl: user.getProfile().imageUrl,
+      lastname: user.getProfile().lastname,
+      name: `${user.getProfile().firstname} ${user.getProfile().lastname}`,
+    };
+  }
+
+  static toFindMeUserResponse(user: User): FindMeUserResponseDataDto {
+    return {
+      email: user.getEmail(),
+      firstname: user.getProfile().firstname,
+      id: user.getId(),
+      imageUrl: user?.getProfile().imageUrl ?? '',
+      lastname: user?.getProfile().lastname ?? '',
+      phone: user?.getPhone() ?? '',
+      stripeAccountId: user?.getStripeAccountId() ?? '',
+    };
   }
 }

@@ -1,4 +1,5 @@
 import { UsersService } from 'src/users/application/services/users.service';
+import { UserNotFoundDomainError } from 'src/users/domain/errors/user-not-found.error';
 import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
@@ -65,15 +66,20 @@ export class UsersController {
     type: NotFoundException,
   })
   async findOne(@Param('id') id: string): Promise<FindOneUserResponseDto> {
-    const user = await this.usersService.findById(id);
-    console.log('user from controller', user);
-    const userPresentation = UserPresentationMapper.toPresentation(user);
-    console.log('userPresentation from controller', userPresentation);
-    return {
-      data: userPresentation,
-      message: 'User fetched successfully',
-      status: 200,
-    };
+    try {
+      const user = await this.usersService.findById(id);
+      return {
+        data: UserPresentationMapper.toFindOneUserResponse(user),
+        message: 'User fetched successfully',
+        status: 200,
+      };
+    } catch (error) {
+      if (error instanceof UserNotFoundDomainError) {
+        throw new NotFoundException('User not found');
+      }
+
+      throw error;
+    }
   }
 
   // @Get('/')

@@ -4,6 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 // import { UserFilterDto } from 'src/users/presentation/dtos/input/user-filter.dto';
 // import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import { UsersRepository } from 'src/users/domain/repositories/users.repository.port';
+import { UserNotFoundDomainError } from 'src/users/domain/errors/user-not-found.error';
 
 import { PrismaUserMapper } from './prisma-user.mapper';
 
@@ -24,6 +25,10 @@ export class PrismaUserRepository implements UsersRepository {
     const user = await this.prisma.users.findUnique({
       where: { id },
     });
+
+    if (!user) {
+      throw new UserNotFoundDomainError(id);
+    }
 
     return PrismaUserMapper.toDomain(user);
   }

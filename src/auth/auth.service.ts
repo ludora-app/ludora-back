@@ -1,9 +1,6 @@
 // import * as argon2 from 'argon2';
-import { JwtService } from '@nestjs/jwt';
 // import { User_type } from '@prisma/client';
-import { UsersService } from 'src/users/domain/services/old.users.service';
 // import { PrismaService } from 'src/prisma/prisma.service';
-import { EmailsService } from 'src/shared/emails/emails.service';
 // import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
 import {
   Injectable,
@@ -24,12 +21,7 @@ import {
 
 @Injectable()
 export class AuthService {
-  constructor(
-    // private readonly prismaService: PrismaService,
-    private readonly jwt: JwtService,
-    private readonly userService: UsersService,
-    private readonly emailsService: EmailsService,
-  ) {}
+  constructor() {} // private readonly emailsService: EmailsService, // private readonly userService: UsersService, // private readonly jwt: JwtService, // private readonly prismaService: PrismaService,
 
   // async register(
   //   registerDto: RegisterUserDto,

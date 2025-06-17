@@ -13,26 +13,24 @@ import {
   IsString,
   IsStrongPassword,
   IsUrl,
+  IsUUID,
 } from 'class-validator';
 
 export class UserDto {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
-  @IsString()
+  @IsUUID()
   readonly id: string;
 
   @ApiProperty({ example: 'Toto', readOnly: true })
   @IsAlpha('fr-FR')
-  @IsString()
   readonly firstname: string;
 
   @ApiProperty({ example: 'Lolo', readOnly: true })
   @IsAlpha('fr-FR')
-  @IsString()
   readonly lastname: string;
 
   @ApiProperty({ example: null, nullable: true, readOnly: true })
   @IsAlpha('fr-FR')
-  @IsString()
   @IsOptional()
   readonly name?: string;
 
@@ -58,10 +56,12 @@ export class UserDto {
     type: String,
   })
   @IsPhoneNumber('FR')
+  @IsOptional()
   readonly phone?: string;
 
   @ApiProperty({ example: '1998-01-31T00:00:00.000Z', nullable: true, readOnly: true })
   @IsDateString()
+  @IsOptional()
   readonly birthdate?: string;
 
   @ApiProperty({
