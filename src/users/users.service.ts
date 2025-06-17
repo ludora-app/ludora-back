@@ -1,7 +1,11 @@
 import * as argon2 from 'argon2';
+import { Gauge } from 'prom-client';
+import { Counter } from 'prom-client';
 import { CreateImageDto } from 'src/auth/dto';
 import { Prisma, Users } from '@prisma/client';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { SuccessTypeDto } from 'src/interfaces/success-type';
 import { ResponseTypeDto } from 'src/interfaces/response-type';
 import { S3FoldersName } from 'src/shared/constants/constants';
@@ -25,10 +29,13 @@ import {
 
 @Injectable()
 export class UsersService {
+  private activeUsersGauge: Gauge<string>;
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly imageService: ImagesService,
     private readonly emailsService: EmailsService,
+    @InjectMetric('active_users') public activeUsersCounter: Counter<string>,
   ) {}
 
   async createUser(
@@ -284,5 +291,16 @@ export class UsersService {
       recipients: [email],
       template: 'verificationCode',
     });
+  }
+
+  @Cron(CronExpression.EVERY_30_SECONDS)
+  async handleCron() {
+    console.log('Cron job executed');
+    const activeUsers = await this.prismaService.users.count({
+      where: {
+        isConnected: true,
+      },
+    });
+    this.activeUsersCounter.inc(activeUsers);
   }
 }

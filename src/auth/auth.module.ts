@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from 'src/users/users.module';
-import { UsersService } from 'src/users/users.service';
 import { SharedModule } from 'src/shared/shared.module';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
@@ -18,7 +18,12 @@ import { AuthController } from './auth.controller';
     }),
     UsersModule,
     SharedModule,
+    PrometheusModule.register({
+      defaultMetrics: {
+        enabled: false,
+      },
+    }),
   ],
-  providers: [AuthService, UsersService],
+  providers: [AuthService],
 })
 export class AuthModule {}

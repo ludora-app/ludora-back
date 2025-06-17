@@ -1,12 +1,20 @@
 import { Module } from '@nestjs/common';
 import { SharedModule } from 'src/shared/shared.module';
+import { makeCounterProvider, PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 
 @Module({
   controllers: [UsersController],
-  imports: [SharedModule],
-  providers: [UsersService],
+  exports: [UsersService],
+  imports: [SharedModule, PrometheusModule.register()],
+  providers: [
+    UsersService,
+    makeCounterProvider({
+      help: 'Active users',
+      name: 'active_users',
+    }),
+  ],
 })
 export class UsersModule {}
