@@ -11,6 +11,8 @@ services:
       - ./src:/usr/src/app/src
       - ./prisma:/usr/src/app/prisma
       - ./test:/usr/src/app/test
+    networks:
+      - ludora-network
 
     ports:
       - '2424:2424'
@@ -29,6 +31,8 @@ services:
       - DOPPLER_TOKEN
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    networks:
+      - ludora-network
 
   grafana:
     image: grafana/grafana-oss:latest
