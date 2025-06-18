@@ -3,23 +3,23 @@ import { User } from 'src/users/domain/entities/user';
 import { PrismaService } from 'src/prisma/prisma.service';
 // import { UserFilterDto } from 'src/users/presentation/dtos/input/user-filter.dto';
 // import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
-import { UserFilter } from 'src/users/domain/value-objects/user-filter';
+import { UserFilter } from 'src/users/application/queries/user-filter';
 import { PaginationResponseType } from 'src/interfaces/pagination-response-type';
-import { UsersRepository } from 'src/users/domain/repositories/users.repository.port';
+import { UsersRepository } from 'src/users/domain/repositories/users.repository';
 import { UserNotFoundDomainError } from 'src/users/domain/errors/user-not-found.error';
 
 import { PrismaUserMapper } from './prisma-user.mapper';
 
 @Injectable()
-export class PrismaUserRepository implements UsersRepository {
+export class PrismaUserAdapter implements UsersRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async save(user: User): Promise<void> {
+  async save(user: User): Promise<User> {
     const prismaUser = PrismaUserMapper.toPrisma(user);
     await this.prisma.users.create({
       data: prismaUser,
     });
-    return;
+    return PrismaUserMapper.toDomain(prismaUser);
   }
 
   async findById(id: string): Promise<User | null> {

@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-
-import { ResponseTypeDto } from '../../../interfaces/response-type';
+import { ResponseTypeDto } from 'src/interfaces/response-type';
 
 export class VerifyEmailResponseDataDto {
   @ApiProperty({

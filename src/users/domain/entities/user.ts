@@ -47,10 +47,10 @@ export class User {
 
     return new User(
       params.id,
-      params.email,
+      new Email(params.email.getValue().toLowerCase()),
       params.password,
-      params.firstname,
-      params.lastname,
+      params.firstname.charAt(0).toUpperCase() + params.firstname.slice(1),
+      params.lastname.charAt(0).toUpperCase() + params.lastname.slice(1),
       params.birthdate,
       params.sex,
       params.phone,

@@ -1,3 +1,18 @@
-# Raffiner les DTOS de sortie pour findById
+# Finir module users
 
-- Créer les Partials et adapter les mapper, ne plus retourner le mot de passe
+## Repository
+
+- update
+- delete?
+
+## Controller
+
+- update
+- deactivate
+- delete?
+
+# Mettre en place le logger dans les couches applications & infrastructure
+
+# finir auth
+
+## créer Token adapter et l'instancier dans le module

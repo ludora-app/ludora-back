@@ -3,9 +3,17 @@ import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from 'src/users/users.module';
 import { SharedModule } from 'src/shared/shared.module';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import { UsersService } from 'src/users/application/services/users.service';
+import { TokenRepository } from 'src/auth/domain/repositories/token.repository';
+import { UserAuthRepository } from 'src/auth/domain/repositories/user-auth.repository';
+import { ArgonPasswordHasherService } from 'src/shared/infrastructure/services/argon-password-hasher.service';
 
 import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
+import { AuthController } from './presentation/auth.controller';
+import { LoginUseCase } from './application/commands/login-use-case';
+import { TokenAdapter } from './infrastructure/adapters/token.adapter';
+import { RegisterUserCase } from './application/commands/register-use-case';
+import { UserAuthAdapter } from './infrastructure/adapters/user-auth.adapter';
 
 @Module({
   controllers: [AuthController],
@@ -24,6 +32,20 @@ import { AuthController } from './auth.controller';
       },
     }),
   ],
-  providers: [AuthService],
+  providers: [
+    AuthService,
+    LoginUseCase,
+    RegisterUserCase,
+    {
+      provide: UserAuthRepository,
+      useClass: UserAuthAdapter,
+    },
+    ArgonPasswordHasherService,
+    UsersService,
+    {
+      provide: TokenRepository,
+      useClass: TokenAdapter,
+    },
+  ],
 })
 export class AuthModule {}

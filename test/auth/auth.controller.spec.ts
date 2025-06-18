@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Sex, User_type } from '@prisma/client';
-import { AuthController } from 'src/auth/auth.controller';
+import { AuthController } from 'src/auth/presentation/auth.controller';
 import { AuthService } from 'src/auth/auth.service';
 import { VerifyEmailCodeDto } from 'src/auth/dto/input/verify-email-code.dto';
 

@@ -5,12 +5,12 @@ import { makeCounterProvider, PrometheusModule } from '@willsoto/nestjs-promethe
 
 import { UsersService } from './application/services/users.service';
 import { UsersController } from './presentation/http/users.controller';
-import { UsersRepository } from './domain/repositories/users.repository.port';
-import { PrismaUserRepository } from './infrastructure/persistance/prisma/prisma-user.repository';
+import { UsersRepository } from './domain/repositories/users.repository';
+import { PrismaUserAdapter } from './infrastructure/persistance/prisma/prisma-user.adapter';
 
 @Module({
   controllers: [UsersController],
-  exports: [UsersService],
+  exports: [UsersService, UsersRepository],
   imports: [
     SharedModule,
     PrometheusModule.register({
@@ -25,7 +25,7 @@ import { PrismaUserRepository } from './infrastructure/persistance/prisma/prisma
     }),
     {
       provide: UsersRepository,
-      useClass: PrismaUserRepository,
+      useClass: PrismaUserAdapter,
     },
   ],
 })

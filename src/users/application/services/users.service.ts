@@ -4,9 +4,9 @@ import { Email } from 'src/users/domain/value-objects/email';
 import { UserId } from 'src/users/domain/value-objects/user-id';
 // import { UserFilterDto } from 'src/users/presentation/dtos/input/user-filter.dto';
 // import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
-import { UserFilter } from 'src/users/domain/value-objects/user-filter';
+import { UserFilter } from 'src/users/application/queries/user-filter';
 import { PaginationResponseType } from 'src/interfaces/pagination-response-type';
-import { UsersRepository } from 'src/users/domain/repositories/users.repository.port';
+import { UsersRepository } from 'src/users/domain/repositories/users.repository';
 
 import { User } from '../../domain/entities/user';
 import { CreateUserCommand } from '../commands/create-user.command';

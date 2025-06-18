@@ -8,7 +8,7 @@ export class ArgonPasswordHasherService implements PasswordHasherPort {
     return await argon2.hash(password);
   }
 
-  async compare(password: string, hashedPassword: string): Promise<boolean> {
+  async compare(hashedPassword: string, password: string): Promise<boolean> {
     return await argon2.verify(hashedPassword, password);
   }
 }

@@ -1,12 +1,12 @@
 import { User } from 'src/users/domain/entities/user';
 import { PaginationResponseType } from 'src/interfaces/pagination-response-type';
 
-import { UserFilter } from '../value-objects/user-filter';
+import { UserFilter } from '../../application/queries/user-filter';
 // import { UserFilterDto } from 'src/users/presentation/dtos/input/user-filter.dto';
 // import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 
 export abstract class UsersRepository {
-  abstract save(user: User): Promise<void>;
+  abstract save(user: User): Promise<User>;
   abstract findById(id: string): Promise<User>;
   // // todo : make the parameters optional
   // abstract update(id: string, user: User): Promise<void>;
