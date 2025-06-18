@@ -54,7 +54,6 @@ export class PrismaUserAdapter implements UsersRepository {
 
   async findAll(filters: UserFilter): Promise<PaginationResponseType<User>> {
     const { cursor, limit, name } = filters;
-    console.log('filters', filters);
 
     const query = {};
 

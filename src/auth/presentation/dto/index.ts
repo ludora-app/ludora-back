@@ -5,4 +5,4 @@ export * from './input/verify-token-response.dto';
 export * from './input/register.dto';
 export * from './input/login.dto';
 export * from './input/verify-mail.dto';
-export * from 'src/shared/images/dto/create-image.dto';
+export * from 'src/shared/presentation/dto/images/create-image.dto';

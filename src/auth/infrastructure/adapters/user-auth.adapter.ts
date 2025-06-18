@@ -22,8 +22,7 @@ export class UserAuthAdapter implements UserAuthRepository {
   async validateUser(credentials: LoginCredentials): Promise<UserAuthInfo | null> {
     const user = await this.userService.findByEmail(credentials.email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
-    console.log('HASH:', user.getPassword());
-    console.log('PLAIN:', credentials.password);
+
     const isValid = await this.argon2.compare(user.getPassword(), credentials.password);
     if (!isValid) throw new UnauthorizedException('Invalid credentials');
     return new UserAuthInfo(

@@ -1,12 +1,35 @@
+import { Request } from 'express';
+import { memoryStorage } from 'multer';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { LoginDto } from 'src/auth/presentation/dto/input/login.dto';
 import { Public } from 'src/auth/presentation/decorators/public.decorator';
 import { LoginResponseDto } from 'src/auth/presentation/dto/output/login-response.dto';
-import { ApiBadRequestResponse, ApiConflictResponse, ApiOperation } from '@nestjs/swagger';
-import { Controller, Post, Body, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiOperation,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  Body,
+  BadRequestException,
+  ConflictException,
+  UploadedFile,
+  UseInterceptors,
+  Req,
+} from '@nestjs/common';
 
-import { RegisterResponseDto, RegisterUserDto } from './dto';
 import { LoginUseCase } from '../application/commands/login-use-case';
 import { RegisterUserCase } from '../application/commands/register-use-case';
+import {
+  CreateImageDto,
+  RegisterResponseDto,
+  RegisterUserDto,
+  RegisterUserWithFileDto,
+} from './dto';
 
 @Controller('auth')
 export class AuthController {
@@ -16,10 +39,21 @@ export class AuthController {
   ) {}
   @Public()
   @Post('register')
-  // @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      fileFilter: (_req, file, cb) => {
+        console.log('File filter called with:', file);
+        cb(null, true);
+      },
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB
+      },
+      storage: memoryStorage(),
+    }),
+  )
   @ApiOperation({ summary: 'Create a user account' })
-  // @ApiConsumes('multipart/form-data')
-  // @ApiBody({ type: RegisterUserWithFileDto })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: RegisterUserWithFileDto })
   @ApiBadRequestResponse({
     description: 'Error during registration',
     type: BadRequestException,
@@ -29,18 +63,33 @@ export class AuthController {
     type: ConflictException,
   })
   async register(
-    @Body() registerDto: RegisterUserDto,
-    // @UploadedFile() file: Express.Multer.File,
+    @Req() request: Request,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<RegisterResponseDto> {
-    // if (file) {
-    // const imageName = Date.now() + file.originalname;
-    // const createImageDto: CreateImageDto = {
-    //   file: file.buffer,
-    //   name: imageName,
-    // };
-    //   return this.registerUseCase.execute(registerDto);
-    // }
-    return this.registerUseCase.execute(registerDto);
+    // Extract and transform form data from request.body
+    const registerDto: RegisterUserDto = {
+      bio: request.body.bio,
+      birthdate: request.body.birthdate,
+      deviceId: request.body.deviceId,
+      email: request.body.email,
+      firstname: request.body.firstname,
+      imageUrl: request.body.imageUrl,
+      lastname: request.body.lastname,
+      password: request.body.password,
+      phone: request.body.phone,
+      sex: request.body.sex?.toUpperCase(), // Transform to enum value
+      type: request.body.type?.toUpperCase(), // Transform to enum value
+    };
+
+    if (file) {
+      const imageName = Date.now() + file.originalname;
+      const createImageDto: CreateImageDto = {
+        file: file.buffer,
+        name: imageName,
+      };
+      return this.registerUseCase.execute(registerDto, createImageDto);
+    }
+    return this.registerUseCase.execute(registerDto, null);
   }
   @Public()
   @Post('/login')

@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { Sex, User_type } from '@prisma/client';
 import {
@@ -13,6 +14,7 @@ import {
 
 export class RegisterUserDto {
   @IsEnum(User_type)
+  @Transform(({ value }) => value?.toUpperCase())
   @ApiProperty({
     description: 'user type (USER or ADMIN)',
     enum: User_type,
@@ -73,6 +75,15 @@ export class RegisterUserDto {
   })
   readonly bio?: string;
 
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    description: 'Image URL',
+    example: 'https://example.com/image.jpg',
+    required: false,
+  })
+  readonly imageUrl?: string;
+
   // Champs spécifiques à USER
   @ValidateIf((dto) => dto.type === User_type.USER)
   @IsDateString()
@@ -86,6 +97,7 @@ export class RegisterUserDto {
 
   @ValidateIf((dto) => dto.type === User_type.USER)
   @IsEnum(Sex, { message: 'Unknown Sex' })
+  @Transform(({ value }) => value?.toUpperCase())
   @IsOptional()
   @ApiProperty({
     description: 'sex of user',

@@ -1,16 +1,30 @@
 import { Inject } from '@nestjs/common';
+import { S3FoldersName } from 'src/shared/constants/constants';
 import { TokenRepository } from 'src/auth/domain/repositories/token.repository';
-import { RegisterResponseDto, RegisterUserDto } from 'src/auth/presentation/dto';
+import { FileStoragePort } from 'src/shared/domain/repositories/file-storage.port';
 import { UserAuthRepository } from 'src/auth/domain/repositories/user-auth.repository';
+import { CreateImageDto, RegisterResponseDto, RegisterUserDto } from 'src/auth/presentation/dto';
 
 export class RegisterUserCase {
   constructor(
     @Inject(UserAuthRepository)
     private readonly userAuthRepository: UserAuthRepository,
     private readonly tokenRepo: TokenRepository,
+    private readonly fileStorage: FileStoragePort,
   ) {}
 
-  async execute(registerDto: RegisterUserDto): Promise<RegisterResponseDto> {
+  async execute(
+    registerDto: RegisterUserDto,
+    createImageDto: CreateImageDto,
+  ): Promise<RegisterResponseDto> {
+    if (createImageDto) {
+      const image = await this.fileStorage.upload(
+        S3FoldersName.USERS,
+        createImageDto.name,
+        createImageDto.file,
+      );
+      (registerDto as any).imageUrl = image.message;
+    }
     const user = await this.userAuthRepository.registerUser(registerDto);
     const payload = {
       id: user.id,

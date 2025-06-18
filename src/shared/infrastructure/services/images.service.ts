@@ -1,10 +1,10 @@
-import { AwsService } from 'src/shared/aws/aws.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { FileStoragePort } from 'src/shared/domain/repositories/file-storage.port';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { S3FoldersName } from '../constants/constants';
-import { UpdateImageDto } from './dto/update-image.dto';
-import { CreateImageDto } from './dto/create-image.dto';
+import { S3FoldersName } from '../../constants/constants';
+import { UpdateImageDto } from '../../presentation/dto/images/update-image.dto';
+import { CreateImageDto } from '../../presentation/dto/images/create-image.dto';
 
 /**
  * Service responsible for handling image operations
@@ -14,7 +14,7 @@ import { CreateImageDto } from './dto/create-image.dto';
 export class ImagesService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly awsService: AwsService,
+    private readonly fileStorage: FileStoragePort,
   ) {}
 
   async getImagesBySessionId(sessionId: string) {
@@ -37,7 +37,7 @@ export class ImagesService {
     const folder = 'sessions';
     const response = await Promise.all(
       images.map(async (image) => {
-        const url = await this.awsService.getSignedUrl(folder, image.url);
+        const url = await this.fileStorage.getSignedUrl(folder, image.url);
         return { order: image.order, url };
       }),
     );
@@ -63,7 +63,7 @@ export class ImagesService {
     }
 
     const folder = 'sessions';
-    const response = await this.awsService.getSignedUrl(folder, image.url);
+    const response = await this.fileStorage.getSignedUrl(folder, image.url);
 
     return response;
   }
@@ -78,7 +78,7 @@ export class ImagesService {
       throw new NotFoundException(`User with id ${userId} not found`);
     }
     const folder = 'users';
-    const response = await this.awsService.getSignedUrl(folder, profilePic.imageUrl);
+    const response = await this.fileStorage.getSignedUrl(folder, profilePic.imageUrl);
 
     return response;
   }
@@ -87,7 +87,7 @@ export class ImagesService {
     const { file, name, order } = createImageDto;
 
     try {
-      const fileS3 = await this.awsService.upload(folder, name, file);
+      const fileS3 = await this.fileStorage.upload(folder, name, file);
 
       if (!fileS3?.message) {
         throw new BadRequestException('Error uploading image');

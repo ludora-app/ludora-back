@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Sex } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ImagesService } from 'src/shared/images/images.service';
+import { ImagesService } from 'src/shared/infrastructure/services/images.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { UsersService } from 'src/users/domain/services/old.users.service';
 
