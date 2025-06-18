@@ -14,6 +14,9 @@ import { LoginUseCase } from './application/commands/login-use-case';
 import { TokenAdapter } from './infrastructure/adapters/token.adapter';
 import { RegisterUserCase } from './application/commands/register-use-case';
 import { UserAuthAdapter } from './infrastructure/adapters/user-auth.adapter';
+import { PrismaAuthAdapter } from './infrastructure/adapters/prisma-auth.adapter';
+import { ValidateEmailUseCase } from './application/commands/validate-email-use-case';
+import { EmailVerificationRepository } from './domain/repositories/email-verification.repository';
 
 @Module({
   controllers: [AuthController],
@@ -36,6 +39,7 @@ import { UserAuthAdapter } from './infrastructure/adapters/user-auth.adapter';
     AuthService,
     LoginUseCase,
     RegisterUserCase,
+    ValidateEmailUseCase,
     {
       provide: UserAuthRepository,
       useClass: UserAuthAdapter,
@@ -45,6 +49,10 @@ import { UserAuthAdapter } from './infrastructure/adapters/user-auth.adapter';
     {
       provide: TokenRepository,
       useClass: TokenAdapter,
+    },
+    {
+      provide: EmailVerificationRepository,
+      useClass: PrismaAuthAdapter,
     },
   ],
 })

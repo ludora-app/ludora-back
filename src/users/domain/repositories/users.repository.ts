@@ -9,7 +9,7 @@ export abstract class UsersRepository {
   abstract save(user: User): Promise<User>;
   abstract findById(id: string): Promise<User>;
   // // todo : make the parameters optional
-  // abstract update(id: string, user: User): Promise<void>;
+  abstract update(id: string, user: User): Promise<void>;
   abstract findByEmail(email: string): Promise<User | null>;
   abstract findAll(filters: UserFilter): Promise<PaginationResponseType<User>>;
 }

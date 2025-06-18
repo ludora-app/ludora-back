@@ -92,4 +92,11 @@ export class PrismaUserAdapter implements UsersRepository {
       },
     };
   }
+
+  async update(id: string, user: User): Promise<void> {
+    await this.prisma.users.update({
+      data: PrismaUserMapper.toPrisma(user),
+      where: { id },
+    });
+  }
 }

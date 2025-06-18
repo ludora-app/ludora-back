@@ -6,7 +6,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSessionDto } from 'src/sessions/dto/input/create-session.dto';
 import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
 import { SessionFilterDto } from 'src/sessions/dto/input/session-filter.dto';
-import { Sport } from 'src/shared/constants/constants';
+import { Sport } from 'src/shared/domain/constants/constants';
 import { Game_modes } from '@prisma/client';
 
 describe('SessionsController', () => {

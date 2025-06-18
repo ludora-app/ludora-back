@@ -15,4 +15,4 @@
 
 # finir auth
 
-## créer Token adapter et l'instancier dans le module
+- Faire le module email

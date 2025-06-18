@@ -1,16 +1,16 @@
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import { Injectable, Logger } from '@nestjs/common';
-
-import { emailTemplates } from './templates/emails.templates';
+import { MailerPort } from 'src/shared/domain/repositories/mailer.port';
+import { emailTemplates } from 'src/shared/domain/constants/emails.templates';
 
 /**
  * Service responsible for handling email operations
  * @class EmailsService
  */
 @Injectable()
-export class EmailsService {
-  private readonly logger = new Logger(EmailsService.name);
+export class NodemailerService implements MailerPort {
+  private readonly logger = new Logger(NodemailerService.name);
 
   private readonly transporter: nodemailer.Transporter;
 

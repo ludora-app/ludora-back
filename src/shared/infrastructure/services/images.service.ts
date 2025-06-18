@@ -2,7 +2,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { FileStoragePort } from 'src/shared/domain/repositories/file-storage.port';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { S3FoldersName } from '../../constants/constants';
+import { S3FoldersName } from '../../domain/constants/constants';
 import { UpdateImageDto } from '../../presentation/dto/images/update-image.dto';
 import { CreateImageDto } from '../../presentation/dto/images/create-image.dto';
 

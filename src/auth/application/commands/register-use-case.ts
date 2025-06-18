@@ -1,5 +1,5 @@
 import { Inject } from '@nestjs/common';
-import { S3FoldersName } from 'src/shared/constants/constants';
+import { S3FoldersName } from 'src/shared/domain/constants/constants';
 import { TokenRepository } from 'src/auth/domain/repositories/token.repository';
 import { FileStoragePort } from 'src/shared/domain/repositories/file-storage.port';
 import { UserAuthRepository } from 'src/auth/domain/repositories/user-auth.repository';
@@ -26,6 +26,7 @@ export class RegisterUserCase {
       (registerDto as any).imageUrl = image.message;
     }
     const user = await this.userAuthRepository.registerUser(registerDto);
+
     const payload = {
       id: user.id,
       ...(registerDto.deviceId && { deviceId: registerDto.deviceId }),
@@ -39,6 +40,9 @@ export class RegisterUserCase {
     if (tokensWithoutDeviceId.length >= 1) {
       await this.tokenRepo.deleteTokenById(tokensWithoutDeviceId[0].id);
     }
+
+    await this.userAuthRepository.sendVerificationEmail(user.id, user.email);
+
     await this.tokenRepo.saveToken(user.id, access_token);
     return {
       data: {
@@ -46,12 +50,4 @@ export class RegisterUserCase {
       },
     };
   }
-
-  //   private async saveToken(user: UserAuthInfo, access_token: string) {
-  //     const payload = {
-  //       id: user.id,
-  //       ...(registerDto.deviceId && { deviceId: registerDto.deviceId }),
-  //     };
-  //     const access_token = this.tokenRepo.sign(payload);
-  //   }
 }

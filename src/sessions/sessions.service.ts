@@ -1,4 +1,4 @@
-import { Sport } from 'src/shared/constants/constants';
+import { Sport } from 'src/shared/domain/constants/constants';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResponseType } from 'src/interfaces/response-type';
 import { PaginationResponseType } from 'src/interfaces/pagination-response-type';

@@ -34,9 +34,9 @@ export class UsersService {
   findById(id: string): Promise<User> {
     return this.usersRepository.findById(id);
   }
-  // update(id: string, user: User): Promise<void> {
-  //   throw new Error('Method not implemented.');
-  // }
+  update(id: string, user: User): Promise<void> {
+    return this.usersRepository.update(id, user);
+  }
   // existsByEmail(email: string): Promise<boolean> {
   //   throw new Error('Method not implemented.');
   // }

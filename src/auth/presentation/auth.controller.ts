@@ -20,10 +20,14 @@ import {
   UploadedFile,
   UseInterceptors,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 
+import { AuthGuard } from './guards/auth.guard';
 import { LoginUseCase } from '../application/commands/login-use-case';
+import { VerifyEmailCodeDto } from './dto/input/verify-email-code.dto';
 import { RegisterUserCase } from '../application/commands/register-use-case';
+import { ValidateEmailUseCase } from '../application/commands/validate-email-use-case';
 import {
   CreateImageDto,
   RegisterResponseDto,
@@ -31,11 +35,13 @@ import {
   RegisterUserWithFileDto,
 } from './dto';
 
+@UseGuards(AuthGuard)
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly loginUseCase: LoginUseCase,
     private readonly registerUseCase: RegisterUserCase,
+    private readonly validateEmailUseCase: ValidateEmailUseCase,
   ) {}
   @Public()
   @Post('register')
@@ -135,10 +141,18 @@ export class AuthController {
   //   const id = request['user'].id;
   //   return this.authService.verifyToken(id);
   // }
-  // @Post('verify-email-code')
-  // async verifyEmailCode(@Request() req, @Body() verifyEmailCodeDto: VerifyEmailCodeDto) {
-  //   return this.authService.verifyEmailCode(req.user.id, verifyEmailCodeDto.code);
-  // }
+  @Post('verify-email-code')
+  async verifyEmailCode(@Req() req, @Body() verifyEmailCodeDto: VerifyEmailCodeDto) {
+    const codeValidation = await this.validateEmailUseCase.execute(
+      req.user.id,
+      verifyEmailCodeDto.code,
+    );
+    return {
+      data: {
+        codeValidation,
+      },
+    };
+  }
   // @Post('resend-verification-code')
   // async resendVerificationCode(@Request() req) {
   //   return this.authService.resendVerificationCode(req.user.id);

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Sport } from 'src/shared/constants/constants';
+import { Sport } from 'src/shared/domain/constants/constants';
 import { PaginationResponseDto } from 'src/interfaces/pagination-response-type';
 
 /**
