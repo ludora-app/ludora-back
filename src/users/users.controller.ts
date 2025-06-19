@@ -1,3 +1,6 @@
+import { Users } from '@prisma/client';
+import { ResponseTypeDto } from 'src/interfaces/response-type';
+import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
@@ -25,6 +28,7 @@ import {
   FindOneUserResponseDto,
   UpdateUserDto,
   FindAllUsersResponseDto,
+  FindAllUsersResponseDataDto,
 } from './dto';
 
 @Controller('users')
@@ -43,8 +47,15 @@ export class UsersController {
     description: 'Error fetching users',
     type: BadRequestException,
   })
-  findAll(@Query() filters: UserFilterDto) {
-    return this.usersService.findAll(filters);
+  async findAll(
+    @Query() filters: UserFilterDto,
+  ): Promise<PaginationResponseTypeDto<FindAllUsersResponseDataDto>> {
+    const data = await this.usersService.findAll(filters);
+    return {
+      data,
+      message: 'Users fetched successfully',
+      status: 200,
+    };
   }
 
   @Get(':id')
@@ -63,7 +74,7 @@ export class UsersController {
     description: 'User not found',
     type: NotFoundException,
   })
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string): Promise<ResponseTypeDto<Users>> {
     const select = {
       bio: true,
       firstname: true,
@@ -73,7 +84,9 @@ export class UsersController {
       name: true,
     };
 
-    return this.usersService.findOne(id, select);
+    const data = await this.usersService.findOne(id, select);
+
+    return { data, message: 'User fetched successfully', status: 200 };
   }
 
   @Get('/')
@@ -92,7 +105,7 @@ export class UsersController {
     description: 'User not found',
     type: NotFoundException,
   })
-  findMe(@Req() request: Request) {
+  async findMe(@Req() request: Request): Promise<ResponseTypeDto<Users>> {
     const id = request['user'].id;
 
     const select = {
@@ -111,7 +124,9 @@ export class UsersController {
       type: true,
     };
 
-    return this.usersService.findOne(id, select);
+    const data = await this.usersService.findOne(id, select);
+
+    return { data, message: 'User fetched successfully', status: 200 };
   }
 
   @Get('/email')
@@ -126,8 +141,9 @@ export class UsersController {
     description: 'User not found',
     type: NotFoundException,
   })
-  async findOneByEmail(@Body('email') email: string) {
-    return this.usersService.findOneByEmail(email);
+  async findOneByEmail(@Body('email') email: string): Promise<ResponseTypeDto<Users>> {
+    const data = await this.usersService.findOneByEmail(email);
+    return { data, message: 'User fetched successfully', status: 200 };
   }
 
   @Patch('/update')
@@ -142,9 +158,13 @@ export class UsersController {
     description: 'User not found',
     type: NotFoundException,
   })
-  update(@Req() request: Request, @Body() updateUserDto: UpdateUserDto) {
+  async update(
+    @Req() request: Request,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<ResponseTypeDto<Users>> {
     const id = request['user'].id;
-    return this.usersService.update(id, updateUserDto);
+    const data = await this.usersService.update(id, updateUserDto);
+    return { data, message: 'User updated successfully', status: 200 };
   }
 
   @Patch('/update-password')

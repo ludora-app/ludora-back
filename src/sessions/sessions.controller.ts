@@ -1,5 +1,6 @@
 import { Sessions } from '@prisma/client';
-import { ResponseTypeDto } from 'src/interfaces/response-type';
+import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
+import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
@@ -25,7 +26,7 @@ import { SessionsService } from './sessions.service';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
 import { CreateSessionDto } from './dto/input/create-session.dto';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
-import { PaginatedSessionResponse } from './dto/output/session-response';
+import { PaginatedSessionResponse, SessionResponse } from './dto/output/session-response';
 
 @Controller('sessions')
 export class SessionsController {
@@ -36,8 +37,14 @@ export class SessionsController {
   @ApiOkResponse({ type: ResponseTypeDto<Sessions> })
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
-  create(@Body() createSessionDto: CreateSessionDto) {
-    return this.sessionsService.create(createSessionDto);
+  async create(@Body() createSessionDto: CreateSessionDto): Promise<ResponseType<SessionResponse>> {
+    const newSession = await this.sessionsService.create(createSessionDto);
+
+    return {
+      data: newSession,
+      message: 'Session created successfully',
+      status: 201,
+    };
   }
 
   @Get('/all')
@@ -45,8 +52,16 @@ export class SessionsController {
   @ApiOkResponse({ type: PaginatedSessionResponse })
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
-  findAll(@Query() filter: SessionFilterDto) {
-    return this.sessionsService.findAll(filter);
+  async findAll(
+    @Query() filter: SessionFilterDto,
+  ): Promise<PaginationResponseTypeDto<SessionResponse>> {
+    const sessions = await this.sessionsService.findAll(filter);
+
+    return {
+      data: sessions,
+      message: 'Sessions fetched successfully',
+      status: 200,
+    };
   }
 
   @Get(':id')
@@ -55,8 +70,14 @@ export class SessionsController {
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
   @ApiNotFoundResponse({ type: NotFoundException })
-  findOne(@Param('id') id: string) {
-    return this.sessionsService.findOne(id);
+  async findOne(@Param('id') id: string): Promise<ResponseType<SessionResponse>> {
+    const session = await this.sessionsService.findOne(id);
+
+    return {
+      data: session,
+      message: 'Session fetched successfully',
+      status: 200,
+    };
   }
 
   @Patch(':id')
@@ -65,12 +86,21 @@ export class SessionsController {
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
   @ApiNotFoundResponse({ type: NotFoundException })
-  update(@Param('id') id: string, @Body() updateSessionDto: UpdateSessionDto) {
-    return this.sessionsService.update(id, updateSessionDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateSessionDto: UpdateSessionDto,
+  ): Promise<ResponseType<SessionResponse>> {
+    const updatedSession = await this.sessionsService.update(id, updateSessionDto);
+
+    return {
+      data: updatedSession,
+      message: 'Session updated successfully',
+      status: 200,
+    };
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
     return this.sessionsService.remove(+id);
   }
 }

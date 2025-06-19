@@ -7,7 +7,7 @@ export class RegisterResponseDataDto {
     readOnly: true,
     type: String,
   })
-  readonly access_token: string;
+  readonly accessToken: string;
 }
 
 export class RegisterResponseDto extends ResponseTypeDto<RegisterResponseDataDto> {

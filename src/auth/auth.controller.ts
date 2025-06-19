@@ -1,4 +1,5 @@
 import { FileInterceptor } from '@nestjs/platform-express';
+import { SuccessTypeDto } from 'src/interfaces/success-type';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -63,10 +64,20 @@ export class AuthController {
         file: file.buffer,
         name: imageName,
       };
-      return this.authService.register(registerDto, createImageDto);
+      const accessToken = await this.authService.register(registerDto, createImageDto);
+      return {
+        data: { accessToken },
+        message: 'User created successfully',
+        status: 201,
+      };
     }
 
-    return this.authService.register(registerDto);
+    const accessToken = await this.authService.register(registerDto);
+    return {
+      data: { accessToken },
+      message: 'User created successfully',
+      status: 201,
+    };
   }
 
   @Public()
@@ -77,8 +88,9 @@ export class AuthController {
   @ApiBadRequestResponse({
     type: BadRequestException,
   })
-  login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
+    const accessToken = await this.authService.login(loginDto);
+    return { data: { accessToken }, message: 'Token created successfully', status: 200 };
   }
 
   @Public()
@@ -91,7 +103,11 @@ export class AuthController {
     type: BadRequestException,
   })
   async verifyEmail(@Body() verifyMailDto: VerifyMailDto): Promise<VerifyEmailResponseDto> {
-    return this.authService.verifyEmail(verifyMailDto);
+    const isAvailable = await this.authService.verifyEmail(verifyMailDto);
+    return {
+      data: { isAvailable: isAvailable },
+      message: `Email is ${isAvailable ? 'available' : 'already used'}`,
+    };
   }
 
   @Get('verify')
@@ -105,17 +121,31 @@ export class AuthController {
   async verifyToken(@Req() request: Request): Promise<VerifyTokenResponseDto> {
     const id = request['user'].id;
 
-    return this.authService.verifyToken(id);
+    const isValid = await this.authService.verifyToken(id);
+    return { data: { isValid: isValid }, message: 'token is valid' };
   }
 
   @Post('verify-email-code')
-  async verifyEmailCode(@Request() req, @Body() verifyEmailCodeDto: VerifyEmailCodeDto) {
-    return this.authService.verifyEmailCode(req.user.id, verifyEmailCodeDto.code);
+  async verifyEmailCode(
+    @Request() req,
+    @Body() verifyEmailCodeDto: VerifyEmailCodeDto,
+  ): Promise<SuccessTypeDto> {
+    await this.authService.verifyEmailCode(req.user.id, verifyEmailCodeDto.code);
+
+    return {
+      message: 'Email vérifié avec succès',
+      status: 200,
+    };
   }
 
   @Post('resend-verification-code')
-  async resendVerificationCode(@Request() req) {
-    return this.authService.resendVerificationCode(req.user.id);
+  async resendVerificationCode(@Request() req): Promise<SuccessTypeDto> {
+    await this.authService.resendVerificationCode(req.user.id);
+
+    return {
+      message: 'Nouveau code de vérification envoyé',
+      status: 200,
+    };
   }
 
   // **************************/

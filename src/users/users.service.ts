@@ -7,11 +7,9 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { SuccessTypeDto } from 'src/interfaces/success-type';
-import { ResponseTypeDto } from 'src/interfaces/response-type';
 import { S3FoldersName } from 'src/shared/constants/constants';
 import { ImagesService } from 'src/shared/images/images.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
-import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import {
   BadRequestException,
   ConflictException,
@@ -19,13 +17,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import {
-  UserFilterDto,
-  CreateUserDto,
-  UpdateUserDto,
-  UpdatePasswordDto,
-  FindAllUsersResponseDataDto,
-} from './dto';
+import { UserFilterDto, CreateUserDto, UpdateUserDto, UpdatePasswordDto } from './dto';
 
 @Injectable()
 export class UsersService {
@@ -83,9 +75,11 @@ export class UsersService {
     return newUser;
   }
 
-  async findAll(
-    filters: UserFilterDto,
-  ): Promise<PaginationResponseTypeDto<FindAllUsersResponseDataDto>> {
+  async findAll(filters: UserFilterDto): Promise<{
+    items: any[];
+    nextCursor: string | null;
+    totalCount: number;
+  }> {
     const { cursor, limit, name } = filters;
 
     const query = {
@@ -129,13 +123,13 @@ export class UsersService {
     const totalCount = await this.prismaService.users.count();
 
     return {
-      data: { items: users, nextCursor, totalCount },
-      message: 'Users fetched successfully',
-      status: 200,
+      items: users,
+      nextCursor,
+      totalCount,
     };
   }
 
-  async findOne(id: string, select: Prisma.UsersSelect): Promise<ResponseTypeDto<Users>> {
+  async findOne(id: string, select: Prisma.UsersSelect): Promise<Users> {
     const existingUser = await this.prismaService.users.findUnique({
       select,
       where: { id },
@@ -148,7 +142,7 @@ export class UsersService {
       imageUrl = '';
     }
     const user = { ...existingUser, imageUrl };
-    return { data: user, status: 200 };
+    return user;
   }
 
   /**
@@ -169,7 +163,7 @@ export class UsersService {
     }
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<ResponseTypeDto<Users>> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<Users> {
     const existingUser = await this.prismaService.users.findUnique({
       where: { id },
     });
@@ -184,7 +178,7 @@ export class UsersService {
     });
 
     if (updatedUser) {
-      return { data: updatedUser, message: 'User updated successfully', status: 200 };
+      return updatedUser;
     } else {
       throw new BadRequestException('User not updated');
     }

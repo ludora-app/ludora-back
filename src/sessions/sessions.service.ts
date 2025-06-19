@@ -1,11 +1,9 @@
+import { Sessions } from '@prisma/client';
 import { Sport } from 'src/shared/constants/constants';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ResponseType } from 'src/interfaces/response-type';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 
 import { DateUtils } from './../shared/utils/date.utils';
-import { SessionResponse } from './dto/output/session-response';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { CreateSessionDto } from './dto/input/create-session.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
@@ -14,7 +12,7 @@ import { UpdateSessionDto } from './dto/input/update-session.dto';
 export class SessionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createSessionDto: CreateSessionDto): Promise<ResponseType<SessionResponse>> {
+  async create(createSessionDto: CreateSessionDto): Promise<Sessions> {
     const { endDate, fieldId, startDate } = createSessionDto;
 
     const start = new Date(startDate);
@@ -98,14 +96,14 @@ export class SessionsService {
       },
     });
 
-    return {
-      data: newSession,
-      message: 'Session created successfully',
-      status: 201,
-    };
+    return newSession;
   }
 
-  async findAll(filter: SessionFilterDto): Promise<PaginationResponseTypeDto<SessionResponse>> {
+  async findAll(filter: SessionFilterDto): Promise<{
+    items: Sessions[];
+    nextCursor: string | null;
+    totalCount: number;
+  }> {
     const {
       cursor,
       latitude,
@@ -206,30 +204,23 @@ export class SessionsService {
     }
 
     return {
-      data: { items: sessions, nextCursor, totalCount: sessions.length },
-      message: 'Sessions fetched successfully',
-      status: 200,
+      items: sessions,
+      nextCursor,
+      totalCount: sessions.length,
     };
   }
 
-  async findOne(id: string): Promise<ResponseType<SessionResponse>> {
+  async findOne(id: string): Promise<Sessions> {
     const session = await this.prisma.sessions.findUnique({ where: { id } });
 
     if (!session) {
       throw new NotFoundException('Session not found');
     }
 
-    return {
-      data: session,
-      message: 'Session fetched successfully',
-      status: 200,
-    };
+    return session;
   }
 
-  async update(
-    id: string,
-    updateSessionDto: UpdateSessionDto,
-  ): Promise<ResponseType<SessionResponse>> {
+  async update(id: string, updateSessionDto: UpdateSessionDto): Promise<Sessions> {
     const { endDate, startDate } = updateSessionDto;
 
     const start = new Date(startDate);
@@ -287,11 +278,7 @@ export class SessionsService {
       where: { id: session.id },
     });
 
-    return {
-      data: updatedSession,
-      message: 'Session updated successfully',
-      status: 200,
-    };
+    return updatedSession;
   }
 
   remove(id: number) {
