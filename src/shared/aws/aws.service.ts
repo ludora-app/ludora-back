@@ -37,7 +37,6 @@ export class AwsService {
       );
 
       const response = { message: processedFilename };
-      console.log('response', response);
       return response;
     } catch (error) {
       console.error('Erreur upload:', error);

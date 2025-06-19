@@ -1,0 +1,60 @@
+# Development environment overrides
+# Usage: docker compose -f compose.yml -f compose.dev.yml up
+
+services:
+  ludora-api:
+    restart: 'no' # Don't restart in dev for easier debugging
+    ports:
+      - '2424:2424' # API port
+      - '5555:5555' # Prisma Studio port
+      - '9229:9229' # Node.js debugging port
+    volumes:
+      - ./src:/usr/src/app/src
+      - ./prisma:/usr/src/app/prisma
+      - ./test:/usr/src/app/test
+      # Exclude node_modules for performance
+      - /usr/src/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DOPPLER_TOKEN
+    command: ['sh', 'start-dev.sh']
+    # Add development-specific labels
+    labels:
+      - 'dev.environment=development'
+
+  ludora-db:
+    restart: 'no'
+    ports:
+      - '5432:5432' # Expose DB port for local connections
+    environment:
+      - POSTGRES_LOG_STATEMENT=all # Enable query logging in dev
+      - DOPPLER_TOKEN
+
+  # Include Grafana in development for monitoring
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: grafana-dev
+    restart: 'no'
+    ports:
+      - '2000:3000'
+    user: '0'
+    environment:
+      - GF_SERVER_ROOT_URL=http://localhost:2000
+      - GF_SECURITY_ADMIN_PASSWORD=admin # Simple password for dev
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - ludora-network
+
+  prometheus:
+    restart: 'no'
+    ports:
+      - '9090:9090'
+    # Add development-specific configuration if needed
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--log.level=debug' # More verbose logging in dev

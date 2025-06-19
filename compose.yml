@@ -1,22 +1,17 @@
+# Base Docker Compose configuration
+# Use with: docker compose -f compose.yml -f compose.dev.yml up (for dev)
+#          docker compose -f compose.yml -f compose.prod.yml up (for prod)
+
 services:
   ludora-api:
     build:
       context: .
       dockerfile: docker/nest-api/Dockerfile
     container_name: ludora-api
-    restart: unless-stopped
     environment:
       - DOPPLER_TOKEN
-    volumes:
-      - ./src:/usr/src/app/src
-      - ./prisma:/usr/src/app/prisma
-      - ./test:/usr/src/app/test
     networks:
       - ludora-network
-
-    ports:
-      - '2424:2424'
-      - '5555:5555'
     depends_on:
       - ludora-db
 
@@ -24,9 +19,6 @@ services:
     build:
       context: .
       dockerfile: docker/postgres/Dockerfile
-    restart: unless-stopped
-    ports:
-      - '5432:5432'
     environment:
       - DOPPLER_TOKEN
     volumes:
@@ -34,26 +26,9 @@ services:
     networks:
       - ludora-network
 
-  grafana:
-    image: grafana/grafana-oss:latest
-    container_name: grafana
-    restart: unless-stopped
-    ports:
-      - '2000:3000'
-    user: '0'
-    environment:
-      - GF_SERVER_ROOT_URL=http://localhost:2000
-    volumes:
-      - grafana-data:/var/lib/grafana
-    networks:
-      - ludora-network
-
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
-    restart: unless-stopped
-    ports:
-      - '9090:9090'
     volumes:
       - prometheus-data:/prometheus
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
