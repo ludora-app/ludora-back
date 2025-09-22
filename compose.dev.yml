@@ -1,8 +1,12 @@
-# Development environment overrides
-# Usage: docker compose -f compose.yml -f compose.dev.yml up
+# Development environment configuration
+# Usage: docker compose -f compose.dev.yml up --build
 
 services:
   ludora-api:
+    build:
+      context: .
+      dockerfile: docker/nest-api/Dockerfile
+    container_name: ludora-api
     restart: 'no' # Don't restart in dev for easier debugging
     ports:
       - '2424:2424' # API port
@@ -18,17 +22,28 @@ services:
       - NODE_ENV=development
       - DOPPLER_TOKEN
     command: ['sh', 'start-dev.sh']
+    networks:
+      - ludora-network
+    depends_on:
+      - ludora-db
     # Add development-specific labels
     labels:
       - 'dev.environment=development'
 
   ludora-db:
+    build:
+      context: .
+      dockerfile: docker/postgres/Dockerfile
     restart: 'no'
     ports:
       - '5432:5432' # Expose DB port for local connections
     environment:
       - POSTGRES_LOG_STATEMENT=all # Enable query logging in dev
       - DOPPLER_TOKEN
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - ludora-network
 
   # Include Grafana in development for monitoring
   grafana:
@@ -47,10 +62,17 @@ services:
       - ludora-network
 
   prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-dev
     restart: 'no'
     ports:
       - '9090:9090'
-    # Add development-specific configuration if needed
+    volumes:
+      - prometheus-data:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - ludora-network
+    # Add development-specific configuration
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -58,3 +80,12 @@ services:
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
       - '--log.level=debug' # More verbose logging in dev
+
+volumes:
+  postgres-data:
+  grafana-data:
+  prometheus-data:
+
+networks:
+  ludora-network:
+    driver: bridge

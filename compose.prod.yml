@@ -1,14 +1,22 @@
-# Production environment overrides
-# Usage: docker compose -f compose.yml -f compose.prod.yml up -d
+# Production environment configuration
+# Usage: docker compose -f compose.prod.yml up -d
 
 services:
   ludora-api:
+    build:
+      context: .
+      dockerfile: docker/nest-api/Dockerfile
+    container_name: ludora-api
     restart: unless-stopped
     ports:
       - '2424:2424' # Only expose API port
     environment:
       - NODE_ENV=production
       - DOPPLER_TOKEN
+    networks:
+      - ludora-network
+    depends_on:
+      - ludora-db
     # Production optimizations
     deploy:
       resources:
@@ -36,10 +44,17 @@ services:
       - 'prod.environment=production'
 
   ludora-db:
+    build:
+      context: .
+      dockerfile: docker/postgres/Dockerfile
     restart: unless-stopped
     # Don't expose DB port in production for security
     environment:
       - DOPPLER_TOKEN
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - ludora-network
     deploy:
       resources:
         limits:
@@ -81,9 +96,16 @@ services:
           memory: 128M
 
   prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-prod
     restart: unless-stopped
     ports:
       - '9090:9090'
+    volumes:
+      - prometheus-data:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - ludora-network
     deploy:
       resources:
         limits:
@@ -100,3 +122,12 @@ services:
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--storage.tsdb.retention.time=30d'
       - '--web.enable-admin-api'
+
+volumes:
+  postgres-data:
+  grafana-data:
+  prometheus-data:
+
+networks:
+  ludora-network:
+    driver: bridge

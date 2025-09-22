@@ -1,0 +1,12 @@
+{
+  "material-icon-theme.activeIconPack": "nest",
+  "material-icon-theme.folders.associations": {
+    "src/shared": "nest",
+    "src/modules": "nest",
+    "src/prisma": "nest",
+    "src/auth": "nest",
+    "src/users": "nest",
+    "src/posts": "nest",
+    "src/comments": "nest"
+  }
+}
