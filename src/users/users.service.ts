@@ -13,7 +13,7 @@ import { S3FoldersName } from 'src/shared/constants/constants';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { ImagesService } from 'src/shared/images/images.service';
 
-import { USERSELECT } from './constants/select-user';
+import { USERSELECT } from '../shared/constants/select-user';
 import { CreateUserDto, UpdatePasswordDto, UpdateUserDto, UserFilterDto } from './dto';
 
 @Injectable()

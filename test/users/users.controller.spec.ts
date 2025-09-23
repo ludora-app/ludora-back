@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { USERSELECT } from 'src/users/constants/select-user';
+import { USERSELECT } from 'src/shared/constants/select-user';
 import { UpdatePasswordDto, UpdateUserDto, UserFilterDto } from 'src/users/dto';
 import { UsersController } from 'src/users/users.controller';
 import { UsersService } from 'src/users/users.service';

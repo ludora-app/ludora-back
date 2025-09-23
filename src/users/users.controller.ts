@@ -21,7 +21,7 @@ import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-ty
 import { ResponseTypeDto } from 'src/interfaces/response-type';
 
 import { Public } from 'src/auth/decorators/public.decorator';
-import { USERSELECT } from './constants/select-user';
+import { USERSELECT } from '../shared/constants/select-user';
 import {
   FindAllUsersResponseDataDto,
   FindAllUsersResponseDto,
