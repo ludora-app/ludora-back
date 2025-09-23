@@ -4,11 +4,12 @@ import { SessionsService } from 'src/sessions/sessions.service';
 import { SharedModule } from 'src/shared/shared.module';
 import { UsersModule } from 'src/users/users.module';
 import { UsersService } from 'src/users/users.service';
-import { InvitationsController } from './invitations.controller';
-import { InvitationsService } from './invitations.service';
+import { SessionInvitationsController } from './session-invitations.controller';
+import { SessionInvitationsService } from './session-invitations.service';
+
 @Module({
-  controllers: [InvitationsController],
-  providers: [InvitationsService, SessionsService, UsersService],
+  controllers: [SessionInvitationsController],
+  providers: [SessionInvitationsService, SessionsService, UsersService],
   imports: [SessionsModule, UsersModule, SharedModule],
 })
-export class InvitationsModule {}
+export class SessionInvitationsModule {}

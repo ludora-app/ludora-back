@@ -2,9 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Invitation_status } from '@prisma/client';
 import { PaginationResponseDto } from 'src/interfaces/pagination-response-type';
 
-export class InvitationResponse {
+export class SessionInvitationResponse {
   @ApiProperty({
-    description: "Invitation's session ID",
+    description: "Session invitation's session ID",
     example: 'cmajhjkjf000bq77q4b5ugn8b',
     readOnly: true,
     type: String,
@@ -12,7 +12,7 @@ export class InvitationResponse {
   sessionId: string;
 
   @ApiProperty({
-    description: "Invitation's user ID",
+    description: "Session invitation's user ID",
     example: 'cmajhjkjf000bq77q4b5ugn8b',
     readOnly: true,
     type: String,
@@ -20,7 +20,7 @@ export class InvitationResponse {
   userId: string;
 
   @ApiProperty({
-    description: "Invitation's status",
+    description: "Session invitation's status",
     example: Invitation_status.PENDING,
     readOnly: true,
     enum: Invitation_status,
@@ -28,7 +28,7 @@ export class InvitationResponse {
   status: Invitation_status;
 
   @ApiProperty({
-    description: "Invitation's creation date",
+    description: "Session invitation's creation date",
     example: '2025-01-01T10:00:00.000Z',
     readOnly: true,
     type: Date,
@@ -36,7 +36,7 @@ export class InvitationResponse {
   createdAt: Date;
 
   @ApiProperty({
-    description: "Invitation's update date",
+    description: "Session invitation's update date",
     example: '2025-05-10T22:30:32.525Z',
     readOnly: true,
   })
@@ -44,6 +44,6 @@ export class InvitationResponse {
 }
 
 /**
- * @description standard response for a paginated invitation, used to type swagger return
+ * @description standard response for a paginated session invitation, used to type swagger return
  */
-export const PaginatedInvitationResponse = PaginationResponseDto(InvitationResponse);
+export const PaginatedSessionInvitationResponse = PaginationResponseDto(SessionInvitationResponse);

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { scope, Sport } from 'src/shared/constants/constants';
 import { IsDate, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { SessionScope, Sport } from 'src/shared/constants/constants';
 
 export class SessionFilterDto {
   @IsOptional()
@@ -100,10 +100,10 @@ export class SessionFilterDto {
   maxDistance?: number;
 
   @IsOptional()
-  @IsEnum(scope)
+  @IsEnum(SessionScope)
   @ApiProperty({
     description: `filtre les sessions en fonction de s'ils sont passés ou à venir, sert pour filtrer mes sessions`,
-    enum: scope,
+    enum: SessionScope,
     example: 'UPCOMING',
     required: false,
   })

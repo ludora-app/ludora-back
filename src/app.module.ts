@@ -2,14 +2,14 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 
+import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { AppController } from './app.controller';
-import { UsersModule } from './users/users.module';
-import { SharedModule } from './shared/shared.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { SessionInvitationsModule } from './session-invitations/session-invitations.module';
 import { SessionsModule } from './sessions/sessions.module';
-import { InvitationsModule } from './invitations/invitations.module';
+import { SharedModule } from './shared/shared.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   controllers: [AppController],
@@ -21,7 +21,7 @@ import { InvitationsModule } from './invitations/invitations.module';
     UsersModule,
     SessionsModule,
     ScheduleModule.forRoot(),
-    InvitationsModule,
+    SessionInvitationsModule,
   ],
 
   providers: [AppService],

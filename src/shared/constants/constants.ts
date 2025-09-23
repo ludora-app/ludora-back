@@ -1,4 +1,4 @@
-export enum scope {
+export enum SessionScope {
   PAST = 'PAST',
   UPCOMING = 'UPCOMING',
   ALL = 'ALL',
