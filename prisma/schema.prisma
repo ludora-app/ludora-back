@@ -188,6 +188,7 @@ model UserRatings {
   evaluated Users @relation(fields: [evaluatedUid], references: [uid], name: "EvaluatedRelation")
 
   @@id([evaluatorUid, evaluatedUid])
+  @@unique([evaluatorUid, evaluatedUid])
   @@map("User_ratings")
   @@schema("ratings")
 }
@@ -202,7 +203,7 @@ model UserGlobalRatings {
   user  Users  @relation(fields: [userUid], references: [uid])
   sport Sports @relation(fields: [sportName], references: [name])
 
-  @@id([userUid, sportName])
+  @@unique([userUid, sportName])
   @@map("User_global_ratings")
   @@schema("ratings")
 }
@@ -252,7 +253,7 @@ model PartnerSports {
   partner       Partners @relation(fields: [partnerUid], references: [uid])
   sportRelation Sports   @relation(fields: [sport], references: [name])
 
-  @@id([partnerUid, sport])
+  @@unique([partnerUid, sport])
   @@map("Partner_sports")
   @@schema("infrastructure")
 }
@@ -343,7 +344,7 @@ model SessionInvitations {
   session Sessions @relation(fields: [sessionUid], references: [uid])
   user    Users    @relation(fields: [userUid], references: [uid])
 
-  @@id([sessionUid, userUid])
+  @@unique([sessionUid, userUid])
   @@map("Session_invitations")
   @@schema("sessions")
 }
