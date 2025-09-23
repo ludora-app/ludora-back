@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { USERSELECT } from 'src/shared/constants/select-user';
 import { UpdatePasswordDto, UpdateUserDto, UserFilterDto } from 'src/users/dto';
 import { UsersController } from 'src/users/users.controller';
 import { UsersService } from 'src/users/users.service';
@@ -26,11 +27,6 @@ describe('UsersController', () => {
     name: 'Test User',
   };
 
-  const mockUserResponse = {
-    data: mockUser,
-    status: 200,
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
@@ -54,34 +50,34 @@ describe('UsersController', () => {
     it('should return an array of users', async () => {
       const filters: UserFilterDto = { limit: 10 };
       mockUsersService.findAll.mockResolvedValue({
-        data: { items: [mockUser], nextCursor: null, totalCount: 1 },
-        message: 'Users fetched successfully',
-        status: 200,
+        items: [mockUser],
+        nextCursor: null,
+        totalCount: 1,
       });
 
       const result = await controller.findAll(filters);
 
-      expect(result).toBeDefined();
+      expect(result).toEqual({
+        data: { items: [mockUser], nextCursor: null, totalCount: 1 },
+        message: 'Users fetched successfully',
+        status: 200,
+      });
       expect(service.findAll).toHaveBeenCalledWith(filters);
     });
   });
 
   describe('findOne', () => {
     it('should return a single user by id', async () => {
-      const select = {
-        bio: true,
-        firstname: true,
-        id: true,
-        imageUrl: true,
-        lastname: true,
-        name: true,
-      };
-      mockUsersService.findOne.mockResolvedValue(mockUserResponse);
+      mockUsersService.findOne.mockResolvedValue(mockUser);
 
       const result = await controller.findOne('1');
 
-      expect(result).toEqual(mockUserResponse);
-      expect(service.findOne).toHaveBeenCalledWith('1', select);
+      expect(result).toEqual({
+        data: mockUser,
+        message: 'User fetched successfully',
+        status: 200,
+      });
+      expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findOne);
     });
   });
 
@@ -90,27 +86,17 @@ describe('UsersController', () => {
       const mockRequest = {
         user: { id: '1' },
       };
-      const select = {
-        active: true,
-        bio: true,
-        birthdate: true,
-        email: true,
-        firstname: true,
-        id: true,
-        imageUrl: true,
-        lastname: true,
-        name: true,
-        phone: true,
-        sex: true,
-        stripe_account_id: true,
-        type: true,
-      };
-      mockUsersService.findOne.mockResolvedValue(mockUserResponse);
+
+      mockUsersService.findOne.mockResolvedValue(mockUser);
 
       const result = await controller.findMe(mockRequest as any);
 
-      expect(result).toEqual(mockUserResponse);
-      expect(service.findOne).toHaveBeenCalledWith('1', select);
+      expect(result).toEqual({
+        data: mockUser,
+        message: 'User fetched successfully',
+        status: 200,
+      });
+      expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findMe);
     });
   });
 
@@ -120,7 +106,11 @@ describe('UsersController', () => {
 
       const result = await controller.findOneByEmail('test@test.com');
 
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual({
+        data: mockUser,
+        message: 'User fetched successfully',
+        status: 200,
+      });
       expect(service.findOneByEmail).toHaveBeenCalledWith('test@test.com');
     });
   });
@@ -133,15 +123,16 @@ describe('UsersController', () => {
       const updateDto: UpdateUserDto = {
         firstname: 'Updated Name',
       };
-      mockUsersService.update.mockResolvedValue({
-        data: { ...mockUser, firstname: 'Updated Name' },
-        message: 'User updated successfully',
-        status: 200,
-      });
+      const updatedUser = { ...mockUser, firstname: 'Updated Name' };
+      mockUsersService.update.mockResolvedValue(updatedUser);
 
       const result = await controller.update(mockRequest as any, updateDto);
 
-      expect(result).toBeDefined();
+      expect(result).toEqual({
+        data: updatedUser,
+        message: 'User updated successfully',
+        status: 200,
+      });
       expect(service.update).toHaveBeenCalledWith('1', updateDto);
     });
   });

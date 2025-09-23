@@ -1,13 +1,13 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { SessionsService } from './../../src/sessions/sessions.service';
-import { CreateSessionDto } from '../../src/sessions/dto/input/create-session.dto';
-import { UpdateSessionDto } from '../../src/sessions/dto/input/update-session.dto';
-import { SessionFilterDto } from '../../src/sessions/dto/input/session-filter.dto';
-import { Sport } from 'src/shared/constants/constants';
 import { Game_modes } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { Sport } from 'src/shared/constants/constants';
 import { DateUtils } from 'src/shared/utils/date.utils';
+import { CreateSessionDto } from '../../src/sessions/dto/input/create-session.dto';
+import { SessionFilterDto } from '../../src/sessions/dto/input/session-filter.dto';
+import { UpdateSessionDto } from '../../src/sessions/dto/input/update-session.dto';
+import { SessionsService } from './../../src/sessions/sessions.service';
 
 jest.mock('src/shared/utils/date.utils', () => ({
   DateUtils: {
@@ -134,14 +134,12 @@ describe('SessionsService', () => {
       const result = await service.create(createSessionDto);
 
       // Assert
-      expect(result).toEqual({
-        data: expect.objectContaining({
+      expect(result).toEqual(
+        expect.objectContaining({
           id: 'session-id-1',
           title: 'Test Session Title',
         }),
-        message: 'Session created successfully',
-        status: 201,
-      });
+      );
       expect(prismaService.fields.findUnique).toHaveBeenCalledWith({
         where: { id: 'field-id-1' },
       });
@@ -313,16 +311,12 @@ describe('SessionsService', () => {
 
       // Assert
       expect(result).toEqual({
-        data: {
-          items: expect.arrayContaining([
-            expect.objectContaining({ id: 'session-id-1' }),
-            expect.objectContaining({ id: 'session-id-2' }),
-          ]),
-          nextCursor: null,
-          totalCount: 2,
-        },
-        message: 'Sessions fetched successfully',
-        status: 200,
+        items: expect.arrayContaining([
+          expect.objectContaining({ id: 'session-id-1' }),
+          expect.objectContaining({ id: 'session-id-2' }),
+        ]),
+        nextCursor: null,
+        totalCount: 2,
       });
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -341,8 +335,8 @@ describe('SessionsService', () => {
       const result = await service.findAll(filter);
 
       // Assert
-      expect(result.data.items).toHaveLength(1);
-      expect(result.data.nextCursor).toBeNull();
+      expect(result.items).toHaveLength(1);
+      expect(result.nextCursor).toBeNull();
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           cursor: { id: 'session-id-1' },
@@ -361,8 +355,8 @@ describe('SessionsService', () => {
       const result = await service.findAll(filter);
 
       // Assert
-      expect(result.data.items).toHaveLength(1);
-      expect(result.data.nextCursor).toBe('session-id-2');
+      expect(result.items).toHaveLength(1);
+      expect(result.nextCursor).toBe('session-id-2');
     });
 
     it('should filter by scope UPCOMING', async () => {
@@ -496,26 +490,28 @@ describe('SessionsService', () => {
       const result = await service.findOne('session-id-1');
 
       // Assert
-      expect(result).toEqual({
-        data: expect.objectContaining({
+      expect(result).toEqual(
+        expect.objectContaining({
           id: 'session-id-1',
         }),
-        message: 'Session fetched successfully',
-        status: 200,
-      });
+      );
       expect(prismaService.sessions.findUnique).toHaveBeenCalledWith({
         where: { id: 'session-id-1' },
       });
     });
 
-    it('should throw NotFoundException if session not found', async () => {
+    it('should return null if session not found', async () => {
       // Arrange
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(null);
 
-      // Act & Assert
-      await expect(service.findOne('non-existent-id')).rejects.toThrow(
-        new NotFoundException('Session not found'),
-      );
+      // Act
+      const result = await service.findOne('non-existent-id');
+
+      // Assert
+      expect(result).toBeNull();
+      expect(prismaService.sessions.findUnique).toHaveBeenCalledWith({
+        where: { id: 'non-existent-id' },
+      });
     });
   });
 
@@ -580,14 +576,12 @@ describe('SessionsService', () => {
       const result = await service.update('session-id-1', updateSessionDto);
 
       // Assert
-      expect(result).toEqual({
-        data: expect.objectContaining({
+      expect(result).toEqual(
+        expect.objectContaining({
           id: 'session-id-1',
           title: 'Updated Session Title',
         }),
-        message: 'Session updated successfully',
-        status: 200,
-      });
+      );
       expect(prismaService.sessions.update).toHaveBeenCalledWith({
         data: expect.objectContaining({
           title: 'Updated Session Title',

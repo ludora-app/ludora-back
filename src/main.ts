@@ -1,7 +1,5 @@
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './app.module';
@@ -27,12 +25,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, document);
 
-  const jwtService = app.get(JwtService);
-  const reflector = app.get(Reflector);
-  const configService = app.get(ConfigService);
+  // Note: Préférer l'injection via APP_GUARD dans un module pour une meilleure gestion des dépendances
   app.useGlobalInterceptors();
-
-  // app.useGlobalGuards(new AuthGuard(jwtService, reflector, configService));
   await app.listen(process.env.PORT ?? 2424);
 }
 bootstrap();

@@ -1,13 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { Game_modes } from '@prisma/client';
+import { CreateSessionDto } from 'src/sessions/dto/input/create-session.dto';
+import { SessionFilterDto } from 'src/sessions/dto/input/session-filter.dto';
+import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
 import { SessionsController } from 'src/sessions/sessions.controller';
 import { SessionsService } from 'src/sessions/sessions.service';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateSessionDto } from 'src/sessions/dto/input/create-session.dto';
-import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
-import { SessionFilterDto } from 'src/sessions/dto/input/session-filter.dto';
 import { Sport } from 'src/shared/constants/constants';
-import { Game_modes } from '@prisma/client';
 
 describe('SessionsController', () => {
   let controller: SessionsController;
@@ -57,8 +56,8 @@ describe('SessionsController', () => {
       gameMode: Game_modes.FIVE_V_FIVE,
     };
 
-    const mockResponse = {
-      data: {
+    it('should create a session', async () => {
+      const createdSession = {
         id: 'session-id-1',
         title: 'Test Session Title',
         sport: Sport.FOOTBALL,
@@ -69,17 +68,17 @@ describe('SessionsController', () => {
         maxPlayersPerTeam: 5,
         minPlayersPerTeam: 3,
         teamsPerGame: 2,
-      },
-      message: 'Session created successfully',
-      status: 201,
-    };
+      };
 
-    it('should create a session', async () => {
-      mockSessionsService.create.mockResolvedValue(mockResponse);
+      mockSessionsService.create.mockResolvedValue(createdSession);
 
       const result = await controller.create(createSessionDto);
 
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual({
+        data: createdSession,
+        message: 'Session created successfully',
+        status: 201,
+      });
       expect(service.create).toHaveBeenCalledWith(createSessionDto);
     });
 
@@ -98,8 +97,8 @@ describe('SessionsController', () => {
       sports: [Sport.FOOTBALL],
     };
 
-    const mockResponse = {
-      data: {
+    it('should return all sessions with filters', async () => {
+      const sessionsData = {
         items: [
           {
             id: 'session-id-1',
@@ -118,17 +117,17 @@ describe('SessionsController', () => {
         ],
         nextCursor: null,
         totalCount: 2,
-      },
-      message: 'Sessions fetched successfully',
-      status: 200,
-    };
+      };
 
-    it('should return all sessions with filters', async () => {
-      mockSessionsService.findAll.mockResolvedValue(mockResponse);
+      mockSessionsService.findAll.mockResolvedValue(sessionsData);
 
       const result = await controller.findAll(sessionFilterDto);
 
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual({
+        data: sessionsData,
+        message: 'Sessions fetched successfully',
+        status: 200,
+      });
       expect(service.findAll).toHaveBeenCalledWith(sessionFilterDto);
     });
 
@@ -139,29 +138,38 @@ describe('SessionsController', () => {
         cursor: 'session-id-1',
       };
 
-      const paginatedResponse = {
-        ...mockResponse,
-        data: {
-          ...mockResponse.data,
-          items: [mockResponse.data.items[1]],
-          nextCursor: null,
-          totalCount: 1,
-        },
+      const paginatedData = {
+        items: [
+          {
+            id: 'session-id-2',
+            title: 'Test Session 2',
+            sport: Sport.FOOTBALL,
+            startDate: '2023-02-16T14:00:00Z',
+            endDate: '2023-02-16T16:00:00Z',
+          },
+        ],
+        nextCursor: null,
+        totalCount: 1,
       };
 
-      mockSessionsService.findAll.mockResolvedValue(paginatedResponse);
+      mockSessionsService.findAll.mockResolvedValue(paginatedData);
 
       const result = await controller.findAll(paginatedFilter);
 
-      expect(result).toEqual(paginatedResponse);
+      expect(result).toEqual({
+        data: paginatedData,
+        message: 'Sessions fetched successfully',
+        status: 200,
+      });
       expect(service.findAll).toHaveBeenCalledWith(paginatedFilter);
     });
   });
 
   describe('findOne', () => {
     const sessionId = 'session-id-1';
-    const mockResponse = {
-      data: {
+
+    it('should return a session by id', async () => {
+      const sessionData = {
         id: sessionId,
         title: 'Test Session',
         sport: Sport.FOOTBALL,
@@ -172,17 +180,17 @@ describe('SessionsController', () => {
         maxPlayersPerTeam: 5,
         minPlayersPerTeam: 3,
         teamsPerGame: 2,
-      },
-      message: 'Session fetched successfully',
-      status: 200,
-    };
+      };
 
-    it('should return a session by id', async () => {
-      mockSessionsService.findOne.mockResolvedValue(mockResponse);
+      mockSessionsService.findOne.mockResolvedValue(sessionData);
 
       const result = await controller.findOne(sessionId);
 
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual({
+        data: sessionData,
+        message: 'Session fetched successfully',
+        status: 200,
+      });
       expect(service.findOne).toHaveBeenCalledWith(sessionId);
     });
 
@@ -207,8 +215,8 @@ describe('SessionsController', () => {
       gameMode: Game_modes.FIVE_V_FIVE,
     };
 
-    const mockResponse = {
-      data: {
+    it('should update a session', async () => {
+      const updatedSessionData = {
         id: sessionId,
         title: 'Updated Session Title',
         sport: Sport.FOOTBALL,
@@ -219,17 +227,17 @@ describe('SessionsController', () => {
         maxPlayersPerTeam: 6,
         minPlayersPerTeam: 4,
         teamsPerGame: 2,
-      },
-      message: 'Session updated successfully',
-      status: 200,
-    };
+      };
 
-    it('should update a session', async () => {
-      mockSessionsService.update.mockResolvedValue(mockResponse);
+      mockSessionsService.update.mockResolvedValue(updatedSessionData);
 
       const result = await controller.update(sessionId, updateSessionDto);
 
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual({
+        data: updatedSessionData,
+        message: 'Session updated successfully',
+        status: 200,
+      });
       expect(service.update).toHaveBeenCalledWith(sessionId, updateSessionDto);
     });
 
@@ -261,7 +269,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.remove.mockReturnValue(mockResponse);
 
-      const result = controller.remove(sessionId);
+      const result = await controller.remove(sessionId);
 
       expect(result).toBe(mockResponse);
       expect(service.remove).toHaveBeenCalledWith(1); // Note: Controller converts to number
