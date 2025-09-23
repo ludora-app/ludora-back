@@ -6,8 +6,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { InvitationsModule } from './invitations/invitations.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { SessionInvitationsModule } from './session-invitations/session-invitations.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { SharedModule } from './shared/shared.module';
 import { UsersModule } from './users/users.module';
@@ -28,7 +28,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     SessionsModule,
     ScheduleModule.forRoot(),
-    InvitationsModule,
+    SessionInvitationsModule,
   ],
 
   providers: [AppService],
