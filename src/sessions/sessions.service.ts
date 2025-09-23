@@ -1,11 +1,11 @@
-import { Sessions } from '@prisma/client';
-import { Sport } from 'src/shared/constants/constants';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Sessions } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { Sport } from 'src/shared/constants/constants';
 
 import { DateUtils } from './../shared/utils/date.utils';
-import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { CreateSessionDto } from './dto/input/create-session.dto';
+import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
 
 @Injectable()
@@ -199,10 +199,6 @@ export class SessionsService {
       nextCursor = nextItem!.id;
     }
 
-    if (sessions.length < 0) {
-      throw new BadRequestException('No sessions found with the given parameters');
-    }
-
     return {
       items: sessions,
       nextCursor,
@@ -211,13 +207,7 @@ export class SessionsService {
   }
 
   async findOne(id: string): Promise<Sessions> {
-    const session = await this.prisma.sessions.findUnique({ where: { id } });
-
-    if (!session) {
-      throw new NotFoundException('Session not found');
-    }
-
-    return session;
+    return await this.prisma.sessions.findUnique({ where: { id } });
   }
 
   async update(id: string, updateSessionDto: UpdateSessionDto): Promise<Sessions> {
@@ -227,14 +217,13 @@ export class SessionsService {
     const end = new Date(endDate);
     const dayOfWeek = start.getUTCDay(); // 0 (sunday) to 6 (saturday)
 
-    const session = await this.prisma.sessions.findUnique({
-      where: { id },
-    });
+    const session = await this.findOne(id);
 
     if (!session) {
       throw new NotFoundException('Session not found');
     }
 
+    // todo: use the field service when created
     const field = await this.prisma.fields.findUnique({
       where: { id: session.fieldId },
     });

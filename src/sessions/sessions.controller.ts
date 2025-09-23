@@ -1,6 +1,16 @@
-import { Sessions } from '@prisma/client';
-import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
-import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UnauthorizedException,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
@@ -8,25 +18,15 @@ import {
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Param,
-  Delete,
-  Query,
-  BadRequestException,
-  UnauthorizedException,
-  NotFoundException,
-  Post,
-  Body,
-  Patch,
-} from '@nestjs/common';
+import { Sessions } from '@prisma/client';
+import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
+import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
 
-import { SessionsService } from './sessions.service';
-import { UpdateSessionDto } from './dto/input/update-session.dto';
 import { CreateSessionDto } from './dto/input/create-session.dto';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
+import { UpdateSessionDto } from './dto/input/update-session.dto';
 import { PaginatedSessionResponse, SessionResponse } from './dto/output/session-response';
+import { SessionsService } from './sessions.service';
 
 @Controller('sessions')
 export class SessionsController {
@@ -72,6 +72,10 @@ export class SessionsController {
   @ApiNotFoundResponse({ type: NotFoundException })
   async findOne(@Param('id') id: string): Promise<ResponseType<SessionResponse>> {
     const session = await this.sessionsService.findOne(id);
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
 
     return {
       data: session,
