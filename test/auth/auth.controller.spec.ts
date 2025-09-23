@@ -49,16 +49,12 @@ describe('AuthController', () => {
         type: User_type.USER,
       };
 
-      mockAuthService.register.mockResolvedValue({
-        data: { access_token: 'mock_token' },
-        message: 'User created successfully',
-        status: 201,
-      });
+      mockAuthService.register.mockResolvedValue('mock_token');
 
       const result = await controller.register(registerDto, undefined);
 
       expect(result).toEqual({
-        data: { access_token: 'mock_token' },
+        data: { accessToken: 'mock_token' },
         message: 'User created successfully',
         status: 201,
       });
@@ -83,16 +79,12 @@ describe('AuthController', () => {
         originalname: 'test.jpg',
       } as Express.Multer.File;
 
-      mockAuthService.register.mockResolvedValue({
-        data: { access_token: 'mock_token' },
-        message: 'User created successfully',
-        status: 201,
-      });
+      mockAuthService.register.mockResolvedValue('mock_token');
 
       const result = await controller.register(registerDto, mockFile);
 
       expect(result).toEqual({
-        data: { access_token: 'mock_token' },
+        data: { accessToken: 'mock_token' },
         message: 'User created successfully',
         status: 201,
       });
@@ -107,16 +99,12 @@ describe('AuthController', () => {
         password: 'password',
       };
 
-      mockAuthService.login.mockResolvedValue({
-        data: { access_token: 'mock_token' },
-        message: 'Token created successfully',
-        status: 200,
-      });
+      mockAuthService.login.mockResolvedValue('mock_token');
 
       const result = await controller.login(loginDto);
 
       expect(result).toEqual({
-        data: { access_token: 'mock_token' },
+        data: { accessToken: 'mock_token' },
         message: 'Token created successfully',
         status: 200,
       });
@@ -127,16 +115,15 @@ describe('AuthController', () => {
   describe('verifyEmail', () => {
     it('should verify email availability', async () => {
       const verifyMailDto = { email: 'test@test.com' };
-      const mockResponse = {
-        data: { isAvailable: true },
-        message: 'Email is available to use',
-      };
 
-      mockAuthService.verifyEmail.mockResolvedValue(mockResponse);
+      mockAuthService.verifyEmail.mockResolvedValue(true);
 
       const result = await controller.verifyEmail(verifyMailDto);
 
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual({
+        data: { isAvailable: true },
+        message: 'Email is available',
+      });
       expect(mockAuthService.verifyEmail).toHaveBeenCalledWith(verifyMailDto);
     });
   });
@@ -147,10 +134,7 @@ describe('AuthController', () => {
         user: { id: '1' },
       };
 
-      mockAuthService.verifyToken.mockResolvedValue({
-        data: { isValid: true },
-        message: 'token is valid',
-      });
+      mockAuthService.verifyToken.mockResolvedValue(true);
 
       const result = await controller.verifyToken(mockRequest as any);
 
@@ -169,10 +153,7 @@ describe('AuthController', () => {
       };
       const dto: VerifyEmailCodeDto = { code: '123456' };
 
-      mockAuthService.verifyEmailCode.mockResolvedValue({
-        message: 'Email vérifié avec succès',
-        status: 200,
-      });
+      mockAuthService.verifyEmailCode.mockResolvedValue(undefined);
 
       const result = await controller.verifyEmailCode(mockRequest as any, dto);
 
@@ -190,10 +171,7 @@ describe('AuthController', () => {
         user: { id: '1' },
       };
 
-      mockAuthService.resendVerificationCode.mockResolvedValue({
-        message: 'Nouveau code de vérification envoyé',
-        status: 200,
-      });
+      mockAuthService.resendVerificationCode.mockResolvedValue(undefined);
 
       const result = await controller.resendVerificationCode(mockRequest as any);
 

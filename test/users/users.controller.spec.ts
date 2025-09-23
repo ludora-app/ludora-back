@@ -27,11 +27,6 @@ describe('UsersController', () => {
     name: 'Test User',
   };
 
-  const mockUserResponse = {
-    data: mockUser,
-    status: 200,
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
@@ -55,25 +50,33 @@ describe('UsersController', () => {
     it('should return an array of users', async () => {
       const filters: UserFilterDto = { limit: 10 };
       mockUsersService.findAll.mockResolvedValue({
-        data: { items: [mockUser], nextCursor: null, totalCount: 1 },
-        message: 'Users fetched successfully',
-        status: 200,
+        items: [mockUser],
+        nextCursor: null,
+        totalCount: 1,
       });
 
       const result = await controller.findAll(filters);
 
-      expect(result).toBeDefined();
+      expect(result).toEqual({
+        data: { items: [mockUser], nextCursor: null, totalCount: 1 },
+        message: 'Users fetched successfully',
+        status: 200,
+      });
       expect(service.findAll).toHaveBeenCalledWith(filters);
     });
   });
 
   describe('findOne', () => {
     it('should return a single user by id', async () => {
-      mockUsersService.findOne.mockResolvedValue(mockUserResponse);
+      mockUsersService.findOne.mockResolvedValue(mockUser);
 
       const result = await controller.findOne('1');
 
-      expect(result).toEqual(mockUserResponse);
+      expect(result).toEqual({
+        data: mockUser,
+        message: 'User fetched successfully',
+        status: 200,
+      });
       expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findOne);
     });
   });
@@ -84,11 +87,15 @@ describe('UsersController', () => {
         user: { id: '1' },
       };
 
-      mockUsersService.findOne.mockResolvedValue(mockUserResponse);
+      mockUsersService.findOne.mockResolvedValue(mockUser);
 
       const result = await controller.findMe(mockRequest as any);
 
-      expect(result).toEqual(mockUserResponse);
+      expect(result).toEqual({
+        data: mockUser,
+        message: 'User fetched successfully',
+        status: 200,
+      });
       expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findMe);
     });
   });
@@ -99,7 +106,11 @@ describe('UsersController', () => {
 
       const result = await controller.findOneByEmail('test@test.com');
 
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual({
+        data: mockUser,
+        message: 'User fetched successfully',
+        status: 200,
+      });
       expect(service.findOneByEmail).toHaveBeenCalledWith('test@test.com');
     });
   });
@@ -112,15 +123,16 @@ describe('UsersController', () => {
       const updateDto: UpdateUserDto = {
         firstname: 'Updated Name',
       };
-      mockUsersService.update.mockResolvedValue({
-        data: { ...mockUser, firstname: 'Updated Name' },
-        message: 'User updated successfully',
-        status: 200,
-      });
+      const updatedUser = { ...mockUser, firstname: 'Updated Name' };
+      mockUsersService.update.mockResolvedValue(updatedUser);
 
       const result = await controller.update(mockRequest as any, updateDto);
 
-      expect(result).toBeDefined();
+      expect(result).toEqual({
+        data: updatedUser,
+        message: 'User updated successfully',
+        status: 200,
+      });
       expect(service.update).toHaveBeenCalledWith('1', updateDto);
     });
   });

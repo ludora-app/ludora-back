@@ -122,11 +122,7 @@ describe('AuthService', () => {
 
       const result = await service.register(registerDto);
 
-      expect(result).toEqual({
-        data: { access_token: 'mock_token' },
-        message: 'User created successfully',
-        status: 201,
-      });
+      expect(result).toBe('mock_token');
       expect(mockUsersService.createUser).toHaveBeenCalled();
       expect(service.sendVerificationEmail).toHaveBeenCalledWith('1', 'test@test.com');
     });
@@ -160,11 +156,7 @@ describe('AuthService', () => {
 
       const result = await service.login(loginDto);
 
-      expect(result).toEqual({
-        data: { access_token: 'mock_token' },
-        message: 'Token created successfully',
-        status: 200,
-      });
+      expect(result).toBe('mock_token');
     });
 
     it('should throw BadRequestException when user not found', async () => {
@@ -182,10 +174,7 @@ describe('AuthService', () => {
 
       const result = await service.verifyEmail({ email: 'new@test.com' });
 
-      expect(result).toEqual({
-        data: { isAvailable: true },
-        message: 'Email is available to use',
-      });
+      expect(result).toBe(true);
     });
 
     it('should return false when email is already used', async () => {
@@ -193,10 +182,7 @@ describe('AuthService', () => {
 
       const result = await service.verifyEmail({ email: 'existing@test.com' });
 
-      expect(result).toEqual({
-        data: { isAvailable: false },
-        message: 'Email is already used',
-      });
+      expect(result).toBe(false);
     });
   });
 
@@ -209,10 +195,7 @@ describe('AuthService', () => {
 
       const result = await service.verifyToken('1');
 
-      expect(result).toEqual({
-        data: { isValid: true },
-        message: 'token is valid',
-      });
+      expect(result).toBe(true);
     });
 
     it('should throw NotFoundException when user not found', async () => {
@@ -258,10 +241,7 @@ describe('AuthService', () => {
 
       const result = await service.verifyEmailCode('1', '123456');
 
-      expect(result).toEqual({
-        message: 'Email vérifié avec succès',
-        status: 200,
-      });
+      expect(result).toBeUndefined();
       expect(mockPrismaService.users.update).toHaveBeenCalledWith({
         data: { emailVerified: true },
         where: { id: '1' },
@@ -287,10 +267,7 @@ describe('AuthService', () => {
 
       const result = await service.resendVerificationCode('1');
 
-      expect(result).toEqual({
-        message: 'Nouveau code de vérification envoyé',
-        status: 200,
-      });
+      expect(result).toBeUndefined();
       expect(service.sendVerificationEmail).toHaveBeenCalledWith('1', 'test@test.com');
     });
 
