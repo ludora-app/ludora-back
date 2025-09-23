@@ -1,12 +1,13 @@
 {
   "material-icon-theme.activeIconPack": "nest",
-  "material-icon-theme.folders.associations": {
-    "src/shared": "nest",
-    "src/modules": "nest",
-    "src/prisma": "nest",
-    "src/auth": "nest",
-    "src/users": "nest",
-    "src/posts": "nest",
-    "src/comments": "nest"
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "editor.formatOnSave": true,
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  "eslint.format.enable": true,
+  "eslint.codeAction.showDocumentation": {
+    "enable": true
   }
 }

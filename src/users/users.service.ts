@@ -1,19 +1,20 @@
-import * as argon2 from 'argon2';
-import { CreateImageDto } from 'src/auth/dto';
-import { Prisma, Users } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { SuccessTypeDto } from 'src/interfaces/success-type';
-import { S3FoldersName } from 'src/shared/constants/constants';
-import { ImagesService } from 'src/shared/images/images.service';
-import { EmailsService } from 'src/shared/emails/emails.service';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma, Users } from '@prisma/client';
+import * as argon2 from 'argon2';
+import { CreateImageDto } from 'src/auth/dto';
+import { SuccessTypeDto } from 'src/interfaces/success-type';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { S3FoldersName } from 'src/shared/constants/constants';
+import { EmailsService } from 'src/shared/emails/emails.service';
+import { ImagesService } from 'src/shared/images/images.service';
 
-import { UserFilterDto, CreateUserDto, UpdateUserDto, UpdatePasswordDto } from './dto';
+import { USERSELECT } from './constants/select-user';
+import { CreateUserDto, UpdatePasswordDto, UpdateUserDto, UserFilterDto } from './dto';
 
 @Injectable()
 export class UsersService {
@@ -90,7 +91,6 @@ export class UsersService {
         OR: [
           { firstname: { contains: name, mode: 'insensitive' } },
           { lastname: { contains: name, mode: 'insensitive' } },
-          { name: { contains: name, mode: 'insensitive' } },
         ],
       };
     }
@@ -111,8 +111,6 @@ export class UsersService {
       nextCursor = nextItem.id;
     }
 
-    if (!users) throw new NotFoundException('No users found');
-
     const totalCount = await this.prismaService.users.count();
 
     return {
@@ -127,8 +125,6 @@ export class UsersService {
       select,
       where: { id },
     });
-
-    if (!existingUser) throw new NotFoundException('User not found');
 
     let imageUrl = await this.imageService.getProfilePic(existingUser.id);
     if (!imageUrl) {
@@ -145,21 +141,13 @@ export class UsersService {
    * @returns The user
    */
   async findOneByEmail(email: string): Promise<Users> {
-    try {
-      const user = await this.prismaService.users.findUnique({
-        where: { email },
-      });
-
-      return user;
-    } catch (error) {
-      throw new NotFoundException(`Error finding user by email: ${error.message}`);
-    }
+    return await this.prismaService.users.findUnique({
+      where: { email },
+    });
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<Users> {
-    const existingUser = await this.prismaService.users.findUnique({
-      where: { id },
-    });
+    const existingUser = await this.findOne(id, USERSELECT.findMe);
 
     if (!existingUser) throw new NotFoundException('User not found');
 

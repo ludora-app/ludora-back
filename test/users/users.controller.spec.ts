@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { USERSELECT } from 'src/users/constants/select-user';
 import { UpdatePasswordDto, UpdateUserDto, UserFilterDto } from 'src/users/dto';
 import { UsersController } from 'src/users/users.controller';
 import { UsersService } from 'src/users/users.service';
@@ -68,20 +69,12 @@ describe('UsersController', () => {
 
   describe('findOne', () => {
     it('should return a single user by id', async () => {
-      const select = {
-        bio: true,
-        firstname: true,
-        id: true,
-        imageUrl: true,
-        lastname: true,
-        name: true,
-      };
       mockUsersService.findOne.mockResolvedValue(mockUserResponse);
 
       const result = await controller.findOne('1');
 
       expect(result).toEqual(mockUserResponse);
-      expect(service.findOne).toHaveBeenCalledWith('1', select);
+      expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findOne);
     });
   });
 
@@ -90,27 +83,13 @@ describe('UsersController', () => {
       const mockRequest = {
         user: { id: '1' },
       };
-      const select = {
-        active: true,
-        bio: true,
-        birthdate: true,
-        email: true,
-        firstname: true,
-        id: true,
-        imageUrl: true,
-        lastname: true,
-        name: true,
-        phone: true,
-        sex: true,
-        stripe_account_id: true,
-        type: true,
-      };
+
       mockUsersService.findOne.mockResolvedValue(mockUserResponse);
 
       const result = await controller.findMe(mockRequest as any);
 
       expect(result).toEqual(mockUserResponse);
-      expect(service.findOne).toHaveBeenCalledWith('1', select);
+      expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findMe);
     });
   });
 

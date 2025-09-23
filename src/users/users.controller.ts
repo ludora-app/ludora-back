@@ -1,35 +1,37 @@
-import { Users } from '@prisma/client';
-import { ResponseTypeDto } from 'src/interfaces/response-type';
-import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  Patch,
+  Query,
+  Req,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Req,
-  Query,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Users } from '@prisma/client';
+import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
+import { ResponseTypeDto } from 'src/interfaces/response-type';
 
-import { UsersService } from './users.service';
+import { Public } from 'src/auth/decorators/public.decorator';
+import { USERSELECT } from './constants/select-user';
 import {
-  UpdatePasswordDto,
-  UserFilterDto,
+  FindAllUsersResponseDataDto,
+  FindAllUsersResponseDto,
   FindMeUserResponseDto,
   FindOneUserResponseDto,
+  UpdatePasswordDto,
   UpdateUserDto,
-  FindAllUsersResponseDto,
-  FindAllUsersResponseDataDto,
+  UserFilterDto,
 } from './dto';
+import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {
@@ -51,6 +53,7 @@ export class UsersController {
     @Query() filters: UserFilterDto,
   ): Promise<PaginationResponseTypeDto<FindAllUsersResponseDataDto>> {
     const data = await this.usersService.findAll(filters);
+
     return {
       data,
       message: 'Users fetched successfully',
@@ -74,17 +77,13 @@ export class UsersController {
     description: 'User not found',
     type: NotFoundException,
   })
+  @Public()
   async findOne(@Param('id') id: string): Promise<ResponseTypeDto<Users>> {
-    const select = {
-      bio: true,
-      firstname: true,
-      id: true,
-      imageUrl: true,
-      lastname: true,
-      name: true,
-    };
+    const data = await this.usersService.findOne(id, USERSELECT.findOne);
 
-    const data = await this.usersService.findOne(id, select);
+    if (!data) {
+      throw new NotFoundException('User not found');
+    }
 
     return { data, message: 'User fetched successfully', status: 200 };
   }
@@ -108,28 +107,12 @@ export class UsersController {
   async findMe(@Req() request: Request): Promise<ResponseTypeDto<Users>> {
     const id = request['user'].id;
 
-    const select = {
-      active: true,
-      bio: true,
-      birthdate: true,
-      email: true,
-      firstname: true,
-      id: true,
-      imageUrl: true,
-      lastname: true,
-      name: true,
-      phone: true,
-      sex: true,
-      stripe_account_id: true,
-      type: true,
-    };
-
-    const data = await this.usersService.findOne(id, select);
+    const data = await this.usersService.findOne(id, USERSELECT.findMe);
 
     return { data, message: 'User fetched successfully', status: 200 };
   }
 
-  @Get('/email')
+  @Get('/email/:email')
   @ApiOperation({
     summary: 'get user by email',
   })
@@ -141,8 +124,12 @@ export class UsersController {
     description: 'User not found',
     type: NotFoundException,
   })
-  async findOneByEmail(@Body('email') email: string): Promise<ResponseTypeDto<Users>> {
+  async findOneByEmail(@Param('email') email: string): Promise<ResponseTypeDto<Users>> {
     const data = await this.usersService.findOneByEmail(email);
+    if (!data) {
+      throw new NotFoundException(`Error finding user by email: ${email}`);
+    }
+
     return { data, message: 'User fetched successfully', status: 200 };
   }
 
