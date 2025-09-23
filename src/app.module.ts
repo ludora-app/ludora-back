@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import { SharedModule } from './shared/shared.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { InvitationsModule } from './invitations/invitations.module';
 
 @Module({
   controllers: [AppController],
@@ -20,6 +21,7 @@ import { SessionsModule } from './sessions/sessions.module';
     UsersModule,
     SessionsModule,
     ScheduleModule.forRoot(),
+    InvitationsModule,
   ],
 
   providers: [AppService],

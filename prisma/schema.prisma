@@ -170,7 +170,7 @@ model User_ratings {
   evaluator Users @relation(fields: [evaluatorId], references: [id], name: "EvaluatorRelation")
   evaluated Users @relation(fields: [evaluatedId], references: [id], name: "EvaluatedRelation")
 
-  @@id([evaluatorId, evaluatedId])
+  @@unique([evaluatorId, evaluatedId])
   @@schema("ratings")
 }
 
@@ -184,7 +184,7 @@ model User_global_ratings {
   user  Users  @relation(fields: [userId], references: [id])
   sport Sports @relation(fields: [sportName], references: [name])
 
-  @@id([userId, sportName])
+  @@unique([userId, sportName])
   @@schema("ratings")
 }
 
@@ -232,7 +232,7 @@ model Partner_sports {
   partner        Partners @relation(fields: [partnerId], references: [id])
   sport_relation Sports   @relation(fields: [sport], references: [name])
 
-  @@id([partnerId, sport])
+  @@unique([partnerId, sport])
   @@schema("infrastructure")
 }
 
@@ -321,7 +321,7 @@ model Session_invitations {
   session Sessions @relation(fields: [sessionId], references: [id])
   user    Users    @relation(fields: [userId], references: [id])
 
-  @@id([sessionId, userId])
+  @@unique([sessionId, userId])
   @@schema("sessions")
 }
 
@@ -364,7 +364,7 @@ model Session_players {
   team    Session_teams @relation(fields: [teamId], references: [id])
   user    Users         @relation(fields: [userId], references: [id])
 
-  @@id([sessionId, teamId, userId])
+  @@unique([sessionId, teamId, userId])
   @@schema("sessions")
 }
 
@@ -425,7 +425,7 @@ model Conversation_members {
   conversation Conversations @relation(fields: [conversationId], references: [id])
   user         Users         @relation(fields: [userId], references: [id])
 
-  @@id([conversationId, userId])
+  @@unique([conversationId, userId])
   @@schema("social")
 }
 
@@ -438,7 +438,6 @@ model Friends {
   user1     Users             @relation("friend1", fields: [userId1], references: [id])
   user2     Users             @relation("friend2", fields: [userId2], references: [id])
 
-  @@id([userId1, userId2])
   @@unique([userId1, userId2])
   @@schema("social")
 }
