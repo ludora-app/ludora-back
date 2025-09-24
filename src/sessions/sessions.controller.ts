@@ -1,3 +1,13 @@
+import { Sessions } from '@prisma/client';
+import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
+import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
+import {
+  ApiBadRequestResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import {
   BadRequestException,
   Body,
@@ -11,29 +21,18 @@ import {
   Query,
   UnauthorizedException,
 } from '@nestjs/common';
-import {
-  ApiBadRequestResponse,
-  ApiBearerAuth,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
-import { Sessions } from '@prisma/client';
-import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
-import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
 
+import { SessionsService } from './sessions.service';
+import { SessionTeamsService } from './session-teams.service';
 import { CreateSessionDto } from './dto/input/create-session.dto';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
+import { PaginatedSessionResponse, SessionResponse } from './dto/output/session.response';
 import {
   PaginatedSessionTeamResponse,
   SessionTeamResponse,
 } from './dto/output/session-team.response';
-import { PaginatedSessionResponse, SessionResponse } from './dto/output/session.response';
-import { SessionTeamsService } from './session-teams.service';
-import { SessionsService } from './sessions.service';
-@ApiBearerAuth()
+
 @Controller('sessions')
 export class SessionsController {
   constructor(

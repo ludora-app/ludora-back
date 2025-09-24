@@ -1,17 +1,17 @@
+import * as argon2 from 'argon2';
+import { CreateImageDto } from 'src/auth/dto';
+import { Prisma, Users } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { SuccessTypeDto } from 'src/interfaces/success-type';
+import { S3FoldersName } from 'src/shared/constants/constants';
+import { EmailsService } from 'src/shared/emails/emails.service';
+import { ImagesService } from 'src/shared/images/images.service';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, Users } from '@prisma/client';
-import * as argon2 from 'argon2';
-import { CreateImageDto } from 'src/auth/dto';
-import { SuccessTypeDto } from 'src/interfaces/success-type';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { S3FoldersName } from 'src/shared/constants/constants';
-import { EmailsService } from 'src/shared/emails/emails.service';
-import { ImagesService } from 'src/shared/images/images.service';
 
 import { USERSELECT } from '../shared/constants/select-user';
 import { CreateUserDto, UpdatePasswordDto, UpdateUserDto, UserFilterDto } from './dto';

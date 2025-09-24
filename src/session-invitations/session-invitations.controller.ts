@@ -1,27 +1,36 @@
+import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
+import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
+import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import {
   BadRequestException,
   Body,
+  ConflictException,
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
   Query,
   UnauthorizedException,
 } from '@nestjs/common';
-import {
-  ApiBadRequestResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
-import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
+
+import { SessionInvitationsService } from './session-invitations.service';
 import { CreateSessionInvitationDto } from './dto/input/create-session-invitation.dto';
 import { SessionInvitationFilterDto } from './dto/input/session-invitation-filter.dto';
 import { UpdateSessionInvitationDto } from './dto/input/update-session-invitation.dto';
-import { SessionInvitationResponse } from './dto/output/session-invitation-response';
-import { SessionInvitationsService } from './session-invitations.service';
+import {
+  PaginatedSessionInvitationResponse,
+  SessionInvitationResponse,
+} from './dto/output/session-invitation-response';
 
 @Controller('session-invitations')
 export class SessionInvitationsController {
@@ -32,6 +41,7 @@ export class SessionInvitationsController {
   @ApiOkResponse({ type: ResponseTypeDto<SessionInvitationResponse> })
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  @ApiConflictResponse({ type: ConflictException })
   async create(
     @Body() createSessionInvitationDto: CreateSessionInvitationDto,
   ): Promise<ResponseType<SessionInvitationResponse>> {
@@ -49,16 +59,67 @@ export class SessionInvitationsController {
   }
 
   @Get('all-by-user/:userUid')
-  findAll(
+  @ApiOperation({ summary: 'Get all session invitations by user ID' })
+  @ApiOkResponse({ type: PaginatedSessionInvitationResponse })
+  @ApiBadRequestResponse({ type: BadRequestException })
+  @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  async findAllByUserId(
     @Param('userUid') userUid: string,
     @Query() sessionInvitationFilterDto: SessionInvitationFilterDto,
-  ) {
-    return this.sessionInvitationsService.findAllByUserId(userUid, sessionInvitationFilterDto);
+  ): Promise<PaginationResponseTypeDto<SessionInvitationResponse>> {
+    const sessionInvitations = await this.sessionInvitationsService.findAllByUserId(
+      userUid,
+      sessionInvitationFilterDto,
+    );
+
+    return {
+      data: sessionInvitations,
+      message: 'Session invitations fetched successfully',
+      status: 200,
+    };
+  }
+
+  @Get('all-by-session/:sessionId')
+  @ApiOperation({ summary: 'Get all session invitations by session ID' })
+  @ApiOkResponse({ type: PaginatedSessionInvitationResponse })
+  @ApiBadRequestResponse({ type: BadRequestException })
+  @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  async findAllBySessionId(
+    @Param('sessionId') sessionId: string,
+    @Query() sessionInvitationFilterDto: SessionInvitationFilterDto,
+  ): Promise<PaginationResponseTypeDto<SessionInvitationResponse>> {
+    const sessionInvitations = await this.sessionInvitationsService.findAllBySessionId(
+      sessionId,
+      sessionInvitationFilterDto,
+    );
+
+    return {
+      data: sessionInvitations,
+      message: 'Session invitations fetched successfully',
+      status: 200,
+    };
   }
 
   @Get(':sessionId/:userId')
-  findOne(@Param('sessionId') sessionId: string, @Param('userId') userId: string) {
-    return this.sessionInvitationsService.findOne(sessionId, userId);
+  @ApiOperation({ summary: 'Get a session invitation by session ID and user ID' })
+  @ApiOkResponse({ type: ResponseTypeDto<SessionInvitationResponse> })
+  @ApiBadRequestResponse({ type: BadRequestException })
+  @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  @ApiNotFoundResponse({ type: NotFoundException })
+  async findOne(
+    @Param('sessionId') sessionId: string,
+    @Param('userId') userId: string,
+  ): Promise<ResponseType<SessionInvitationResponse>> {
+    try {
+      const invitation = await this.sessionInvitationsService.findOne(sessionId, userId);
+      return {
+        data: invitation,
+        message: 'Session invitation fetched successfully',
+        status: 200,
+      };
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   @Patch(':sessionId/:userId')
