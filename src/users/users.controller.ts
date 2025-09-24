@@ -1,3 +1,13 @@
+import { Users } from '@prisma/client';
+import { Public } from 'src/auth/decorators/public.decorator';
+import { ResponseTypeDto } from 'src/interfaces/response-type';
+import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
+import {
+  ApiBadRequestResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+} from '@nestjs/swagger';
 import {
   BadRequestException,
   Body,
@@ -10,17 +20,8 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
-import {
-  ApiBadRequestResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-} from '@nestjs/swagger';
-import { Users } from '@prisma/client';
-import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
-import { ResponseTypeDto } from 'src/interfaces/response-type';
 
-import { Public } from 'src/auth/decorators/public.decorator';
+import { UsersService } from './users.service';
 import { USERSELECT } from '../shared/constants/select-user';
 import {
   FindAllUsersResponseDataDto,
@@ -31,7 +32,6 @@ import {
   UpdateUserDto,
   UserFilterDto,
 } from './dto';
-import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {

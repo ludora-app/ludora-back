@@ -21,9 +21,9 @@ export class SessionInvitationResponse {
 
   @ApiProperty({
     description: "Session invitation's status",
+    enum: Invitation_status,
     example: Invitation_status.PENDING,
     readOnly: true,
-    enum: Invitation_status,
   })
   status: Invitation_status;
 

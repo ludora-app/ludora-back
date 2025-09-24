@@ -1,7 +1,7 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Sessions } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { Sport } from 'src/shared/constants/constants';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { DateUtils } from './../shared/utils/date.utils';
 import { CreateSessionDto } from './dto/input/create-session.dto';

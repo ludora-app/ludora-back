@@ -3,13 +3,6 @@
 import { Prisma } from '@prisma/client';
 
 export const USERSELECT: Record<string, Prisma.UsersSelect> = {
-  findOne: {
-    bio: true,
-    firstname: true,
-    id: true,
-    imageUrl: true,
-    lastname: true,
-  },
   findMe: {
     bio: true,
     birthdate: true,
@@ -19,9 +12,16 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     imageUrl: true,
     isConnected: true,
     lastname: true,
-    sex: true,
     phone: true,
+    sex: true,
     stripeAccountId: true,
     type: true,
+  },
+  findOne: {
+    bio: true,
+    firstname: true,
+    id: true,
+    imageUrl: true,
+    lastname: true,
   },
 };
