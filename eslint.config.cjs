@@ -2,6 +2,7 @@ const tsParser = require('@typescript-eslint/parser');
 const prettierPlugin = require('eslint-plugin-prettier');
 const prettierConfig = require('eslint-config-prettier');
 const tseslint = require('@typescript-eslint/eslint-plugin');
+const perfectionist = require('eslint-plugin-perfectionist');
 const unusedImports = require('eslint-plugin-unused-imports');
 
 module.exports = [
@@ -33,6 +34,7 @@ module.exports = [
   {
     plugins: {
       '@typescript-eslint': tseslint,
+      perfectionist: perfectionist,
       prettier: prettierPlugin,
       'unused-imports': unusedImports,
     },
@@ -53,6 +55,14 @@ module.exports = [
           varsIgnorePattern: '^_',
         },
       ],
+      'perfectionist/sort-imports': ['error'],
+      'perfectionist/sort-interfaces': ['error'],
+      'perfectionist/sort-objects': [
+        'error',
+        {
+          type: 'alphabetical',
+        },
+      ],
       'prettier/prettier': 'error',
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
@@ -65,6 +75,11 @@ module.exports = [
         },
       ],
     },
-    settings: {},
+    settings: {
+      perfectionist: {
+        partitionByComment: true,
+        type: 'line-length',
+      },
+    },
   },
 ];
