@@ -7,6 +7,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 
@@ -21,6 +22,8 @@ export class SessionInvitationsService {
     private readonly usersService: UsersService,
   ) {}
 
+  private logger = new Logger(SessionInvitationsService.name);
+
   async create(
     createSessionInvitationDto: CreateSessionInvitationDto,
   ): Promise<Session_invitations> {
@@ -30,6 +33,7 @@ export class SessionInvitationsService {
     );
 
     if (!existingSession) {
+      this.logger.error(`Session ${createSessionInvitationDto.sessionId} not found`);
       throw new BadRequestException('Session not found');
     }
     // checks if the user exists
@@ -39,6 +43,7 @@ export class SessionInvitationsService {
     );
 
     if (!existingUser) {
+      this.logger.error(`User ${createSessionInvitationDto.userId} not found`);
       throw new BadRequestException('User not found');
     }
 
@@ -53,6 +58,9 @@ export class SessionInvitationsService {
     });
 
     if (existingInvitation) {
+      this.logger.error(
+        `User ${createSessionInvitationDto.userId} already invited to the session ${createSessionInvitationDto.sessionId}`,
+      );
       throw new ConflictException('User already invited to the session');
     }
 
@@ -62,7 +70,9 @@ export class SessionInvitationsService {
         userId: createSessionInvitationDto.userId,
       },
     });
-
+    this.logger.log(
+      `User ${createSessionInvitationDto.userId} invited to the session ${createSessionInvitationDto.sessionId}`,
+    );
     return invitation;
   }
 
@@ -127,7 +137,11 @@ export class SessionInvitationsService {
       },
     });
 
-    return sessionInvitations;
+    return {
+      items: sessionInvitations,
+      nextCursor: null,
+      totalCount: sessionInvitations.length,
+    };
   }
 
   async findAllBySessionId(
@@ -190,7 +204,11 @@ export class SessionInvitationsService {
       },
     });
 
-    return sessionInvitations;
+    return {
+      items: sessionInvitations,
+      nextCursor: null,
+      totalCount: sessionInvitations.length,
+    };
   }
 
   async findOne(sessionId: string, userId: string) {
@@ -212,7 +230,6 @@ export class SessionInvitationsService {
         },
       },
     });
-
     return invitation;
   }
 
