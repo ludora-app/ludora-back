@@ -151,6 +151,7 @@ export class SessionInvitationsService {
         sessionUid: true,
         status: true,
         updatedAt: true,
+        userId: true,
       },
     });
 
