@@ -48,6 +48,11 @@ export class SessionInvitationsService {
       throw new BadRequestException('User not found');
     }
 
+    if (senderId === createSessionInvitationDto.receiverId) {
+      this.logger.error(`User ${createSessionInvitationDto.receiverId} cannot invite himself`);
+      throw new BadRequestException('You cannot invite yourself to a session');
+    }
+
     // checks if the user is already invited to the session
     const existingInvitation = await this.prisma.session_invitations.findFirst({
       where: {
@@ -58,8 +63,9 @@ export class SessionInvitationsService {
 
     // ? if the user is already invited to the session and did not reject, we throw an error
     if (
-      existingInvitation.status === Invitation_status.ACCEPTED ||
-      existingInvitation.status === Invitation_status.PENDING
+      existingInvitation &&
+      (existingInvitation.status === Invitation_status.ACCEPTED ||
+        existingInvitation.status === Invitation_status.PENDING)
     ) {
       this.logger.error(
         `User ${createSessionInvitationDto.receiverId} already invited to the session ${createSessionInvitationDto.sessionId}`,
@@ -243,13 +249,50 @@ export class SessionInvitationsService {
     return invitation;
   }
 
-  update(
-    sessionId: string,
-    userId: string,
-    updateSessionInvitationDto: UpdateSessionInvitationDto,
-  ) {
+  async update(updateSessionInvitationDto: UpdateSessionInvitationDto) {
     //todo: use memberservice to create a member if the status is accepted
-    return `This action updates session invitation for session ${sessionId} and user ${userId}`;
+    const existingInvitation = await this.findOne(
+      updateSessionInvitationDto.sessionId,
+      updateSessionInvitationDto.userId,
+    );
+
+    if (!existingInvitation) {
+      throw new NotFoundException('Session invitation not found');
+    }
+
+    if (updateSessionInvitationDto.status === existingInvitation.status) {
+      throw new BadRequestException(`Status ${updateSessionInvitationDto.status} is already set`);
+    }
+    let isSender;
+    let isReceiver;
+    if (updateSessionInvitationDto.userId === existingInvitation.senderId) {
+      isSender = true;
+    }
+    if (updateSessionInvitationDto.userId === existingInvitation.receiverId) {
+      isReceiver = true;
+    }
+
+    //todo: add a CANCELED status
+    if (isReceiver && updateSessionInvitationDto.status !== Invitation_status.ACCEPTED) {
+      throw new BadRequestException(`You cannot change the status of the sender or the receiver`);
+    }
+    // todo: use the member service to create a member if the status is accepted
+    const updatedInvitation = await this.prisma.session_invitations.update({
+      data: { status: updateSessionInvitationDto.status },
+      where: {
+        sessionId_senderId_receiverId: {
+          receiverId: existingInvitation.receiverId,
+          senderId: existingInvitation.senderId,
+          sessionId: existingInvitation.sessionId,
+        },
+      },
+    });
+
+    this.logger.log(
+      `Session invitation with sessionId${existingInvitation.sessionId} updated to ${updateSessionInvitationDto.status}`,
+    );
+
+    return updatedInvitation;
   }
 
   remove(sessionId: string, userId: string) {
