@@ -15,10 +15,10 @@ export class CreateSessionInvitationDto {
   @IsString()
   @IsNotEmpty()
   @ApiProperty({
-    description: 'User ID',
+    description: 'User ID of the person who is being invited',
     example: 'cmajhjkjf000bq77q4b5ugn8b',
     readOnly: true,
     type: String,
   })
-  userId: string;
+  receiverId: string;
 }

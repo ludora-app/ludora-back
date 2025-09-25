@@ -20,6 +20,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UnauthorizedException,
 } from '@nestjs/common';
 
@@ -43,9 +44,15 @@ export class SessionInvitationsController {
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
   @ApiConflictResponse({ type: ConflictException })
   async create(
+    @Req() request: Request,
     @Body() createSessionInvitationDto: CreateSessionInvitationDto,
   ): Promise<ResponseType<SessionInvitationResponse>> {
-    const invitation = await this.sessionInvitationsService.create(createSessionInvitationDto);
+    const senderId = request['user'].id;
+
+    const invitation = await this.sessionInvitationsService.create(
+      senderId,
+      createSessionInvitationDto,
+    );
 
     if (!invitation) {
       throw new BadRequestException('Failed to create session invitation');
@@ -100,18 +107,18 @@ export class SessionInvitationsController {
     };
   }
 
-  @Get(':sessionId/:userId')
-  @ApiOperation({ summary: 'Get a session invitation by session ID and user ID' })
+  @Get(':sessionId/:receiverId')
+  @ApiOperation({ summary: 'Get a session invitation by session ID and receiver ID' })
   @ApiOkResponse({ type: ResponseTypeDto<SessionInvitationResponse> })
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
   @ApiNotFoundResponse({ type: NotFoundException })
   async findOne(
     @Param('sessionId') sessionId: string,
-    @Param('userId') userId: string,
+    @Param('receiverId') receiverId: string,
   ): Promise<ResponseType<SessionInvitationResponse>> {
     try {
-      const invitation = await this.sessionInvitationsService.findOne(sessionId, userId);
+      const invitation = await this.sessionInvitationsService.findOne(sessionId, receiverId);
       return {
         data: invitation,
         message: 'Session invitation fetched successfully',

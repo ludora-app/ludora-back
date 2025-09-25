@@ -25,6 +25,7 @@ export class SessionInvitationsService {
   private logger = new Logger(SessionInvitationsService.name);
 
   async create(
+    senderId: string,
     createSessionInvitationDto: CreateSessionInvitationDto,
   ): Promise<Session_invitations> {
     // checks if the session exists
@@ -36,51 +37,54 @@ export class SessionInvitationsService {
       this.logger.error(`Session ${createSessionInvitationDto.sessionId} not found`);
       throw new BadRequestException('Session not found');
     }
-    // checks if the user exists
-    const existingUser = await this.usersService.findOne(
-      createSessionInvitationDto.userId,
+    // checks if the receiver exists
+    const existingReceiver = await this.usersService.findOne(
+      createSessionInvitationDto.receiverId,
       USERSELECT.findOne,
     );
 
-    if (!existingUser) {
-      this.logger.error(`User ${createSessionInvitationDto.userId} not found`);
+    if (!existingReceiver) {
+      this.logger.error(`User ${createSessionInvitationDto.receiverId} not found`);
       throw new BadRequestException('User not found');
     }
 
     // checks if the user is already invited to the session
-    const existingInvitation = await this.prisma.session_invitations.findUnique({
+    const existingInvitation = await this.prisma.session_invitations.findFirst({
       where: {
-        sessionId_userId: {
-          sessionId: createSessionInvitationDto.sessionId,
-          userId: createSessionInvitationDto.userId,
-        },
+        receiverId: createSessionInvitationDto.receiverId,
+        sessionId: createSessionInvitationDto.sessionId,
       },
     });
 
-    if (existingInvitation) {
+    // ? if the user is already invited to the session and did not reject, we throw an error
+    if (
+      existingInvitation.status === Invitation_status.ACCEPTED ||
+      existingInvitation.status === Invitation_status.PENDING
+    ) {
       this.logger.error(
-        `User ${createSessionInvitationDto.userId} already invited to the session ${createSessionInvitationDto.sessionId}`,
+        `User ${createSessionInvitationDto.receiverId} already invited to the session ${createSessionInvitationDto.sessionId}`,
       );
       throw new ConflictException('User already invited to the session');
     }
 
     const invitation = await this.prisma.session_invitations.create({
       data: {
+        receiverId: createSessionInvitationDto.receiverId,
+        senderId,
         sessionId: createSessionInvitationDto.sessionId,
-        userId: createSessionInvitationDto.userId,
       },
     });
     this.logger.log(
-      `User ${createSessionInvitationDto.userId} invited to the session ${createSessionInvitationDto.sessionId}`,
+      `User ${createSessionInvitationDto.receiverId} invited to the session ${createSessionInvitationDto.sessionId} by User${senderId}`,
     );
     return invitation;
   }
 
-  async findAllByUserId(
-    userId: string,
+  async findAllByReceiverId(
+    receiverId: string,
     filter: SessionInvitationFilterDto,
   ): Promise<{ items: Session_invitations[]; nextCursor: string | null; totalCount: number }> {
-    const existingUser = await this.usersService.findOne(userId, USERSELECT.findOne);
+    const existingUser = await this.usersService.findOne(receiverId, USERSELECT.findOne);
 
     if (!existingUser) {
       throw new NotFoundException('User not found');
@@ -91,19 +95,20 @@ export class SessionInvitationsService {
       take: number;
       skip?: number;
       cursor?: {
-        sessionId_userId: {
+        sessionId_senderId_receiverId: {
           sessionId: string;
-          userId: string;
+          senderId: string;
+          receiverId: string;
         };
       };
       where: {
-        userId: string;
+        receiverId: string;
         status?: Invitation_status;
       };
     } = {
       take: limit + 1,
       where: {
-        userId,
+        receiverId,
       },
     };
 
@@ -115,12 +120,14 @@ export class SessionInvitationsService {
       query.where.status = Invitation_status.REJECTED;
     }
 
-    //cursor on sessionId since userId doesnt change here
+    //cursor on sessionId since receiverId doesnt change here
     if (cursor) {
+      const [cursorSessionId, cursorSenderId, cursorReceiverId] = cursor.split(':');
       query.cursor = {
-        sessionId_userId: {
-          sessionId: cursor,
-          userId: userId,
+        sessionId_senderId_receiverId: {
+          receiverId: cursorReceiverId,
+          senderId: cursorSenderId,
+          sessionId: cursorSessionId,
         },
       };
       query.skip = 1;
@@ -130,10 +137,11 @@ export class SessionInvitationsService {
       ...query,
       select: {
         createdAt: true,
+        receiverId: true,
+        senderId: true,
         sessionId: true,
         status: true,
         updatedAt: true,
-        userId: true,
       },
     });
 
@@ -159,9 +167,10 @@ export class SessionInvitationsService {
       take: number;
       skip?: number;
       cursor?: {
-        sessionId_userId: {
+        sessionId_senderId_receiverId: {
           sessionId: string;
-          userId: string;
+          senderId: string;
+          receiverId: string;
         };
       };
       where: {
@@ -176,10 +185,12 @@ export class SessionInvitationsService {
     };
     //cursor on userId since sessionId doesnt change here
     if (cursor) {
+      const [cursorSessionId, cursorSenderId, cursorReceiverId] = cursor.split(':');
       query.cursor = {
-        sessionId_userId: {
-          sessionId: sessionId,
-          userId: cursor,
+        sessionId_senderId_receiverId: {
+          receiverId: cursorReceiverId,
+          senderId: cursorSenderId,
+          sessionId: cursorSessionId,
         },
       };
       query.skip = 1;
@@ -197,10 +208,11 @@ export class SessionInvitationsService {
       ...query,
       select: {
         createdAt: true,
+        receiverId: true,
+        senderId: true,
         sessionId: true,
         status: true,
         updatedAt: true,
-        userId: true,
       },
     });
 
@@ -211,23 +223,21 @@ export class SessionInvitationsService {
     };
   }
 
-  async findOne(sessionId: string, userId: string) {
+  async findOne(sessionId: string, receiverId: string) {
     const existingSession = await this.sessionsService.findOne(sessionId);
     if (!existingSession) {
       throw new NotFoundException(`Session ${sessionId} not found`);
     }
 
-    const existingUser = await this.usersService.findOne(userId, USERSELECT.findOne);
-    if (!existingUser) {
-      throw new NotFoundException(`User ${userId} not found`);
+    const existingReceiver = await this.usersService.findOne(receiverId, USERSELECT.findOne);
+    if (!existingReceiver) {
+      throw new NotFoundException(`User ${receiverId} not found`);
     }
 
-    const invitation = await this.prisma.session_invitations.findUnique({
+    const invitation = await this.prisma.session_invitations.findFirst({
       where: {
-        sessionId_userId: {
-          sessionId,
-          userId,
-        },
+        receiverId,
+        sessionId,
       },
     });
     return invitation;

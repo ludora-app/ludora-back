@@ -115,8 +115,6 @@ model Users {
 
   Conversation_options Conversation_options[]
 
-  Session_invitations Session_invitations[]
-
   Session_players Session_players[]
 
   Evaluator_rating User_ratings[] @relation(name: "EvaluatorRelation")
@@ -126,7 +124,9 @@ model Users {
   User_global_rating User_global_ratings[]
   Email_verification Email_verification[]
 
-  User_tokens User_tokens[]
+  User_tokens          User_tokens[]
+  Sent_invitations     Session_invitations[] @relation(name: "senderRelation")
+  Received_invitations Session_invitations[] @relation(name: "receiverRelation")
 
   @@schema("auth")
 }
@@ -312,16 +312,18 @@ model Sessions {
 }
 
 model Session_invitations {
-  sessionId String            @map("session_id")
-  userId    String
-  status    Invitation_status @default(PENDING)
-  createdAt DateTime          @default(now()) @map("created_at")
-  updatedAt DateTime          @updatedAt @map("updated_at")
+  sessionId  String            @map("session_id")
+  senderId   String            @map("sender_id")
+  receiverId String            @map("receiver_id")
+  status     Invitation_status @default(PENDING)
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
 
-  session Sessions @relation(fields: [sessionId], references: [id])
-  user    Users    @relation(fields: [userId], references: [id])
+  session  Sessions @relation(fields: [sessionId], references: [id])
+  sender   Users    @relation(fields: [senderId], references: [id], name: "senderRelation")
+  receiver Users    @relation(fields: [receiverId], references: [id], name: "receiverRelation")
 
-  @@unique([sessionId, userId])
+  @@unique([sessionId, senderId, receiverId])
   @@schema("sessions")
 }
 
