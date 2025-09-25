@@ -74,7 +74,7 @@ export class SessionInvitationsController {
     @Param('userUid') userUid: string,
     @Query() sessionInvitationFilterDto: SessionInvitationFilterDto,
   ): Promise<PaginationResponseTypeDto<SessionInvitationResponse>> {
-    const sessionInvitations = await this.sessionInvitationsService.findAllByUserId(
+    const sessionInvitations = await this.sessionInvitationsService.findAllByReceiverId(
       userUid,
       sessionInvitationFilterDto,
     );
@@ -117,25 +117,22 @@ export class SessionInvitationsController {
     @Param('sessionId') sessionId: string,
     @Param('receiverId') receiverId: string,
   ): Promise<ResponseType<SessionInvitationResponse>> {
-    try {
-      const invitation = await this.sessionInvitationsService.findOne(sessionId, receiverId);
-      return {
-        data: invitation,
-        message: 'Session invitation fetched successfully',
-        status: 200,
-      };
-    } catch (error) {
-      throw new NotFoundException(error.message);
+    const invitation = await this.sessionInvitationsService.findOne(sessionId, receiverId);
+
+    if (!invitation) {
+      throw new NotFoundException('Session invitation not found');
     }
+
+    return {
+      data: invitation,
+      message: 'Session invitation fetched successfully',
+      status: 200,
+    };
   }
 
-  @Patch(':sessionId/:userId')
-  update(
-    @Param('sessionId') sessionId: string,
-    @Param('userId') userId: string,
-    @Body() updateSessionInvitationDto: UpdateSessionInvitationDto,
-  ) {
-    return this.sessionInvitationsService.update(sessionId, userId, updateSessionInvitationDto);
+  @Patch()
+  update(@Body() updateSessionInvitationDto: UpdateSessionInvitationDto) {
+    return this.sessionInvitationsService.update(updateSessionInvitationDto);
   }
 
   @Delete(':sessionId/:userId')
