@@ -12,12 +12,20 @@ export class SessionInvitationResponse {
   sessionId: string;
 
   @ApiProperty({
-    description: "Session invitation's user ID",
+    description: "Session invitation's receiver ID",
     example: 'cmajhjkjf000bq77q4b5ugn8b',
     readOnly: true,
     type: String,
   })
-  userId: string;
+  receiverId: string;
+
+  @ApiProperty({
+    description: "Session invitation's sender ID",
+    example: 'cmajhjkjf000bq77q4b5ugn8b',
+    readOnly: true,
+    type: String,
+  })
+  senderId: string;
 
   @ApiProperty({
     description: "Session invitation's status",
