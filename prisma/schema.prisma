@@ -36,6 +36,7 @@ enum Invitation_status {
   PENDING
   ACCEPTED
   REJECTED
+  CANCELED
 
   @@schema("shared")
 }
