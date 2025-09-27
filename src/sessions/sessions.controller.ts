@@ -170,4 +170,34 @@ export class SessionsController {
       status: 200,
     };
   }
+  // ************************
+  // ********* TEAMS ********
+  // ************************
+  @Get(':uid/teams')
+  @ApiOperation({ summary: 'Get all teams by session uid' })
+  @ApiOkResponse({ type: PaginatedSessionTeamResponse })
+  @ApiBadRequestResponse({ type: BadRequestException })
+  @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  @ApiNotFoundResponse({ type: NotFoundException })
+  async findTeamsBySessionId(
+    @Param('uid') uid: string,
+  ): Promise<PaginationResponseTypeDto<SessionTeamResponse>> {
+    const existingSession = await this.sessionsService.findOne(uid);
+
+    if (!existingSession) {
+      throw new NotFoundException('Session not found');
+    }
+
+    const teams = await this.sessionTeamsService.findTeamsBySessionUid(uid);
+
+    if (teams.items.length === 0) {
+      throw new NotFoundException('No teams found for session');
+    }
+
+    return {
+      data: teams,
+      message: `Teams fetched successfully for session ${uid}`,
+      status: 200,
+    };
+  }
 }
