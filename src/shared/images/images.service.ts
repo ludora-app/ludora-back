@@ -84,7 +84,7 @@ export class ImagesService {
   }
 
   async create(folder: S3FoldersName, createImageDto: CreateImageDto) {
-    const { file, name, order } = createImageDto;
+    const { file, name } = createImageDto;
 
     try {
       const fileS3 = await this.awsService.upload(folder, name, file);

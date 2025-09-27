@@ -263,10 +263,10 @@ export class SessionInvitationsService {
     if (updateSessionInvitationDto.status === existingInvitation.status) {
       throw new BadRequestException(`Status ${updateSessionInvitationDto.status} is already set`);
     }
-    let isSender;
+    // let isSender;
     let isReceiver;
     if (updateSessionInvitationDto.userId === existingInvitation.senderId) {
-      isSender = true;
+      // isSender = true;
     }
     if (updateSessionInvitationDto.userId === existingInvitation.receiverId) {
       isReceiver = true;
