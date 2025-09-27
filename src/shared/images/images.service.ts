@@ -1,10 +1,10 @@
-import { AwsService } from 'src/shared/aws/aws.service';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { AwsService } from 'src/shared/aws/aws.service';
 
 import { S3FoldersName } from '../constants/constants';
-import { UpdateImageDto } from './dto/update-image.dto';
 import { CreateImageDto } from './dto/create-image.dto';
+import { UpdateImageDto } from './dto/update-image.dto';
 
 /**
  * Service responsible for handling image operations
@@ -84,7 +84,7 @@ export class ImagesService {
   }
 
   async create(folder: S3FoldersName, createImageDto: CreateImageDto) {
-    const { file, name, order } = createImageDto;
+    const { file, name } = createImageDto;
 
     try {
       const fileS3 = await this.awsService.upload(folder, name, file);

@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -25,12 +26,24 @@ import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
 import { CreateSessionDto } from './dto/input/create-session.dto';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
-import { PaginatedSessionResponse, SessionResponse } from './dto/output/session-response';
+import {
+  PaginatedSessionTeamResponse,
+  SessionTeamResponse,
+} from './dto/output/session-team.response';
+import { PaginatedSessionResponse, SessionResponse } from './dto/output/session.response';
+import { SessionTeamsService } from './session-teams.service';
 import { SessionsService } from './sessions.service';
-
+@ApiBearerAuth()
 @Controller('sessions')
 export class SessionsController {
-  constructor(private readonly sessionsService: SessionsService) {}
+  constructor(
+    private readonly sessionsService: SessionsService,
+    private readonly sessionTeamsService: SessionTeamsService,
+  ) {}
+
+  // ************************
+  // ******* SESSIONS *******
+  // ************************
 
   @Post()
   @ApiOperation({ summary: 'Create a new session' })
@@ -106,5 +119,35 @@ export class SessionsController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.sessionsService.remove(+id);
+  }
+  // ************************
+  // ********* TEAMS ********
+  // ************************
+  @Get(':uid/teams')
+  @ApiOperation({ summary: 'Get all teams by session uid' })
+  @ApiOkResponse({ type: PaginatedSessionTeamResponse })
+  @ApiBadRequestResponse({ type: BadRequestException })
+  @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  @ApiNotFoundResponse({ type: NotFoundException })
+  async findTeamsBySessionId(
+    @Param('uid') uid: string,
+  ): Promise<PaginationResponseTypeDto<SessionTeamResponse>> {
+    const existingSession = await this.sessionsService.findOne(uid);
+
+    if (!existingSession) {
+      throw new NotFoundException('Session not found');
+    }
+
+    const teams = await this.sessionTeamsService.findTeamsBySessionUid(uid);
+
+    if (teams.items.length === 0) {
+      throw new NotFoundException('No teams found for session');
+    }
+
+    return {
+      data: teams,
+      message: `Teams fetched successfully for session ${uid}`,
+      status: 200,
+    };
   }
 }
