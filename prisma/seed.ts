@@ -11,9 +11,6 @@ async function hashPassword(password: string): Promise<string> {
  * @description Seeds the infrastructure & sessions schema
  */
 async function seed() {
-  //***************** */
-  //** INFRASTRUCTURE */
-  //***************** */
   const sports = [
     { name: 'FOOTBALL' },
     { name: 'BASKETBALL' },
@@ -615,13 +612,7 @@ async function seed() {
     });
   }
   console.log('Opening hours populated');
-  //***************** */
-  //****** USERS ******/
-  //***************** */
 
-  //***************** */
-  //***** SESSIONS ****/
-  //***************** */
   const sessions = [
     {
       fieldId: createdFields[21].id,
@@ -915,9 +906,6 @@ async function seed() {
     createdUsers.push({ id: createdUser.id });
     console.log(`Created user: ${user.email}`);
   }
-  //***************** */
-  //** CONVERSATIONS */
-  //***************** */
 }
 
 seed()
