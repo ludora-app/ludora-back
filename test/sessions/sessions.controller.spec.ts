@@ -4,6 +4,7 @@ import { Game_modes } from '@prisma/client';
 import { CreateSessionDto } from 'src/sessions/dto/input/create-session.dto';
 import { SessionFilterDto } from 'src/sessions/dto/input/session-filter.dto';
 import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
+import { SessionTeamsService } from 'src/sessions/session-teams.service';
 import { SessionsController } from 'src/sessions/sessions.controller';
 import { SessionsService } from 'src/sessions/sessions.service';
 import { Sport } from 'src/shared/constants/constants';
@@ -20,6 +21,12 @@ describe('SessionsController', () => {
     remove: jest.fn(),
   };
 
+  const mockSessionTeamsService = {
+    createDefaultTeams: jest.fn(),
+    findTeamsBySessionUid: jest.fn(),
+    findOneByUid: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SessionsController],
@@ -27,6 +34,10 @@ describe('SessionsController', () => {
         {
           provide: SessionsService,
           useValue: mockSessionsService,
+        },
+        {
+          provide: SessionTeamsService,
+          useValue: mockSessionTeamsService,
         },
       ],
     }).compile();

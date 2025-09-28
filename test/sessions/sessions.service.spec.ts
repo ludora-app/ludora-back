@@ -7,6 +7,7 @@ import { DateUtils } from 'src/shared/utils/date.utils';
 import { CreateSessionDto } from '../../src/sessions/dto/input/create-session.dto';
 import { SessionFilterDto } from '../../src/sessions/dto/input/session-filter.dto';
 import { UpdateSessionDto } from '../../src/sessions/dto/input/update-session.dto';
+import { SessionTeamsService } from '../../src/sessions/session-teams.service';
 import { SessionsService } from './../../src/sessions/sessions.service';
 
 jest.mock('src/shared/utils/date.utils', () => ({
@@ -59,6 +60,12 @@ describe('SessionsService', () => {
               findMany: jest.fn(),
               update: jest.fn(),
             },
+          },
+        },
+        {
+          provide: SessionTeamsService,
+          useValue: {
+            createDefaultTeams: jest.fn(),
           },
         },
       ],

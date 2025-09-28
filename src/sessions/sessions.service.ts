@@ -7,10 +7,14 @@ import { DateUtils } from './../shared/utils/date.utils';
 import { CreateSessionDto } from './dto/input/create-session.dto';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
+import { SessionTeamsService } from './session-teams.service';
 
 @Injectable()
 export class SessionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sessionTeamsService: SessionTeamsService,
+  ) {}
 
   async create(createSessionDto: CreateSessionDto): Promise<Sessions> {
     const { endDate, fieldId, startDate } = createSessionDto;
@@ -95,6 +99,7 @@ export class SessionsService {
         title: createSessionDto.title ? createSessionDto.title : autoTitle,
       },
     });
+    await this.sessionTeamsService.createDefaultTeams(newSession.id);
 
     return newSession;
   }
