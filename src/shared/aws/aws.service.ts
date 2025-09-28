@@ -24,17 +24,19 @@ export class AwsService {
    */
   async upload(folder: string, filename: string, file: Buffer) {
     try {
-      const key = `${folder}/${filename}`;
+      const processedFilename = Date.now() + filename;
+
+      const key = `${folder}/${processedFilename}`;
 
       await this.s3Client.send(
         new PutObjectCommand({
           Body: file,
-          Bucket: 'ludora.app',
+          Bucket: this.configService.getOrThrow('AWS_S3_BUCKET'),
           Key: key,
         }),
       );
 
-      const response = { message: filename };
+      const response = { message: processedFilename };
       return response;
     } catch (error) {
       console.error('Erreur upload:', error);
@@ -85,3 +87,4 @@ export class AwsService {
     }
   }
 }
+//todo: trouver la config pour bloquer les fichiers dans le bucket S3

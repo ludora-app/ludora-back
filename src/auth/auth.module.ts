@@ -1,24 +1,42 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
-import { UsersModule } from 'src/users/users.module';
-import { UsersService } from 'src/users/users.service';
-import { SharedModule } from 'src/shared/shared.module';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
-import { AuthService } from './auth.service';
+import { SharedModule } from 'src/shared/shared.module';
+import { UsersModule } from 'src/users/users.module';
+
 import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { AuthGuard } from './guards/auth.guard';
 
 @Module({
   controllers: [AuthController],
   exports: [AuthService],
   imports: [
-    JwtModule.register({
+    JwtModule.registerAsync({
       global: true,
-      secret: process.env.JWT_SECRET,
-      // signOptions: { expiresIn: '60s' },
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.getOrThrow('JWT_SECRET'),
+        signOptions: { expiresIn: '7d' },
+      }),
     }),
     UsersModule,
     SharedModule,
+    PrometheusModule.register({
+      defaultMetrics: {
+        enabled: false,
+      },
+    }),
   ],
-  providers: [AuthService, UsersService],
+  providers: [
+    AuthService,
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+  ],
 })
 export class AuthModule {}

@@ -1,29 +1,17 @@
-import * as argon2 from 'argon2';
-import { JwtService } from '@nestjs/jwt';
-import { Provider, User_type } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { UsersService } from 'src/users/users.service';
-import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
-import { EmailsService } from 'src/shared/emails/emails.service';
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  BadRequestException,
   UnauthorizedException,
-  HttpException,
-  InternalServerErrorException,
 } from '@nestjs/common';
-import {
-  LoginResponseDto,
-  RegisterResponseDto,
-  VerifyMailDto,
-  CreateGoogleUserDto,
-  RegisterUserDto,
-  LoginDto,
-  VerifyTokenResponseDto,
-  VerifyEmailResponseDto,
-  CreateImageDto,
-} from 'src/auth/dto';
+import { JwtService } from '@nestjs/jwt';
+import { User_type } from '@prisma/client';
+import * as argon2 from 'argon2';
+import { CreateImageDto, LoginDto, RegisterUserDto, VerifyMailDto } from 'src/auth/dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { EmailsService } from 'src/shared/emails/emails.service';
+import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class AuthService {
@@ -34,11 +22,8 @@ export class AuthService {
     private readonly emailsService: EmailsService,
   ) {}
 
-  async register(
-    registerDto: RegisterUserDto,
-    createImageDto?: CreateImageDto,
-  ): Promise<RegisterResponseDto> {
-    const { device_id, type } = registerDto;
+  async register(registerDto: RegisterUserDto, createImageDto?: CreateImageDto): Promise<string> {
+    const { deviceUid, type } = registerDto;
 
     const result = await this.prismaService.$transaction(async (tx) => {
       let newUser;
@@ -62,34 +47,30 @@ export class AuthService {
         throw new BadRequestException('Invalid user type');
       }
 
-      const payload: { id: string; device_id?: string } = { id: newUser.id };
-      if (device_id) payload.device_id = device_id;
+      const payload: { uid: string; deviceUid?: string } = { uid: newUser.uid };
+      if (deviceUid) payload.deviceUid = deviceUid;
 
-      const access_token = this.jwt.sign(payload);
+      const accessToken = this.jwt.sign(payload);
 
       await tx.user_tokens.create({
         data: {
-          device_id,
-          token: access_token,
-          user_id: newUser.id,
+          deviceUid,
+          token: accessToken,
+          userUid: newUser.uid,
         },
       });
 
-      return { access_token, newUser };
+      return { accessToken, newUser };
     });
 
-    await this.sendVerificationEmail(result.newUser.id, result.newUser.email);
+    await this.sendVerificationEmail(result.newUser.uid, result.newUser.email);
 
-    return {
-      data: { access_token: result.access_token },
-      message: 'User created successfully',
-      status: 201,
-    };
+    return result.accessToken;
   }
 
-  async login(loginDto: LoginDto): Promise<LoginResponseDto> {
+  async login(loginDto: LoginDto): Promise<string> {
     try {
-      const { device_id, email, password } = loginDto;
+      const { deviceUid, email, password } = loginDto;
       const formattedEmail = email.toLowerCase();
 
       const user = await this.userService.findOneByEmail(formattedEmail);
@@ -102,146 +83,140 @@ export class AuthService {
         throw new NotFoundException('User not found');
       }
 
-      const payload = { id: user.id, ...(device_id && { device_id }) };
-      const access_token = this.jwt.sign(payload);
+      const payload = { uid: user.uid, ...(deviceUid && { deviceUid }) };
+      const accessToken = this.jwt.sign(payload);
 
       const existingTokens = await this.prismaService.user_tokens.findMany({
-        orderBy: { created_at: 'asc' },
-        where: { user_id: user.id },
+        orderBy: { createdAt: 'asc' },
+        where: { userUid: user.uid },
       });
 
-      const tokenWithDeviceId = existingTokens.find((token) => token.device_id !== null);
-      const tokensWithoutDeviceId = existingTokens.filter((token) => !token.device_id);
+      const tokenWithDeviceUid = existingTokens.find((token) => token.deviceUid !== null);
+      const tokensWithoutDeviceUid = existingTokens.filter((token) => !token.deviceUid);
 
       // Gestion des tokens avec transaction pour garantir l'atomicité
       await this.prismaService.$transaction(async (prisma) => {
-        if (device_id) {
-          if (tokenWithDeviceId) {
-            // Mise à jour du token existant avec device_id
+        if (deviceUid) {
+          if (tokenWithDeviceUid) {
+            // Mise à jour du token existant avec deviceUid
             await prisma.user_tokens.update({
-              data: { token: access_token },
-              where: { id: tokenWithDeviceId.id },
+              data: { token: accessToken },
+              where: { uid: tokenWithDeviceUid.uid },
             });
           } else {
-            // Création d'un nouveau token avec device_id
+            // Création d'un nouveau token avec deviceUid
             await prisma.user_tokens.create({
               data: {
-                device_id,
-                token: access_token,
-                user_id: user.id,
+                deviceUid,
+                token: accessToken,
+                userUid: user.uid,
               },
             });
           }
         } else {
-          // Gestion du token sans device_id
-          if (tokensWithoutDeviceId.length >= 1) {
-            //? on supprime le token le plus ancien sans device_id
+          // Gestion du token sans deviceUid
+          if (tokensWithoutDeviceUid.length >= 1) {
+            //? on supprime le token le plus ancien sans deviceUid
             await prisma.user_tokens.delete({
-              where: { id: tokensWithoutDeviceId[0].id },
+              where: { uid: tokensWithoutDeviceUid[0].uid },
             });
           }
 
-          // Création du nouveau token sans device_id
+          // Création du nouveau token sans deviceUid
           await prisma.user_tokens.create({
             data: {
-              token: access_token,
-              user_id: user.id,
+              token: accessToken,
+              userUid: user.uid,
             },
           });
         }
       });
 
-      return { data: { access_token }, message: 'Token created successfully', status: 200 };
+      return accessToken;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
 
-  async verifyEmail(emailDto: VerifyMailDto): Promise<VerifyEmailResponseDto> {
+  async verifyEmail(emailDto: VerifyMailDto): Promise<boolean> {
     const { email } = emailDto;
     const formattedEmail = email.toLowerCase();
     const user = await this.userService.findOneByEmail(formattedEmail);
     if (!user) {
-      return {
-        data: { isAvailable: true },
-        message: `Email is available to use`,
-      };
+      return true;
     }
 
-    return {
-      data: { isAvailable: false },
-      message: `Email is already used`,
-    };
+    return false;
   }
 
-  async validateGoogleUser(googleUser: CreateGoogleUserDto) {
-    try {
-      let user = await this.prismaService.users.findUnique({
-        where: { email: googleUser.email },
-      });
+  // async validateGoogleUser(googleUser: CreateGoogleUserDto) {
+  //   try {
+  //     let user = await this.prismaService.users.findUnique({
+  //       where: { email: googleUser.email },
+  //     });
 
-      if (!user) {
-        user = await this.userService.createGoogleUser(googleUser);
-      }
+  //     if (!user) {
+  //       user = await this.userService.createGoogleUser(googleUser);
+  //     }
 
-      const payload = { id: user.id };
+  //     const payload = { uid: user.uid };
 
-      if (user.provider !== Provider.GOOGLE) {
-        throw new BadRequestException('User already exists');
-      }
+  //     if (user.provider !== Provider.GOOGLE) {
+  //       throw new BadRequestException('User already exists');
+  //     }
 
-      return { access_token: this.jwt.sign(payload) };
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(error.message);
-    }
-  }
+  //     return { accessToken: this.jwt.sign(payload) };
+  //   } catch (error) {
+  //     if (error instanceof HttpException) throw error;
+  //     throw new InternalServerErrorException(error.message);
+  //   }
+  // }
 
-  async googleLogin(id: string) {
-    const user = await this.prismaService.users.findUnique({ where: { id } });
+  async googleLogin(uid: string) {
+    const user = await this.prismaService.users.findUnique({ where: { uid } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    const payload = { id: user.id };
+    const payload = { uid: user.uid };
     const token = this.jwt.sign(payload);
-    return { access_token: token };
+    return { accessToken: token };
   }
 
   // i can return error type here ?
-  async verifyToken(id: string): Promise<VerifyTokenResponseDto> {
-    const user = await this.prismaService.users.findUnique({ where: { id } });
+  async verifyToken(uid: string): Promise<boolean> {
+    const user = await this.prismaService.users.findUnique({ where: { uid } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    if (user.is_connected !== true) {
+    if (user.isConnected !== true) {
       throw new UnauthorizedException('User is not active');
     }
-    return { data: { isValid: true }, message: 'token is valid' };
+    return true;
   }
 
   /**
    * Send a verification email to the user with a 6 digits verfication code that expires in 15 minutes
-   * @param userId - The id of the user
+   * @param userUid - The uid of the user
    * @param email - The email of the user
    * @memberof UsersService & AuthService
    */
-  async sendVerificationEmail(userId: string, email: string) {
+  async sendVerificationEmail(userUid: string, email: string) {
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expires_at = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     // Utiliser une transaction pour garantir l'atomicité
     await this.prismaService.$transaction(async (tx) => {
       // Supprimer les anciens codes de vérification
       await tx.email_verification.deleteMany({
-        where: { user_id: userId },
+        where: { userUid: userUid },
       });
 
       // Créer le nouveau code
       await tx.email_verification.create({
         data: {
           code: verificationCode,
-          expires_at,
-          user_id: userId,
+          expiresAt,
+          userUid: userUid,
         },
       });
     });
@@ -258,37 +233,14 @@ export class AuthService {
    * Verify the email of the user with the verification code
    * @param code - The code of the user
    */
-  async verifyEmailFromCode(code: string) {
-    const verification = await this.prismaService.email_verification.findFirst({
-      include: { user: true },
-      where: { code },
-    });
-
-    if (!verification || verification.expires_at < new Date()) {
-      throw new BadRequestException('Token invalide ou expiré');
-    }
-
-    await this.prismaService.$transaction([
-      this.prismaService.users.update({
-        data: { email_verified: true },
-        where: { id: verification.user_id },
-      }),
-      this.prismaService.email_verification.delete({
-        where: { id: verification.id },
-      }),
-    ]);
-
-    return { message: 'Email vérifié avec succès' };
-  }
-
-  async verifyEmailCode(userId: string, code: string) {
+  async verifyEmailCode(userUid: string, code: string): Promise<void> {
     const verification = await this.prismaService.email_verification.findFirst({
       where: {
         code,
-        expires_at: {
+        expiresAt: {
           gt: new Date(), // vérifie que le code n'est pas expiré
         },
-        user_id: userId,
+        userUid: userUid,
       },
     });
 
@@ -299,44 +251,34 @@ export class AuthService {
     // Mise à jour du statut de vérification de l'utilisateur
     await this.prismaService.$transaction([
       this.prismaService.users.update({
-        data: { email_verified: true },
-        where: { id: userId },
+        data: { emailVerified: true },
+        where: { uid: userUid },
       }),
       // Supprime tous les codes de vérification de l'utilisateur
       this.prismaService.email_verification.deleteMany({
-        where: { user_id: userId },
+        where: { userUid: userUid },
       }),
     ]);
-
-    return {
-      message: 'Email vérifié avec succès',
-      status: 200,
-    };
   }
 
-  async resendVerificationCode(userId: string) {
+  async resendVerificationCode(userUid: string): Promise<void> {
     const user = await this.prismaService.users.findUnique({
-      where: { id: userId },
+      where: { uid: userUid },
     });
 
     if (!user) {
       throw new NotFoundException('Utilisateur non trouvé');
     }
 
-    if (user.email_verified) {
+    if (user.emailVerified) {
       throw new BadRequestException('Email déjà vérifié');
     }
 
     await this.prismaService.email_verification.deleteMany({
-      where: { user_id: userId },
+      where: { userUid: userUid },
     });
 
     // Envoyer un nouveau code
-    await this.sendVerificationEmail(userId, user.email);
-
-    return {
-      message: 'Nouveau code de vérification envoyé',
-      status: 200,
-    };
+    await this.sendVerificationEmail(userUid, user.email);
   }
 }

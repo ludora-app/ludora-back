@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 // import { Message_type } from '@prisma/client';
@@ -11,60 +10,60 @@ export class WebsocketsService {
   private readonly socketUserMap = new Map<string, string>();
   private readonly groupUsers = new Map<string, Set<string>>();
 
-  // addUser(user_id: string, socket_id: string) {
-  //   this.userSocketMap.set(user_id, socket_id);
-  //   this.socketUserMap.set(socket_id, user_id);
+  // addUser(userUid: string, socket_uid: string) {
+  //   this.userSocketMap.set(userUid, socket_uid);
+  //   this.socketUserMap.set(socket_uid, userUid);
   // }
 
-  // removeUser(socket_id: string) {
-  //   const user_id = this.socketUserMap.get(socket_id);
-  //   if (user_id) {
-  //     this.userSocketMap.delete(user_id);
-  //     this.socketUserMap.delete(socket_id);
+  // removeUser(socket_uid: string) {
+  //   const userUid = this.socketUserMap.get(socket_uid);
+  //   if (userUid) {
+  //     this.userSocketMap.delete(userUid);
+  //     this.socketUserMap.delete(socket_uid);
   //   }
   // }
 
-  // getUserSocketId(user_id: string): string | undefined {
-  //   return this.userSocketMap.get(user_id);
+  // getUserSocketUid(userUid: string): string | undefined {
+  //   return this.userSocketMap.get(userUid);
   // }
 
-  // addUserToGroup(user_id: string, group_id: string) {
-  //   if (!this.groupUsers.has(group_id)) {
-  //     this.groupUsers.set(group_id, new Set());
+  // addUserToGroup(userUid: string, group_uid: string) {
+  //   if (!this.groupUsers.has(group_uid)) {
+  //     this.groupUsers.set(group_uid, new Set());
   //   }
-  //   this.groupUsers.get(group_id).add(user_id);
+  //   this.groupUsers.get(group_uid).add(userUid);
   // }
 
-  // removeUserFromGroup(user_id: string, group_id: string) {
-  //   const group = this.groupUsers.get(group_id);
+  // removeUserFromGroup(userUid: string, group_uid: string) {
+  //   const group = this.groupUsers.get(group_uid);
   //   if (group) {
-  //     group.delete(user_id);
+  //     group.delete(userUid);
   //   }
   // }
 
-  // isUserInGroup(user_id: string, group_id: string): boolean {
-  //   const group = this.groupUsers.get(group_id);
-  //   return group ? group.has(user_id) : false;
+  // isUserInGroup(userUid: string, group_uid: string): boolean {
+  //   const group = this.groupUsers.get(group_uid);
+  //   return group ? group.has(userUid) : false;
   // }
 
   // async createGroup(name: string): Promise<string> {
-  //   const group_id = uuidv4();
-  //   this.groupUsers.set(group_id, new Set());
+  //   const group_uid = uuidv4();
+  //   this.groupUsers.set(group_uid, new Set());
   //   await this.prisma.conversations.create({
   //     data: {
-  //       id: group_id,
+  //       uid: group_uid,
   //       name,
   //       type: 'GROUP',
   //     },
   //   });
-  //   return group_id;
+  //   return group_uid;
   // }
 
   // async createMessage(
-  //   sender_id: string,
+  //   sender_uid: string,
   //   _: string,
   //   content: string,
-  //   conversation_id: string,
+  //   conversation_uid: string,
   //   type: Message_type,
   // ) {
   //   return this.prisma.$transaction(async () => {
@@ -72,10 +71,10 @@ export class WebsocketsService {
   //       data: {
   //         content,
   //         conversation: {
-  //           connect: { id: conversation_id },
+  //           connect: { uid: conversation_uid },
   //         },
   //         sender: {
-  //           connect: { id: sender_id },
+  //           connect: { uid: sender_uid },
   //         },
   //         status: 'SENT',
   //         type,
@@ -83,34 +82,34 @@ export class WebsocketsService {
   //     });
   //     //? Update the conversation so that the most recent one is at the top
   //     await this.prisma.conversations.update({
-  //       data: { updated_at: new Date() },
-  //       where: { id: conversation_id },
+  //       data: { updatedAt: new Date() },
+  //       where: { uid: conversation_uid },
   //     });
   //   });
   // }
 
   // async createGroupMessage(
-  //   sender_id: string,
-  //   group_id: string,
+  //   sender_uid: string,
+  //   group_uid: string,
   //   content: string,
   //   type: Message_type,
   // ) {
   //   const conversationExists = await this.prisma.conversations.findUnique({
-  //     where: { id: group_id },
+  //     where: { uid: group_uid },
   //   });
 
   //   if (!conversationExists) {
-  //     throw new Error(`Conversation with id ${group_id} not found`);
+  //     throw new Error(`Conversation with uid ${group_uid} not found`);
   //   }
 
   //   return this.prisma.messages.create({
   //     data: {
   //       content,
   //       conversation: {
-  //         connect: { id: group_id },
+  //         connect: { uid: group_uid },
   //       },
   //       sender: {
-  //         connect: { id: sender_id },
+  //         connect: { uid: sender_uid },
   //       },
   //       status: 'SENT',
   //       type,

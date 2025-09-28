@@ -1,9 +1,10 @@
-import { Request } from 'express';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+import { Request } from 'express';
+
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
@@ -13,7 +14,7 @@ export class AuthGuard implements CanActivate {
     private readonly jwtService: JwtService,
     private readonly reflector: Reflector,
     private readonly configService: ConfigService,
-    private readonly prisma: PrismaService, // Injecte Prisma pour accéder à la base
+    private readonly prisma: PrismaService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -27,31 +28,64 @@ export class AuthGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
+
     if (!token) {
-      throw new UnauthorizedException('Token manquant');
+      throw new UnauthorizedException('Token missing');
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.getOrThrow('JWT_SECRET'),
+      // Verify and decode the JWT
+      const payload = await this.jwtService.verifyAsync(token);
+      const { uid: userUid } = payload;
+
+      if (!userUid) {
+        throw new UnauthorizedException('Token invalid: user missing');
+      }
+
+      // Verify that the token still exists in the database
+      const tokenRecord = await this.prisma.user_tokens.findFirst({
+        where: {
+          token,
+          userUid: userUid,
+        },
       });
 
-      // const { deviceId, id: userId } = payload;
+      if (!tokenRecord) {
+        throw new UnauthorizedException('Token expired or invalid');
+      }
 
-      // const tokenRecord = await this.prisma.user_tokens.findFirst({
-      //   where: { device_id: deviceId, token, user_id: userId },
-      // });
+      // Check if the user is verified and active
+      const user = await this.prisma.users.findUnique({
+        select: { emailVerified: true, uid: true, isConnected: true },
+        where: { uid: userUid },
+      });
 
-      // if (!tokenRecord) {
-      //   throw new UnauthorizedException('Token expiré ou invalide');
-      // }
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      if (!user.isConnected) {
+        throw new UnauthorizedException('User account disabled');
+      }
 
       request['user'] = payload;
-    } catch {
-      throw new UnauthorizedException('Accès refusé');
-    }
+      return true;
+    } catch (error) {
+      // error log
+      console.error('🔒 Auth Guard Error:', {
+        message: error.message,
+        timestamp: new Date().toISOString(),
+        token: token?.substring(0, 20) + '...',
+      });
 
-    return true;
+      // if it's already a UnauthorizedException, we throw it
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
+      // else, throws a generic error
+      throw new UnauthorizedException('Access denied');
+    }
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {

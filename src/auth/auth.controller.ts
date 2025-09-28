@@ -1,33 +1,35 @@
-import { FileInterceptor } from '@nestjs/platform-express';
-import { ErrorResponseDto } from 'src/interfaces/error-response-type';
-import { ApiBadRequestResponse, ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
 import {
-  Controller,
-  Post,
+  BadRequestException,
   Body,
+  ConflictException,
+  Controller,
   Get,
-  UseGuards,
+  Post,
   Req,
-  Res,
-  NotFoundException,
-  UseInterceptors,
-  UploadedFile,
-  HttpException,
-  InternalServerErrorException,
   Request,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
-  VerifyMailDto,
-  LoginDto,
-  RegisterUserDto,
-  CreateGoogleUserDto,
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiConflictResponse,
+  ApiConsumes,
+  ApiOperation,
+} from '@nestjs/swagger';
+import {
   CreateImageDto,
-  RegisterUserWithFileDto,
-  RegisterResponseDto,
+  LoginDto,
   LoginResponseDto,
+  RegisterResponseDto,
+  RegisterUserDto,
+  RegisterUserWithFileDto,
   VerifyEmailResponseDto,
+  VerifyMailDto,
   VerifyTokenResponseDto,
 } from 'src/auth/dto';
+import { SuccessTypeDto } from 'src/interfaces/success-type';
 
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
@@ -40,12 +42,16 @@ export class AuthController {
   @Public()
   @Post('register')
   @UseInterceptors(FileInterceptor('file'))
-  @ApiOperation({ summary: 'Create a user or organisation account' })
+  @ApiOperation({ summary: 'Create a user account' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: RegisterUserWithFileDto })
   @ApiBadRequestResponse({
     description: 'Error during registration',
-    type: ErrorResponseDto,
+    type: BadRequestException,
+  })
+  @ApiConflictResponse({
+    description: 'User already exists',
+    type: ConflictException,
   })
   async register(
     @Body() registerDto: RegisterUserDto,
@@ -58,10 +64,20 @@ export class AuthController {
         file: file.buffer,
         name: imageName,
       };
-      return this.authService.register(registerDto, createImageDto);
+      const accessToken = await this.authService.register(registerDto, createImageDto);
+      return {
+        data: { accessToken },
+        message: 'User created successfully',
+        status: 201,
+      };
     }
 
-    return this.authService.register(registerDto);
+    const accessToken = await this.authService.register(registerDto);
+    return {
+      data: { accessToken },
+      message: 'User created successfully',
+      status: 201,
+    };
   }
 
   @Public()
@@ -70,11 +86,11 @@ export class AuthController {
     summary: 'Allow the user to login',
   })
   @ApiBadRequestResponse({
-    description: 'Error during login',
-    type: ErrorResponseDto,
+    type: BadRequestException,
   })
-  login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
+    const accessToken = await this.authService.login(loginDto);
+    return { data: { accessToken }, message: 'Token created successfully', status: 200 };
   }
 
   @Public()
@@ -84,10 +100,14 @@ export class AuthController {
   })
   @ApiBadRequestResponse({
     description: 'Error during email verification',
-    type: ErrorResponseDto,
+    type: BadRequestException,
   })
   async verifyEmail(@Body() verifyMailDto: VerifyMailDto): Promise<VerifyEmailResponseDto> {
-    return this.authService.verifyEmail(verifyMailDto);
+    const isAvailable = await this.authService.verifyEmail(verifyMailDto);
+    return {
+      data: { isAvailable: isAvailable },
+      message: `Email is ${isAvailable ? 'available' : 'already used'}`,
+    };
   }
 
   @Get('verify')
@@ -96,35 +116,49 @@ export class AuthController {
   })
   @ApiBadRequestResponse({
     description: 'Error during token verification',
-    type: ErrorResponseDto,
+    type: BadRequestException,
   })
   async verifyToken(@Req() request: Request): Promise<VerifyTokenResponseDto> {
-    const id = request['user'].id;
+    const uid = request['user'].uid;
 
-    return this.authService.verifyToken(id);
+    const isValid = await this.authService.verifyToken(uid);
+    return { data: { isValid: isValid }, message: 'token is valid' };
   }
 
   @Post('verify-email-code')
-  async verifyEmailCode(@Request() req, @Body() verifyEmailCodeDto: VerifyEmailCodeDto) {
-    return this.authService.verifyEmailCode(req.user.id, verifyEmailCodeDto.code);
+  async verifyEmailCode(
+    @Request() req,
+    @Body() verifyEmailCodeDto: VerifyEmailCodeDto,
+  ): Promise<SuccessTypeDto> {
+    await this.authService.verifyEmailCode(req.user.uid, verifyEmailCodeDto.code);
+
+    return {
+      message: 'Email vérifié avec succès',
+      status: 200,
+    };
   }
 
   @Post('resend-verification-code')
-  async resendVerificationCode(@Request() req) {
-    return this.authService.resendVerificationCode(req.user.id);
+  async resendVerificationCode(@Request() req): Promise<SuccessTypeDto> {
+    await this.authService.resendVerificationCode(req.user.uid);
+
+    return {
+      message: 'Nouveau code de vérification envoyé',
+      status: 200,
+    };
   }
 
   // **************************/
   // ** GOOGLE AUTHENTICATION *
   // **************************/
 
-  @Public() // ? décorateur @Public() pour ignorer le middleware d'authentification
-  // @UseGuards(GoogleAuthGuard)
-  @Post('google/login')
-  @ApiOperation({
-    summary: "Permet à l'utilisateur de se connecter avec Google",
-  })
-  async googleLogin(@Body() googleUser: CreateGoogleUserDto): Promise<any> {
-    return this.authService.validateGoogleUser(googleUser);
-  }
+  // @Public() // ? décorateur @Public() pour ignorer le middleware d'authentification
+  // // @UseGuards(GoogleAuthGuard)
+  // @Post('google/login')
+  // @ApiOperation({
+  //   summary: "Permet à l'utilisateur de se connecter avec Google",
+  // })
+  // async googleLogin(@Body() googleUser: CreateGoogleUserDto): Promise<any> {
+  //   return this.authService.validateGoogleUser(googleUser);
+  // }
 }

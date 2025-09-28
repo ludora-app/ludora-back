@@ -1,26 +1,20 @@
-import * as argon2 from 'argon2';
-import { CreateImageDto } from 'src/auth/dto';
-import { Prisma, Users } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { SuccessTypeDto } from 'src/interfaces/success-type';
-import { ImagesService } from 'src/shared/images/images.service';
-import { EmailsService } from 'src/shared/emails/emails.service';
-import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma, Users } from '@prisma/client';
+import * as argon2 from 'argon2';
+import { CreateImageDto } from 'src/auth/dto';
+import { SuccessTypeDto } from 'src/interfaces/success-type';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { S3FoldersName } from 'src/shared/constants/constants';
+import { EmailsService } from 'src/shared/emails/emails.service';
+import { ImagesService } from 'src/shared/images/images.service';
 
-import {
-  UserFilterDto,
-  CreateUserDto,
-  CreateGoogleUserDto,
-  UpdateUserDto,
-  UpdatePasswordDto,
-  FindAllUsersResponseDataDto,
-} from './dto';
+import { USERSELECT } from '../shared/constants/select-user';
+import { CreateUserDto, UpdatePasswordDto, UpdateUserDto, UserFilterDto } from './dto';
 
 @Injectable()
 export class UsersService {
@@ -52,10 +46,10 @@ export class UsersService {
 
     const hashedPassword = await argon2.hash(password);
 
-    let image_url = { data: '' };
+    let imageUrl = { data: '' };
 
     if (createImageDto) {
-      // image_url = await this.imageService.createUserImage(createImageDto);
+      imageUrl = await this.imageService.create(S3FoldersName.USERS, createImageDto);
     }
 
     const newUser = await prisma.users.create({
@@ -64,7 +58,7 @@ export class UsersService {
         birthdate: new Date(createUserDto.birthdate),
         email: formattedEmail,
         firstname: formattedFirst,
-        image_url: image_url.data,
+        imageUrl: imageUrl.data,
         lastname: formattedLast,
         password: hashedPassword,
         phone: createUserDto.phone,
@@ -75,46 +69,20 @@ export class UsersService {
     return newUser;
   }
 
-  async createGoogleUser(createGoogleUserDto: CreateGoogleUserDto) {
-    const { email, firstname, image_url, lastname, provider } = createGoogleUserDto;
-
-    try {
-      const existingUser = await this.prismaService.users.findUnique({
-        where: { email },
-      });
-
-      if (existingUser) {
-        throw new ConflictException(`User already exists: ${JSON.stringify(existingUser)}`);
-      }
-
-      const newUser = await this.prismaService.users.create({
-        data: {
-          email,
-          firstname,
-          image_url,
-          lastname,
-          provider,
-        },
-      });
-
-      return newUser;
-    } catch (error) {
-      throw new BadRequestException(`Error creating Google user: ${error.message}`);
-    }
-  }
-
-  async findAll(
-    filters: UserFilterDto,
-  ): Promise<PaginationResponseTypeDto<FindAllUsersResponseDataDto>> {
+  async findAll(filters: UserFilterDto): Promise<{
+    items: any[];
+    nextCursor: string | null;
+    totalCount: number;
+  }> {
     const { cursor, limit, name } = filters;
 
     const query = {
       select: {
-        firstname: true,
-        lastname: true,
-        id: true,
-        image_url: true,
         email: true,
+        firstname: true,
+        uid: true,
+        imageUrl: true,
+        lastname: true,
       },
     };
 
@@ -123,7 +91,6 @@ export class UsersService {
         OR: [
           { firstname: { contains: name, mode: 'insensitive' } },
           { lastname: { contains: name, mode: 'insensitive' } },
-          { name: { contains: name, mode: 'insensitive' } },
         ],
       };
     }
@@ -141,53 +108,46 @@ export class UsersService {
     let nextCursor: string | null = null;
     if (users.length > limit) {
       const nextItem = users.pop();
-      nextCursor = nextItem.id;
+      nextCursor = nextItem.uid;
     }
-
-    if (!users) throw new NotFoundException('No users found');
 
     const totalCount = await this.prismaService.users.count();
 
     return {
-      data: { items: users, nextCursor, totalCount },
-      message: 'Users fetched successfully',
-      status: 200,
+      items: users,
+      nextCursor,
+      totalCount,
     };
   }
 
-  async findOne(id: string, select: Prisma.UsersSelect) {
+  async findOne(uid: string, select: Prisma.UsersSelect): Promise<Users> {
     const existingUser = await this.prismaService.users.findUnique({
       select,
-      where: { id },
+      where: { uid },
     });
 
-    if (!existingUser) throw new NotFoundException('User not found');
-
-    // let image_url = await this.imageService.getProfilePic(existingUser.id);
-    // if (!image_url) {
-    //   image_url = '';
-    // }
-    let image_url = '';
-    const user = { ...existingUser, image_url };
-    return { data: user, status: 200 };
-  }
-
-  async findOneByEmail(email: string): Promise<Users> {
-    try {
-      const user = await this.prismaService.users.findUnique({
-        where: { email },
-      });
-
-      return user;
-    } catch (error) {
-      throw new NotFoundException(`Error finding user by email: ${error.message}`);
+    let imageUrl = await this.imageService.getProfilePic(existingUser.uid);
+    if (!imageUrl) {
+      imageUrl = '';
     }
+    const user = { ...existingUser, imageUrl };
+    return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<SuccessTypeDto> {
-    const existingUser = await this.prismaService.users.findUnique({
-      where: { id },
+  /**
+   * Find a user by email
+   * @param email - The email of the user
+   * @description This method is used in the auth service to find a user by email
+   * @returns The user
+   */
+  async findOneByEmail(email: string): Promise<Users> {
+    return await this.prismaService.users.findUnique({
+      where: { email },
     });
+  }
+
+  async update(uid: string, updateUserDto: UpdateUserDto): Promise<Users> {
+    const existingUser = await this.findOne(uid, USERSELECT.findMe);
 
     if (!existingUser) throw new NotFoundException('User not found');
 
@@ -195,11 +155,11 @@ export class UsersService {
       data: {
         ...updateUserDto,
       },
-      where: { id },
+      where: { uid },
     });
 
     if (updatedUser) {
-      return { message: 'User updated successfully', status: 200 };
+      return updatedUser;
     } else {
       throw new BadRequestException('User not updated');
     }
@@ -207,10 +167,10 @@ export class UsersService {
 
   //? this method needs to change the password after all the verification is done
   //todo: new method that send the verification email ? And verify if the user.provider is google ?
-  async updatePassword(id: string, updatePasswordDto: UpdatePasswordDto): Promise<SuccessTypeDto> {
+  async updatePassword(uid: string, updatePasswordDto: UpdatePasswordDto): Promise<SuccessTypeDto> {
     const { newPassword, oldPassword } = updatePasswordDto;
     const existingUser = await this.prismaService.users.findUnique({
-      where: { id },
+      where: { uid },
     });
 
     if (!existingUser) throw new NotFoundException('User not found');
@@ -227,7 +187,7 @@ export class UsersService {
       data: {
         password: hashedPassword,
       },
-      where: { id },
+      where: { uid },
     });
 
     if (updatedUser) {
@@ -242,72 +202,60 @@ export class UsersService {
     }
   }
 
-  async deactivate(id: string): Promise<SuccessTypeDto> {
+  async deactivate(uid: string): Promise<SuccessTypeDto> {
     const existingUser = await this.prismaService.users.findUnique({
-      where: { id },
+      where: { uid },
     });
 
     if (!existingUser) throw new NotFoundException('User not found');
 
     await this.prismaService.users.update({
       data: {
-        is_connected: false,
+        isConnected: false,
       },
-      where: { id },
+      where: { uid },
     });
 
-    return { message: `User ${id} has been deactivated`, status: 200 };
+    return { message: `User ${uid} has been deactivated`, status: 200 };
   }
 
-  async remove(id: string): Promise<SuccessTypeDto> {
+  async remove(uid: string): Promise<SuccessTypeDto> {
     const existingUser = await this.prismaService.users.findUnique({
-      where: { id },
+      where: { uid },
     });
 
     if (!existingUser) throw new NotFoundException('User not found');
 
-    if (!existingUser) {
-      throw new NotFoundException('User not found');
-    }
-
     await this.prismaService.users.delete({
-      where: { id },
+      where: { uid },
     });
 
-    return { message: `User ${id} has been deleted`, status: 200 };
+    return { message: `User ${uid} has been deleted`, status: 200 };
   }
 
   /**
-   * ! workflow update password
-   * 1. Click on update password
-   * 2. Send verification email
-   * 2. verify email
-   * 3. update password
-   */
-
-  /**
    * Send a verification email to the user with a 6 digits verfication code that expires in 15 minutes
-   * @param userId - The id of the user
+   * @param userUid - The uid of the user
    * @param email - The email of the user
    * @memberof UsersService & AuthService
    */
-  async sendVerificationEmail(userId: string, email: string) {
+  async sendVerificationEmail(userUid: string, email: string) {
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expires_at = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     // Utiliser une transaction pour garantir l'atomicité
     await this.prismaService.$transaction(async (tx) => {
       // Supprimer les anciens codes de vérification
       await tx.email_verification.deleteMany({
-        where: { user_id: userId },
+        where: { userUid: userUid },
       });
 
       // Créer le nouveau code
       await tx.email_verification.create({
         data: {
           code: verificationCode,
-          expires_at,
-          user_id: userId,
+          expiresAt,
+          userUid: userUid,
         },
       });
     });

@@ -3,7 +3,7 @@ import { PaginationResponseDto } from 'src/interfaces/pagination-response-type';
 
 export class FindAllUsersResponseDataDto {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
-  readonly id: string;
+  readonly uid: string;
 
   @ApiProperty({ example: 'Toto', readOnly: true })
   readonly firstname: string;
@@ -15,7 +15,7 @@ export class FindAllUsersResponseDataDto {
   readonly name?: string;
 
   @ApiProperty({ example: 'https://example.com/image.jpg', nullable: true, readOnly: true })
-  readonly image_url?: string;
+  readonly imageUrl?: string;
 }
 
 export const FindAllUsersResponseDto = PaginationResponseDto(FindAllUsersResponseDataDto);

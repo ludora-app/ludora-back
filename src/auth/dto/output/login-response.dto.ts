@@ -8,7 +8,7 @@ export class LoginResponseDataDto {
     readOnly: true,
     type: String,
   })
-  readonly access_token: string;
+  readonly accessToken: string;
 }
 
 export class LoginResponseDto extends ResponseTypeDto<LoginResponseDataDto> {
