@@ -174,7 +174,7 @@ export class SessionsController {
   // ********* TEAMS ********
   // ************************
   @Get(':uid/teams')
-  @ApiOperation({ summary: 'Get all teams by session uid' })
+  @ApiOperation({ summary: 'Get all teams linked to a session by session uid' })
   @ApiOkResponse({ type: PaginatedSessionTeamResponse })
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
@@ -197,6 +197,26 @@ export class SessionsController {
     return {
       data: teams,
       message: `Teams fetched successfully for session ${uid}`,
+      status: 200,
+    };
+  }
+
+  @Get('/teams/:uid')
+  @ApiOperation({ summary: 'Get a team by its uid' })
+  @ApiOkResponse({ type: ResponseTypeDto<SessionTeamResponse> })
+  @ApiBadRequestResponse({ type: BadRequestException })
+  @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  @ApiNotFoundResponse({ type: NotFoundException })
+  async findOneTeamByUid(@Param('uid') uid: string): Promise<ResponseType<SessionTeamResponse>> {
+    const team = await this.sessionTeamsService.findOneByUid(uid);
+
+    if (!team) {
+      throw new NotFoundException(`Team with uid ${uid} not found`);
+    }
+
+    return {
+      data: team,
+      message: 'Team fetched successfully',
       status: 200,
     };
   }
