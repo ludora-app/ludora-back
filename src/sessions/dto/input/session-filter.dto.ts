@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { scope, Sport } from 'src/shared/constants/constants';
 import { IsDate, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { scope, Sport } from 'src/shared/constants/constants';
 
 export class SessionFilterDto {
   @IsOptional()
@@ -13,7 +13,7 @@ export class SessionFilterDto {
   })
   @IsEnum(Sport, { each: true })
   @ApiProperty({
-    description: 'Sports de la session',
+    description: 'Sports of the session',
     enum: Sport,
     example: [Sport.BASKETBALL, Sport.FOOTBALL],
     isArray: true,
@@ -26,7 +26,7 @@ export class SessionFilterDto {
   @IsInt()
   @Min(1)
   @ApiProperty({
-    description: 'Limite de session à retourner',
+    description: 'Limit of sessions to return',
     example: 10,
     required: false,
     type: Number,
@@ -36,7 +36,7 @@ export class SessionFilterDto {
   @IsOptional()
   @IsString()
   @ApiProperty({
-    description: 'Curseur pour la pagination',
+    description: 'Cursor for pagination',
     example: 'fcacfaca3c2a323bhf',
     required: false,
     type: String,
@@ -47,7 +47,7 @@ export class SessionFilterDto {
   @Transform(({ value }) => new Date(value))
   @IsDate()
   @ApiProperty({
-    description: 'Date de début minimale',
+    description: 'Minimum start date',
     example: '2022-01-01T00:00:00.000Z',
     required: false,
     type: Date,
@@ -58,7 +58,7 @@ export class SessionFilterDto {
   @Transform(({ value }) => new Date(value))
   @IsDate()
   @ApiProperty({
-    description: 'Date de début maximale',
+    description: 'Maximum start date',
     example: '2022-01-01T00:00:00.000Z',
     required: false,
     type: Date,
@@ -69,7 +69,7 @@ export class SessionFilterDto {
   @Type(() => Number)
   @IsNumber()
   @ApiProperty({
-    description: "Latitude de l'utilisateur",
+    description: 'Latitude of the user',
     example: '48.8588443',
     required: false,
     type: Number,
@@ -80,7 +80,7 @@ export class SessionFilterDto {
   @Type(() => Number)
   @IsNumber()
   @ApiProperty({
-    description: "Longitude de l'utilisateur",
+    description: 'Longitude of the user',
     example: '2.2943506',
     required: false,
     type: Number,
@@ -92,7 +92,7 @@ export class SessionFilterDto {
   @IsNumber()
   @Min(0)
   @ApiProperty({
-    description: 'Distance maximale de recherche de la session (en km)',
+    description: 'Maximum distance of the session search (in km)',
     example: '10',
     required: false,
     type: Number,
@@ -102,7 +102,7 @@ export class SessionFilterDto {
   @IsOptional()
   @IsEnum(scope)
   @ApiProperty({
-    description: `filtre les sessions en fonction de s'ils sont passés ou à venir, sert pour filtrer mes sessions`,
+    description: `Filter sessions by whether they are past or upcoming, used to filter my sessions`,
     enum: scope,
     example: 'UPCOMING',
     required: false,

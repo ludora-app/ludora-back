@@ -1,23 +1,23 @@
-import { Sex } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsStrongPassword } from 'src/users/password.validator';
+import { Sex } from '@prisma/client';
 import {
-  IsString,
-  IsNotEmpty,
-  IsPhoneNumber,
-  IsOptional,
-  IsEnum,
-  IsEmail,
-  Validate,
-  MinLength,
   IsAlpha,
   IsDateString,
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsPhoneNumber,
+  IsString,
+  MinLength,
+  Validate,
 } from 'class-validator';
+import { IsStrongPassword } from 'src/users/password.validator';
 
 export class CreateUserDto {
   @IsEmail()
   @ApiProperty({
-    description: "L'email de l'utilisateur",
+    description: 'The email of the user',
     example: 'test@gmail.com',
     type: String,
   })
@@ -26,7 +26,7 @@ export class CreateUserDto {
   @Validate(IsStrongPassword)
   @MinLength(8)
   @ApiProperty({
-    description: "Le mot de passe de l'utilisateur",
+    description: 'The password of the user',
     example: 'Test!1234',
     readOnly: true,
     type: String,
@@ -36,7 +36,7 @@ export class CreateUserDto {
   @IsAlpha('fr-FR')
   @IsNotEmpty()
   @ApiProperty({
-    description: "Prénom de l'utilisateur",
+    description: 'The firstname of the user',
     example: 'John',
     readOnly: true,
     type: String,
@@ -46,7 +46,7 @@ export class CreateUserDto {
   @IsAlpha('fr-FR')
   @IsNotEmpty()
   @ApiProperty({
-    description: "Nom de l'utilisateur",
+    description: 'The lastname of the user',
     example: 'Doe',
     readOnly: true,
     type: String,
@@ -56,7 +56,7 @@ export class CreateUserDto {
   @IsDateString()
   @IsOptional()
   @ApiProperty({
-    description: "Date de naissance de l'utilisateur",
+    description: 'The birthdate of the user',
     example: '01/01/2000',
     oneOf: [{ type: 'string' }, { type: 'Date' }],
     readOnly: true,
@@ -66,7 +66,7 @@ export class CreateUserDto {
   @IsEnum(Sex, { message: 'Unknown Sex' })
   @IsOptional()
   @ApiProperty({
-    description: "Sexe de l'utilisateur",
+    description: 'The sex of the user',
     enum: Sex,
     example: ['MALE', 'FEMALE', 'OTHER'],
     readOnly: true,
@@ -77,7 +77,7 @@ export class CreateUserDto {
   @IsPhoneNumber('FR')
   @IsOptional()
   @ApiProperty({
-    description: "Numéro de téléphone de l'utilisateur",
+    description: 'The phone number of the user',
     example: '+33612345678',
     readOnly: true,
     required: false,
@@ -88,8 +88,8 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   @ApiProperty({
-    description: "Biographie de l'utilisateur",
-    example: 'Je suis un bousilleur',
+    description: 'The biography of the user',
+    example: 'I am a bousilleur',
     readOnly: true,
     required: false,
     type: String,

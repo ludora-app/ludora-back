@@ -1,17 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Sex, User_type } from '@prisma/client';
-import { IsStrongPassword } from 'src/users/password.validator';
 import {
-  IsEnum,
-  IsString,
-  IsOptional,
-  ValidateIf,
   IsDateString,
   IsEmail,
-  MinLength,
+  IsEnum,
+  IsOptional,
   IsPhoneNumber,
+  IsString,
+  MinLength,
   Validate,
+  ValidateIf,
 } from 'class-validator';
+import { IsStrongPassword } from 'src/users/password.validator';
 
 export class RegisterUserDto {
   @IsEnum(User_type)
@@ -67,7 +67,7 @@ export class RegisterUserDto {
   @IsString()
   @ApiProperty({
     description: 'Bio',
-    example: "Je suis un utilisateur de l'application.",
+    example: "I'm a user of the application.",
   })
   readonly bio?: string;
 
@@ -96,7 +96,7 @@ export class RegisterUserDto {
 
 export class RegisterUserWithFileDto extends RegisterUserDto {
   @ApiProperty({
-    description: 'Fichier image (avatar)',
+    description: 'File image (avatar)',
     format: 'binary',
     required: false,
     type: 'string',
