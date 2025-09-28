@@ -1,5 +1,16 @@
+import {
+  BadRequestException,
+  Body,
+  ConflictException,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Request,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { SuccessTypeDto } from 'src/interfaces/success-type';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -8,28 +19,17 @@ import {
   ApiOperation,
 } from '@nestjs/swagger';
 import {
-  Controller,
-  Post,
-  Body,
-  Get,
-  Req,
-  UseInterceptors,
-  UploadedFile,
-  Request,
-  BadRequestException,
-  ConflictException,
-} from '@nestjs/common';
-import {
-  VerifyMailDto,
-  LoginDto,
-  RegisterUserDto,
   CreateImageDto,
-  RegisterUserWithFileDto,
-  RegisterResponseDto,
+  LoginDto,
   LoginResponseDto,
+  RegisterResponseDto,
+  RegisterUserDto,
+  RegisterUserWithFileDto,
   VerifyEmailResponseDto,
+  VerifyMailDto,
   VerifyTokenResponseDto,
 } from 'src/auth/dto';
+import { SuccessTypeDto } from 'src/interfaces/success-type';
 
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
@@ -119,9 +119,9 @@ export class AuthController {
     type: BadRequestException,
   })
   async verifyToken(@Req() request: Request): Promise<VerifyTokenResponseDto> {
-    const id = request['user'].id;
+    const uid = request['user'].uid;
 
-    const isValid = await this.authService.verifyToken(id);
+    const isValid = await this.authService.verifyToken(uid);
     return { data: { isValid: isValid }, message: 'token is valid' };
   }
 
@@ -130,7 +130,7 @@ export class AuthController {
     @Request() req,
     @Body() verifyEmailCodeDto: VerifyEmailCodeDto,
   ): Promise<SuccessTypeDto> {
-    await this.authService.verifyEmailCode(req.user.id, verifyEmailCodeDto.code);
+    await this.authService.verifyEmailCode(req.user.uid, verifyEmailCodeDto.code);
 
     return {
       message: 'Email vérifié avec succès',
@@ -140,7 +140,7 @@ export class AuthController {
 
   @Post('resend-verification-code')
   async resendVerificationCode(@Request() req): Promise<SuccessTypeDto> {
-    await this.authService.resendVerificationCode(req.user.id);
+    await this.authService.resendVerificationCode(req.user.uid);
 
     return {
       message: 'Nouveau code de vérification envoyé',

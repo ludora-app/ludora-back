@@ -21,7 +21,7 @@ describe('UsersController', () => {
   const mockUser = {
     bio: 'test bio',
     firstname: 'John',
-    id: '1',
+    uid: '1',
     imageUrl: 'test-url',
     lastname: 'Doe',
     name: 'Test User',
@@ -67,7 +67,7 @@ describe('UsersController', () => {
   });
 
   describe('findOne', () => {
-    it('should return a single user by id', async () => {
+    it('should return a single user by uid', async () => {
       mockUsersService.findOne.mockResolvedValue(mockUser);
 
       const result = await controller.findOne('1');
@@ -84,7 +84,7 @@ describe('UsersController', () => {
   describe('findMe', () => {
     it('should return the authenticated user', async () => {
       const mockRequest = {
-        user: { id: '1' },
+        user: { uid: '1' },
       };
 
       mockUsersService.findOne.mockResolvedValue(mockUser);
@@ -118,7 +118,7 @@ describe('UsersController', () => {
   describe('update', () => {
     it('should update a user', async () => {
       const mockRequest = {
-        user: { id: '1' },
+        user: { uid: '1' },
       };
       const updateDto: UpdateUserDto = {
         firstname: 'Updated Name',
@@ -140,7 +140,7 @@ describe('UsersController', () => {
   describe('updatePassword', () => {
     it('should update user password', async () => {
       const mockRequest = {
-        user: { id: '1' },
+        user: { uid: '1' },
       };
       const updatePasswordDto: UpdatePasswordDto = {
         newPassword: 'newPass',
@@ -164,7 +164,7 @@ describe('UsersController', () => {
   describe('deactivate', () => {
     it('should deactivate a user', async () => {
       const mockRequest = {
-        user: { id: '1' },
+        user: { uid: '1' },
       };
       mockUsersService.deactivate.mockResolvedValue({
         message: 'User 1 has been deactivated',
@@ -184,7 +184,7 @@ describe('UsersController', () => {
   describe('remove', () => {
     it('should remove a user', async () => {
       const mockRequest = {
-        user: { id: '1' },
+        user: { uid: '1' },
       };
       mockUsersService.remove.mockResolvedValue({
         message: 'User 1 has been deleted',

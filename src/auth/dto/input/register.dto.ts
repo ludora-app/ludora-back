@@ -26,10 +26,10 @@ export class RegisterUserDto {
   @IsString()
   @IsOptional()
   @ApiProperty({
-    description: 'device id, only for phones',
+    description: 'device uid, only for phones',
     example: '123456',
   })
-  readonly deviceId?: string;
+  readonly deviceUid?: string;
 
   @IsString()
   @IsEmail()

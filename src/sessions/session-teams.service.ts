@@ -11,12 +11,12 @@ export class SessionTeamsService {
     await this.prisma.session_teams.createMany({
       data: [
         {
-          sessionId: sessionUid,
+          sessionUid: sessionUid,
           teamLabel: Team_label.A,
           teamName: 'Team A',
         },
         {
-          sessionId: sessionUid,
+          sessionUid: sessionUid,
           teamLabel: Team_label.B,
           teamName: 'Team B',
         },
@@ -31,7 +31,7 @@ export class SessionTeamsService {
   ): Promise<{ items: Session_teams[]; nextCursor: string | null; totalCount: number }> {
     const teams = await this.prisma.session_teams.findMany({
       where: {
-        sessionId: sessionUid,
+        sessionUid: sessionUid,
       },
     });
 
@@ -41,7 +41,7 @@ export class SessionTeamsService {
   async findOneByUid(uid: string): Promise<Session_teams> {
     return this.prisma.session_teams.findUnique({
       where: {
-        id: uid,
+        uid: uid,
       },
     });
   }

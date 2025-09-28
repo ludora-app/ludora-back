@@ -77,14 +77,14 @@ export class SessionsController {
     };
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get a session by id' })
+  @Get(':uid')
+  @ApiOperation({ summary: 'Get a session by uid' })
   @ApiOkResponse({ type: ResponseTypeDto<Sessions> })
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
   @ApiNotFoundResponse({ type: NotFoundException })
-  async findOne(@Param('id') id: string): Promise<ResponseType<SessionResponse>> {
-    const session = await this.sessionsService.findOne(id);
+  async findOne(@Param('uid') uid: string): Promise<ResponseType<SessionResponse>> {
+    const session = await this.sessionsService.findOne(uid);
 
     if (!session) {
       throw new NotFoundException('Session not found');
@@ -97,17 +97,17 @@ export class SessionsController {
     };
   }
 
-  @Patch(':id')
-  @ApiOperation({ summary: 'Update a session by id' })
+  @Patch(':uid')
+  @ApiOperation({ summary: 'Update a session by uid' })
   @ApiOkResponse({ type: ResponseTypeDto<Sessions> })
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
   @ApiNotFoundResponse({ type: NotFoundException })
   async update(
-    @Param('id') id: string,
+    @Param('uid') uid: string,
     @Body() updateSessionDto: UpdateSessionDto,
   ): Promise<ResponseType<SessionResponse>> {
-    const updatedSession = await this.sessionsService.update(id, updateSessionDto);
+    const updatedSession = await this.sessionsService.update(uid, updateSessionDto);
 
     return {
       data: updatedSession,
@@ -116,9 +116,9 @@ export class SessionsController {
     };
   }
 
-  @Delete(':id')
-  async remove(@Param('id') id: string) {
-    return this.sessionsService.remove(+id);
+  @Delete(':uid')
+  async remove(@Param('uid') uid: string) {
+    return this.sessionsService.remove(uid);
   }
   // ************************
   // ********* TEAMS ********
@@ -129,7 +129,7 @@ export class SessionsController {
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
   @ApiNotFoundResponse({ type: NotFoundException })
-  async findTeamsBySessionId(
+  async findTeamsBySessionUid(
     @Param('uid') uid: string,
   ): Promise<PaginationResponseTypeDto<SessionTeamResponse>> {
     const existingSession = await this.sessionsService.findOne(uid);

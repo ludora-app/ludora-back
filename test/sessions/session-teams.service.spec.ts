@@ -60,12 +60,12 @@ describe('SessionTeamsService', () => {
       expect(mockPrismaService.session_teams.createMany).toHaveBeenCalledWith({
         data: [
           {
-            sessionId: sessionUid,
+            sessionUid: sessionUid,
             teamLabel: Team_label.A,
             teamName: 'Team A',
           },
           {
-            sessionId: sessionUid,
+            sessionUid: sessionUid,
             teamLabel: Team_label.B,
             teamName: 'Team B',
           },
@@ -84,12 +84,12 @@ describe('SessionTeamsService', () => {
       expect(mockPrismaService.session_teams.createMany).toHaveBeenCalledWith({
         data: [
           {
-            sessionId: sessionUid,
+            sessionUid: sessionUid,
             teamLabel: Team_label.A,
             teamName: 'Team A',
           },
           {
-            sessionId: sessionUid,
+            sessionUid: sessionUid,
             teamLabel: Team_label.B,
             teamName: 'Team B',
           },
@@ -111,12 +111,12 @@ describe('SessionTeamsService', () => {
       const createCall = mockPrismaService.session_teams.createMany.mock.calls[0][0];
       expect(createCall.data).toHaveLength(2);
       expect(createCall.data[0]).toMatchObject({
-        sessionId: sessionUid,
+        sessionUid: sessionUid,
         teamLabel: Team_label.A,
         teamName: 'Team A',
       });
       expect(createCall.data[1]).toMatchObject({
-        sessionId: sessionUid,
+        sessionUid: sessionUid,
         teamLabel: Team_label.B,
         teamName: 'Team B',
       });
@@ -127,16 +127,16 @@ describe('SessionTeamsService', () => {
     const sessionUid = 'test-session-uid-123';
     const mockTeams: Session_teams[] = [
       {
-        id: 'team-id-1',
-        sessionId: sessionUid,
+        uid: 'team-uid-1',
+        sessionUid: sessionUid,
         teamLabel: Team_label.A,
         teamName: 'Team A',
         createdAt: new Date('2023-01-01T12:00:00Z'),
         updatedAt: new Date('2023-01-01T12:00:00Z'),
       },
       {
-        id: 'team-id-2',
-        sessionId: sessionUid,
+        uid: 'team-uid-2',
+        sessionUid: sessionUid,
         teamLabel: Team_label.B,
         teamName: 'Team B',
         createdAt: new Date('2023-01-01T12:00:00Z'),
@@ -159,7 +159,7 @@ describe('SessionTeamsService', () => {
       });
       expect(mockPrismaService.session_teams.findMany).toHaveBeenCalledWith({
         where: {
-          sessionId: sessionUid,
+          sessionUid: sessionUid,
         },
       });
     });
@@ -179,7 +179,7 @@ describe('SessionTeamsService', () => {
       });
       expect(mockPrismaService.session_teams.findMany).toHaveBeenCalledWith({
         where: {
-          sessionId: sessionUid,
+          sessionUid: sessionUid,
         },
       });
     });
@@ -209,7 +209,7 @@ describe('SessionTeamsService', () => {
       await expect(service.findTeamsBySessionUid(sessionUid)).rejects.toThrow(databaseError);
       expect(mockPrismaService.session_teams.findMany).toHaveBeenCalledWith({
         where: {
-          sessionId: sessionUid,
+          sessionUid: sessionUid,
         },
       });
     });
@@ -232,10 +232,10 @@ describe('SessionTeamsService', () => {
   });
 
   describe('findOneByUid', () => {
-    const teamUid = 'team-id-123';
+    const teamUid = 'team-uid-123';
     const mockTeam: Session_teams = {
-      id: teamUid,
-      sessionId: 'session-id-123',
+      uid: teamUid,
+      sessionUid: 'session-uid-123',
       teamLabel: Team_label.A,
       teamName: 'Team A',
       createdAt: new Date('2023-01-01T12:00:00Z'),
@@ -253,7 +253,7 @@ describe('SessionTeamsService', () => {
       expect(result).toEqual(mockTeam);
       expect(mockPrismaService.session_teams.findUnique).toHaveBeenCalledWith({
         where: {
-          id: teamUid,
+          uid: teamUid,
         },
       });
     });
@@ -263,13 +263,13 @@ describe('SessionTeamsService', () => {
       mockPrismaService.session_teams.findUnique.mockResolvedValue(null);
 
       // Act
-      const result = await service.findOneByUid('non-existent-id');
+      const result = await service.findOneByUid('non-existent-uid');
 
       // Assert
       expect(result).toBeNull();
       expect(mockPrismaService.session_teams.findUnique).toHaveBeenCalledWith({
         where: {
-          id: 'non-existent-id',
+          uid: 'non-existent-uid',
         },
       });
     });
@@ -283,7 +283,7 @@ describe('SessionTeamsService', () => {
       await expect(service.findOneByUid(teamUid)).rejects.toThrow(databaseError);
       expect(mockPrismaService.session_teams.findUnique).toHaveBeenCalledWith({
         where: {
-          id: teamUid,
+          uid: teamUid,
         },
       });
     });
@@ -299,7 +299,7 @@ describe('SessionTeamsService', () => {
       expect(result).toBeNull();
       expect(mockPrismaService.session_teams.findUnique).toHaveBeenCalledWith({
         where: {
-          id: '',
+          uid: '',
         },
       });
     });
@@ -313,8 +313,8 @@ describe('SessionTeamsService', () => {
 
       // Assert
       expect(result).toMatchObject({
-        id: teamUid,
-        sessionId: 'session-id-123',
+        uid: teamUid,
+        sessionUid: 'session-uid-123',
         teamLabel: Team_label.A,
         teamName: 'Team A',
       });
@@ -329,16 +329,16 @@ describe('SessionTeamsService', () => {
       const sessionUid = 'concurrent-session-123';
       const mockTeams: Session_teams[] = [
         {
-          id: 'team-1',
-          sessionId: sessionUid,
+          uid: 'team-1',
+          sessionUid: sessionUid,
           teamLabel: Team_label.A,
           teamName: 'Team A',
           createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
-          id: 'team-2',
-          sessionId: sessionUid,
+          uid: 'team-2',
+          sessionUid: sessionUid,
           teamLabel: Team_label.B,
           teamName: 'Team B',
           createdAt: new Date(),
@@ -365,8 +365,8 @@ describe('SessionTeamsService', () => {
       const teamUid = 'consistency-test-team';
 
       const mockTeam: Session_teams = {
-        id: teamUid,
-        sessionId: sessionUid,
+        uid: teamUid,
+        sessionUid: sessionUid,
         teamLabel: Team_label.A,
         teamName: 'Team A',
         createdAt: new Date(),
@@ -383,7 +383,7 @@ describe('SessionTeamsService', () => {
       // Assert
       expect(allTeams.items[0]).toMatchObject(mockTeam);
       expect(singleTeam).toMatchObject(mockTeam);
-      expect(allTeams.items[0].sessionId).toBe(singleTeam?.sessionId);
+      expect(allTeams.items[0].sessionUid).toBe(singleTeam?.sessionUid);
     });
   });
 });

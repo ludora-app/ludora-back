@@ -36,9 +36,9 @@ export class AuthGuard implements CanActivate {
     try {
       // Verify and decode the JWT
       const payload = await this.jwtService.verifyAsync(token);
-      const { id: userId } = payload;
+      const { uid: userUid } = payload;
 
-      if (!userId) {
+      if (!userUid) {
         throw new UnauthorizedException('Token invalid: user missing');
       }
 
@@ -46,7 +46,7 @@ export class AuthGuard implements CanActivate {
       const tokenRecord = await this.prisma.user_tokens.findFirst({
         where: {
           token,
-          userId: userId,
+          userUid: userUid,
         },
       });
 
@@ -56,8 +56,8 @@ export class AuthGuard implements CanActivate {
 
       // Check if the user is verified and active
       const user = await this.prisma.users.findUnique({
-        select: { emailVerified: true, id: true, isConnected: true },
-        where: { id: userId },
+        select: { emailVerified: true, uid: true, isConnected: true },
+        where: { uid: userUid },
       });
 
       if (!user) {

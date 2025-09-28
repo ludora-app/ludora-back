@@ -4,7 +4,7 @@ import { PaginationResponseDto } from 'src/interfaces/pagination-response-type';
 
 export class SessionTeamResponse {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
-  readonly id: string;
+  readonly uid: string;
 
   @ApiProperty({ example: 'Team A', readOnly: true })
   readonly teamName: string;

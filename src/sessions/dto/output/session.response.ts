@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Sport } from 'src/shared/constants/constants';
 import { PaginationResponseDto } from 'src/interfaces/pagination-response-type';
+import { Sport } from 'src/shared/constants/constants';
 
 /**
  * @description standard response for a session
@@ -24,7 +24,7 @@ export class SessionResponse {
   endDate: Date;
 
   @ApiProperty({ description: 'Session ID', example: 'cmaistjrg001yob7oe0mqu3ws', readOnly: true })
-  id: string;
+  uid: string;
 
   @ApiProperty({ description: 'Maximum number of players per team', example: 5, readOnly: true })
   maxPlayersPerTeam: number;

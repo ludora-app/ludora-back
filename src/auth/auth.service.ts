@@ -1,17 +1,17 @@
-import * as argon2 from 'argon2';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User_type } from '@prisma/client';
-import { UsersService } from 'src/users/users.service';
+import * as argon2 from 'argon2';
+import { CreateImageDto, LoginDto, RegisterUserDto, VerifyMailDto } from 'src/auth/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
-import { VerifyMailDto, RegisterUserDto, LoginDto, CreateImageDto } from 'src/auth/dto';
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class AuthService {
@@ -23,7 +23,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterUserDto, createImageDto?: CreateImageDto): Promise<string> {
-    const { deviceId, type } = registerDto;
+    const { deviceUid, type } = registerDto;
 
     const result = await this.prismaService.$transaction(async (tx) => {
       let newUser;
@@ -47,30 +47,30 @@ export class AuthService {
         throw new BadRequestException('Invalid user type');
       }
 
-      const payload: { id: string; deviceId?: string } = { id: newUser.id };
-      if (deviceId) payload.deviceId = deviceId;
+      const payload: { uid: string; deviceUid?: string } = { uid: newUser.uid };
+      if (deviceUid) payload.deviceUid = deviceUid;
 
       const accessToken = this.jwt.sign(payload);
 
       await tx.user_tokens.create({
         data: {
-          deviceId,
+          deviceUid,
           token: accessToken,
-          userId: newUser.id,
+          userUid: newUser.uid,
         },
       });
 
       return { accessToken, newUser };
     });
 
-    await this.sendVerificationEmail(result.newUser.id, result.newUser.email);
+    await this.sendVerificationEmail(result.newUser.uid, result.newUser.email);
 
     return result.accessToken;
   }
 
   async login(loginDto: LoginDto): Promise<string> {
     try {
-      const { deviceId, email, password } = loginDto;
+      const { deviceUid, email, password } = loginDto;
       const formattedEmail = email.toLowerCase();
 
       const user = await this.userService.findOneByEmail(formattedEmail);
@@ -83,50 +83,50 @@ export class AuthService {
         throw new NotFoundException('User not found');
       }
 
-      const payload = { id: user.id, ...(deviceId && { deviceId }) };
+      const payload = { uid: user.uid, ...(deviceUid && { deviceUid }) };
       const accessToken = this.jwt.sign(payload);
 
       const existingTokens = await this.prismaService.user_tokens.findMany({
         orderBy: { createdAt: 'asc' },
-        where: { userId: user.id },
+        where: { userUid: user.uid },
       });
 
-      const tokenWithDeviceId = existingTokens.find((token) => token.deviceId !== null);
-      const tokensWithoutDeviceId = existingTokens.filter((token) => !token.deviceId);
+      const tokenWithDeviceUid = existingTokens.find((token) => token.deviceUid !== null);
+      const tokensWithoutDeviceUid = existingTokens.filter((token) => !token.deviceUid);
 
       // Gestion des tokens avec transaction pour garantir l'atomicité
       await this.prismaService.$transaction(async (prisma) => {
-        if (deviceId) {
-          if (tokenWithDeviceId) {
-            // Mise à jour du token existant avec deviceId
+        if (deviceUid) {
+          if (tokenWithDeviceUid) {
+            // Mise à jour du token existant avec deviceUid
             await prisma.user_tokens.update({
               data: { token: accessToken },
-              where: { id: tokenWithDeviceId.id },
+              where: { uid: tokenWithDeviceUid.uid },
             });
           } else {
-            // Création d'un nouveau token avec deviceId
+            // Création d'un nouveau token avec deviceUid
             await prisma.user_tokens.create({
               data: {
-                deviceId,
+                deviceUid,
                 token: accessToken,
-                userId: user.id,
+                userUid: user.uid,
               },
             });
           }
         } else {
-          // Gestion du token sans deviceId
-          if (tokensWithoutDeviceId.length >= 1) {
-            //? on supprime le token le plus ancien sans deviceId
+          // Gestion du token sans deviceUid
+          if (tokensWithoutDeviceUid.length >= 1) {
+            //? on supprime le token le plus ancien sans deviceUid
             await prisma.user_tokens.delete({
-              where: { id: tokensWithoutDeviceId[0].id },
+              where: { uid: tokensWithoutDeviceUid[0].uid },
             });
           }
 
-          // Création du nouveau token sans deviceId
+          // Création du nouveau token sans deviceUid
           await prisma.user_tokens.create({
             data: {
               token: accessToken,
-              userId: user.id,
+              userUid: user.uid,
             },
           });
         }
@@ -159,7 +159,7 @@ export class AuthService {
   //       user = await this.userService.createGoogleUser(googleUser);
   //     }
 
-  //     const payload = { id: user.id };
+  //     const payload = { uid: user.uid };
 
   //     if (user.provider !== Provider.GOOGLE) {
   //       throw new BadRequestException('User already exists');
@@ -172,19 +172,19 @@ export class AuthService {
   //   }
   // }
 
-  async googleLogin(id: string) {
-    const user = await this.prismaService.users.findUnique({ where: { id } });
+  async googleLogin(uid: string) {
+    const user = await this.prismaService.users.findUnique({ where: { uid } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    const payload = { id: user.id };
+    const payload = { uid: user.uid };
     const token = this.jwt.sign(payload);
     return { accessToken: token };
   }
 
   // i can return error type here ?
-  async verifyToken(id: string): Promise<boolean> {
-    const user = await this.prismaService.users.findUnique({ where: { id } });
+  async verifyToken(uid: string): Promise<boolean> {
+    const user = await this.prismaService.users.findUnique({ where: { uid } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -196,11 +196,11 @@ export class AuthService {
 
   /**
    * Send a verification email to the user with a 6 digits verfication code that expires in 15 minutes
-   * @param userId - The id of the user
+   * @param userUid - The uid of the user
    * @param email - The email of the user
    * @memberof UsersService & AuthService
    */
-  async sendVerificationEmail(userId: string, email: string) {
+  async sendVerificationEmail(userUid: string, email: string) {
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
@@ -208,7 +208,7 @@ export class AuthService {
     await this.prismaService.$transaction(async (tx) => {
       // Supprimer les anciens codes de vérification
       await tx.email_verification.deleteMany({
-        where: { userId: userId },
+        where: { userUid: userUid },
       });
 
       // Créer le nouveau code
@@ -216,7 +216,7 @@ export class AuthService {
         data: {
           code: verificationCode,
           expiresAt,
-          userId: userId,
+          userUid: userUid,
         },
       });
     });
@@ -233,14 +233,14 @@ export class AuthService {
    * Verify the email of the user with the verification code
    * @param code - The code of the user
    */
-  async verifyEmailCode(userId: string, code: string): Promise<void> {
+  async verifyEmailCode(userUid: string, code: string): Promise<void> {
     const verification = await this.prismaService.email_verification.findFirst({
       where: {
         code,
         expiresAt: {
           gt: new Date(), // vérifie que le code n'est pas expiré
         },
-        userId: userId,
+        userUid: userUid,
       },
     });
 
@@ -252,18 +252,18 @@ export class AuthService {
     await this.prismaService.$transaction([
       this.prismaService.users.update({
         data: { emailVerified: true },
-        where: { id: userId },
+        where: { uid: userUid },
       }),
       // Supprime tous les codes de vérification de l'utilisateur
       this.prismaService.email_verification.deleteMany({
-        where: { userId: userId },
+        where: { userUid: userUid },
       }),
     ]);
   }
 
-  async resendVerificationCode(userId: string): Promise<void> {
+  async resendVerificationCode(userUid: string): Promise<void> {
     const user = await this.prismaService.users.findUnique({
-      where: { id: userId },
+      where: { uid: userUid },
     });
 
     if (!user) {
@@ -275,10 +275,10 @@ export class AuthService {
     }
 
     await this.prismaService.email_verification.deleteMany({
-      where: { userId: userId },
+      where: { userUid: userUid },
     });
 
     // Envoyer un nouveau code
-    await this.sendVerificationEmail(userId, user.email);
+    await this.sendVerificationEmail(userUid, user.email);
   }
 }

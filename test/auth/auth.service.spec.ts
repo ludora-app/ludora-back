@@ -16,13 +16,13 @@ describe('AuthService', () => {
       if (typeof callback === 'function') {
         return callback({
           email_verification: {
-            create: jest.fn().mockResolvedValue({ id: '1', code: '123456' }),
+            create: jest.fn().mockResolvedValue({ uid: '1', code: '123456' }),
             deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
           },
           user_tokens: {
-            create: jest.fn().mockResolvedValue({ id: '1', token: 'mock_token' }),
-            update: jest.fn().mockResolvedValue({ id: '1', token: 'mock_token' }),
-            delete: jest.fn().mockResolvedValue({ id: '1' }),
+            create: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_token' }),
+            update: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_token' }),
+            delete: jest.fn().mockResolvedValue({ uid: '1' }),
             findMany: jest.fn().mockResolvedValue([]),
           },
         });
@@ -31,17 +31,17 @@ describe('AuthService', () => {
     }),
     users: {
       findUnique: jest.fn(),
-      update: jest.fn().mockResolvedValue({ id: '1', emailVerified: true }),
+      update: jest.fn().mockResolvedValue({ uid: '1', emailVerified: true }),
     },
     user_tokens: {
       findMany: jest.fn().mockResolvedValue([]),
-      create: jest.fn().mockResolvedValue({ id: '1', token: 'mock_token' }),
-      update: jest.fn().mockResolvedValue({ id: '1', token: 'mock_token' }),
-      delete: jest.fn().mockResolvedValue({ id: '1' }),
+      create: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_token' }),
+      update: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_token' }),
+      delete: jest.fn().mockResolvedValue({ uid: '1' }),
     },
     email_verification: {
-      create: jest.fn().mockResolvedValue({ id: '1', code: '123456' }),
-      delete: jest.fn().mockResolvedValue({ id: '1' }),
+      create: jest.fn().mockResolvedValue({ uid: '1', code: '123456' }),
+      delete: jest.fn().mockResolvedValue({ uid: '1' }),
       deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
       findFirst: jest.fn(),
     },
@@ -109,7 +109,7 @@ describe('AuthService', () => {
       };
 
       const mockUser = {
-        id: '1',
+        uid: '1',
         email: 'test@test.com',
         firstname: 'John',
         lastname: 'Doe',
@@ -148,7 +148,7 @@ describe('AuthService', () => {
       const hashedPassword = await argon2.hash('password');
       const mockUser = {
         email: loginDto.email,
-        id: '1',
+        uid: '1',
         password: hashedPassword,
       };
 
@@ -178,7 +178,7 @@ describe('AuthService', () => {
     });
 
     it('should return false when email is already used', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue({ id: '1' });
+      mockUsersService.findOneByEmail.mockResolvedValue({ uid: '1' });
 
       const result = await service.verifyEmail({ email: 'existing@test.com' });
 
@@ -189,7 +189,7 @@ describe('AuthService', () => {
   describe('verifyToken', () => {
     it('should return isValid=true for a valid user', async () => {
       mockPrismaService.users.findUnique.mockResolvedValue({
-        id: '1',
+        uid: '1',
         isConnected: true,
       });
 
@@ -206,7 +206,7 @@ describe('AuthService', () => {
 
     it('should throw UnauthorizedException when user is not active', async () => {
       mockPrismaService.users.findUnique.mockResolvedValue({
-        id: '1',
+        uid: '1',
         isConnected: false,
       });
 
@@ -233,10 +233,10 @@ describe('AuthService', () => {
       const futureDate = new Date(now.getTime() + 60000); // 1 minute in the future
 
       mockPrismaService.email_verification.findFirst.mockResolvedValue({
-        id: '1',
+        uid: '1',
         code: '123456',
         expiresAt: futureDate,
-        userId: '1',
+        userUid: '1',
       });
 
       const result = await service.verifyEmailCode('1', '123456');
@@ -244,7 +244,7 @@ describe('AuthService', () => {
       expect(result).toBeUndefined();
       expect(mockPrismaService.users.update).toHaveBeenCalledWith({
         data: { emailVerified: true },
-        where: { id: '1' },
+        where: { uid: '1' },
       });
     });
 
@@ -258,7 +258,7 @@ describe('AuthService', () => {
   describe('resendVerificationCode', () => {
     it('should resend verification code', async () => {
       mockPrismaService.users.findUnique.mockResolvedValue({
-        id: '1',
+        uid: '1',
         email: 'test@test.com',
         emailVerified: false,
       });
@@ -279,7 +279,7 @@ describe('AuthService', () => {
 
     it('should throw BadRequestException when email is already verified', async () => {
       mockPrismaService.users.findUnique.mockResolvedValue({
-        id: '1',
+        uid: '1',
         email: 'test@test.com',
         emailVerified: true,
       });
