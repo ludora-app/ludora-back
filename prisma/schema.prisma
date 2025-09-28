@@ -364,7 +364,7 @@ model Session_players {
   team    Session_teams @relation(fields: [teamUid], references: [uid])
   user    Users         @relation(fields: [userUid], references: [uid])
 
-  @@id([sessionUid, teamUid, userUid])
+  @@unique([sessionUid, teamUid, userUid])
   @@schema("sessions")
 }
 
