@@ -6,7 +6,7 @@ export class UpdatePasswordDto {
   @IsString()
   @Validate(IsStrongPassword)
   @ApiProperty({
-    description: "Ancien mot de passe de l'utilisateur",
+    description: 'Old password of the user',
     example: 'password',
     required: true,
     type: String,
@@ -16,7 +16,7 @@ export class UpdatePasswordDto {
   @IsString()
   @Validate(IsStrongPassword)
   @ApiProperty({
-    description: "Nouveau mot de passe de l'utilisateur",
+    description: 'New password of the user',
     example: 'password',
     required: true,
     type: String,

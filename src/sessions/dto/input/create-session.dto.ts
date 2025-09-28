@@ -1,5 +1,5 @@
-import { Game_modes } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
+import { Game_modes } from '@prisma/client';
 import { IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateSessionDto {
@@ -7,7 +7,7 @@ export class CreateSessionDto {
   @IsOptional()
   @ApiProperty({
     description: 'The title of the session',
-    example: 'Session de football',
+    example: 'Football session',
     required: false,
   })
   title?: string;
@@ -16,7 +16,7 @@ export class CreateSessionDto {
   @IsOptional()
   @ApiProperty({
     description: 'The description of the session',
-    example: 'Session de football',
+    example: 'Football session',
     required: false,
   })
   description?: string;

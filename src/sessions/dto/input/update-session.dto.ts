@@ -1,5 +1,5 @@
-import { Game_modes } from '@prisma/client';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
+import { Game_modes } from '@prisma/client';
 import { IsDateString, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 
 import { CreateSessionDto } from './create-session.dto';
@@ -9,7 +9,7 @@ export class UpdateSessionDto extends PartialType(CreateSessionDto) {
   @IsOptional()
   @ApiProperty({
     description: 'The title of the session',
-    example: 'Session de football',
+    example: 'Football session',
     required: false,
   })
   title?: string;
@@ -18,7 +18,7 @@ export class UpdateSessionDto extends PartialType(CreateSessionDto) {
   @IsOptional()
   @ApiProperty({
     description: 'The description of the session',
-    example: 'Session de football',
+    example: 'Football session',
     required: false,
   })
   description?: string;
