@@ -1,0 +1,261 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  # ============================================
+  # JOB 1: Format & Lint
+  # ============================================
+  format:
+    name: Format & Lint
+    runs-on: ubuntu-latest
+    container:
+      image: node:22.13.1-slim
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.13.1
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run format check
+        run: pnpm format
+
+      - name: Run linter
+        run: pnpm lint
+
+  # ============================================
+  # JOB 2: Tests
+  # ============================================
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: format
+    container:
+      image: node:22.13.1-slim
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/test_db
+      NODE_ENV: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.13.1
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Generate Prisma Client
+        run: pnpm prisma generate
+
+      - name: Setup database
+        run: pnpm prisma migrate deploy
+
+      - name: Run unit tests
+        run: pnpm test
+
+      - name: Run tests with coverage
+        run: pnpm test:cov
+
+      - name: Check coverage artifacts size
+        run: |
+          echo "Coverage artifacts size:"
+          du -sh coverage/lcov-report/ || echo "No lcov-report"
+          du -sh coverage/lcov.info || echo "No lcov.info"
+          du -sh coverage/coverage-final.json || echo "No coverage-final.json"
+          echo "Total coverage size:"
+          du -sh coverage/ || echo "No coverage directory"
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage/lcov-report/
+            coverage/lcov.info
+            coverage/coverage-final.json
+          retention-days: 30
+
+  # ============================================
+  # JOB 3: Build
+  # ============================================
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: test
+    container:
+      image: node:22.13.1-slim
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.13.1
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Generate Prisma Client
+        run: pnpm prisma generate
+
+      - name: Build application
+        run:
+          pnpm build
+
+          # This step cleans the build output directory by removing unnecessary files
+          #(source maps, test files, node_modules, git, coverage, etc.) before uploading the build artifacts.
+      - name: Clean build directory
+        run: |
+          # Remove unnecessary files before upload
+          find dist/ -name "*.map" -delete || true
+          find dist/ -name "*.test.*" -delete || true
+          find dist/ -name "*.spec.*" -delete || true
+          rm -rf dist/node_modules || true
+          rm -rf dist/.git || true
+          rm -rf dist/coverage || true
+          echo "Build directory cleaned"
+
+      - name: Check build artifacts size
+        run: |
+          echo "Build artifacts size:"
+          du -sh dist/ || echo "No dist directory"
+          du -sh package.json || echo "No package.json"
+          du -sh prisma/ || echo "No prisma directory"
+          du -sh docker/ || echo "No docker directory"
+          echo "Files to be uploaded:"
+          find dist/ -type f | head -10 || echo "No files in dist"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: |
+            dist/
+            package.json
+            prisma/
+            docker/
+            compose.*.yml
+          retention-days: 7
+
+  # ============================================
+  # JOB 4: Deploy (Development or Production)
+  # ============================================
+  deploy:
+    name: Deploy to ${{ github.ref == 'refs/heads/main' && 'Production' || 'Development' }}
+    runs-on: ubuntu-latest
+    needs: build
+    if: (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') && github.event_name == 'push'
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'PROD' || 'DEV' }}
+      url: ${{ github.ref == 'refs/heads/main' && vars.PROD_URL || vars.DEV_URL }}
+
+    container:
+      image: node:22.13.1-slim
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.13.1
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build application
+        run: pnpm build
+
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+        run: |
+          apt-get update && apt-get install -y openssh-client
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $REMOTE_HOST >> ~/.ssh/known_hosts
+
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "🚀 Deploying to ${{ github.ref == 'refs/heads/main' && 'PRODUCTION' || 'DEVELOPMENT' }} environment..."
+            cd ${{ secrets.REMOTE_PATH }}
+            git checkout ${{ github.ref_name }}
+            git pull
+            docker compose -f compose.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}.yml down
+            docker compose -f compose.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}.yml up -d --build
+            echo "✅ Deployment completed!"
+
+      - name: Deployment Status
+        env:
+          ENVIRONMENT: ${{ vars.ENV }}
+          DEPLOY_URL: ${{ github.ref == 'refs/heads/main' && vars.PROD_URL || vars.DEV_URL }}
+        run: |
+          echo "✅ Deployment to $ENVIRONMENT completed successfully!"
+          echo "🌐 Environment: $ENVIRONMENT"
+          echo "🔗 URL: $DEPLOY_URL"
+
+      - name: Create Release Tag
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          TAG_NAME="release-$(date +'%Y%m%d-%H%M%S')"
+          git tag -a $TAG_NAME -m "Production release $TAG_NAME"
+          git push origin $TAG_NAME
