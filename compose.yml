@@ -1,0 +1,32 @@
+services:
+  ludora-api:
+    build:
+      context: .
+      dockerfile: docker/nest-api/Dockerfile
+    container_name: ludora-api
+    environment:
+      - DOPPLER_TOKEN
+    volumes:
+      - ./src:/usr/src/app/src
+      - ./prisma:/usr/src/app/prisma
+      - ./test:/usr/src/app/test
+
+    ports:
+      - '2424:2424'
+      - '5555:5555'
+    depends_on:
+      - ludora-db
+
+  ludora-db:
+    build:
+      context: .
+      dockerfile: docker/postgres/Dockerfile
+    ports:
+      - '5432:5432'
+    environment:
+      - DOPPLER_TOKEN
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:

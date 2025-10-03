@@ -1,7 +1,7 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { ApiProperty } from '@nestjs/swagger';
 import { Sex } from '@prisma/client';
-import { IsDateString, IsEnum, IsOptional, IsPhoneNumber, IsString, IsUrl } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { PartialType } from '@nestjs/mapped-types';
+import { IsString, IsPhoneNumber, IsUrl, IsOptional, IsEnum, IsDateString } from 'class-validator';
 
 import { CreateUserDto } from './create-user.dto';
 
@@ -9,7 +9,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsString()
   @IsOptional()
   @ApiProperty({
-    description: 'The firstname of the user',
+    description: "Prénom de l'utilisateur",
     example: 'John',
     required: false,
     type: String,
@@ -19,7 +19,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsString()
   @IsOptional()
   @ApiProperty({
-    description: 'The lastname of the user',
+    description: "Nom de l'utilisateur",
     example: 'Doe',
     required: false,
     type: String,
@@ -29,7 +29,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsDateString()
   @IsOptional()
   @ApiProperty({
-    description: 'The birthdate of the user',
+    description: "Date de naissance de l'utilisateur",
     example: '01/01/2000',
     required: false,
     type: String,
@@ -39,7 +39,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsEnum(Sex, { message: 'Unknown Sex' })
   @IsOptional()
   @ApiProperty({
-    description: 'The sex of the user',
+    description: "Sexe de l'utilisateur",
     enum: Sex,
     example: ['MALE', 'FEMALE', 'OTHER'],
     required: false,
@@ -49,7 +49,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsPhoneNumber('FR')
   @IsOptional()
   @ApiProperty({
-    description: 'The phone number of the user',
+    description: "Numéro de téléphone de l'utilisateur",
     example: '+33612345678',
     required: false,
     type: String,
@@ -59,17 +59,17 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsUrl()
   @IsOptional()
   @ApiProperty({
-    description: 'The image url of the user',
+    description: "URL de l'image de profil",
     example: 'https://www.example.com/image.jpg',
     required: false,
     type: String,
   })
-  imageUrl?: string;
+  image_url?: string;
 
   @IsString()
   @IsOptional()
   @ApiProperty({
-    description: 'The biography of the user',
+    description: "Biographie de l'utilisateur",
     example: 'Je suis un bousilleur',
     required: false,
     type: String,

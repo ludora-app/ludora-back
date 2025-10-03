@@ -24,7 +24,7 @@ RUN pnpm install
 
 COPY . ./
 
-RUN pnpm prisma generate
+RUN pnpm dlx prisma generate
 
 EXPOSE 2424
 

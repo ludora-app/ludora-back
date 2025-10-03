@@ -1,35 +1,33 @@
-import {
-  BadRequestException,
-  Body,
-  ConflictException,
-  Controller,
-  Get,
-  Post,
-  Req,
-  Request,
-  UploadedFile,
-  UseInterceptors,
-} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ErrorResponseDto } from 'src/interfaces/error-response-type';
+import { ApiBadRequestResponse, ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
 import {
-  ApiBadRequestResponse,
-  ApiBody,
-  ApiConflictResponse,
-  ApiConsumes,
-  ApiOperation,
-} from '@nestjs/swagger';
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Req,
+  Res,
+  NotFoundException,
+  UseInterceptors,
+  UploadedFile,
+  HttpException,
+  InternalServerErrorException,
+  Request,
+} from '@nestjs/common';
 import {
-  CreateImageDto,
-  LoginDto,
-  LoginResponseDto,
-  RegisterResponseDto,
-  RegisterUserDto,
-  RegisterUserWithFileDto,
-  VerifyEmailResponseDto,
   VerifyMailDto,
+  LoginDto,
+  RegisterUserDto,
+  CreateGoogleUserDto,
+  CreateImageDto,
+  RegisterUserWithFileDto,
+  RegisterResponseDto,
+  LoginResponseDto,
+  VerifyEmailResponseDto,
   VerifyTokenResponseDto,
 } from 'src/auth/dto';
-import { SuccessTypeDto } from 'src/interfaces/success-type';
 
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
@@ -42,16 +40,12 @@ export class AuthController {
   @Public()
   @Post('register')
   @UseInterceptors(FileInterceptor('file'))
-  @ApiOperation({ summary: 'Create a user account' })
+  @ApiOperation({ summary: 'Create a user or organisation account' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: RegisterUserWithFileDto })
   @ApiBadRequestResponse({
     description: 'Error during registration',
-    type: BadRequestException,
-  })
-  @ApiConflictResponse({
-    description: 'User already exists',
-    type: ConflictException,
+    type: ErrorResponseDto,
   })
   async register(
     @Body() registerDto: RegisterUserDto,
@@ -64,20 +58,10 @@ export class AuthController {
         file: file.buffer,
         name: imageName,
       };
-      const accessToken = await this.authService.register(registerDto, createImageDto);
-      return {
-        data: { accessToken },
-        message: 'User created successfully',
-        status: 201,
-      };
+      return this.authService.register(registerDto, createImageDto);
     }
 
-    const accessToken = await this.authService.register(registerDto);
-    return {
-      data: { accessToken },
-      message: 'User created successfully',
-      status: 201,
-    };
+    return this.authService.register(registerDto);
   }
 
   @Public()
@@ -86,11 +70,11 @@ export class AuthController {
     summary: 'Allow the user to login',
   })
   @ApiBadRequestResponse({
-    type: BadRequestException,
+    description: 'Error during login',
+    type: ErrorResponseDto,
   })
-  async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
-    const accessToken = await this.authService.login(loginDto);
-    return { data: { accessToken }, message: 'Token created successfully', status: 200 };
+  login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
+    return this.authService.login(loginDto);
   }
 
   @Public()
@@ -100,14 +84,10 @@ export class AuthController {
   })
   @ApiBadRequestResponse({
     description: 'Error during email verification',
-    type: BadRequestException,
+    type: ErrorResponseDto,
   })
   async verifyEmail(@Body() verifyMailDto: VerifyMailDto): Promise<VerifyEmailResponseDto> {
-    const isAvailable = await this.authService.verifyEmail(verifyMailDto);
-    return {
-      data: { isAvailable: isAvailable },
-      message: `Email is ${isAvailable ? 'available' : 'already used'}`,
-    };
+    return this.authService.verifyEmail(verifyMailDto);
   }
 
   @Get('verify')
@@ -116,49 +96,35 @@ export class AuthController {
   })
   @ApiBadRequestResponse({
     description: 'Error during token verification',
-    type: BadRequestException,
+    type: ErrorResponseDto,
   })
   async verifyToken(@Req() request: Request): Promise<VerifyTokenResponseDto> {
-    const uid = request['user'].uid;
+    const id = request['user'].id;
 
-    const isValid = await this.authService.verifyToken(uid);
-    return { data: { isValid: isValid }, message: 'token is valid' };
+    return this.authService.verifyToken(id);
   }
 
   @Post('verify-email-code')
-  async verifyEmailCode(
-    @Request() req,
-    @Body() verifyEmailCodeDto: VerifyEmailCodeDto,
-  ): Promise<SuccessTypeDto> {
-    await this.authService.verifyEmailCode(req.user.uid, verifyEmailCodeDto.code);
-
-    return {
-      message: 'Email vérifié avec succès',
-      status: 200,
-    };
+  async verifyEmailCode(@Request() req, @Body() verifyEmailCodeDto: VerifyEmailCodeDto) {
+    return this.authService.verifyEmailCode(req.user.id, verifyEmailCodeDto.code);
   }
 
   @Post('resend-verification-code')
-  async resendVerificationCode(@Request() req): Promise<SuccessTypeDto> {
-    await this.authService.resendVerificationCode(req.user.uid);
-
-    return {
-      message: 'Nouveau code de vérification envoyé',
-      status: 200,
-    };
+  async resendVerificationCode(@Request() req) {
+    return this.authService.resendVerificationCode(req.user.id);
   }
 
   // **************************/
   // ** GOOGLE AUTHENTICATION *
   // **************************/
 
-  // @Public() // ? décorateur @Public() pour ignorer le middleware d'authentification
-  // // @UseGuards(GoogleAuthGuard)
-  // @Post('google/login')
-  // @ApiOperation({
-  //   summary: "Permet à l'utilisateur de se connecter avec Google",
-  // })
-  // async googleLogin(@Body() googleUser: CreateGoogleUserDto): Promise<any> {
-  //   return this.authService.validateGoogleUser(googleUser);
-  // }
+  @Public() // ? décorateur @Public() pour ignorer le middleware d'authentification
+  // @UseGuards(GoogleAuthGuard)
+  @Post('google/login')
+  @ApiOperation({
+    summary: "Permet à l'utilisateur de se connecter avec Google",
+  })
+  async googleLogin(@Body() googleUser: CreateGoogleUserDto): Promise<any> {
+    return this.authService.validateGoogleUser(googleUser);
+  }
 }

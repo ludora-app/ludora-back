@@ -6,7 +6,7 @@ export interface PaginationResponseTypeDto<T = unknown> {
   message?: string;
   data: {
     items: T[];
-    nextCursor: string | null;
+    nextCursor: string;
     totalCount: number;
   };
 }

@@ -4,7 +4,7 @@ import { ResponseTypeDto } from 'src/interfaces/response-type';
 
 export class FindOneUserResponseDataDto {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
-  readonly uid: string;
+  readonly id: string;
 
   @ApiProperty({ example: 'Toto', readOnly: true })
   readonly firstname: string;
@@ -19,12 +19,12 @@ export class FindOneUserResponseDataDto {
   readonly bio?: string;
 
   @ApiProperty({ example: 'https://example.com/image.jpg', nullable: true, readOnly: true })
-  readonly imageUrl?: string;
+  readonly image_url?: string;
 }
 
 export class FindMeUserResponseDataDto {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
-  readonly uid: string;
+  readonly id: string;
 
   @ApiProperty({ example: 'Toto', readOnly: true })
   readonly firstname: string;
@@ -39,7 +39,7 @@ export class FindMeUserResponseDataDto {
   readonly bio?: string;
 
   @ApiProperty({ example: 'https://example.com/image.jpg', nullable: true, readOnly: true })
-  readonly imageUrl?: string;
+  readonly image_url?: string;
 
   @ApiProperty({ example: 'toto@gmail.com', nullable: true, readOnly: true })
   readonly email?: string;
@@ -60,7 +60,7 @@ export class FindMeUserResponseDataDto {
   readonly type: User_type;
 
   @ApiProperty({ example: null, nullable: true, readOnly: true })
-  readonly stripe_account_uid?: string;
+  readonly stripe_account_id?: string;
 }
 
 export class FindMeUserResponseDto extends ResponseTypeDto<FindMeUserResponseDataDto> {

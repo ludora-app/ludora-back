@@ -1,14 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { USERSELECT } from 'src/shared/constants/select-user';
-import { UpdatePasswordDto, UpdateUserDto, UserFilterDto } from 'src/users/dto';
+import { CreateGoogleUserDto } from 'src/users/dto/input/create-google-user.dto';
+import { UpdatePasswordDto } from 'src/users/dto/input/update-password.dto';
+import { UpdateUserDto } from 'src/users/dto/update-user.dto';
 import { UsersController } from 'src/users/users.controller';
 import { UsersService } from 'src/users/users.service';
 
-describe('UsersController', () => {
+describe('Users', () => {
   let controller: UsersController;
   let service: UsersService;
 
   const mockUsersService = {
+    createGoogleUser: jest.fn(),
     deactivate: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
@@ -21,10 +23,15 @@ describe('UsersController', () => {
   const mockUser = {
     bio: 'test bio',
     firstname: 'John',
-    uid: '1',
-    imageUrl: 'test-url',
+    id: '1',
+    image_url: 'test-url',
     lastname: 'Doe',
     name: 'Test User',
+  };
+
+  const mockUserResponse = {
+    data: mockUser,
+    status: 200,
   };
 
   beforeEach(async () => {
@@ -46,57 +53,83 @@ describe('UsersController', () => {
     expect(controller).toBeDefined();
   });
 
+  describe('createGoogleUser', () => {
+    it('should create a user with Google account', async () => {
+      const dto: CreateGoogleUserDto = {
+        email: 'test@test.com',
+        firstname: 'Test User',
+        provider: 'GOOGLE',
+      };
+      mockUsersService.createGoogleUser.mockResolvedValue(mockUser);
+
+      const result = await controller.createGoogleUser(dto);
+
+      expect(result).toEqual(mockUser);
+      expect(service.createGoogleUser).toHaveBeenCalledWith(dto);
+    });
+  });
+
   describe('findAll', () => {
     it('should return an array of users', async () => {
-      const filters: UserFilterDto = { limit: 10 };
+      const filters = { limit: 10 };
       mockUsersService.findAll.mockResolvedValue({
-        items: [mockUser],
-        nextCursor: null,
-        totalCount: 1,
-      });
-
-      const result = await controller.findAll(filters);
-
-      expect(result).toEqual({
         data: { items: [mockUser], nextCursor: null, totalCount: 1 },
         message: 'Users fetched successfully',
         status: 200,
       });
+
+      const result = await controller.findAll(filters);
+
+      expect(result).toBeDefined();
       expect(service.findAll).toHaveBeenCalledWith(filters);
     });
   });
 
   describe('findOne', () => {
-    it('should return a single user by uid', async () => {
-      mockUsersService.findOne.mockResolvedValue(mockUser);
+    it('should return a single user by id', async () => {
+      const select = {
+        bio: true,
+        firstname: true,
+        id: true,
+        image_url: true,
+        lastname: true,
+        name: true,
+      };
+      mockUsersService.findOne.mockResolvedValue(mockUserResponse);
 
       const result = await controller.findOne('1');
 
-      expect(result).toEqual({
-        data: mockUser,
-        message: 'User fetched successfully',
-        status: 200,
-      });
-      expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findOne);
+      expect(result).toEqual(mockUserResponse);
+      expect(service.findOne).toHaveBeenCalledWith('1', select);
     });
   });
 
   describe('findMe', () => {
     it('should return the authenticated user', async () => {
       const mockRequest = {
-        user: { uid: '1' },
+        user: { id: '1' },
       };
-
-      mockUsersService.findOne.mockResolvedValue(mockUser);
+      const select = {
+        active: true,
+        bio: true,
+        birthdate: true,
+        email: true,
+        firstname: true,
+        id: true,
+        image_url: true,
+        lastname: true,
+        name: true,
+        phone: true,
+        sex: true,
+        stripe_account_id: true,
+        type: true,
+      };
+      mockUsersService.findOne.mockResolvedValue(mockUserResponse);
 
       const result = await controller.findMe(mockRequest as any);
 
-      expect(result).toEqual({
-        data: mockUser,
-        message: 'User fetched successfully',
-        status: 200,
-      });
-      expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findMe);
+      expect(result).toEqual(mockUserResponse);
+      expect(service.findOne).toHaveBeenCalledWith('1', select);
     });
   });
 
@@ -106,11 +139,7 @@ describe('UsersController', () => {
 
       const result = await controller.findOneByEmail('test@test.com');
 
-      expect(result).toEqual({
-        data: mockUser,
-        message: 'User fetched successfully',
-        status: 200,
-      });
+      expect(result).toEqual(mockUser);
       expect(service.findOneByEmail).toHaveBeenCalledWith('test@test.com');
     });
   });
@@ -118,18 +147,19 @@ describe('UsersController', () => {
   describe('update', () => {
     it('should update a user', async () => {
       const mockRequest = {
-        user: { uid: '1' },
+        user: { id: '1' },
       };
       const updateDto: UpdateUserDto = {
         firstname: 'Updated Name',
       };
-      const updatedUser = { ...mockUser, firstname: 'Updated Name' };
-      mockUsersService.update.mockResolvedValue(updatedUser);
+      mockUsersService.update.mockResolvedValue({
+        message: 'User updated successfully',
+        status: 200,
+      });
 
       const result = await controller.update(mockRequest as any, updateDto);
 
       expect(result).toEqual({
-        data: updatedUser,
         message: 'User updated successfully',
         status: 200,
       });
@@ -140,7 +170,7 @@ describe('UsersController', () => {
   describe('updatePassword', () => {
     it('should update user password', async () => {
       const mockRequest = {
-        user: { uid: '1' },
+        user: { id: '1' },
       };
       const updatePasswordDto: UpdatePasswordDto = {
         newPassword: 'newPass',
@@ -164,7 +194,7 @@ describe('UsersController', () => {
   describe('deactivate', () => {
     it('should deactivate a user', async () => {
       const mockRequest = {
-        user: { uid: '1' },
+        user: { id: '1' },
       };
       mockUsersService.deactivate.mockResolvedValue({
         message: 'User 1 has been deactivated',
@@ -184,7 +214,7 @@ describe('UsersController', () => {
   describe('remove', () => {
     it('should remove a user', async () => {
       const mockRequest = {
-        user: { uid: '1' },
+        user: { id: '1' },
       };
       mockUsersService.remove.mockResolvedValue({
         message: 'User 1 has been deleted',

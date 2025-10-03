@@ -72,38 +72,24 @@ enum Conversation_type {
   @@schema("social")
 }
 
-enum Game_modes {
-  TWO_V_TWO
-  THREE_V_THREE
-  FOUR_V_FOUR
-  FIVE_V_FIVE
-  SIX_V_SIX
-  SEVEN_V_SEVEN
-  EIGHT_V_EIGHT
-  TEN_V_TEN
-  ELEVEN_V_ELEVEN
-
-  @@schema("sessions")
-}
-
 model Users {
-  uid              String    @id @default(cuid())
-  email            String    @unique
-  password         String?
-  firstname        String?
-  lastname         String?
-  birthdate        DateTime?
-  sex              Sex?      @map("sex")
-  phone            String?
-  imageUrl         String?   @map("image_url")
-  bio              String?
-  provider         Provider  @default(LUDORA)
-  isConnected      Boolean   @default(true) @map("is_connected")
-  stripeAccountUid String?   @unique @map("stripe_account_uid")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
-  emailVerified    Boolean   @default(false) @map("email_verified")
-  type             User_type @default(USER) @map("type")
+  id                String    @id @default(cuid())
+  email             String    @unique
+  password          String?
+  firstname         String?
+  lastname          String?
+  birthdate         DateTime?
+  sex               Sex?      @map("sex")
+  phone             String?
+  image_url         String?
+  bio               String?
+  provider          Provider  @default(LUDORA)
+  is_connected      Boolean   @default(true) //? ça sert à quoi ?
+  stripe_account_id String?   @unique
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  email_verified    Boolean   @default(false)
+  type              User_type @default(USER) @map("type")
 
   Message             Messages[]
   // Event               Events[]
@@ -132,172 +118,139 @@ model Users {
 }
 
 model Email_verification {
-  uid       String   @id @default(cuid())
-  userUid   String   @map("user_uid")
-  code      String
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
+  id         String   @id @default(cuid())
+  user_id    String
+  code       String
+  expires_at DateTime
+  created_at DateTime @default(now())
 
-  user Users @relation(fields: [userUid], references: [uid], onDelete: Cascade)
+  user Users @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@schema("auth")
 }
 
 model User_tokens {
-  uid       String   @id @default(cuid())
-  userUid   String   @map("user_uid")
-  deviceUid String?  @map("deviceUid")
-  token     String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(cuid())
+  user_id    String
+  device_id  String?
+  token      String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  user Users @relation(fields: [userUid], references: [uid])
+  user Users @relation(fields: [user_id], references: [id])
 
   @@schema("auth")
 }
 
 model User_ratings {
-  evaluatorUid String   @map("evaluator_uid")
-  evaluatedUid String   @map("evaluated_uid")
-  note1        Int      @map("note_1")
-  note2        Int      @map("note_2")
-  note3        Int      @map("note_3")
-  note4        Int      @map("note_4")
-  note5        Int      @map("note_5")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  evaluator_id String
+  evaluated_id String
+  note_1       Int
+  note_2       Int
+  note_3       Int
+  note_4       Int
+  note_5       Int
+  // comment      String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 
-  evaluator Users @relation(fields: [evaluatorUid], references: [uid], name: "EvaluatorRelation")
-  evaluated Users @relation(fields: [evaluatedUid], references: [uid], name: "EvaluatedRelation")
+  evaluator Users @relation(fields: [evaluator_id], references: [id], name: "EvaluatorRelation")
+  evaluated Users @relation(fields: [evaluated_id], references: [id], name: "EvaluatedRelation")
 
-  @@id([evaluatorUid, evaluatedUid])
+  @@id([evaluator_id, evaluated_id])
   @@schema("ratings")
 }
 
 model User_global_ratings {
-  userUid   String   @map("user_uid")
-  sportName String   @map("sport_name")
-  rating    Float
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  user_id    String
+  sport_id   String
+  rating     Float
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  user  Users  @relation(fields: [userUid], references: [uid])
-  sport Sports @relation(fields: [sportName], references: [name])
+  user  Users  @relation(fields: [user_id], references: [id])
+  sport Sports @relation(fields: [sport_id], references: [id])
 
-  @@id([userUid, sportName])
+  @@id([user_id, sport_id])
   @@schema("ratings")
 }
 
 model Partners {
-  uid                   String                  @id @default(cuid())
-  name                  String
-  imageUrl              String?                 @map("image_url")
-  address               String
-  latitude              Float
-  longitude             Float
-  phone                 String
-  email                 String
-  createdAt             DateTime                @default(now()) @map("created_at")
-  updatedAt             DateTime                @updatedAt @map("updated_at")
-  //todo: add stripe account uid
-  Fields                Fields[]
-  Partner_sports        Partner_sports[]
-  Partner_opening_hours Partner_opening_hours[]
+  id         String   @id @default(cuid())
+  sport_id   String
+  name       String
+  image_url  String?
+  address    String
+  latitude   Float
+  longitude  Float
+  phone      String
+  email      String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  @@schema("infrastructure")
-}
+  Fields Fields[]
 
-model Partner_opening_hours {
-  uid        String   @id @default(cuid())
-  partnerUid String   @map("partner_uid")
-  dayOfWeek  Int      @map("day_of_week")
-  openTime   String   @map("open_time")
-  closeTime  String   @map("close_time")
-  isClosed   Boolean  @default(false) @map("is_closed")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-
-  partner Partners @relation(fields: [partnerUid], references: [uid], onDelete: Cascade)
-
-  @@unique([partnerUid, dayOfWeek])
-  @@schema("infrastructure")
-}
-
-model Partner_sports {
-  partnerUid String   @map("partner_uid")
-  sport      String
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-
-  partner        Partners @relation(fields: [partnerUid], references: [uid])
-  sport_relation Sports   @relation(fields: [sport], references: [name])
-
-  @@id([partnerUid, sport])
   @@schema("infrastructure")
 }
 
 model Sports {
-  uid       String   @id @default(cuid())
-  name      String   @unique
-  imageUrl  String?  @map("image_url")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(cuid())
+  name       String
+  image_url  String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   Fields Fields[]
 
   User_global_rating User_global_ratings[]
-  Partner_sports     Partner_sports[]
 
   @@schema("infrastructure")
 }
 
 model Fields {
-  uid        String     @id @default(cuid())
-  sport      String
-  partnerUid String     @map("partner_uid")
-  name       String?
+  id         String @id @default(cuid())
+  sport_id   String
+  partner_id String
+  name       String
   address    String
   latitude   Float
   longitude  Float
-  entryFee   Float      @map("entry_fee")
-  gameMode   Game_modes @map("game_mode")
+  // ? le prix devrait être stocké dans cette table plutôt ?
 
-  Field_images   Field_images[]
-  partner        Partners       @relation(fields: [partnerUid], references: [uid])
-  sport_relation Sports         @relation(fields: [sport], references: [name])
-  sessions       Sessions[]
+  Field_images Field_images[]
+  partner      Partners       @relation(fields: [partner_id], references: [id])
+  sport        Sports         @relation(fields: [sport_id], references: [id])
 
   @@schema("infrastructure")
 }
 
 model Field_images {
-  uid       String   @id @default(cuid())
-  fieldUid  String   @map("field_uid")
-  url       String
-  order     Int
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(cuid())
+  field_id   String
+  image_url  String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  field Fields @relation(fields: [fieldUid], references: [uid])
+  field Fields @relation(fields: [field_id], references: [id])
 
   @@schema("infrastructure")
 }
 
 model Sessions {
-  uid               String     @id @default(cuid())
-  fieldUid          String     @map("field_uid")
-  title             String?
-  startDate         DateTime   @map("start_date")
-  endDate           DateTime   @map("end_date")
-  sport             String
-  gameMode          Game_modes @map("game_mode")
+  id                   String   @id @default(cuid())
+  creator_id           String
+  title                String
+  date                 DateTime
   // visibility        Visibility
-  maxPlayersPerTeam Int        @map("max_players_per_team")
-  teamsPerGame      Int        @map("teams_per_game")
-  minPlayersPerTeam Int        @map("min_players_per_team")
-  description       String?
-  createdAt         DateTime   @default(now()) @map("created_at")
-  updatedAt         DateTime   @updatedAt @map("updated_at")
+  max_players_per_team Int
+  max_teams_per_game   Int
+  min_players_per_team Int
+  min_teams_per_game   Int
+  entry_fee            Float
+  description          String?
+  // view_count Int @default(0)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
 
   Session_invitations Session_invitations[]
 
@@ -306,47 +259,45 @@ model Sessions {
   Session_teams Session_teams[]
 
   Session_players Session_players[]
-  field           Fields            @relation(fields: [fieldUid], references: [uid])
 
   @@schema("sessions")
 }
 
 model Session_invitations {
-  sessionUid String            @map("session_uid")
-  userUid    String
+  session_id String
+  user_id    String
   status     Invitation_status @default(PENDING)
-  createdAt  DateTime          @default(now()) @map("created_at")
-  updatedAt  DateTime          @updatedAt @map("updated_at")
+  created_at DateTime          @default(now())
+  updated_at DateTime          @updatedAt
 
-  session Sessions @relation(fields: [sessionUid], references: [uid])
-  user    Users    @relation(fields: [userUid], references: [uid])
+  session Sessions @relation(fields: [session_id], references: [id])
+  user    Users    @relation(fields: [user_id], references: [id])
 
-  @@id([sessionUid, userUid])
+  @@id([session_id, user_id])
   @@schema("sessions")
 }
 
 model Session_images {
-  uid        String   @id @default(cuid())
-  sessionUid String   @map("session_uid")
-  url        String
-  order      Int
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(cuid())
+  session_id String
+  image_url  String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  session Sessions @relation(fields: [sessionUid], references: [uid])
+  session Sessions @relation(fields: [session_id], references: [id])
 
   @@schema("sessions")
 }
 
 model Session_teams {
-  uid        String     @id @default(cuid())
-  sessionUid String     @map("session_uid")
-  teamLabel  Team_label @map("team_label")
-  teamName   String     @map("team_name")
-  createdAt  DateTime   @default(now()) @map("created_at")
-  updatedAt  DateTime   @updatedAt @map("updated_at")
+  id         String     @id @default(cuid())
+  session_id String
+  team_label Team_label
+  team_name  String
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
 
-  session Sessions @relation(fields: [sessionUid], references: [uid])
+  session Sessions @relation(fields: [session_id], references: [id])
 
   Session_players Session_players[]
 
@@ -354,27 +305,27 @@ model Session_teams {
 }
 
 model Session_players {
-  sessionUid String   @map("session_uid")
-  teamUid    String   @map("team_uid")
-  userUid    String
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  session_id String
+  team_id    String
+  user_id    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  session Sessions      @relation(fields: [sessionUid], references: [uid])
-  team    Session_teams @relation(fields: [teamUid], references: [uid])
-  user    Users         @relation(fields: [userUid], references: [uid])
+  session Sessions      @relation(fields: [session_id], references: [id])
+  team    Session_teams @relation(fields: [team_id], references: [id])
+  user    Users         @relation(fields: [user_id], references: [id])
 
-  @@id([sessionUid, teamUid, userUid])
+  @@id([session_id, team_id, user_id])
   @@schema("sessions")
 }
 
 model Conversations {
-  uid                 String                 @id @default(cuid())
-  eventUid            String?                @map("event_uid")
+  id                  String                 @id @default(cuid())
+  event_id            String?
   name                String?
   type                Conversation_type
-  createdAt           DateTime               @default(now()) @map("created_at")
-  updatedAt           DateTime               @updatedAt @map("updated_at")
+  created_at          DateTime               @default(now())
+  updated_at          DateTime               @updatedAt
   // todo: image_url
   Message             Messages[]
   Conversation_member Conversation_members[]
@@ -385,60 +336,60 @@ model Conversations {
 }
 
 model Messages {
-  uid             String         @id @default(cuid())
-  conversationUid String         @map("conversation_uid")
-  senderUid       String         @map("sender_uid")
+  id              String         @id @default(cuid())
+  conversation_id String
+  sender_id       String
   content         String
   status          Message_status @default(SENT)
   type            Message_type
-  createdAt       DateTime       @default(now()) @map("created_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
 
-  sender       Users         @relation(fields: [senderUid], references: [uid])
-  conversation Conversations @relation(fields: [conversationUid], references: [uid])
+  sender       Users         @relation(fields: [sender_id], references: [id])
+  conversation Conversations @relation(fields: [conversation_id], references: [id])
 
   @@schema("social")
 }
 
 model Conversation_options {
-  conversationUid String
-  userUid         String
-  isAdmin         Boolean  @default(false) @map("is_admin")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  conversation_id String
+  user_id         String
+  is_admin        Boolean  @default(false)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
   archived        Boolean  @default(false)
   muted           Boolean  @default(false)
   deleted         Boolean  @default(false)
 
-  user         Users         @relation(fields: [userUid], references: [uid])
-  conversation Conversations @relation(fields: [conversationUid], references: [uid])
+  user         Users         @relation(fields: [user_id], references: [id])
+  conversation Conversations @relation(fields: [conversation_id], references: [id])
 
-  @@unique([conversationUid, userUid])
+  @@unique([conversation_id, user_id])
   @@schema("social")
 }
 
 model Conversation_members {
-  conversationUid String
-  userUid         String
-  isAdmin         Boolean @default(false) @map("is_admin")
+  conversation_id String
+  user_id         String
+  is_admin        Boolean @default(false)
 
-  conversation Conversations @relation(fields: [conversationUid], references: [uid])
-  user         Users         @relation(fields: [userUid], references: [uid])
+  conversation Conversations @relation(fields: [conversation_id], references: [id])
+  user         Users         @relation(fields: [user_id], references: [id])
 
-  @@id([conversationUid, userUid])
+  @@id([conversation_id, user_id])
   @@schema("social")
 }
 
 model Friends {
-  userUid1  String
-  userUid2  String
-  status    Invitation_status @map("status")
-  createdAt DateTime          @default(now()) @map("created_at")
-  updatedAt DateTime          @updatedAt @map("updated_at")
-  user1     Users             @relation("friend1", fields: [userUid1], references: [uid])
-  user2     Users             @relation("friend2", fields: [userUid2], references: [uid])
+  user_id1   String
+  user_id2   String
+  status     Invitation_status @map("status")
+  created_at DateTime          @default(now())
+  updated_at DateTime          @updatedAt
+  user1      Users             @relation("friend1", fields: [user_id1], references: [id])
+  user2      Users             @relation("friend2", fields: [user_id2], references: [id])
 
-  @@id([userUid1, userUid2])
-  @@unique([userUid1, userUid2])
+  @@id([user_id1, user_id2])
+  @@unique([user_id1, user_id2])
   @@schema("social")
 }

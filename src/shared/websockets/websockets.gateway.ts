@@ -52,16 +52,16 @@ export class WebsocketsGateway implements OnGatewayConnection {
 
   // 📩 Envoyer un message à une room
   @SubscribeMessage('message')
-  handleSendMessage({ action, payload, ressource, userId }) {
-    this.server.to(`user_${userId}`).emit('message', {
+  handleSendMessage({ action, payload, ressource, user_id }) {
+    this.server.to(`user_${user_id}`).emit('message', {
       action,
       payload,
       ressource,
     });
   }
   @SubscribeMessage('invitation')
-  handleInvitations({ action, payload, ressource, userId }) {
-    this.server.to(`user_${userId}`).emit('invitation', {
+  handleInvitations({ action, payload, ressource, user_id }) {
+    this.server.to(`user_${user_id}`).emit('invitation', {
       action,
       payload,
       ressource,

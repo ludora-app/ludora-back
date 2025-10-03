@@ -1,18 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Sex, User_type } from '@prisma/client';
+import { Provider, User_type } from '@prisma/client';
 import { AuthController } from 'src/auth/auth.controller';
 import { AuthService } from 'src/auth/auth.service';
-import { VerifyEmailCodeDto } from 'src/auth/dto/input/verify-email-code.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
 
   const mockAuthService = {
+    googleLogin: jest.fn(),
     login: jest.fn(),
     register: jest.fn(),
-    resendVerificationCode: jest.fn(),
+    validateGoogleUser: jest.fn(),
     verifyEmail: jest.fn(),
-    verifyEmailCode: jest.fn(),
     verifyToken: jest.fn(),
   };
 
@@ -38,39 +37,35 @@ describe('AuthController', () => {
   describe('register', () => {
     it('should register a new user without file', async () => {
       const registerDto = {
-        bio: 'Test bio',
         birthdate: new Date().toString(),
         email: 'test@test.com',
         firstname: 'John',
         lastname: 'Doe',
         password: 'password',
-        phone: '1234567890',
-        sex: Sex.MALE,
         type: User_type.USER,
       };
 
-      mockAuthService.register.mockResolvedValue('mock_token');
+      const noFile = {} as Express.Multer.File;
 
-      const result = await controller.register(registerDto, undefined);
-
-      expect(result).toEqual({
-        data: { accessToken: 'mock_token' },
-        message: 'User created successfully',
-        status: 201,
+      mockAuthService.register.mockResolvedValue({
+        access_token: 'mock_token',
       });
-      expect(mockAuthService.register).toHaveBeenCalledWith(registerDto);
+
+      const result = await controller.register(registerDto, noFile);
+
+      expect(result).toEqual({ access_token: 'mock_token' });
+      expect(mockAuthService.register).toHaveBeenCalledWith(registerDto, {
+        file: undefined,
+        name: NaN,
+      });
     });
 
     it('should register a new user with file', async () => {
       const registerDto = {
-        bio: 'Test bio',
-        birthdate: new Date().toString(),
         email: 'test@test.com',
         firstname: 'John',
         lastname: 'Doe',
         password: 'password',
-        phone: '1234567890',
-        sex: Sex.MALE,
         type: User_type.USER,
       };
 
@@ -79,15 +74,13 @@ describe('AuthController', () => {
         originalname: 'test.jpg',
       } as Express.Multer.File;
 
-      mockAuthService.register.mockResolvedValue('mock_token');
+      mockAuthService.register.mockResolvedValue({
+        access_token: 'mock_token',
+      });
 
       const result = await controller.register(registerDto, mockFile);
 
-      expect(result).toEqual({
-        data: { accessToken: 'mock_token' },
-        message: 'User created successfully',
-        status: 201,
-      });
+      expect(result).toEqual({ access_token: 'mock_token' });
       expect(mockAuthService.register).toHaveBeenCalled();
     });
   });
@@ -99,15 +92,11 @@ describe('AuthController', () => {
         password: 'password',
       };
 
-      mockAuthService.login.mockResolvedValue('mock_token');
+      mockAuthService.login.mockResolvedValue({ access_token: 'mock_token' });
 
       const result = await controller.login(loginDto);
 
-      expect(result).toEqual({
-        data: { accessToken: 'mock_token' },
-        message: 'Token created successfully',
-        status: 200,
-      });
+      expect(result).toEqual({ access_token: 'mock_token' });
       expect(mockAuthService.login).toHaveBeenCalledWith(loginDto);
     });
   });
@@ -115,15 +104,16 @@ describe('AuthController', () => {
   describe('verifyEmail', () => {
     it('should verify email availability', async () => {
       const verifyMailDto = { email: 'test@test.com' };
+      const mockResponse = {
+        data: { isAvailable: true },
+        message: 'Email is available to use',
+      };
 
-      mockAuthService.verifyEmail.mockResolvedValue(true);
+      mockAuthService.verifyEmail.mockResolvedValue(mockResponse);
 
       const result = await controller.verifyEmail(verifyMailDto);
 
-      expect(result).toEqual({
-        data: { isAvailable: true },
-        message: 'Email is available',
-      });
+      expect(result).toEqual(mockResponse);
       expect(mockAuthService.verifyEmail).toHaveBeenCalledWith(verifyMailDto);
     });
   });
@@ -131,55 +121,35 @@ describe('AuthController', () => {
   describe('verifyToken', () => {
     it('should verify token', async () => {
       const mockRequest = {
-        user: { uid: '1' },
+        user: { id: '1' },
       };
 
-      mockAuthService.verifyToken.mockResolvedValue(true);
+      mockAuthService.verifyToken.mockResolvedValue({ message: true });
 
       const result = await controller.verifyToken(mockRequest as any);
 
-      expect(result).toEqual({
-        data: { isValid: true },
-        message: 'token is valid',
-      });
+      expect(result).toEqual({ message: true });
       expect(mockAuthService.verifyToken).toHaveBeenCalledWith('1');
     });
   });
 
-  describe('verifyEmailCode', () => {
-    it('should verify email code', async () => {
-      const mockRequest = {
-        user: { uid: '1' },
-      };
-      const dto: VerifyEmailCodeDto = { code: '123456' };
-
-      mockAuthService.verifyEmailCode.mockResolvedValue(undefined);
-
-      const result = await controller.verifyEmailCode(mockRequest as any, dto);
-
-      expect(result).toEqual({
-        message: 'Email vérifié avec succès',
-        status: 200,
-      });
-      expect(mockAuthService.verifyEmailCode).toHaveBeenCalledWith('1', '123456');
-    });
-  });
-
-  describe('resendVerificationCode', () => {
-    it('should resend verification code', async () => {
-      const mockRequest = {
-        user: { uid: '1' },
+  describe('googleLogin', () => {
+    it('should handle Google login', async () => {
+      const googleUser = {
+        email: 'google@test.com',
+        firstname: 'Google',
+        lastname: 'User',
+        provider: Provider.GOOGLE,
       };
 
-      mockAuthService.resendVerificationCode.mockResolvedValue(undefined);
-
-      const result = await controller.resendVerificationCode(mockRequest as any);
-
-      expect(result).toEqual({
-        message: 'Nouveau code de vérification envoyé',
-        status: 200,
+      mockAuthService.validateGoogleUser.mockResolvedValue({
+        access_token: 'mock_token',
       });
-      expect(mockAuthService.resendVerificationCode).toHaveBeenCalledWith('1');
+
+      const result = await controller.googleLogin(googleUser);
+
+      expect(result).toEqual({ access_token: 'mock_token' });
+      expect(mockAuthService.validateGoogleUser).toHaveBeenCalledWith(googleUser);
     });
   });
 });

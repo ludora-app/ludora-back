@@ -1,41 +1,29 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Delete,
-  Get,
-  NotFoundException,
-  Param,
-  Patch,
-  Query,
-  Req,
-} from '@nestjs/common';
-import {
-  ApiBadRequestResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-} from '@nestjs/swagger';
-import { Users } from '@prisma/client';
-import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
-import { ResponseTypeDto } from 'src/interfaces/response-type';
+import { ErrorResponseDto } from 'src/interfaces/error-response-type';
+import { ApiBadRequestResponse, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Body, Patch, Param, Delete, Req, Post, Query } from '@nestjs/common';
 
-import { Public } from 'src/auth/decorators/public.decorator';
-import { USERSELECT } from '../shared/constants/select-user';
+import { UsersService } from './users.service';
 import {
-  FindAllUsersResponseDataDto,
-  FindAllUsersResponseDto,
+  CreateGoogleUserDto,
+  UpdatePasswordDto,
+  UserFilterDto,
   FindMeUserResponseDto,
   FindOneUserResponseDto,
-  UpdatePasswordDto,
   UpdateUserDto,
-  UserFilterDto,
+  FindAllUsersResponseDto,
 } from './dto';
-import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Post('/google')
+  @ApiOperation({
+    summary: 'Crée un utilisateur avec un compte Google',
+  })
+  createGoogleUser(@Body() createGoogleUserDto: CreateGoogleUserDto) {
+    return this.usersService.createGoogleUser(createGoogleUserDto);
+  }
 
   @Get('/all')
   @ApiOperation({
@@ -47,23 +35,15 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error fetching users',
-    type: BadRequestException,
+    type: ErrorResponseDto,
   })
-  async findAll(
-    @Query() filters: UserFilterDto,
-  ): Promise<PaginationResponseTypeDto<FindAllUsersResponseDataDto>> {
-    const data = await this.usersService.findAll(filters);
-
-    return {
-      data,
-      message: 'Users fetched successfully',
-      status: 200,
-    };
+  findAll(@Query() filters: UserFilterDto) {
+    return this.usersService.findAll(filters);
   }
 
-  @Get(':uid')
+  @Get(':id')
   @ApiOperation({
-    summary: 'get user by uid requires to be connected',
+    summary: 'get user by id requires to be connected',
   })
   @ApiOkResponse({
     description: 'Successfully fetched user',
@@ -71,21 +51,19 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error fetching user',
-    type: BadRequestException,
+    type: ErrorResponseDto,
   })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-    type: NotFoundException,
-  })
-  @Public()
-  async findOne(@Param('uid') uid: string): Promise<ResponseTypeDto<Users>> {
-    const data = await this.usersService.findOne(uid, USERSELECT.findOne);
+  findOne(@Param('id') id: string) {
+    const select = {
+      bio: true,
+      firstname: true,
+      id: true,
+      image_url: true,
+      lastname: true,
+      name: true,
+    };
 
-    if (!data) {
-      throw new NotFoundException('User not found');
-    }
-
-    return { data, message: 'User fetched successfully', status: 200 };
+    return this.usersService.findOne(id, select);
   }
 
   @Get('/')
@@ -98,39 +76,40 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error fetching user',
-    type: BadRequestException,
+    type: ErrorResponseDto,
   })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-    type: NotFoundException,
-  })
-  async findMe(@Req() request: Request): Promise<ResponseTypeDto<Users>> {
-    const uid = request['user'].uid;
+  findMe(@Req() request: Request) {
+    const id = request['user'].id;
 
-    const data = await this.usersService.findOne(uid, USERSELECT.findMe);
+    const select = {
+      active: true,
+      bio: true,
+      birthdate: true,
+      email: true,
+      firstname: true,
+      id: true,
+      image_url: true,
+      lastname: true,
+      name: true,
+      phone: true,
+      sex: true,
+      stripe_account_id: true,
+      type: true,
+    };
 
-    return { data, message: 'User fetched successfully', status: 200 };
+    return this.usersService.findOne(id, select);
   }
 
-  @Get('/email/:email')
+  @Get('/email')
   @ApiOperation({
     summary: 'get user by email',
   })
   @ApiBadRequestResponse({
     description: 'Error fetching user',
-    type: BadRequestException,
+    type: ErrorResponseDto,
   })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-    type: NotFoundException,
-  })
-  async findOneByEmail(@Param('email') email: string): Promise<ResponseTypeDto<Users>> {
-    const data = await this.usersService.findOneByEmail(email);
-    if (!data) {
-      throw new NotFoundException(`Error finding user by email: ${email}`);
-    }
-
-    return { data, message: 'User fetched successfully', status: 200 };
+  async findOneByEmail(@Body('email') email: string) {
+    return this.usersService.findOneByEmail(email);
   }
 
   @Patch('/update')
@@ -139,19 +118,11 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error updating user',
-    type: BadRequestException,
+    type: ErrorResponseDto,
   })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-    type: NotFoundException,
-  })
-  async update(
-    @Req() request: Request,
-    @Body() updateUserDto: UpdateUserDto,
-  ): Promise<ResponseTypeDto<Users>> {
-    const uid = request['user'].uid;
-    const data = await this.usersService.update(uid, updateUserDto);
-    return { data, message: 'User updated successfully', status: 200 };
+  update(@Req() request: Request, @Body() updateUserDto: UpdateUserDto) {
+    const id = request['user'].id;
+    return this.usersService.update(id, updateUserDto);
   }
 
   @Patch('/update-password')
@@ -160,15 +131,11 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error updating password',
-    type: BadRequestException,
-  })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-    type: NotFoundException,
+    type: ErrorResponseDto,
   })
   updatePassword(@Req() request: Request, @Body() updatePasswordDto: UpdatePasswordDto) {
-    const uid = request['user'].uid;
-    return this.usersService.updatePassword(uid, updatePasswordDto);
+    const id = request['user'].id;
+    return this.usersService.updatePassword(id, updatePasswordDto);
   }
 
   @Patch('/deactivate')
@@ -177,15 +144,11 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error deactivating user',
-    type: BadRequestException,
-  })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-    type: NotFoundException,
+    type: ErrorResponseDto,
   })
   deactivate(@Req() request: Request) {
-    const uid = request['user'].uid;
-    return this.usersService.deactivate(uid);
+    const id = request['user'].id;
+    return this.usersService.deactivate(id);
   }
 
   @Delete('/delete')
@@ -194,14 +157,10 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error deleting user',
-    type: BadRequestException,
-  })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-    type: NotFoundException,
+    type: ErrorResponseDto,
   })
   remove(@Req() request: Request) {
-    const uid = request['user'].uid;
-    return this.usersService.remove(uid);
+    const id = request['user'].id;
+    return this.usersService.remove(id);
   }
 }

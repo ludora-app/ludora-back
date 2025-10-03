@@ -1,20 +1,26 @@
+import * as argon2 from 'argon2';
+import { CreateImageDto } from 'src/auth/dto';
+import { Prisma, Users } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { SuccessTypeDto } from 'src/interfaces/success-type';
+import { ImagesService } from 'src/shared/images/images.service';
+import { EmailsService } from 'src/shared/emails/emails.service';
+import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, Users } from '@prisma/client';
-import * as argon2 from 'argon2';
-import { CreateImageDto } from 'src/auth/dto';
-import { SuccessTypeDto } from 'src/interfaces/success-type';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { S3FoldersName } from 'src/shared/constants/constants';
-import { EmailsService } from 'src/shared/emails/emails.service';
-import { ImagesService } from 'src/shared/images/images.service';
 
-import { USERSELECT } from '../shared/constants/select-user';
-import { CreateUserDto, UpdatePasswordDto, UpdateUserDto, UserFilterDto } from './dto';
+import {
+  UserFilterDto,
+  CreateUserDto,
+  CreateGoogleUserDto,
+  UpdateUserDto,
+  UpdatePasswordDto,
+  FindAllUsersResponseDataDto,
+} from './dto';
 
 @Injectable()
 export class UsersService {
@@ -46,10 +52,10 @@ export class UsersService {
 
     const hashedPassword = await argon2.hash(password);
 
-    let imageUrl = { data: '' };
+    let image_url = { data: '' };
 
     if (createImageDto) {
-      imageUrl = await this.imageService.create(S3FoldersName.USERS, createImageDto);
+      // image_url = await this.imageService.createUserImage(createImageDto);
     }
 
     const newUser = await prisma.users.create({
@@ -58,7 +64,7 @@ export class UsersService {
         birthdate: new Date(createUserDto.birthdate),
         email: formattedEmail,
         firstname: formattedFirst,
-        imageUrl: imageUrl.data,
+        image_url: image_url.data,
         lastname: formattedLast,
         password: hashedPassword,
         phone: createUserDto.phone,
@@ -69,20 +75,46 @@ export class UsersService {
     return newUser;
   }
 
-  async findAll(filters: UserFilterDto): Promise<{
-    items: any[];
-    nextCursor: string | null;
-    totalCount: number;
-  }> {
+  async createGoogleUser(createGoogleUserDto: CreateGoogleUserDto) {
+    const { email, firstname, image_url, lastname, provider } = createGoogleUserDto;
+
+    try {
+      const existingUser = await this.prismaService.users.findUnique({
+        where: { email },
+      });
+
+      if (existingUser) {
+        throw new ConflictException(`User already exists: ${JSON.stringify(existingUser)}`);
+      }
+
+      const newUser = await this.prismaService.users.create({
+        data: {
+          email,
+          firstname,
+          image_url,
+          lastname,
+          provider,
+        },
+      });
+
+      return newUser;
+    } catch (error) {
+      throw new BadRequestException(`Error creating Google user: ${error.message}`);
+    }
+  }
+
+  async findAll(
+    filters: UserFilterDto,
+  ): Promise<PaginationResponseTypeDto<FindAllUsersResponseDataDto>> {
     const { cursor, limit, name } = filters;
 
     const query = {
       select: {
-        email: true,
         firstname: true,
-        uid: true,
-        imageUrl: true,
         lastname: true,
+        id: true,
+        image_url: true,
+        email: true,
       },
     };
 
@@ -91,6 +123,7 @@ export class UsersService {
         OR: [
           { firstname: { contains: name, mode: 'insensitive' } },
           { lastname: { contains: name, mode: 'insensitive' } },
+          { name: { contains: name, mode: 'insensitive' } },
         ],
       };
     }
@@ -108,46 +141,53 @@ export class UsersService {
     let nextCursor: string | null = null;
     if (users.length > limit) {
       const nextItem = users.pop();
-      nextCursor = nextItem.uid;
+      nextCursor = nextItem.id;
     }
+
+    if (!users) throw new NotFoundException('No users found');
 
     const totalCount = await this.prismaService.users.count();
 
     return {
-      items: users,
-      nextCursor,
-      totalCount,
+      data: { items: users, nextCursor, totalCount },
+      message: 'Users fetched successfully',
+      status: 200,
     };
   }
 
-  async findOne(uid: string, select: Prisma.UsersSelect): Promise<Users> {
+  async findOne(id: string, select: Prisma.UsersSelect) {
     const existingUser = await this.prismaService.users.findUnique({
       select,
-      where: { uid },
+      where: { id },
     });
 
-    let imageUrl = await this.imageService.getProfilePic(existingUser.uid);
-    if (!imageUrl) {
-      imageUrl = '';
-    }
-    const user = { ...existingUser, imageUrl };
-    return user;
+    if (!existingUser) throw new NotFoundException('User not found');
+
+    // let image_url = await this.imageService.getProfilePic(existingUser.id);
+    // if (!image_url) {
+    //   image_url = '';
+    // }
+    let image_url = '';
+    const user = { ...existingUser, image_url };
+    return { data: user, status: 200 };
   }
 
-  /**
-   * Find a user by email
-   * @param email - The email of the user
-   * @description This method is used in the auth service to find a user by email
-   * @returns The user
-   */
   async findOneByEmail(email: string): Promise<Users> {
-    return await this.prismaService.users.findUnique({
-      where: { email },
-    });
+    try {
+      const user = await this.prismaService.users.findUnique({
+        where: { email },
+      });
+
+      return user;
+    } catch (error) {
+      throw new NotFoundException(`Error finding user by email: ${error.message}`);
+    }
   }
 
-  async update(uid: string, updateUserDto: UpdateUserDto): Promise<Users> {
-    const existingUser = await this.findOne(uid, USERSELECT.findMe);
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<SuccessTypeDto> {
+    const existingUser = await this.prismaService.users.findUnique({
+      where: { id },
+    });
 
     if (!existingUser) throw new NotFoundException('User not found');
 
@@ -155,11 +195,11 @@ export class UsersService {
       data: {
         ...updateUserDto,
       },
-      where: { uid },
+      where: { id },
     });
 
     if (updatedUser) {
-      return updatedUser;
+      return { message: 'User updated successfully', status: 200 };
     } else {
       throw new BadRequestException('User not updated');
     }
@@ -167,10 +207,10 @@ export class UsersService {
 
   //? this method needs to change the password after all the verification is done
   //todo: new method that send the verification email ? And verify if the user.provider is google ?
-  async updatePassword(uid: string, updatePasswordDto: UpdatePasswordDto): Promise<SuccessTypeDto> {
+  async updatePassword(id: string, updatePasswordDto: UpdatePasswordDto): Promise<SuccessTypeDto> {
     const { newPassword, oldPassword } = updatePasswordDto;
     const existingUser = await this.prismaService.users.findUnique({
-      where: { uid },
+      where: { id },
     });
 
     if (!existingUser) throw new NotFoundException('User not found');
@@ -187,7 +227,7 @@ export class UsersService {
       data: {
         password: hashedPassword,
       },
-      where: { uid },
+      where: { id },
     });
 
     if (updatedUser) {
@@ -202,60 +242,72 @@ export class UsersService {
     }
   }
 
-  async deactivate(uid: string): Promise<SuccessTypeDto> {
+  async deactivate(id: string): Promise<SuccessTypeDto> {
     const existingUser = await this.prismaService.users.findUnique({
-      where: { uid },
+      where: { id },
     });
 
     if (!existingUser) throw new NotFoundException('User not found');
 
     await this.prismaService.users.update({
       data: {
-        isConnected: false,
+        is_connected: false,
       },
-      where: { uid },
+      where: { id },
     });
 
-    return { message: `User ${uid} has been deactivated`, status: 200 };
+    return { message: `User ${id} has been deactivated`, status: 200 };
   }
 
-  async remove(uid: string): Promise<SuccessTypeDto> {
+  async remove(id: string): Promise<SuccessTypeDto> {
     const existingUser = await this.prismaService.users.findUnique({
-      where: { uid },
+      where: { id },
     });
 
     if (!existingUser) throw new NotFoundException('User not found');
 
+    if (!existingUser) {
+      throw new NotFoundException('User not found');
+    }
+
     await this.prismaService.users.delete({
-      where: { uid },
+      where: { id },
     });
 
-    return { message: `User ${uid} has been deleted`, status: 200 };
+    return { message: `User ${id} has been deleted`, status: 200 };
   }
 
   /**
+   * ! workflow update password
+   * 1. Click on update password
+   * 2. Send verification email
+   * 2. verify email
+   * 3. update password
+   */
+
+  /**
    * Send a verification email to the user with a 6 digits verfication code that expires in 15 minutes
-   * @param userUid - The uid of the user
+   * @param userId - The id of the user
    * @param email - The email of the user
    * @memberof UsersService & AuthService
    */
-  async sendVerificationEmail(userUid: string, email: string) {
+  async sendVerificationEmail(userId: string, email: string) {
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const expires_at = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     // Utiliser une transaction pour garantir l'atomicité
     await this.prismaService.$transaction(async (tx) => {
       // Supprimer les anciens codes de vérification
       await tx.email_verification.deleteMany({
-        where: { userUid: userUid },
+        where: { user_id: userId },
       });
 
       // Créer le nouveau code
       await tx.email_verification.create({
         data: {
           code: verificationCode,
-          expiresAt,
-          userUid: userUid,
+          expires_at,
+          user_id: userId,
         },
       });
     });

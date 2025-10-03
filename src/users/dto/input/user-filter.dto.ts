@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export class UserFilterDto {
@@ -12,7 +12,7 @@ export class UserFilterDto {
   @IsInt()
   @Min(1)
   @ApiProperty({
-    description: 'Limit of users to return',
+    description: 'Limite de users à retourner',
     example: 10,
     required: false,
     type: Number,
@@ -22,7 +22,7 @@ export class UserFilterDto {
   @IsOptional()
   @IsString()
   @ApiProperty({
-    description: 'Cursor for pagination',
+    description: 'Curseur pour la pagination',
     example: 'fcacfaca3c2a323bhf',
     required: false,
     type: String,

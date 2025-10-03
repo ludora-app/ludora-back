@@ -91,11 +91,11 @@ export class EmailsService {
 
   async testEmail() {
     await this.sendEmail({
+      recipients: ['ganafall9498@gmail.com'],
+      template: 'welcomeEmail',
       data: {
         name: 'John Doe',
       },
-      recipients: ['ganafall9498@gmail.com'],
-      template: 'welcomeEmail',
     });
   }
 }

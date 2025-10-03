@@ -6,7 +6,6 @@ import { UsersController } from './users.controller';
 
 @Module({
   controllers: [UsersController],
-  exports: [UsersService],
   imports: [SharedModule],
   providers: [UsersService],
 })
