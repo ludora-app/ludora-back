@@ -57,7 +57,7 @@ describe('SessionsController', () => {
   describe('create', () => {
     const createSessionDto: CreateSessionDto = {
       endDate: '2023-02-15T16:00:00Z',
-      fieldId: 'field-id-1',
+      fieldUid: 'field-uid-1',
       startDate: '2023-02-15T14:00:00Z',
       description: 'Test session',
       maxPlayersPerTeam: 5,
@@ -69,7 +69,7 @@ describe('SessionsController', () => {
 
     it('should create a session', async () => {
       const createdSession = {
-        id: 'session-id-1',
+        uid: 'session-uid-1',
         title: 'Test Session Title',
         sport: Sport.FOOTBALL,
         description: 'Test session',
@@ -112,14 +112,14 @@ describe('SessionsController', () => {
       const sessionsData = {
         items: [
           {
-            id: 'session-id-1',
+            uid: 'session-uid-1',
             title: 'Test Session 1',
             sport: Sport.FOOTBALL,
             startDate: '2023-02-15T14:00:00Z',
             endDate: '2023-02-15T16:00:00Z',
           },
           {
-            id: 'session-id-2',
+            uid: 'session-uid-2',
             title: 'Test Session 2',
             sport: Sport.FOOTBALL,
             startDate: '2023-02-16T14:00:00Z',
@@ -146,13 +146,13 @@ describe('SessionsController', () => {
       const paginatedFilter: SessionFilterDto = {
         ...sessionFilterDto,
         limit: 1,
-        cursor: 'session-id-1',
+        cursor: 'session-uid-1',
       };
 
       const paginatedData = {
         items: [
           {
-            id: 'session-id-2',
+            uid: 'session-uid-2',
             title: 'Test Session 2',
             sport: Sport.FOOTBALL,
             startDate: '2023-02-16T14:00:00Z',
@@ -177,11 +177,11 @@ describe('SessionsController', () => {
   });
 
   describe('findOne', () => {
-    const sessionId = 'session-id-1';
+    const sessionUid = 'session-uid-1';
 
-    it('should return a session by id', async () => {
+    it('should return a session by uid', async () => {
       const sessionData = {
-        id: sessionId,
+        uid: sessionUid,
         title: 'Test Session',
         sport: Sport.FOOTBALL,
         description: 'Test session',
@@ -195,26 +195,26 @@ describe('SessionsController', () => {
 
       mockSessionsService.findOne.mockResolvedValue(sessionData);
 
-      const result = await controller.findOne(sessionId);
+      const result = await controller.findOne(sessionUid);
 
       expect(result).toEqual({
         data: sessionData,
         message: 'Session fetched successfully',
         status: 200,
       });
-      expect(service.findOne).toHaveBeenCalledWith(sessionId);
+      expect(service.findOne).toHaveBeenCalledWith(sessionUid);
     });
 
     it('should throw NotFoundException when session not found', async () => {
       mockSessionsService.findOne.mockRejectedValue(new NotFoundException('Session not found'));
 
-      await expect(controller.findOne('non-existent-id')).rejects.toThrow(NotFoundException);
-      expect(service.findOne).toHaveBeenCalledWith('non-existent-id');
+      await expect(controller.findOne('non-existent-uid')).rejects.toThrow(NotFoundException);
+      expect(service.findOne).toHaveBeenCalledWith('non-existent-uid');
     });
   });
 
   describe('update', () => {
-    const sessionId = 'session-id-1';
+    const sessionUid = 'session-uid-1';
     const updateSessionDto: UpdateSessionDto = {
       endDate: '2023-02-15T17:00:00Z',
       startDate: '2023-02-15T15:00:00Z',
@@ -228,7 +228,7 @@ describe('SessionsController', () => {
 
     it('should update a session', async () => {
       const updatedSessionData = {
-        id: sessionId,
+        uid: sessionUid,
         title: 'Updated Session Title',
         sport: Sport.FOOTBALL,
         description: 'Updated session',
@@ -242,23 +242,23 @@ describe('SessionsController', () => {
 
       mockSessionsService.update.mockResolvedValue(updatedSessionData);
 
-      const result = await controller.update(sessionId, updateSessionDto);
+      const result = await controller.update(sessionUid, updateSessionDto);
 
       expect(result).toEqual({
         data: updatedSessionData,
         message: 'Session updated successfully',
         status: 200,
       });
-      expect(service.update).toHaveBeenCalledWith(sessionId, updateSessionDto);
+      expect(service.update).toHaveBeenCalledWith(sessionUid, updateSessionDto);
     });
 
     it('should throw NotFoundException when session not found', async () => {
       mockSessionsService.update.mockRejectedValue(new NotFoundException('Session not found'));
 
-      await expect(controller.update('non-existent-id', updateSessionDto)).rejects.toThrow(
+      await expect(controller.update('non-existent-uid', updateSessionDto)).rejects.toThrow(
         NotFoundException,
       );
-      expect(service.update).toHaveBeenCalledWith('non-existent-id', updateSessionDto);
+      expect(service.update).toHaveBeenCalledWith('non-existent-uid', updateSessionDto);
     });
 
     it('should throw BadRequestException when validation fails', async () => {
@@ -266,24 +266,24 @@ describe('SessionsController', () => {
         new BadRequestException('The field is closed on this date'),
       );
 
-      await expect(controller.update(sessionId, updateSessionDto)).rejects.toThrow(
+      await expect(controller.update(sessionUid, updateSessionDto)).rejects.toThrow(
         BadRequestException,
       );
-      expect(service.update).toHaveBeenCalledWith(sessionId, updateSessionDto);
+      expect(service.update).toHaveBeenCalledWith(sessionUid, updateSessionDto);
     });
   });
 
   describe('remove', () => {
     it('should remove a session', async () => {
-      const sessionId = '1';
+      const sessionUid = 'session-uid-1';
       const mockResponse = 'This action removes a #1 session';
 
       mockSessionsService.remove.mockReturnValue(mockResponse);
 
-      const result = await controller.remove(sessionId);
+      const result = await controller.remove(sessionUid);
 
       expect(result).toBe(mockResponse);
-      expect(service.remove).toHaveBeenCalledWith(1); // Note: Controller converts to number
+      expect(service.remove).toHaveBeenCalledWith('session-uid-1');
     });
   });
 });

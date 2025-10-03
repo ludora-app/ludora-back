@@ -17,18 +17,18 @@ export class ImagesService {
     private readonly awsService: AwsService,
   ) {}
 
-  async getImagesBySessionId(sessionId: string) {
+  async getImagesBySessionUid(sessionUid: string) {
     const existingSession = await this.prisma.sessions.findUnique({
-      where: { id: sessionId },
+      where: { uid: sessionUid },
     });
 
     if (!existingSession) {
-      throw new NotFoundException(`Session with id ${sessionId} not found`);
+      throw new NotFoundException(`Session with uid ${sessionUid} not found`);
     }
 
     const images = await this.prisma.session_images.findMany({
       orderBy: { createdAt: 'asc' },
-      where: { sessionId: sessionId },
+      where: { sessionUid: sessionUid },
     });
 
     if (!images || images.length === 0) {
@@ -45,17 +45,17 @@ export class ImagesService {
     return response;
   }
 
-  async getFirstImageBySessionId(sessionId: string) {
+  async getFirstImageBySessionUid(sessionUid: string) {
     const existingSession = await this.prisma.sessions.findUnique({
-      where: { id: sessionId },
+      where: { uid: sessionUid },
     });
 
     if (!existingSession) {
-      throw new NotFoundException(`Session with id ${sessionId} not found`);
+      throw new NotFoundException(`Session with uid ${sessionUid} not found`);
     }
 
     const image = await this.prisma.session_images.findFirst({
-      where: { order: 1, sessionId },
+      where: { order: 1, sessionUid },
     });
 
     if (!image) {
@@ -68,14 +68,14 @@ export class ImagesService {
     return response;
   }
 
-  async getProfilePic(userId: string) {
+  async getProfilePic(userUid: string) {
     const profilePic = await this.prisma.users.findUnique({
       select: { imageUrl: true },
-      where: { id: userId },
+      where: { uid: userUid },
     });
 
     if (!profilePic) {
-      throw new NotFoundException(`User with id ${userId} not found`);
+      throw new NotFoundException(`User with uid ${userUid} not found`);
     }
     const folder = 'users';
     const response = await this.awsService.getSignedUrl(folder, profilePic.imageUrl);
@@ -100,9 +100,9 @@ export class ImagesService {
     }
   }
 
-  async update(image_id: string, updateImageDto: UpdateImageDto) {
+  async update(image_uid: string, updateImageDto: UpdateImageDto) {
     const existingImage = await this.prisma.session_images.findUnique({
-      where: { id: image_id },
+      where: { uid: image_uid },
     });
 
     if (!existingImage) {
@@ -111,23 +111,23 @@ export class ImagesService {
 
     const updatedImage = await this.prisma.session_images.update({
       data: updateImageDto,
-      where: { id: image_id },
+      where: { uid: image_uid },
     });
 
     return updatedImage;
   }
 
-  async delete(image_id: string) {
+  async delete(image_uid: string) {
     const existingImage = await this.prisma.session_images.findUnique({
-      where: { id: image_id },
+      where: { uid: image_uid },
     });
 
     if (!existingImage) {
       throw new NotFoundException('Image not found');
     }
 
-    await this.prisma.session_images.delete({ where: { id: image_id } });
+    await this.prisma.session_images.delete({ where: { uid: image_uid } });
 
-    return `image '${image_id}' deleted`;
+    return `image '${image_uid}' deleted`;
   }
 }

@@ -17,14 +17,14 @@ export class SessionsService {
   ) {}
 
   async create(createSessionDto: CreateSessionDto): Promise<Sessions> {
-    const { endDate, fieldId, startDate } = createSessionDto;
+    const { endDate, fieldUid, startDate } = createSessionDto;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
     const dayOfWeek = start.getUTCDay(); // 0 (sunday) to 6 (saturday)
 
     const field = await this.prisma.fields.findUnique({
-      where: { id: fieldId },
+      where: { uid: fieldUid },
     });
 
     if (!field) {
@@ -33,9 +33,9 @@ export class SessionsService {
 
     const openingHours = await this.prisma.partner_opening_hours.findUnique({
       where: {
-        partnerId_dayOfWeek: {
+        partnerUid_dayOfWeek: {
           dayOfWeek: dayOfWeek,
-          partnerId: field.partnerId,
+          partnerUid: field.partnerUid,
         },
       },
     });
@@ -68,7 +68,7 @@ export class SessionsService {
     const conflict = await this.prisma.sessions.findFirst({
       where: {
         endDate: { gt: start },
-        fieldId: fieldId,
+        fieldUid: fieldUid,
         startDate: { lt: end },
       },
     });
@@ -89,7 +89,7 @@ export class SessionsService {
       data: {
         description: createSessionDto.description,
         endDate: endDate,
-        fieldId: field.id,
+        fieldUid: field.uid,
         gameMode: field.gameMode,
         maxPlayersPerTeam: createSessionDto.maxPlayersPerTeam,
         minPlayersPerTeam: createSessionDto.minPlayersPerTeam,
@@ -99,7 +99,7 @@ export class SessionsService {
         title: createSessionDto.title ? createSessionDto.title : autoTitle,
       },
     });
-    await this.sessionTeamsService.createDefaultTeams(newSession.id);
+    await this.sessionTeamsService.createDefaultTeams(newSession.uid);
 
     return newSession;
   }
@@ -125,7 +125,7 @@ export class SessionsService {
       take: number;
       skip?: number;
       cursor?: {
-        id: string;
+        uid: string;
       };
       where: {
         startDate?: Record<string, Date>;
@@ -142,7 +142,7 @@ export class SessionsService {
 
     if (cursor) {
       query.cursor = {
-        id: cursor,
+        uid: cursor,
       };
       query.skip = 1;
     }
@@ -185,9 +185,9 @@ export class SessionsService {
         createdAt: true,
         description: true,
         endDate: true,
-        fieldId: true,
+        fieldUid: true,
         gameMode: true,
-        id: true,
+        uid: true,
         maxPlayersPerTeam: true,
         minPlayersPerTeam: true,
         sport: true,
@@ -201,7 +201,7 @@ export class SessionsService {
     let nextCursor: string | null = null;
     if (sessions.length > limit) {
       const nextItem = sessions.pop();
-      nextCursor = nextItem!.id;
+      nextCursor = nextItem!.uid;
     }
 
     return {
@@ -211,18 +211,18 @@ export class SessionsService {
     };
   }
 
-  async findOne(id: string): Promise<Sessions> {
-    return await this.prisma.sessions.findUnique({ where: { id } });
+  async findOne(uid: string): Promise<Sessions> {
+    return await this.prisma.sessions.findUnique({ where: { uid } });
   }
 
-  async update(id: string, updateSessionDto: UpdateSessionDto): Promise<Sessions> {
+  async update(uid: string, updateSessionDto: UpdateSessionDto): Promise<Sessions> {
     const { endDate, startDate } = updateSessionDto;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
     const dayOfWeek = start.getUTCDay(); // 0 (sunday) to 6 (saturday)
 
-    const session = await this.findOne(id);
+    const session = await this.findOne(uid);
 
     if (!session) {
       throw new NotFoundException('Session not found');
@@ -230,7 +230,7 @@ export class SessionsService {
 
     // todo: use the field service when created
     const field = await this.prisma.fields.findUnique({
-      where: { id: session.fieldId },
+      where: { uid: session.fieldUid },
     });
     if (!field) {
       throw new NotFoundException('Field not found');
@@ -238,9 +238,9 @@ export class SessionsService {
 
     const openingHours = await this.prisma.partner_opening_hours.findUnique({
       where: {
-        partnerId_dayOfWeek: {
+        partnerUid_dayOfWeek: {
           dayOfWeek: dayOfWeek,
-          partnerId: field.partnerId,
+          partnerUid: field.partnerUid,
         },
       },
     });
@@ -269,13 +269,13 @@ export class SessionsService {
         teamsPerGame: updateSessionDto.teamsPerGame,
         title: updateSessionDto.title,
       },
-      where: { id: session.id },
+      where: { uid: session.uid },
     });
 
     return updatedSession;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} session`;
+  remove(uid: string) {
+    return `This action removes a #${uid} session`;
   }
 }

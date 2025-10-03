@@ -80,7 +80,7 @@ export class UsersService {
       select: {
         email: true,
         firstname: true,
-        id: true,
+        uid: true,
         imageUrl: true,
         lastname: true,
       },
@@ -108,7 +108,7 @@ export class UsersService {
     let nextCursor: string | null = null;
     if (users.length > limit) {
       const nextItem = users.pop();
-      nextCursor = nextItem.id;
+      nextCursor = nextItem.uid;
     }
 
     const totalCount = await this.prismaService.users.count();
@@ -120,13 +120,13 @@ export class UsersService {
     };
   }
 
-  async findOne(id: string, select: Prisma.UsersSelect): Promise<Users> {
+  async findOne(uid: string, select: Prisma.UsersSelect): Promise<Users> {
     const existingUser = await this.prismaService.users.findUnique({
       select,
-      where: { id },
+      where: { uid },
     });
 
-    let imageUrl = await this.imageService.getProfilePic(existingUser.id);
+    let imageUrl = await this.imageService.getProfilePic(existingUser.uid);
     if (!imageUrl) {
       imageUrl = '';
     }
@@ -146,8 +146,8 @@ export class UsersService {
     });
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<Users> {
-    const existingUser = await this.findOne(id, USERSELECT.findMe);
+  async update(uid: string, updateUserDto: UpdateUserDto): Promise<Users> {
+    const existingUser = await this.findOne(uid, USERSELECT.findMe);
 
     if (!existingUser) throw new NotFoundException('User not found');
 
@@ -155,7 +155,7 @@ export class UsersService {
       data: {
         ...updateUserDto,
       },
-      where: { id },
+      where: { uid },
     });
 
     if (updatedUser) {
@@ -167,10 +167,10 @@ export class UsersService {
 
   //? this method needs to change the password after all the verification is done
   //todo: new method that send the verification email ? And verify if the user.provider is google ?
-  async updatePassword(id: string, updatePasswordDto: UpdatePasswordDto): Promise<SuccessTypeDto> {
+  async updatePassword(uid: string, updatePasswordDto: UpdatePasswordDto): Promise<SuccessTypeDto> {
     const { newPassword, oldPassword } = updatePasswordDto;
     const existingUser = await this.prismaService.users.findUnique({
-      where: { id },
+      where: { uid },
     });
 
     if (!existingUser) throw new NotFoundException('User not found');
@@ -187,7 +187,7 @@ export class UsersService {
       data: {
         password: hashedPassword,
       },
-      where: { id },
+      where: { uid },
     });
 
     if (updatedUser) {
@@ -202,9 +202,9 @@ export class UsersService {
     }
   }
 
-  async deactivate(id: string): Promise<SuccessTypeDto> {
+  async deactivate(uid: string): Promise<SuccessTypeDto> {
     const existingUser = await this.prismaService.users.findUnique({
-      where: { id },
+      where: { uid },
     });
 
     if (!existingUser) throw new NotFoundException('User not found');
@@ -213,33 +213,33 @@ export class UsersService {
       data: {
         isConnected: false,
       },
-      where: { id },
+      where: { uid },
     });
 
-    return { message: `User ${id} has been deactivated`, status: 200 };
+    return { message: `User ${uid} has been deactivated`, status: 200 };
   }
 
-  async remove(id: string): Promise<SuccessTypeDto> {
+  async remove(uid: string): Promise<SuccessTypeDto> {
     const existingUser = await this.prismaService.users.findUnique({
-      where: { id },
+      where: { uid },
     });
 
     if (!existingUser) throw new NotFoundException('User not found');
 
     await this.prismaService.users.delete({
-      where: { id },
+      where: { uid },
     });
 
-    return { message: `User ${id} has been deleted`, status: 200 };
+    return { message: `User ${uid} has been deleted`, status: 200 };
   }
 
   /**
    * Send a verification email to the user with a 6 digits verfication code that expires in 15 minutes
-   * @param userId - The id of the user
+   * @param userUid - The uid of the user
    * @param email - The email of the user
    * @memberof UsersService & AuthService
    */
-  async sendVerificationEmail(userId: string, email: string) {
+  async sendVerificationEmail(userUid: string, email: string) {
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
@@ -247,7 +247,7 @@ export class UsersService {
     await this.prismaService.$transaction(async (tx) => {
       // Supprimer les anciens codes de vérification
       await tx.email_verification.deleteMany({
-        where: { userId: userId },
+        where: { userUid: userUid },
       });
 
       // Créer le nouveau code
@@ -255,7 +255,7 @@ export class UsersService {
         data: {
           code: verificationCode,
           expiresAt,
-          userId: userId,
+          userUid: userUid,
         },
       });
     });

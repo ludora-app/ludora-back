@@ -87,7 +87,7 @@ describe('SessionsService', () => {
   describe('create', () => {
     const createSessionDto: CreateSessionDto = {
       endDate: mockFutureEndDate.toISOString(),
-      fieldId: 'field-id-1',
+      fieldUid: 'field-uid-1',
       startDate: mockFutureDate.toISOString(),
       description: 'Test session',
       maxPlayersPerTeam: 5,
@@ -98,14 +98,14 @@ describe('SessionsService', () => {
     };
 
     const mockField = {
-      id: 'field-id-1',
+      uid: 'field-uid-1',
       sport: Sport.FOOTBALL,
       gameMode: '5v5',
-      partnerId: 'partner-id-1',
+      partnerUid: 'partner-uid-1',
     };
 
     const mockOpeningHours = {
-      partnerId: 'partner-id-1',
+      partnerUid: 'partner-uid-1',
       dayOfWeek: 2, // Tuesday
       openTime: '08:00:00',
       closeTime: '22:00:00',
@@ -113,10 +113,10 @@ describe('SessionsService', () => {
     };
 
     const mockCreatedSession = {
-      id: 'session-id-1',
+      uid: 'session-uid-1',
       description: 'Test session',
       endDate: mockFutureEndDate,
-      fieldId: 'field-id-1',
+      fieldUid: 'field-uid-1',
       gameMode: '5v5',
       maxPlayersPerTeam: 5,
       minPlayersPerTeam: 3,
@@ -143,16 +143,16 @@ describe('SessionsService', () => {
       // Assert
       expect(result).toEqual(
         expect.objectContaining({
-          id: 'session-id-1',
+          uid: 'session-uid-1',
           title: 'Test Session Title',
         }),
       );
       expect(prismaService.fields.findUnique).toHaveBeenCalledWith({
-        where: { id: 'field-id-1' },
+        where: { uid: 'field-uid-1' },
       });
       expect(prismaService.sessions.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          fieldId: 'field-id-1',
+          fieldUid: 'field-uid-1',
           title: 'Test Session Title',
         }),
       });
@@ -268,7 +268,7 @@ describe('SessionsService', () => {
         mockOpeningHours,
       );
       (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue({
-        id: 'existing-session-id',
+        uid: 'existing-session-uid',
       });
 
       // Act & Assert
@@ -281,7 +281,7 @@ describe('SessionsService', () => {
   describe('findAll', () => {
     const mockSessions = [
       {
-        id: 'session-id-1',
+        uid: 'session-uid-1',
         description: 'Session 1',
         endDate: new Date('2023-01-10T16:00:00Z'),
         startDate: new Date('2023-01-10T14:00:00Z'),
@@ -294,7 +294,7 @@ describe('SessionsService', () => {
         updatedAt: new Date('2023-01-01T12:00:00Z'),
       },
       {
-        id: 'session-id-2',
+        uid: 'session-uid-2',
         description: 'Session 2',
         endDate: new Date('2023-01-11T16:00:00Z'),
         startDate: new Date('2023-01-11T14:00:00Z'),
@@ -319,8 +319,8 @@ describe('SessionsService', () => {
       // Assert
       expect(result).toEqual({
         items: expect.arrayContaining([
-          expect.objectContaining({ id: 'session-id-1' }),
-          expect.objectContaining({ id: 'session-id-2' }),
+          expect.objectContaining({ uid: 'session-uid-1' }),
+          expect.objectContaining({ uid: 'session-uid-2' }),
         ]),
         nextCursor: null,
         totalCount: 2,
@@ -335,7 +335,7 @@ describe('SessionsService', () => {
 
     it('should handle pagination with cursor', async () => {
       // Arrange
-      const filter: SessionFilterDto = { limit: 1, cursor: 'session-id-1' };
+      const filter: SessionFilterDto = { limit: 1, cursor: 'session-uid-1' };
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSessions[1]]);
 
       // Act
@@ -346,7 +346,7 @@ describe('SessionsService', () => {
       expect(result.nextCursor).toBeNull();
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          cursor: { id: 'session-id-1' },
+          cursor: { uid: 'session-uid-1' },
           skip: 1,
           take: 2,
         }),
@@ -363,7 +363,7 @@ describe('SessionsService', () => {
 
       // Assert
       expect(result.items).toHaveLength(1);
-      expect(result.nextCursor).toBe('session-id-2');
+      expect(result.nextCursor).toBe('session-uid-2');
     });
 
     it('should filter by scope UPCOMING', async () => {
@@ -474,10 +474,10 @@ describe('SessionsService', () => {
 
   describe('findOne', () => {
     const mockSession = {
-      id: 'session-id-1',
+      uid: 'session-uid-1',
       description: 'Test session',
       endDate: new Date('2023-01-10T16:00:00Z'),
-      fieldId: 'field-id-1',
+      fieldUid: 'field-uid-1',
       gameMode: '5v5',
       maxPlayersPerTeam: 5,
       minPlayersPerTeam: 3,
@@ -489,21 +489,21 @@ describe('SessionsService', () => {
       updatedAt: new Date('2023-01-01T12:00:00Z'),
     };
 
-    it('should return a session by id', async () => {
+    it('should return a session by uid', async () => {
       // Arrange
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
 
       // Act
-      const result = await service.findOne('session-id-1');
+      const result = await service.findOne('session-uid-1');
 
       // Assert
       expect(result).toEqual(
         expect.objectContaining({
-          id: 'session-id-1',
+          uid: 'session-uid-1',
         }),
       );
       expect(prismaService.sessions.findUnique).toHaveBeenCalledWith({
-        where: { id: 'session-id-1' },
+        where: { uid: 'session-uid-1' },
       });
     });
 
@@ -512,12 +512,12 @@ describe('SessionsService', () => {
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(null);
 
       // Act
-      const result = await service.findOne('non-existent-id');
+      const result = await service.findOne('non-existent-uid');
 
       // Assert
       expect(result).toBeNull();
       expect(prismaService.sessions.findUnique).toHaveBeenCalledWith({
-        where: { id: 'non-existent-id' },
+        where: { uid: 'non-existent-uid' },
       });
     });
   });
@@ -535,19 +535,19 @@ describe('SessionsService', () => {
     };
 
     const mockSession = {
-      id: 'session-id-1',
-      fieldId: 'field-id-1',
+      uid: 'session-uid-1',
+      fieldUid: 'field-uid-1',
     };
 
     const mockField = {
-      id: 'field-id-1',
+      uid: 'field-uid-1',
       sport: Sport.FOOTBALL,
       gameMode: '5v5',
-      partnerId: 'partner-id-1',
+      partnerUid: 'partner-uid-1',
     };
 
     const mockOpeningHours = {
-      partnerId: 'partner-id-1',
+      partnerUid: 'partner-uid-1',
       dayOfWeek: 2, // Tuesday
       openTime: '08:00:00',
       closeTime: '22:00:00',
@@ -555,10 +555,10 @@ describe('SessionsService', () => {
     };
 
     const mockUpdatedSession = {
-      id: 'session-id-1',
+      uid: 'session-uid-1',
       description: 'Updated session',
       endDate: mockFutureEndDate,
-      fieldId: 'field-id-1',
+      fieldUid: 'field-uid-1',
       gameMode: '5v5',
       maxPlayersPerTeam: 6,
       minPlayersPerTeam: 4,
@@ -580,12 +580,12 @@ describe('SessionsService', () => {
       (prismaService.sessions.update as jest.Mock).mockResolvedValue(mockUpdatedSession);
 
       // Act
-      const result = await service.update('session-id-1', updateSessionDto);
+      const result = await service.update('session-uid-1', updateSessionDto);
 
       // Assert
       expect(result).toEqual(
         expect.objectContaining({
-          id: 'session-id-1',
+          uid: 'session-uid-1',
           title: 'Updated Session Title',
         }),
       );
@@ -593,7 +593,7 @@ describe('SessionsService', () => {
         data: expect.objectContaining({
           title: 'Updated Session Title',
         }),
-        where: { id: 'session-id-1' },
+        where: { uid: 'session-uid-1' },
       });
     });
 
@@ -602,7 +602,7 @@ describe('SessionsService', () => {
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.update('non-existent-id', updateSessionDto)).rejects.toThrow(
+      await expect(service.update('non-existent-uid', updateSessionDto)).rejects.toThrow(
         new NotFoundException('Session not found'),
       );
     });
@@ -613,7 +613,7 @@ describe('SessionsService', () => {
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.update('session-id-1', updateSessionDto)).rejects.toThrow(
+      await expect(service.update('session-uid-1', updateSessionDto)).rejects.toThrow(
         new NotFoundException('Field not found'),
       );
     });
@@ -628,7 +628,7 @@ describe('SessionsService', () => {
       });
 
       // Act & Assert
-      await expect(service.update('session-id-1', updateSessionDto)).rejects.toThrow(
+      await expect(service.update('session-uid-1', updateSessionDto)).rejects.toThrow(
         new BadRequestException('The field is closed on this date'),
       );
     });
@@ -644,7 +644,7 @@ describe('SessionsService', () => {
       (DateUtils.timeStringToMinutes as jest.Mock).mockReturnValueOnce(960); // 16 * 60
 
       // Act & Assert
-      await expect(service.update('session-id-1', updateSessionDto)).rejects.toThrow(
+      await expect(service.update('session-uid-1', updateSessionDto)).rejects.toThrow(
         new BadRequestException('The session is outside the opening hours of the field'),
       );
     });
@@ -652,7 +652,7 @@ describe('SessionsService', () => {
 
   describe('remove', () => {
     it('should return a string message', () => {
-      const result = service.remove(1);
+      const result = service.remove('1');
       expect(result).toBe('This action removes a #1 session');
     });
   });

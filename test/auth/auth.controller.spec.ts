@@ -131,7 +131,7 @@ describe('AuthController', () => {
   describe('verifyToken', () => {
     it('should verify token', async () => {
       const mockRequest = {
-        user: { id: '1' },
+        user: { uid: '1' },
       };
 
       mockAuthService.verifyToken.mockResolvedValue(true);
@@ -149,7 +149,7 @@ describe('AuthController', () => {
   describe('verifyEmailCode', () => {
     it('should verify email code', async () => {
       const mockRequest = {
-        user: { id: '1' },
+        user: { uid: '1' },
       };
       const dto: VerifyEmailCodeDto = { code: '123456' };
 
@@ -168,7 +168,7 @@ describe('AuthController', () => {
   describe('resendVerificationCode', () => {
     it('should resend verification code', async () => {
       const mockRequest = {
-        user: { id: '1' },
+        user: { uid: '1' },
       };
 
       mockAuthService.resendVerificationCode.mockResolvedValue(undefined);

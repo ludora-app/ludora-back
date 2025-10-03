@@ -21,7 +21,7 @@ async function seed() {
     { name: 'PING-PONG' },
   ];
 
-  const createdSports: { id: string; name: string }[] = [];
+  const createdSports: { uid: string; name: string }[] = [];
   for (const sport of sports) {
     const createdSport = await prisma.sports.create({
       data: sport,
@@ -64,7 +64,7 @@ async function seed() {
     },
   ];
 
-  const createdPartners: { id: string; name: string }[] = [];
+  const createdPartners: { uid: string; name: string }[] = [];
   for (const p of partners) {
     const createdPartner = await prisma.partners.create({
       data: p,
@@ -75,51 +75,51 @@ async function seed() {
 
   const partner_sport = [
     {
-      partnerId: createdPartners[0].id,
+      partnerUid: createdPartners[0].uid,
       sport: createdSports[1].name,
     },
     {
-      partnerId: createdPartners[1].id,
+      partnerUid: createdPartners[1].uid,
       sport: createdSports[1].name,
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       sport: createdSports[0].name,
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       sport: createdSports[1].name,
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       sport: createdSports[4].name,
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       sport: createdSports[5].name,
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       sport: createdSports[6].name,
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       sport: createdSports[2].name,
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       sport: createdSports[3].name,
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       sport: createdSports[4].name,
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       sport: createdSports[5].name,
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       sport: createdSports[6].name,
     },
   ];
@@ -134,7 +134,7 @@ async function seed() {
   const fields = [
     // ? HOOPFACTORY
     {
-      partnerId: createdPartners[0].id,
+      partnerUid: createdPartners[0].uid,
       sport: createdSports[1].name,
       address: '3 Rue Pierre Larousse, 93300 Aubervilliers',
       latitude: 48.9047454,
@@ -143,7 +143,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[0].id,
+      partnerUid: createdPartners[0].uid,
       sport: createdSports[1].name,
       address: '3 Rue Pierre Larousse, 93300 Aubervilliers',
       latitude: 48.9047454,
@@ -152,7 +152,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[0].id,
+      partnerUid: createdPartners[0].uid,
       sport: createdSports[1].name,
       address: '3 Rue Pierre Larousse, 93300 Aubervilliers',
       latitude: 48.9047454,
@@ -161,7 +161,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[0].id,
+      partnerUid: createdPartners[0].uid,
       sport: createdSports[1].name,
       address: '3 Rue Pierre Larousse, 93300 Aubervilliers',
       latitude: 48.9047454,
@@ -170,7 +170,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[0].id,
+      partnerUid: createdPartners[0].uid,
       sport: createdSports[1].name,
       address: '3 Rue Pierre Larousse, 93300 Aubervilliers',
       latitude: 48.9047454,
@@ -179,7 +179,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[0].id,
+      partnerUid: createdPartners[0].uid,
       sport: createdSports[1].name,
       address: '3 Rue Pierre Larousse, 93300 Aubervilliers',
       latitude: 48.9047454,
@@ -189,7 +189,7 @@ async function seed() {
     },
     // ? THE ONE BALL
     {
-      partnerId: createdPartners[1].id,
+      partnerUid: createdPartners[1].uid,
       sport: createdSports[1].name,
       address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
       latitude: 48.8499,
@@ -198,7 +198,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[1].id,
+      partnerUid: createdPartners[1].uid,
       sport: createdSports[1].name,
       address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
       latitude: 48.8499,
@@ -207,7 +207,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[1].id,
+      partnerUid: createdPartners[1].uid,
       sport: createdSports[1].name,
       address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
       latitude: 48.8499,
@@ -216,7 +216,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[1].id,
+      partnerUid: createdPartners[1].uid,
       sport: createdSports[1].name,
       address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
       latitude: 48.8499,
@@ -225,7 +225,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[1].id,
+      partnerUid: createdPartners[1].uid,
       sport: createdSports[1].name,
       address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
       latitude: 48.8499,
@@ -234,7 +234,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[1].id,
+      partnerUid: createdPartners[1].uid,
       sport: createdSports[1].name,
       address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
       latitude: 48.8499,
@@ -244,7 +244,7 @@ async function seed() {
     },
     // ? STADIUM THIAS ORLY
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       sport: createdSports[1].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
       latitude: 48.7555,
@@ -253,7 +253,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       sport: createdSports[1].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
       latitude: 48.7555,
@@ -262,7 +262,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       sport: createdSports[1].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
       latitude: 48.7555,
@@ -271,7 +271,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       sport: createdSports[4].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
       latitude: 48.7555,
@@ -280,7 +280,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       sport: createdSports[4].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
       latitude: 48.7555,
@@ -289,7 +289,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       sport: createdSports[4].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
       latitude: 48.7555,
@@ -298,7 +298,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       sport: createdSports[4].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
       latitude: 48.7555,
@@ -307,7 +307,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       sport: createdSports[4].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
       latitude: 48.7555,
@@ -317,7 +317,7 @@ async function seed() {
     },
     // here
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       sport: createdSports[0].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
       latitude: 48.7555,
@@ -326,7 +326,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       sport: createdSports[0].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
       latitude: 48.7555,
@@ -335,7 +335,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       sport: createdSports[0].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
       latitude: 48.7555,
@@ -344,7 +344,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       sport: createdSports[4].name,
       address: '19 avenue de la Liberté, 92000 Nanterre',
       latitude: 48.892,
@@ -353,7 +353,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       sport: createdSports[4].name,
       address: '19 avenue de la Liberté, 92000 Nanterre',
       latitude: 48.892,
@@ -362,7 +362,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       sport: createdSports[4].name,
       address: '19 avenue de la Liberté, 92000 Nanterre',
       latitude: 48.892,
@@ -371,7 +371,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       sport: createdSports[2].name,
       address: '19 avenue de la Liberté, 92000 Nanterre',
       latitude: 48.892,
@@ -380,7 +380,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       sport: createdSports[2].name,
       address: '19 avenue de la Liberté, 92000 Nanterre',
       latitude: 48.892,
@@ -389,7 +389,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       sport: createdSports[5].name,
       address: '19 avenue de la Liberté, 92000 Nanterre',
       latitude: 48.892,
@@ -398,7 +398,7 @@ async function seed() {
       entryFee: 0,
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       sport: createdSports[5].name,
       address: '19 avenue de la Liberté, 92000 Nanterre',
       latitude: 48.892,
@@ -408,11 +408,11 @@ async function seed() {
     },
   ];
 
-  const createdFields: { id: string; sport: string; partnerId: string; gameMode: string }[] = [];
+  const createdFields: { uid: string; sport: string; partnerUid: string; gameMode: string }[] = [];
   for (const field of fields) {
     const createdField = await prisma.fields.create({
       data: {
-        partner: { connect: { id: field.partnerId } },
+        partner: { connect: { uid: field.partnerUid } },
         sport_relation: { connect: { name: field.sport } },
         address: field.address,
         latitude: field.latitude,
@@ -421,180 +421,180 @@ async function seed() {
         entryFee: field.entryFee,
       },
     });
-    console.log(`Field ${createdField.id} has been created`);
+    console.log(`Field ${createdField.uid} has been created`);
     createdFields.push(createdField);
   }
 
   const partners_openingHours = [
     // ? HOOPFACTORY
     {
-      partnerId: createdPartners[0].id,
+      partnerUid: createdPartners[0].uid,
       dayOfWeek: 1,
       opening_time: '10:00',
       closing_time: '12:00',
     },
     {
-      partnerId: createdPartners[0].id,
+      partnerUid: createdPartners[0].uid,
       dayOfWeek: 2,
       opening_time: '10:00',
       closing_time: '12:00',
     },
     {
-      partnerId: createdPartners[0].id,
+      partnerUid: createdPartners[0].uid,
       dayOfWeek: 3,
       opening_time: '10:00',
       closing_time: '12:00',
     },
     {
-      partnerId: createdPartners[0].id,
+      partnerUid: createdPartners[0].uid,
       dayOfWeek: 4,
       opening_time: '10:00',
       closing_time: '12:00',
     },
     {
-      partnerId: createdPartners[0].id,
+      partnerUid: createdPartners[0].uid,
       dayOfWeek: 5,
       opening_time: '10:00',
       closing_time: '12:00',
     },
     {
-      partnerId: createdPartners[0].id,
+      partnerUid: createdPartners[0].uid,
       dayOfWeek: 6,
       opening_time: '10:00',
       closing_time: '22:00',
     },
     {
-      partnerId: createdPartners[0].id,
+      partnerUid: createdPartners[0].uid,
       dayOfWeek: 0,
       opening_time: '10:00',
       closing_time: '22:00',
     },
     // ? THE ONE BALL
     {
-      partnerId: createdPartners[1].id,
+      partnerUid: createdPartners[1].uid,
       dayOfWeek: 1,
       opening_time: '11:00',
       closing_time: '23:00',
     },
     {
-      partnerId: createdPartners[1].id,
+      partnerUid: createdPartners[1].uid,
       dayOfWeek: 2,
       opening_time: '11:00',
       closing_time: '23:00',
     },
     {
-      partnerId: createdPartners[1].id,
+      partnerUid: createdPartners[1].uid,
       dayOfWeek: 3,
       opening_time: '11:00',
       closing_time: '23:00',
     },
     {
-      partnerId: createdPartners[1].id,
+      partnerUid: createdPartners[1].uid,
       dayOfWeek: 4,
       opening_time: '11:00',
       closing_time: '23:00',
     },
     {
-      partnerId: createdPartners[1].id,
+      partnerUid: createdPartners[1].uid,
       dayOfWeek: 5,
       opening_time: '11:00',
       closing_time: '23:00',
     },
     {
-      partnerId: createdPartners[1].id,
+      partnerUid: createdPartners[1].uid,
       dayOfWeek: 6,
       opening_time: '09:00',
       closing_time: '20:00',
     },
     {
-      partnerId: createdPartners[1].id,
+      partnerUid: createdPartners[1].uid,
       dayOfWeek: 0,
       opening_time: '09:00',
       closing_time: '23:00',
     },
     // ? STADIUM THIAS ORLY
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       dayOfWeek: 1,
       opening_time: '10:00',
       closing_time: '22:00',
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       dayOfWeek: 2,
       opening_time: '10:00',
       closing_time: '22:00',
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       dayOfWeek: 3,
       opening_time: '10:00',
       closing_time: '22:00',
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       dayOfWeek: 4,
       opening_time: '10:00',
       closing_time: '22:00',
     },
 
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       dayOfWeek: 5,
       opening_time: '10:00',
       closing_time: '22:00',
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       dayOfWeek: 6,
       opening_time: '10:00',
       closing_time: '22:00',
     },
     {
-      partnerId: createdPartners[2].id,
+      partnerUid: createdPartners[2].uid,
       dayOfWeek: 0,
       opening_time: '10:00',
       closing_time: '22:00',
     },
     // ? FOREST HILL LA DEFENSE
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       dayOfWeek: 1,
       opening_time: '07:00',
       closing_time: '23:00',
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       dayOfWeek: 2,
       opening_time: '07:00',
       closing_time: '23:00',
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       dayOfWeek: 3,
       opening_time: '07:00',
       closing_time: '23:00',
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       dayOfWeek: 4,
       opening_time: '07:00',
       closing_time: '23:00',
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       dayOfWeek: 5,
       opening_time: '07:00',
       closing_time: '23:00',
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       dayOfWeek: 6,
       opening_time: '07:00',
       closing_time: '22:00',
     },
     {
-      partnerId: createdPartners[3].id,
+      partnerUid: createdPartners[3].uid,
       dayOfWeek: 0,
       opening_time: '07:00',
       closing_time: '22:00',
@@ -604,7 +604,7 @@ async function seed() {
   for (const hours of partners_openingHours) {
     await prisma.partner_opening_hours.create({
       data: {
-        partner: { connect: { id: hours.partnerId } },
+        partner: { connect: { uid: hours.partnerUid } },
         dayOfWeek: hours.dayOfWeek,
         openTime: hours.opening_time,
         closeTime: hours.closing_time,
@@ -615,70 +615,70 @@ async function seed() {
 
   const sessions = [
     {
-      fieldId: createdFields[21].id,
+      fieldUid: createdFields[21].uid,
       startDate: new Date('2025-01-01T10:00:00'),
       endDate: new Date('2025-01-01T11:00:00'),
       sport: createdSports[0].name,
       gameMode: Game_modes.FIVE_V_FIVE,
     },
     {
-      fieldId: createdFields[1].id,
+      fieldUid: createdFields[1].uid,
       startDate: new Date('2025-01-02T11:00:00'),
       endDate: new Date('2025-01-02T13:00:00'),
       sport: createdSports[1].name,
       gameMode: Game_modes.THREE_V_THREE,
     },
     {
-      fieldId: createdFields[2].id,
+      fieldUid: createdFields[2].uid,
       startDate: new Date('2025-01-03T14:00:00'),
       endDate: new Date('2025-01-03T15:00:00'),
       sport: createdSports[2].name,
       gameMode: Game_modes.TWO_V_TWO,
     },
     {
-      fieldId: createdFields[3].id,
+      fieldUid: createdFields[3].uid,
       startDate: new Date('2025-01-04T15:00:00'),
       endDate: new Date('2025-01-04T17:00:00'),
       sport: createdSports[3].name,
       gameMode: Game_modes.FOUR_V_FOUR,
     },
     {
-      fieldId: createdFields[4].id,
+      fieldUid: createdFields[4].uid,
       startDate: new Date('2025-01-05T16:00:00'),
       endDate: new Date('2025-01-05T18:00:00'),
       sport: createdSports[4].name,
       gameMode: Game_modes.FOUR_V_FOUR,
     },
     {
-      fieldId: createdFields[5].id,
+      fieldUid: createdFields[5].uid,
       startDate: new Date('2025-01-06T10:00:00'),
       endDate: new Date('2025-01-06T12:00:00'),
       sport: createdSports[5].name,
       gameMode: Game_modes.TWO_V_TWO,
     },
     {
-      fieldId: createdFields[6].id,
+      fieldUid: createdFields[6].uid,
       startDate: new Date('2025-01-07T13:00:00'),
       endDate: new Date('2025-01-07T14:00:00'),
       sport: createdSports[6].name,
       gameMode: Game_modes.TWO_V_TWO,
     },
     {
-      fieldId: createdFields[0].id,
+      fieldUid: createdFields[0].uid,
       startDate: new Date('2025-12-01T11:00:00'),
       endDate: new Date('2025-12-01T12:00:00'),
       sport: createdSports[0].name,
       gameMode: Game_modes.ELEVEN_V_ELEVEN,
     },
     {
-      fieldId: createdFields[1].id,
+      fieldUid: createdFields[1].uid,
       startDate: new Date('2025-12-02T14:00:00'),
       endDate: new Date('2025-12-02T15:00:00'),
       sport: createdSports[1].name,
       gameMode: Game_modes.FIVE_V_FIVE,
     },
     {
-      fieldId: createdFields[2].id,
+      fieldUid: createdFields[2].uid,
       startDate: new Date('2025-12-03T17:00:00'),
       endDate: new Date('2025-12-03T18:00:00'),
       sport: createdSports[2].name,
@@ -690,7 +690,7 @@ async function seed() {
   for (const session of sessions) {
     const createdSession = await prisma.sessions.create({
       data: {
-        fieldId: session.fieldId,
+        fieldUid: session.fieldUid,
         sport: session.sport,
         gameMode: session.gameMode,
         startDate: session.startDate,
@@ -896,14 +896,14 @@ async function seed() {
     },
   ];
 
-  const createdUsers: { id: string }[] = [];
+  const createdUsers: { uid: string }[] = [];
   for (const user of users) {
     const createdUser = await prisma.users.upsert({
       where: { email: user.email },
       update: {},
       create: user,
     });
-    createdUsers.push({ id: createdUser.id });
+    createdUsers.push({ uid: createdUser.uid });
     console.log(`Created user: ${user.email}`);
   }
 }

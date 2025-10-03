@@ -28,6 +28,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "doppler run -- ts-node prisma/seed.ts",
     "migrate-dev": "doppler run -- pnpm dlx prisma migrate dev",
+    "migrate-reset": "doppler run -- pnpm dlx prisma migrate reset",
     "db-push": "doppler run -- pnpm dlx prisma db push",
     "studio": "doppler run -- pnpm dlx prisma studio",
     "prepare": "husky",

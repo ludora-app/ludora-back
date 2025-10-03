@@ -61,9 +61,9 @@ export class UsersController {
     };
   }
 
-  @Get(':id')
+  @Get(':uid')
   @ApiOperation({
-    summary: 'get user by id requires to be connected',
+    summary: 'get user by uid requires to be connected',
   })
   @ApiOkResponse({
     description: 'Successfully fetched user',
@@ -78,8 +78,8 @@ export class UsersController {
     type: NotFoundException,
   })
   @Public()
-  async findOne(@Param('id') id: string): Promise<ResponseTypeDto<Users>> {
-    const data = await this.usersService.findOne(id, USERSELECT.findOne);
+  async findOne(@Param('uid') uid: string): Promise<ResponseTypeDto<Users>> {
+    const data = await this.usersService.findOne(uid, USERSELECT.findOne);
 
     if (!data) {
       throw new NotFoundException('User not found');
@@ -105,9 +105,9 @@ export class UsersController {
     type: NotFoundException,
   })
   async findMe(@Req() request: Request): Promise<ResponseTypeDto<Users>> {
-    const id = request['user'].id;
+    const uid = request['user'].uid;
 
-    const data = await this.usersService.findOne(id, USERSELECT.findMe);
+    const data = await this.usersService.findOne(uid, USERSELECT.findMe);
 
     return { data, message: 'User fetched successfully', status: 200 };
   }
@@ -149,8 +149,8 @@ export class UsersController {
     @Req() request: Request,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<ResponseTypeDto<Users>> {
-    const id = request['user'].id;
-    const data = await this.usersService.update(id, updateUserDto);
+    const uid = request['user'].uid;
+    const data = await this.usersService.update(uid, updateUserDto);
     return { data, message: 'User updated successfully', status: 200 };
   }
 
@@ -167,8 +167,8 @@ export class UsersController {
     type: NotFoundException,
   })
   updatePassword(@Req() request: Request, @Body() updatePasswordDto: UpdatePasswordDto) {
-    const id = request['user'].id;
-    return this.usersService.updatePassword(id, updatePasswordDto);
+    const uid = request['user'].uid;
+    return this.usersService.updatePassword(uid, updatePasswordDto);
   }
 
   @Patch('/deactivate')
@@ -184,8 +184,8 @@ export class UsersController {
     type: NotFoundException,
   })
   deactivate(@Req() request: Request) {
-    const id = request['user'].id;
-    return this.usersService.deactivate(id);
+    const uid = request['user'].uid;
+    return this.usersService.deactivate(uid);
   }
 
   @Delete('/delete')
@@ -201,7 +201,7 @@ export class UsersController {
     type: NotFoundException,
   })
   remove(@Req() request: Request) {
-    const id = request['user'].id;
-    return this.usersService.remove(id);
+    const uid = request['user'].uid;
+    return this.usersService.remove(uid);
   }
 }

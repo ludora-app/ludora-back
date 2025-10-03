@@ -24,11 +24,11 @@ export class CreateSessionDto {
   @IsString()
   @IsNotEmpty()
   @ApiProperty({
-    description: 'The id of the field',
+    description: 'The uid of the field',
     example: 'cmajhjkjf000bq77q4b5ugn8b',
     required: true,
   })
-  fieldId: string;
+  fieldUid: string;
 
   @IsEnum(Game_modes)
   @IsNotEmpty()
