@@ -24,14 +24,18 @@ echo "🗄️ Generating Prisma client..."
 pnpm prisma generate
 
 # Verify Prisma client was generated
-if [ ! -d "node_modules/.prisma/client" ]; then
+# With pnpm, the client is generated in a different location
+PRISMA_CLIENT_PATH=$(find node_modules -name ".prisma" -type d 2>/dev/null | head -1)
+if [ -z "$PRISMA_CLIENT_PATH" ] || [ ! -d "$PRISMA_CLIENT_PATH/client" ]; then
     echo "❌ Error: Prisma client was not generated properly"
+    echo "Searched for .prisma directory in node_modules"
     exit 1
 fi
+echo "✅ Prisma client found at: $PRISMA_CLIENT_PATH"
 
 # Build the application
 echo "🏗️ Building application..."
-pnpm run build
+npx nest build
 
 # Verify build output
 if [ ! -d "dist" ]; then
