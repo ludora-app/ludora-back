@@ -11,14 +11,14 @@ export class SessionPlayersService {
    * Only use this method when creating a session so there's no need to check for the existing session and team
    * @param sessionUid
    * @param teamUid
-   * @param userId
+   * @param userUid
    */
   async addDefaultPlayer(createSessionPlayerDto: CreateSessionPlayerDto): Promise<void> {
     await this.prisma.session_players.create({
       data: {
-        sessionId: createSessionPlayerDto.sessionUid,
-        teamId: createSessionPlayerDto.teamUid,
-        userId: createSessionPlayerDto.userUid,
+        sessionUid: createSessionPlayerDto.sessionUid,
+        teamUid: createSessionPlayerDto.teamUid,
+        userUid: createSessionPlayerDto.userUid,
       },
     });
     this.logger.log(
