@@ -141,15 +141,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Generate Prisma Client
-        run: pnpm prisma generate
-
       - name: Build application
-        run:
-          pnpm build
-
-          # This step cleans the build output directory by removing unnecessary files
-          #(source maps, test files, node_modules, git, coverage, etc.) before uploading the build artifacts.
+        run: chmod +x scripts/build.sh && ./scripts/build.sh
       - name: Clean build directory
         run: |
           # Remove unnecessary files before upload

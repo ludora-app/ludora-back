@@ -6,10 +6,11 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "prisma generate && nest build",
+    "build:ci": "prisma generate && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "start:dev": "sh start-dev.sh",
+    "start:dev": "sh scripts/start-dev.sh",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "docker:dev": "docker compose -f compose.yml -f compose.dev.yml up",

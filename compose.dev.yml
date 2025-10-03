@@ -21,7 +21,7 @@ services:
     environment:
       - NODE_ENV=development
       - DOPPLER_TOKEN
-    command: ['sh', 'start-dev.sh']
+    command: ['sh', 'scripts/start-dev.sh']
     networks:
       - ludora-network
       - traefik
