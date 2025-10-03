@@ -56,29 +56,45 @@ services:
     image: grafana/grafana-oss:latest
     container_name: grafana-dev
     restart: 'no'
-    ports:
-      - '2000:3000'
+    # Remove direct port exposure for security - use Traefik instead
+    # ports:
+    #   - '2000:3000'
     user: '0'
     environment:
-      - GF_SERVER_ROOT_URL=http://localhost:2000
+      - GF_SERVER_ROOT_URL=https://grafana.gana-f4ll.fr
       - GF_SECURITY_ADMIN_PASSWORD=admin # Simple password for dev
     volumes:
       - grafana-data:/var/lib/grafana
     networks:
       - ludora-network
       - traefik
+    # Add Traefik labels for secure access
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.grafana-dev.rule=Host(`grafana.gana-f4ll.fr`)'
+      - 'traefik.http.routers.grafana-dev.entrypoints=websecure'
+      - 'traefik.http.routers.grafana-dev.tls.certresolver=myresolver'
+      - 'traefik.http.services.grafana-dev.loadbalancer.server.port=3000'
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus-dev
     restart: 'no'
-    ports:
-      - '9090:9090'
+    # Remove direct port exposure for security - use Traefik instead
+    # ports:
+    #   - '9090:9090'
     volumes:
       - prometheus-data:/prometheus
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - ludora-network
       - traefik
+    # Add Traefik labels for secure access
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.prometheus-dev.rule=Host(`prometheus.gana-f4ll.fr`)'
+      - 'traefik.http.routers.prometheus-dev.entrypoints=websecure'
+      - 'traefik.http.routers.prometheus-dev.tls.certresolver=myresolver'
+      - 'traefik.http.services.prometheus-dev.loadbalancer.server.port=9090'
     # Add development-specific configuration
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
