@@ -243,7 +243,7 @@ jobs:
             git checkout ${{ github.ref_name }}
             git pull
             docker compose -f compose.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}.yml down
-            docker compose -f compose.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}.yml up -d --build
+            docker compose -f compose.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}.yml --env-file .env.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }} up -d --build
             echo "✅ Deployment completed!"
 
       - name: Deployment Status
