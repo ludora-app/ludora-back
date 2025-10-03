@@ -227,7 +227,7 @@ jobs:
           echo "SSH key first line: $(head -1 ~/.ssh/id_rsa 2>/dev/null || echo 'Cannot read file')"
           echo "SSH key last line: $(tail -1 ~/.ssh/id_rsa 2>/dev/null || echo 'Cannot read file')"
 
-          # Test de connexion SSH
+          # Test connexion SSH
           echo "🔗 Testing SSH connection..."
           ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "echo 'SSH connection successful'" || echo "SSH connection failed"
 
