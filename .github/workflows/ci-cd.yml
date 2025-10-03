@@ -107,7 +107,7 @@ jobs:
           du -sh coverage/ || echo "No coverage directory"
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: |
@@ -172,7 +172,7 @@ jobs:
           find dist/ -type f | head -10 || echo "No files in dist"
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           path: |
