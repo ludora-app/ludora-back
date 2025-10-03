@@ -5,11 +5,11 @@ services:
   ludora-api:
     build:
       context: .
-      dockerfile: docker/nest-api/Dockerfile
+      dockerfile: docker/nest-api/Dockerfile.prod
     container_name: ludora-api
     restart: unless-stopped
     ports:
-      - '2424:2424' # Only expose API port
+      - '2424:2424'
     environment:
       - NODE_ENV=production
       - DOPPLER_TOKEN
