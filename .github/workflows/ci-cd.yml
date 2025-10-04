@@ -242,8 +242,32 @@ jobs:
             cd ${{ secrets.REMOTE_PATH }}
             git checkout ${{ github.ref_name }}
             git pull
-            docker compose -f compose.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}.yml down
-            docker compose -f compose.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}.yml --env-file .env.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }} up  --build -d 
+            
+            # Set environment file
+            export ENV_FILE=".env.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}"
+            export COMPOSE_FILE="compose.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}.yml"
+            
+            echo "📦 Using compose file: $COMPOSE_FILE"
+            echo "🔐 Using env file: $ENV_FILE"
+            
+            # Stop containers
+            docker compose -f $COMPOSE_FILE down
+            
+            # Start containers with build
+            docker compose -f $COMPOSE_FILE --env-file $ENV_FILE up --build -d
+            
+            # Wait for containers to be healthy
+            echo "⏳ Waiting for containers to be ready..."
+            sleep 10
+            
+            # Check container status
+            echo "📊 Container status:"
+            docker ps --filter "name=ludora"
+            
+            # Check API logs
+            echo "📝 API logs (last 20 lines):"
+            docker logs ludora-api --tail 20
+            
             echo "✅ Deployment completed!"
 
       - name: Deployment Status

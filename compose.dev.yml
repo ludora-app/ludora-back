@@ -27,6 +27,13 @@ services:
       - traefik
     depends_on:
       - ludora-db
+    # Add healthcheck to ensure API is ready
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:2424/health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     # Add development-specific labels
     labels:
       - 'dev.environment=development'
