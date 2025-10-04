@@ -17,7 +17,7 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('Ludora API')
+    .setTitle('Ludora API v1')
     .setDescription('API for the Ludora app')
     .setVersion('1.0')
     .build();

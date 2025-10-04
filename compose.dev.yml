@@ -50,15 +50,13 @@ services:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - ludora-network
-      - traefik
+    labels:
+      - 'traefik.enable=false'
   # Include Grafana in development for monitoring
-  grafana:
+  ludora-grafana:
     image: grafana/grafana-oss:latest
     container_name: grafana-dev
     restart: 'no'
-    # Remove direct port exposure for security - use Traefik instead
-    # ports:
-    #   - '2000:3000'
     user: '0'
     environment:
       - GF_SERVER_ROOT_URL=https://grafana.gana-f4ll.fr
@@ -75,13 +73,10 @@ services:
       - 'traefik.http.routers.grafana-dev.entrypoints=websecure'
       - 'traefik.http.routers.grafana-dev.tls.certresolver=myresolver'
       - 'traefik.http.services.grafana-dev.loadbalancer.server.port=3000'
-  prometheus:
+  ludora-prometheus:
     image: prom/prometheus:latest
     container_name: prometheus-dev
     restart: 'no'
-    # Remove direct port exposure for security - use Traefik instead
-    # ports:
-    #   - '9090:9090'
     volumes:
       - prometheus-data:/prometheus
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
