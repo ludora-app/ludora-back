@@ -250,6 +250,14 @@ jobs:
             echo "📦 Using compose file: $COMPOSE_FILE"
             echo "🔐 Using env file: $ENV_FILE"
             
+            # Check if traefik network exists, create if not
+            if ! docker network ls | grep -q traefik; then
+              echo "🌐 Creating traefik network..."
+              docker network create traefik
+            else
+              echo "✅ Traefik network already exists"
+            fi
+            
             # Stop containers
             docker compose -f $COMPOSE_FILE down
             
@@ -267,6 +275,17 @@ jobs:
             # Check API logs
             echo "📝 API logs (last 20 lines):"
             docker logs ludora-api --tail 20
+            
+            # Restart Traefik to detect new containers
+            echo "🔄 Restarting Traefik to detect containers..."
+            cd ~/traefik && docker compose restart || echo "⚠️  Could not restart Traefik (might not be in ~/traefik)"
+            
+            # Wait a bit for Traefik to restart
+            sleep 5
+            
+            # Verify Traefik detected the containers
+            echo "🔍 Checking if Traefik detected ludora-api..."
+            docker logs traefik-reverse-proxy-1 --tail 50 | grep -i ludora || echo "⚠️  Ludora not found in Traefik logs"
             
             echo "✅ Deployment completed!"
 
