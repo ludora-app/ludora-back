@@ -38,12 +38,11 @@ services:
     labels:
       - 'dev.environment=development'
       - 'traefik.enable=true'
+      - 'traefik.docker.network=traefik'
       - 'traefik.http.routers.ludora-api.rule=Host(`ludora-api.gana-f4ll.fr`)'
       - 'traefik.http.routers.ludora-api.entrypoints=websecure'
       - 'traefik.http.routers.ludora-api.tls=true'
       - 'traefik.http.routers.ludora-api.tls.certresolver=myresolver'
-      - 'traefik.http.routers.ludora-api.tls.domains[0].main=ludora-api.gana-f4ll.fr'
-      - 'traefik.http.routers.ludora-api.tls.domains[0].sans=*.ludora-api.gana-f4ll.fr'
       - 'traefik.http.services.ludora-api.loadbalancer.server.port=2424'
 
   ludora-db:
