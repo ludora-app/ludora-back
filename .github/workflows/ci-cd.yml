@@ -266,7 +266,10 @@ jobs:
             
             # Wait for containers to be healthy
             echo "⏳ Waiting for containers to be ready..."
-            sleep 10
+            sleep 40
+            
+            echo "⏳ Waiting for healthcheck to pass..."
+            sleep 20
             
             # Check container status
             echo "📊 Container status:"
@@ -278,7 +281,16 @@ jobs:
             
             # Restart Traefik to detect new containers
             echo "🔄 Restarting Traefik to detect containers..."
-            cd ~/traefik && docker compose restart || echo "⚠️  Could not restart Traefik (might not be in ~/traefik)"
+            if [ -d "/root/traefik" ]; then
+              cd /root/traefik && docker compose restart
+            elif [ -d "/root/code/traefik" ]; then
+              cd /root/code/traefik && docker compose restart
+            elif [ -d "$HOME/traefik" ]; then
+              cd $HOME/traefik && docker compose restart
+            else
+              echo "⚠️  Could not find Traefik directory, trying to restart container directly..."
+              docker restart traefik-reverse-proxy-1 || echo "❌ Failed to restart Traefik"
+            fi
             
             # Wait a bit for Traefik to restart
             sleep 5
