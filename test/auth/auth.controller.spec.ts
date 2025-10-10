@@ -14,6 +14,9 @@ describe('AuthController', () => {
     verifyEmail: jest.fn(),
     verifyEmailCode: jest.fn(),
     verifyToken: jest.fn(),
+    refreshToken: jest.fn(),
+    logout: jest.fn(),
+    logoutAllDevices: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -49,12 +52,15 @@ describe('AuthController', () => {
         type: User_type.USER,
       };
 
-      mockAuthService.register.mockResolvedValue('mock_token');
+      mockAuthService.register.mockResolvedValue({
+        accessToken: 'mock_token',
+        refreshToken: 'mock_refresh_token',
+      });
 
       const result = await controller.register(registerDto, undefined);
 
       expect(result).toEqual({
-        data: { accessToken: 'mock_token' },
+        data: { accessToken: 'mock_token', refreshToken: 'mock_refresh_token' },
         message: 'User created successfully',
         status: 201,
       });
@@ -79,12 +85,15 @@ describe('AuthController', () => {
         originalname: 'test.jpg',
       } as Express.Multer.File;
 
-      mockAuthService.register.mockResolvedValue('mock_token');
+      mockAuthService.register.mockResolvedValue({
+        accessToken: 'mock_token',
+        refreshToken: 'mock_refresh_token',
+      });
 
       const result = await controller.register(registerDto, mockFile);
 
       expect(result).toEqual({
-        data: { accessToken: 'mock_token' },
+        data: { accessToken: 'mock_token', refreshToken: 'mock_refresh_token' },
         message: 'User created successfully',
         status: 201,
       });
@@ -99,12 +108,15 @@ describe('AuthController', () => {
         password: 'password',
       };
 
-      mockAuthService.login.mockResolvedValue('mock_token');
+      mockAuthService.login.mockResolvedValue({
+        accessToken: 'mock_token',
+        refreshToken: 'mock_refresh_token',
+      });
 
       const result = await controller.login(loginDto);
 
       expect(result).toEqual({
-        data: { accessToken: 'mock_token' },
+        data: { accessToken: 'mock_token', refreshToken: 'mock_refresh_token' },
         message: 'Token created successfully',
         status: 200,
       });
@@ -180,6 +192,62 @@ describe('AuthController', () => {
         status: 200,
       });
       expect(mockAuthService.resendVerificationCode).toHaveBeenCalledWith('1');
+    });
+  });
+
+  describe('refreshToken', () => {
+    it('should refresh tokens successfully', async () => {
+      const refreshTokenDto = { refreshToken: 'valid_refresh_token' };
+
+      mockAuthService.refreshToken.mockResolvedValue({
+        accessToken: 'new_access_token',
+        refreshToken: 'new_refresh_token',
+      });
+
+      const result = await controller.refreshToken(refreshTokenDto);
+
+      expect(result).toEqual({
+        data: { accessToken: 'new_access_token', refreshToken: 'new_refresh_token' },
+        message: 'Tokens refreshed successfully',
+        status: 200,
+      });
+      expect(mockAuthService.refreshToken).toHaveBeenCalledWith(refreshTokenDto);
+    });
+  });
+
+  describe('logout', () => {
+    it('should logout from current device', async () => {
+      const mockRequest = {
+        user: { uid: '1', deviceUid: 'device123' },
+      };
+
+      mockAuthService.logout.mockResolvedValue(undefined);
+
+      const result = await controller.logout(mockRequest as any);
+
+      expect(result).toEqual({
+        message: 'Logged out successfully',
+        status: 200,
+      });
+      expect(mockAuthService.logout).toHaveBeenCalledWith('1', 'device123');
+    });
+  });
+
+  describe('logoutAllDevices', () => {
+    it('should logout from all devices', async () => {
+      const mockRequest = {
+        user: { uid: '1' },
+      };
+
+      mockAuthService.logoutAllDevices.mockResolvedValue(undefined);
+
+      const result = await controller.logoutAllDevices(mockRequest as any);
+
+      expect(result).toEqual({
+        message: 'Logged out from all devices successfully',
+        status: 200,
+      });
+      expect(mockAuthService.logoutAllDevices).toHaveBeenCalledWith('1');
     });
   });
 });

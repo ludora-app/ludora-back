@@ -125,8 +125,8 @@ model Users {
 
   User_global_rating User_global_ratings[]
   Email_verification Email_verification[]
-
-  User_tokens User_tokens[]
+  User_tokens        User_tokens[]
+  Refresh_tokens     Refresh_tokens[]
 
   @@schema("auth")
 }
@@ -152,6 +152,20 @@ model User_tokens {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   user Users @relation(fields: [userUid], references: [uid])
+
+  @@schema("auth")
+}
+
+model Refresh_tokens {
+  uid       String   @id @default(cuid())
+  userUid   String   @map("user_uid")
+  deviceUid String?  @map("deviceUid")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user Users @relation(fields: [userUid], references: [uid], onDelete: Cascade)
 
   @@schema("auth")
 }

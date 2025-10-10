@@ -7,7 +7,13 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { User_type } from '@prisma/client';
 import * as argon2 from 'argon2';
-import { CreateImageDto, LoginDto, RegisterUserDto, VerifyMailDto } from 'src/auth/dto';
+import {
+  CreateImageDto,
+  LoginDto,
+  RefreshTokenDto,
+  RegisterUserDto,
+  VerifyMailDto,
+} from 'src/auth/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
@@ -22,7 +28,10 @@ export class AuthService {
     private readonly emailsService: EmailsService,
   ) {}
 
-  async register(registerDto: RegisterUserDto, createImageDto?: CreateImageDto): Promise<string> {
+  async register(
+    registerDto: RegisterUserDto,
+    createImageDto?: CreateImageDto,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const { deviceUid, type } = registerDto;
 
     const result = await this.prismaService.$transaction(async (tx) => {
@@ -50,8 +59,10 @@ export class AuthService {
       const payload: { uid: string; deviceUid?: string } = { uid: newUser.uid };
       if (deviceUid) payload.deviceUid = deviceUid;
 
-      const accessToken = this.jwt.sign(payload);
+      const accessToken = this.jwt.sign(payload, { expiresIn: '15m' });
+      const refreshToken = this.jwt.sign(payload, { expiresIn: '7d' });
 
+      // Créer le token d'accès
       await tx.user_tokens.create({
         data: {
           deviceUid,
@@ -60,15 +71,25 @@ export class AuthService {
         },
       });
 
-      return { accessToken, newUser };
+      // Créer le refresh token
+      await tx.refresh_tokens.create({
+        data: {
+          deviceUid,
+          token: refreshToken,
+          userUid: newUser.uid,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours
+        },
+      });
+
+      return { accessToken, refreshToken, newUser };
     });
 
     await this.sendVerificationEmail(result.newUser.uid, result.newUser.email);
 
-    return result.accessToken;
+    return { accessToken: result.accessToken, refreshToken: result.refreshToken };
   }
 
-  async login(loginDto: LoginDto): Promise<string> {
+  async login(loginDto: LoginDto): Promise<{ accessToken: string; refreshToken: string }> {
     try {
       const { deviceUid, email, password } = loginDto;
       const formattedEmail = email.toLowerCase();
@@ -84,7 +105,8 @@ export class AuthService {
       }
 
       const payload = { uid: user.uid, ...(deviceUid && { deviceUid }) };
-      const accessToken = this.jwt.sign(payload);
+      const accessToken = this.jwt.sign(payload, { expiresIn: '15m' });
+      const refreshToken = this.jwt.sign(payload, { expiresIn: '1year' });
 
       const existingTokens = await this.prismaService.user_tokens.findMany({
         orderBy: { createdAt: 'asc' },
@@ -130,9 +152,62 @@ export class AuthService {
             },
           });
         }
+
+        // Gestion des refresh tokens
+        const existingRefreshTokens = await prisma.refresh_tokens.findMany({
+          orderBy: { createdAt: 'asc' },
+          where: { userUid: user.uid },
+        });
+
+        const refreshTokenWithDeviceUid = existingRefreshTokens.find(
+          (token) => token.deviceUid !== null,
+        );
+        const refreshTokensWithoutDeviceUid = existingRefreshTokens.filter(
+          (token) => !token.deviceUid,
+        );
+
+        if (deviceUid) {
+          if (refreshTokenWithDeviceUid) {
+            // Mise à jour du refresh token existant avec deviceUid
+            await prisma.refresh_tokens.update({
+              data: {
+                token: refreshToken,
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+              },
+              where: { uid: refreshTokenWithDeviceUid.uid },
+            });
+          } else {
+            // Création d'un nouveau refresh token avec deviceUid
+            await prisma.refresh_tokens.create({
+              data: {
+                deviceUid,
+                token: refreshToken,
+                userUid: user.uid,
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+              },
+            });
+          }
+        } else {
+          // Gestion du refresh token sans deviceUid
+          if (refreshTokensWithoutDeviceUid.length >= 1) {
+            // Supprimer le refresh token le plus ancien sans deviceUid
+            await prisma.refresh_tokens.delete({
+              where: { uid: refreshTokensWithoutDeviceUid[0].uid },
+            });
+          }
+
+          // Création du nouveau refresh token sans deviceUid
+          await prisma.refresh_tokens.create({
+            data: {
+              token: refreshToken,
+              userUid: user.uid,
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            },
+          });
+        }
       });
 
-      return accessToken;
+      return { accessToken, refreshToken };
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -280,5 +355,135 @@ export class AuthService {
 
     // Envoyer un nouveau code
     await this.sendVerificationEmail(userUid, user.email);
+  }
+
+  /**
+   * Refresh access token using refresh token
+   * @param refreshTokenDto - The refresh token data
+   */
+  async refreshToken(
+    refreshTokenDto: RefreshTokenDto,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const { refreshToken } = refreshTokenDto;
+
+    try {
+      // Vérifier et décoder le refresh token
+      const payload = await this.jwt.verifyAsync(refreshToken);
+      const { uid: userUid, deviceUid } = payload;
+
+      if (!userUid) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      // Vérifier que le refresh token existe encore en base de données
+      const refreshTokenRecord = await this.prismaService.refresh_tokens.findFirst({
+        where: {
+          token: refreshToken,
+          userUid: userUid,
+          expiresAt: {
+            gt: new Date(), // Vérifier qu'il n'est pas expiré
+          },
+        },
+      });
+
+      if (!refreshTokenRecord) {
+        throw new UnauthorizedException('Refresh token expired or invalid');
+      }
+
+      // Vérifier que l'utilisateur est toujours actif
+      const user = await this.prismaService.users.findUnique({
+        select: { emailVerified: true, uid: true, isConnected: true },
+        where: { uid: userUid },
+      });
+
+      if (!user || !user.isConnected) {
+        throw new UnauthorizedException('User account disabled');
+      }
+
+      // Générer de nouveaux tokens
+      const newPayload = { uid: userUid, ...(deviceUid && { deviceUid }) };
+      const newAccessToken = this.jwt.sign(newPayload, { expiresIn: '15m' });
+      const newRefreshToken = this.jwt.sign(newPayload, { expiresIn: '7d' });
+
+      // Mettre à jour les tokens en base de données
+      await this.prismaService.$transaction(async (tx) => {
+        // Supprimer l'ancien refresh token
+        await tx.refresh_tokens.delete({
+          where: { uid: refreshTokenRecord.uid },
+        });
+
+        // Créer le nouveau refresh token
+        await tx.refresh_tokens.create({
+          data: {
+            deviceUid,
+            token: newRefreshToken,
+            userUid: userUid,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          },
+        });
+
+        // Mettre à jour l'access token
+        const existingAccessToken = await tx.user_tokens.findFirst({
+          where: { userUid: userUid, deviceUid: deviceUid || null },
+        });
+
+        if (existingAccessToken) {
+          await tx.user_tokens.update({
+            data: { token: newAccessToken },
+            where: { uid: existingAccessToken.uid },
+          });
+        } else {
+          await tx.user_tokens.create({
+            data: {
+              deviceUid,
+              token: newAccessToken,
+              userUid: userUid,
+            },
+          });
+        }
+      });
+
+      return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
+  /**
+   * Logout user by invalidating all tokens
+   * @param userUid - The user uid
+   * @param deviceUid - Optional device uid for device-specific logout
+   */
+  async logout(userUid: string, deviceUid?: string): Promise<void> {
+    await this.prismaService.$transaction(async (tx) => {
+      if (deviceUid) {
+        // Logout spécifique à un appareil
+        await tx.user_tokens.deleteMany({
+          where: { userUid, deviceUid },
+        });
+        await tx.refresh_tokens.deleteMany({
+          where: { userUid, deviceUid },
+        });
+      } else {
+        // Logout de tous les appareils
+        await tx.user_tokens.deleteMany({
+          where: { userUid },
+        });
+        await tx.refresh_tokens.deleteMany({
+          where: { userUid },
+        });
+      }
+    });
+  }
+
+  /**
+   * Logout from all devices
+   * @param userUid - The user uid
+   */
+  async logoutAllDevices(userUid: string): Promise<void> {
+    await this.logout(userUid);
   }
 }

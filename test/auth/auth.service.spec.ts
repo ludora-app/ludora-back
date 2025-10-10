@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Sex, User_type } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { AuthService } from 'src/auth/auth.service';
+import { RefreshTokenDto } from 'src/auth/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { UsersService } from 'src/users/users.service';
@@ -23,7 +24,17 @@ describe('AuthService', () => {
             create: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_token' }),
             update: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_token' }),
             delete: jest.fn().mockResolvedValue({ uid: '1' }),
+            deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
             findMany: jest.fn().mockResolvedValue([]),
+            findFirst: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_token' }),
+          },
+          refresh_tokens: {
+            create: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_refresh_token' }),
+            update: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_refresh_token' }),
+            delete: jest.fn().mockResolvedValue({ uid: '1' }),
+            deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+            findMany: jest.fn().mockResolvedValue([]),
+            findFirst: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_refresh_token' }),
           },
         });
       }
@@ -38,6 +49,16 @@ describe('AuthService', () => {
       create: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_token' }),
       update: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_token' }),
       delete: jest.fn().mockResolvedValue({ uid: '1' }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+      findFirst: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_token' }),
+    },
+    refresh_tokens: {
+      create: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_refresh_token' }),
+      update: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_refresh_token' }),
+      delete: jest.fn().mockResolvedValue({ uid: '1' }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+      findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_refresh_token' }),
     },
     email_verification: {
       create: jest.fn().mockResolvedValue({ uid: '1', code: '123456' }),
@@ -49,6 +70,7 @@ describe('AuthService', () => {
 
   const mockJwtService = {
     sign: jest.fn().mockReturnValue('mock_token'),
+    verifyAsync: jest.fn().mockResolvedValue({ uid: '1', deviceUid: 'device123' }),
   };
 
   const mockUsersService = {
@@ -122,7 +144,7 @@ describe('AuthService', () => {
 
       const result = await service.register(registerDto);
 
-      expect(result).toBe('mock_token');
+      expect(result).toEqual({ accessToken: 'mock_token', refreshToken: 'mock_token' });
       expect(mockUsersService.createUser).toHaveBeenCalled();
       expect(service.sendVerificationEmail).toHaveBeenCalledWith('1', 'test@test.com');
     });
@@ -156,7 +178,7 @@ describe('AuthService', () => {
 
       const result = await service.login(loginDto);
 
-      expect(result).toBe('mock_token');
+      expect(result).toEqual({ accessToken: 'mock_token', refreshToken: 'mock_token' });
     });
 
     it('should throw BadRequestException when user not found', async () => {
@@ -285,6 +307,69 @@ describe('AuthService', () => {
       });
 
       await expect(service.resendVerificationCode('1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('refreshToken', () => {
+    it('should refresh tokens successfully', async () => {
+      const refreshTokenDto: RefreshTokenDto = { refreshToken: 'valid_refresh_token' };
+
+      mockPrismaService.refresh_tokens.findFirst.mockResolvedValue({
+        uid: '1',
+        token: 'valid_refresh_token',
+        userUid: '1',
+        expiresAt: new Date(Date.now() + 60000), // 1 minute from now
+      });
+
+      mockPrismaService.users.findUnique.mockResolvedValue({
+        uid: '1',
+        isConnected: true,
+        emailVerified: true,
+      });
+
+      const result = await service.refreshToken(refreshTokenDto);
+
+      expect(result).toEqual({ accessToken: 'mock_token', refreshToken: 'mock_token' });
+      expect(mockJwtService.verifyAsync).toHaveBeenCalledWith('valid_refresh_token');
+    });
+
+    it('should throw UnauthorizedException for invalid refresh token', async () => {
+      const refreshTokenDto: RefreshTokenDto = { refreshToken: 'invalid_token' };
+
+      mockJwtService.verifyAsync.mockRejectedValue(new Error('Invalid token'));
+
+      await expect(service.refreshToken(refreshTokenDto)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException for expired refresh token', async () => {
+      const refreshTokenDto: RefreshTokenDto = { refreshToken: 'expired_token' };
+
+      mockJwtService.verifyAsync.mockResolvedValue({ uid: '1' });
+      mockPrismaService.refresh_tokens.findFirst.mockResolvedValue(null);
+
+      await expect(service.refreshToken(refreshTokenDto)).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('logout', () => {
+    it('should logout from current device', async () => {
+      await service.logout('1', 'device123');
+
+      expect(mockPrismaService.$transaction).toHaveBeenCalled();
+    });
+
+    it('should logout from all devices', async () => {
+      await service.logout('1');
+
+      expect(mockPrismaService.$transaction).toHaveBeenCalled();
+    });
+  });
+
+  describe('logoutAllDevices', () => {
+    it('should logout from all devices', async () => {
+      await service.logoutAllDevices('1');
+
+      expect(mockPrismaService.$transaction).toHaveBeenCalled();
     });
   });
 });
