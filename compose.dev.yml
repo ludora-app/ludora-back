@@ -64,7 +64,7 @@ services:
   # Include Grafana in development for monitoring
   ludora-grafana:
     image: grafana/grafana-oss:latest
-    container_name: grafana-dev
+    container_name: ludora-grafana
     restart: 'no'
     user: '0'
     environment:
@@ -84,7 +84,7 @@ services:
       - 'traefik.http.services.grafana-dev.loadbalancer.server.port=3000'
   ludora-prometheus:
     image: prom/prometheus:latest
-    container_name: prometheus-dev
+    container_name: ludora-prometheus
     restart: 'no'
     volumes:
       - prometheus-data:/prometheus
