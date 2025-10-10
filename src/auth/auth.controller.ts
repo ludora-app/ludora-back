@@ -18,10 +18,14 @@ import {
   ApiConsumes,
   ApiOperation,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import {
   CreateImageDto,
   LoginDto,
   LoginResponseDto,
+  LogoutResponseDto,
+  RefreshTokenDto,
+  RefreshTokenResponseDto,
   RegisterResponseDto,
   RegisterUserDto,
   RegisterUserWithFileDto,
@@ -64,17 +68,17 @@ export class AuthController {
         file: file.buffer,
         name: imageName,
       };
-      const accessToken = await this.authService.register(registerDto, createImageDto);
+      const tokens = await this.authService.register(registerDto, createImageDto);
       return {
-        data: { accessToken },
+        data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
         message: 'User created successfully',
         status: 201,
       };
     }
 
-    const accessToken = await this.authService.register(registerDto);
+    const tokens = await this.authService.register(registerDto);
     return {
-      data: { accessToken },
+      data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
       message: 'User created successfully',
       status: 201,
     };
@@ -82,6 +86,7 @@ export class AuthController {
 
   @Public()
   @Post('/login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 tentatives par minute
   @ApiOperation({
     summary: 'Allow the user to login',
   })
@@ -89,8 +94,12 @@ export class AuthController {
     type: BadRequestException,
   })
   async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
-    const accessToken = await this.authService.login(loginDto);
-    return { data: { accessToken }, message: 'Token created successfully', status: 200 };
+    const tokens = await this.authService.login(loginDto);
+    return {
+      data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
+      message: 'Token created successfully',
+      status: 200,
+    };
   }
 
   @Public()
@@ -144,6 +153,53 @@ export class AuthController {
 
     return {
       message: 'Nouveau code de vérification envoyé',
+      status: 200,
+    };
+  }
+
+  @Public()
+  @Post('refresh-token')
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 tentatives par minute
+  @ApiOperation({
+    summary: 'Refresh access token using refresh token',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error during token refresh',
+    type: BadRequestException,
+  })
+  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto): Promise<RefreshTokenResponseDto> {
+    const tokens = await this.authService.refreshToken(refreshTokenDto);
+    return {
+      data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
+      message: 'Tokens refreshed successfully',
+      status: 200,
+    };
+  }
+
+  @Post('logout')
+  @ApiOperation({
+    summary: 'Logout user from current device',
+  })
+  async logout(@Request() req): Promise<LogoutResponseDto> {
+    const { uid, deviceUid } = req.user;
+    await this.authService.logout(uid, deviceUid);
+
+    return {
+      message: 'Logged out successfully',
+      status: 200,
+    };
+  }
+
+  @Post('logout-all-devices')
+  @ApiOperation({
+    summary: 'Logout user from all devices',
+  })
+  async logoutAllDevices(@Request() req): Promise<LogoutResponseDto> {
+    const { uid } = req.user;
+    await this.authService.logoutAllDevices(uid);
+
+    return {
+      message: 'Logged out from all devices successfully',
       status: 200,
     };
   }
