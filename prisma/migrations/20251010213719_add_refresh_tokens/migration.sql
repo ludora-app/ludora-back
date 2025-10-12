@@ -90,6 +90,19 @@ CREATE TABLE "auth"."User_tokens" (
 );
 
 -- CreateTable
+CREATE TABLE "auth"."Refresh_tokens" (
+    "uid" TEXT NOT NULL,
+    "user_uid" TEXT NOT NULL,
+    "deviceUid" TEXT,
+    "token" TEXT NOT NULL,
+    "expires_at" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Refresh_tokens_pkey" PRIMARY KEY ("uid")
+);
+
+-- CreateTable
 CREATE TABLE "ratings"."User_ratings" (
     "evaluator_uid" TEXT NOT NULL,
     "evaluated_uid" TEXT NOT NULL,
@@ -253,9 +266,7 @@ CREATE TABLE "sessions"."Session_players" (
     "team_uid" TEXT NOT NULL,
     "userUid" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Session_players_pkey" PRIMARY KEY ("session_uid","team_uid","userUid")
+    "updated_at" TIMESTAMP(3) NOT NULL
 );
 
 -- CreateTable
@@ -323,10 +334,16 @@ CREATE UNIQUE INDEX "Users_email_key" ON "auth"."Users"("email");
 CREATE UNIQUE INDEX "Users_stripe_account_uid_key" ON "auth"."Users"("stripe_account_uid");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Refresh_tokens_token_key" ON "auth"."Refresh_tokens"("token");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Partner_opening_hours_partner_uid_day_of_week_key" ON "infrastructure"."Partner_opening_hours"("partner_uid", "day_of_week");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Sports_name_key" ON "infrastructure"."Sports"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Session_players_session_uid_team_uid_userUid_key" ON "sessions"."Session_players"("session_uid", "team_uid", "userUid");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Conversation_options_conversationUid_userUid_key" ON "social"."Conversation_options"("conversationUid", "userUid");
@@ -339,6 +356,9 @@ ALTER TABLE "auth"."Email_verification" ADD CONSTRAINT "Email_verification_user_
 
 -- AddForeignKey
 ALTER TABLE "auth"."User_tokens" ADD CONSTRAINT "User_tokens_user_uid_fkey" FOREIGN KEY ("user_uid") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "auth"."Refresh_tokens" ADD CONSTRAINT "Refresh_tokens_user_uid_fkey" FOREIGN KEY ("user_uid") REFERENCES "auth"."Users"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ratings"."User_ratings" ADD CONSTRAINT "User_ratings_evaluator_uid_fkey" FOREIGN KEY ("evaluator_uid") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
