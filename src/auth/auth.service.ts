@@ -63,7 +63,7 @@ export class AuthService {
       const refreshToken = this.jwt.sign(payload, { expiresIn: '7d' });
 
       // Créer le token d'accès
-      await tx.user_tokens.create({
+      await tx.userTokens.create({
         data: {
           deviceUid,
           token: accessToken,
@@ -72,7 +72,7 @@ export class AuthService {
       });
 
       // Créer le refresh token
-      await tx.refresh_tokens.create({
+      await tx.refreshTokens.create({
         data: {
           deviceUid,
           token: refreshToken,
@@ -108,7 +108,7 @@ export class AuthService {
       const accessToken = this.jwt.sign(payload, { expiresIn: '15m' });
       const refreshToken = this.jwt.sign(payload, { expiresIn: '1year' });
 
-      const existingTokens = await this.prismaService.user_tokens.findMany({
+      const existingTokens = await this.prismaService.userTokens.findMany({
         orderBy: { createdAt: 'asc' },
         where: { userUid: user.uid },
       });
@@ -121,13 +121,13 @@ export class AuthService {
         if (deviceUid) {
           if (tokenWithDeviceUid) {
             // Mise à jour du token existant avec deviceUid
-            await prisma.user_tokens.update({
+            await prisma.userTokens.update({
               data: { token: accessToken },
               where: { uid: tokenWithDeviceUid.uid },
             });
           } else {
             // Création d'un nouveau token avec deviceUid
-            await prisma.user_tokens.create({
+            await prisma.userTokens.create({
               data: {
                 deviceUid,
                 token: accessToken,
@@ -139,13 +139,13 @@ export class AuthService {
           // Gestion du token sans deviceUid
           if (tokensWithoutDeviceUid.length >= 1) {
             //? on supprime le token le plus ancien sans deviceUid
-            await prisma.user_tokens.delete({
+            await prisma.userTokens.delete({
               where: { uid: tokensWithoutDeviceUid[0].uid },
             });
           }
 
           // Création du nouveau token sans deviceUid
-          await prisma.user_tokens.create({
+          await prisma.userTokens.create({
             data: {
               token: accessToken,
               userUid: user.uid,
@@ -154,7 +154,7 @@ export class AuthService {
         }
 
         // Gestion des refresh tokens
-        const existingRefreshTokens = await prisma.refresh_tokens.findMany({
+        const existingRefreshTokens = await prisma.refreshTokens.findMany({
           orderBy: { createdAt: 'asc' },
           where: { userUid: user.uid },
         });
@@ -169,7 +169,7 @@ export class AuthService {
         if (deviceUid) {
           if (refreshTokenWithDeviceUid) {
             // Mise à jour du refresh token existant avec deviceUid
-            await prisma.refresh_tokens.update({
+            await prisma.refreshTokens.update({
               data: {
                 token: refreshToken,
                 expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -178,7 +178,7 @@ export class AuthService {
             });
           } else {
             // Création d'un nouveau refresh token avec deviceUid
-            await prisma.refresh_tokens.create({
+            await prisma.refreshTokens.create({
               data: {
                 deviceUid,
                 token: refreshToken,
@@ -191,13 +191,13 @@ export class AuthService {
           // Gestion du refresh token sans deviceUid
           if (refreshTokensWithoutDeviceUid.length >= 1) {
             // Supprimer le refresh token le plus ancien sans deviceUid
-            await prisma.refresh_tokens.delete({
+            await prisma.refreshTokens.delete({
               where: { uid: refreshTokensWithoutDeviceUid[0].uid },
             });
           }
 
           // Création du nouveau refresh token sans deviceUid
-          await prisma.refresh_tokens.create({
+          await prisma.refreshTokens.create({
             data: {
               token: refreshToken,
               userUid: user.uid,
@@ -282,12 +282,12 @@ export class AuthService {
     // Utiliser une transaction pour garantir l'atomicité
     await this.prismaService.$transaction(async (tx) => {
       // Supprimer les anciens codes de vérification
-      await tx.email_verification.deleteMany({
+      await tx.emailVerification.deleteMany({
         where: { userUid: userUid },
       });
 
       // Créer le nouveau code
-      await tx.email_verification.create({
+      await tx.emailVerification.create({
         data: {
           code: verificationCode,
           expiresAt,
@@ -309,7 +309,7 @@ export class AuthService {
    * @param code - The code of the user
    */
   async verifyEmailCode(userUid: string, code: string): Promise<void> {
-    const verification = await this.prismaService.email_verification.findFirst({
+    const verification = await this.prismaService.emailVerification.findFirst({
       where: {
         code,
         expiresAt: {
@@ -330,7 +330,7 @@ export class AuthService {
         where: { uid: userUid },
       }),
       // Supprime tous les codes de vérification de l'utilisateur
-      this.prismaService.email_verification.deleteMany({
+      this.prismaService.emailVerification.deleteMany({
         where: { userUid: userUid },
       }),
     ]);
@@ -349,7 +349,7 @@ export class AuthService {
       throw new BadRequestException('Email déjà vérifié');
     }
 
-    await this.prismaService.email_verification.deleteMany({
+    await this.prismaService.emailVerification.deleteMany({
       where: { userUid: userUid },
     });
 
@@ -376,7 +376,7 @@ export class AuthService {
       }
 
       // Vérifier que le refresh token existe encore en base de données
-      const refreshTokenRecord = await this.prismaService.refresh_tokens.findFirst({
+      const refreshTokenRecord = await this.prismaService.refreshTokens.findFirst({
         where: {
           token: refreshToken,
           userUid: userUid,
@@ -408,12 +408,12 @@ export class AuthService {
       // Mettre à jour les tokens en base de données
       await this.prismaService.$transaction(async (tx) => {
         // Supprimer l'ancien refresh token
-        await tx.refresh_tokens.delete({
+        await tx.refreshTokens.delete({
           where: { uid: refreshTokenRecord.uid },
         });
 
         // Créer le nouveau refresh token
-        await tx.refresh_tokens.create({
+        await tx.refreshTokens.create({
           data: {
             deviceUid,
             token: newRefreshToken,
@@ -423,17 +423,17 @@ export class AuthService {
         });
 
         // Mettre à jour l'access token
-        const existingAccessToken = await tx.user_tokens.findFirst({
+        const existingAccessToken = await tx.userTokens.findFirst({
           where: { userUid: userUid, deviceUid: deviceUid || null },
         });
 
         if (existingAccessToken) {
-          await tx.user_tokens.update({
+          await tx.userTokens.update({
             data: { token: newAccessToken },
             where: { uid: existingAccessToken.uid },
           });
         } else {
-          await tx.user_tokens.create({
+          await tx.userTokens.create({
             data: {
               deviceUid,
               token: newAccessToken,
@@ -461,18 +461,18 @@ export class AuthService {
     await this.prismaService.$transaction(async (tx) => {
       if (deviceUid) {
         // Logout spécifique à un appareil
-        await tx.user_tokens.deleteMany({
+        await tx.userTokens.deleteMany({
           where: { userUid, deviceUid },
         });
-        await tx.refresh_tokens.deleteMany({
+        await tx.refreshTokens.deleteMany({
           where: { userUid, deviceUid },
         });
       } else {
         // Logout de tous les appareils
-        await tx.user_tokens.deleteMany({
+        await tx.userTokens.deleteMany({
           where: { userUid },
         });
-        await tx.refresh_tokens.deleteMany({
+        await tx.refreshTokens.deleteMany({
           where: { userUid },
         });
       }

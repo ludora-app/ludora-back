@@ -31,7 +31,7 @@ export class SessionsService {
       throw new BadRequestException('Field not found');
     }
 
-    const openingHours = await this.prisma.partner_opening_hours.findUnique({
+    const openingHours = await this.prisma.partnerOpeningHours.findUnique({
       where: {
         partnerUid_dayOfWeek: {
           dayOfWeek: dayOfWeek,
@@ -236,7 +236,7 @@ export class SessionsService {
       throw new NotFoundException('Field not found');
     }
 
-    const openingHours = await this.prisma.partner_opening_hours.findUnique({
+    const openingHours = await this.prisma.partnerOpeningHours.findUnique({
       where: {
         partnerUid_dayOfWeek: {
           dayOfWeek: dayOfWeek,

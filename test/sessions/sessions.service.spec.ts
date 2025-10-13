@@ -50,7 +50,7 @@ describe('SessionsService', () => {
             fields: {
               findUnique: jest.fn(),
             },
-            partner_opening_hours: {
+            partnerOpeningHours: {
               findUnique: jest.fn(),
             },
             sessions: {
@@ -131,7 +131,7 @@ describe('SessionsService', () => {
     it('should create a session successfully', async () => {
       // Arrange
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partner_opening_hours.findUnique as jest.Mock).mockResolvedValue(
+      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue(
         mockOpeningHours,
       );
       (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
@@ -162,7 +162,7 @@ describe('SessionsService', () => {
       // Arrange
       const dtoWithoutTitle = { ...createSessionDto, title: undefined };
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partner_opening_hours.findUnique as jest.Mock).mockResolvedValue(
+      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue(
         mockOpeningHours,
       );
       (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
@@ -196,7 +196,7 @@ describe('SessionsService', () => {
     it('should throw BadRequestException if field is closed on the date', async () => {
       // Arrange
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partner_opening_hours.findUnique as jest.Mock).mockResolvedValue({
+      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue({
         ...mockOpeningHours,
         isClosed: true,
       });
@@ -210,7 +210,7 @@ describe('SessionsService', () => {
     it('should throw BadRequestException if session is outside opening hours', async () => {
       // Arrange
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partner_opening_hours.findUnique as jest.Mock).mockResolvedValue({
+      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue({
         ...mockOpeningHours,
         openTime: '16:00:00', // After session start time
       });
@@ -233,7 +233,7 @@ describe('SessionsService', () => {
       };
 
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partner_opening_hours.findUnique as jest.Mock).mockResolvedValue(
+      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue(
         mockOpeningHours,
       );
 
@@ -251,7 +251,7 @@ describe('SessionsService', () => {
       };
 
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partner_opening_hours.findUnique as jest.Mock).mockResolvedValue(
+      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue(
         mockOpeningHours,
       );
 
@@ -264,7 +264,7 @@ describe('SessionsService', () => {
     it('should throw BadRequestException if there is a session conflict', async () => {
       // Arrange
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partner_opening_hours.findUnique as jest.Mock).mockResolvedValue(
+      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue(
         mockOpeningHours,
       );
       (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue({
@@ -574,7 +574,7 @@ describe('SessionsService', () => {
       // Arrange
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partner_opening_hours.findUnique as jest.Mock).mockResolvedValue(
+      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue(
         mockOpeningHours,
       );
       (prismaService.sessions.update as jest.Mock).mockResolvedValue(mockUpdatedSession);
@@ -622,7 +622,7 @@ describe('SessionsService', () => {
       // Arrange
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partner_opening_hours.findUnique as jest.Mock).mockResolvedValue({
+      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue({
         ...mockOpeningHours,
         isClosed: true,
       });
@@ -637,7 +637,7 @@ describe('SessionsService', () => {
       // Arrange
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partner_opening_hours.findUnique as jest.Mock).mockResolvedValue({
+      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue({
         ...mockOpeningHours,
         openTime: '16:00:00', // After session start time
       });

@@ -246,12 +246,12 @@ export class UsersService {
     // Utiliser une transaction pour garantir l'atomicité
     await this.prismaService.$transaction(async (tx) => {
       // Supprimer les anciens codes de vérification
-      await tx.email_verification.deleteMany({
+      await tx.emailVerification.deleteMany({
         where: { userUid: userUid },
       });
 
       // Créer le nouveau code
-      await tx.email_verification.create({
+      await tx.emailVerification.create({
         data: {
           code: verificationCode,
           expiresAt,

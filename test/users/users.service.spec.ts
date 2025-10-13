@@ -25,7 +25,7 @@ describe('UsersService', () => {
       update: jest.fn(),
       count: jest.fn(),
     },
-    email_verification: {
+    emailVerification: {
       deleteMany: jest.fn(),
       create: jest.fn(),
     },
@@ -350,10 +350,10 @@ describe('UsersService', () => {
       await service.sendVerificationEmail('1', 'test@test.com');
 
       expect(mockPrismaService.$transaction).toHaveBeenCalled();
-      expect(mockPrismaService.email_verification.deleteMany).toHaveBeenCalledWith({
+      expect(mockPrismaService.emailVerification.deleteMany).toHaveBeenCalledWith({
         where: { userUid: '1' },
       });
-      expect(mockPrismaService.email_verification.create).toHaveBeenCalledWith({
+      expect(mockPrismaService.emailVerification.create).toHaveBeenCalledWith({
         data: {
           code: expect.any(String),
           expiresAt: expect.any(Date),

@@ -25,7 +25,7 @@ describe('AuthGuard', () => {
   };
 
   const mockPrismaService = {
-    user_tokens: {
+    userTokens: {
       findFirst: jest.fn(),
     },
     users: {
@@ -162,7 +162,7 @@ describe('AuthGuard', () => {
       };
       mockGetRequest.mockReturnValue(mockRequest);
       mockJwtService.verifyAsync.mockResolvedValue({ uid: 'user123' });
-      mockPrismaService.user_tokens.findFirst.mockResolvedValue(null);
+      mockPrismaService.userTokens.findFirst.mockResolvedValue(null);
 
       await expect(guard.canActivate(context)).rejects.toThrow(
         new UnauthorizedException('Token expired or invalid'),
@@ -179,7 +179,7 @@ describe('AuthGuard', () => {
       };
       mockGetRequest.mockReturnValue(mockRequest);
       mockJwtService.verifyAsync.mockResolvedValue({ uid: 'user123' });
-      mockPrismaService.user_tokens.findFirst.mockResolvedValue({
+      mockPrismaService.userTokens.findFirst.mockResolvedValue({
         uid: 'token123',
         token: 'valid_token',
         userUid: 'user123',
@@ -201,7 +201,7 @@ describe('AuthGuard', () => {
       };
       mockGetRequest.mockReturnValue(mockRequest);
       mockJwtService.verifyAsync.mockResolvedValue({ uid: 'user123' });
-      mockPrismaService.user_tokens.findFirst.mockResolvedValue({
+      mockPrismaService.userTokens.findFirst.mockResolvedValue({
         uid: 'token123',
         token: 'valid_token',
         userUid: 'user123',
@@ -230,7 +230,7 @@ describe('AuthGuard', () => {
       const mockPayload = { uid: 'user123', deviceUid: 'device456' };
       mockJwtService.verifyAsync.mockResolvedValue(mockPayload);
 
-      mockPrismaService.user_tokens.findFirst.mockResolvedValue({
+      mockPrismaService.userTokens.findFirst.mockResolvedValue({
         uid: 'token123',
         token: 'valid_token',
         userUid: 'user123',
@@ -247,7 +247,7 @@ describe('AuthGuard', () => {
       expect(result).toBe(true);
       expect(mockRequest['user']).toEqual(mockPayload);
       expect(mockJwtService.verifyAsync).toHaveBeenCalledWith('valid_token');
-      expect(mockPrismaService.user_tokens.findFirst).toHaveBeenCalledWith({
+      expect(mockPrismaService.userTokens.findFirst).toHaveBeenCalledWith({
         where: {
           token: 'valid_token',
           userUid: 'user123',
@@ -327,7 +327,7 @@ describe('AuthGuard', () => {
       const mockPayload = { uid: 'user789' };
       mockJwtService.verifyAsync.mockResolvedValue(mockPayload);
 
-      mockPrismaService.user_tokens.findFirst.mockResolvedValue({
+      mockPrismaService.userTokens.findFirst.mockResolvedValue({
         uid: 'token789',
         token: 'valid_token',
         userUid: 'user789',
@@ -341,7 +341,7 @@ describe('AuthGuard', () => {
 
       await guard.canActivate(context);
 
-      expect(mockPrismaService.user_tokens.findFirst).toHaveBeenCalledWith({
+      expect(mockPrismaService.userTokens.findFirst).toHaveBeenCalledWith({
         where: {
           token: 'valid_token',
           userUid: 'user789',

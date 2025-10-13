@@ -26,7 +26,7 @@ export class ImagesService {
       throw new NotFoundException(`Session with uid ${sessionUid} not found`);
     }
 
-    const images = await this.prisma.session_images.findMany({
+    const images = await this.prisma.sessionImages.findMany({
       orderBy: { createdAt: 'asc' },
       where: { sessionUid: sessionUid },
     });
@@ -54,7 +54,7 @@ export class ImagesService {
       throw new NotFoundException(`Session with uid ${sessionUid} not found`);
     }
 
-    const image = await this.prisma.session_images.findFirst({
+    const image = await this.prisma.sessionImages.findFirst({
       where: { order: 1, sessionUid },
     });
 
@@ -101,7 +101,7 @@ export class ImagesService {
   }
 
   async update(image_uid: string, updateImageDto: UpdateImageDto) {
-    const existingImage = await this.prisma.session_images.findUnique({
+    const existingImage = await this.prisma.sessionImages.findUnique({
       where: { uid: image_uid },
     });
 
@@ -109,7 +109,7 @@ export class ImagesService {
       throw new NotFoundException('Image not found');
     }
 
-    const updatedImage = await this.prisma.session_images.update({
+    const updatedImage = await this.prisma.sessionImages.update({
       data: updateImageDto,
       where: { uid: image_uid },
     });
@@ -118,7 +118,7 @@ export class ImagesService {
   }
 
   async delete(image_uid: string) {
-    const existingImage = await this.prisma.session_images.findUnique({
+    const existingImage = await this.prisma.sessionImages.findUnique({
       where: { uid: image_uid },
     });
 
@@ -126,7 +126,7 @@ export class ImagesService {
       throw new NotFoundException('Image not found');
     }
 
-    await this.prisma.session_images.delete({ where: { uid: image_uid } });
+    await this.prisma.sessionImages.delete({ where: { uid: image_uid } });
 
     return `image '${image_uid}' deleted`;
   }
