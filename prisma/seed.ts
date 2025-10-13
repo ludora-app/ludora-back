@@ -1,4 +1,4 @@
-import { Game_modes, PrismaClient, Sex } from '@prisma/client';
+import { Game_modes, PrismaClient, Sex, Team_label } from '@prisma/client';
 import * as argon2 from 'argon2';
 
 const prisma = new PrismaClient();
@@ -125,7 +125,7 @@ async function seed() {
   ];
 
   for (const relation of partner_sport) {
-    await prisma.partner_sports.create({
+    await prisma.partnerSports.create({
       data: relation,
     });
   }
@@ -413,7 +413,7 @@ async function seed() {
     const createdField = await prisma.fields.create({
       data: {
         partner: { connect: { uid: field.partnerUid } },
-        sport_relation: { connect: { name: field.sport } },
+        sportRelation: { connect: { name: field.sport } },
         address: field.address,
         latitude: field.latitude,
         longitude: field.longitude,
@@ -602,7 +602,7 @@ async function seed() {
   ];
 
   for (const hours of partners_openingHours) {
-    await prisma.partner_opening_hours.create({
+    await prisma.partnerOpeningHours.create({
       data: {
         partner: { connect: { uid: hours.partnerUid } },
         dayOfWeek: hours.dayOfWeek,
@@ -906,6 +906,195 @@ async function seed() {
     createdUsers.push({ uid: createdUser.uid });
     console.log(`Created user: ${user.email}`);
   }
+
+  const teams = [
+    {
+      sessionUid: createdSessions[0].uid,
+      teamLabel: Team_label.A,
+      teamName: 'Team A',
+    },
+    {
+      sessionUid: createdSessions[0].uid,
+      teamLabel: Team_label.B,
+      teamName: 'Team B',
+    },
+    {
+      sessionUid: createdSessions[1].uid,
+      teamLabel: Team_label.A,
+      teamName: 'Team A',
+    },
+    {
+      sessionUid: createdSessions[1].uid,
+      teamLabel: Team_label.B,
+      teamName: 'Team B',
+    },
+    {
+      sessionUid: createdSessions[2].uid,
+      teamLabel: Team_label.A,
+      teamName: 'Team A',
+    },
+    {
+      sessionUid: createdSessions[2].uid,
+      teamLabel: Team_label.B,
+      teamName: 'Team B',
+    },
+    {
+      sessionUid: createdSessions[3].uid,
+      teamLabel: Team_label.A,
+      teamName: 'Team A',
+    },
+    {
+      sessionUid: createdSessions[3].uid,
+      teamLabel: Team_label.B,
+      teamName: 'Team B',
+    },
+    {
+      sessionUid: createdSessions[4].uid,
+      teamLabel: Team_label.A,
+      teamName: 'Team A',
+    },
+    {
+      sessionUid: createdSessions[4].uid,
+      teamLabel: Team_label.B,
+      teamName: 'Team B',
+    },
+    {
+      sessionUid: createdSessions[5].uid,
+      teamLabel: Team_label.A,
+      teamName: 'Team A',
+    },
+    {
+      sessionUid: createdSessions[5].uid,
+      teamLabel: Team_label.B,
+      teamName: 'Team B',
+    },
+    {
+      sessionUid: createdSessions[6].uid,
+      teamLabel: Team_label.A,
+      teamName: 'Team A',
+    },
+    {
+      sessionUid: createdSessions[6].uid,
+      teamLabel: Team_label.B,
+      teamName: 'Team B',
+    },
+    {
+      sessionUid: createdSessions[7].uid,
+      teamLabel: Team_label.A,
+      teamName: 'Team A',
+    },
+    {
+      sessionUid: createdSessions[7].uid,
+      teamLabel: Team_label.B,
+      teamName: 'Team B',
+    },
+    {
+      sessionUid: createdSessions[8].uid,
+      teamLabel: Team_label.A,
+      teamName: 'Team A',
+    },
+    {
+      sessionUid: createdSessions[8].uid,
+      teamLabel: Team_label.B,
+      teamName: 'Team B',
+    },
+    {
+      sessionUid: createdSessions[9].uid,
+      teamLabel: Team_label.A,
+      teamName: 'Team A',
+    },
+    {
+      sessionUid: createdSessions[9].uid,
+      teamLabel: Team_label.B,
+      teamName: 'Team B',
+    },
+  ];
+
+  const createdTeams: { uid: string }[] = [];
+  for (const team of teams) {
+    const createdTeam = await prisma.sessionTeams.upsert({
+      where: {
+        sessionUid_teamLabel: {
+          sessionUid: team.sessionUid,
+          teamLabel: team.teamLabel,
+        },
+      },
+      update: {},
+      create: team,
+    });
+    createdTeams.push({ uid: createdTeam.uid });
+    console.log(`Created team: ${team.teamName}`);
+  }
+
+  const players = [
+    {
+      sessionUid: createdSessions[0].uid,
+      teamUid: createdTeams[0].uid,
+      userUid: createdUsers[0].uid,
+    },
+    {
+      sessionUid: createdSessions[0].uid,
+      teamUid: createdTeams[0].uid,
+      userUid: createdUsers[1].uid,
+    },
+    {
+      sessionUid: createdSessions[0].uid,
+      teamUid: createdTeams[0].uid,
+      userUid: createdUsers[2].uid,
+    },
+    {
+      sessionUid: createdSessions[0].uid,
+      teamUid: createdTeams[0].uid,
+      userUid: createdUsers[3].uid,
+    },
+    {
+      sessionUid: createdSessions[0].uid,
+      teamUid: createdTeams[0].uid,
+      userUid: createdUsers[4].uid,
+    },
+    {
+      sessionUid: createdSessions[0].uid,
+      teamUid: createdTeams[0].uid,
+      userUid: createdUsers[5].uid,
+    },
+    {
+      sessionUid: createdSessions[1].uid,
+      teamUid: createdTeams[1].uid,
+      userUid: createdUsers[6].uid,
+    },
+    {
+      sessionUid: createdSessions[1].uid,
+      teamUid: createdTeams[1].uid,
+      userUid: createdUsers[7].uid,
+    },
+    {
+      sessionUid: createdSessions[1].uid,
+      teamUid: createdTeams[1].uid,
+      userUid: createdUsers[8].uid,
+    },
+  ];
+
+  const createdPlayers: { sessionUid: string; teamUid: string; userUid: string }[] = [];
+  for (const player of players) {
+    const createdPlayer = await prisma.sessionPlayers.upsert({
+      where: {
+        sessionUid_teamUid_userUid: {
+          sessionUid: player.sessionUid,
+          teamUid: player.teamUid,
+          userUid: player.userUid,
+        },
+      },
+      update: {},
+      create: player,
+    });
+    createdPlayers.push({
+      sessionUid: createdPlayer.sessionUid,
+      teamUid: createdPlayer.teamUid,
+      userUid: createdPlayer.userUid,
+    });
+  }
+
+  console.log('Players populated');
 }
 
 seed()

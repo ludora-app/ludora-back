@@ -16,11 +16,11 @@ describe('AuthService', () => {
     $transaction: jest.fn().mockImplementation((callback) => {
       if (typeof callback === 'function') {
         return callback({
-          email_verification: {
+          emailVerification: {
             create: jest.fn().mockResolvedValue({ uid: '1', code: '123456' }),
             deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
           },
-          user_tokens: {
+          userTokens: {
             create: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_token' }),
             update: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_token' }),
             delete: jest.fn().mockResolvedValue({ uid: '1' }),
@@ -28,7 +28,7 @@ describe('AuthService', () => {
             findMany: jest.fn().mockResolvedValue([]),
             findFirst: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_token' }),
           },
-          refresh_tokens: {
+          refreshTokens: {
             create: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_refresh_token' }),
             update: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_refresh_token' }),
             delete: jest.fn().mockResolvedValue({ uid: '1' }),
@@ -44,7 +44,7 @@ describe('AuthService', () => {
       findUnique: jest.fn(),
       update: jest.fn().mockResolvedValue({ uid: '1', emailVerified: true }),
     },
-    user_tokens: {
+    userTokens: {
       findMany: jest.fn().mockResolvedValue([]),
       create: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_token' }),
       update: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_token' }),
@@ -52,7 +52,7 @@ describe('AuthService', () => {
       deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
       findFirst: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_token' }),
     },
-    refresh_tokens: {
+    refreshTokens: {
       create: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_refresh_token' }),
       update: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_refresh_token' }),
       delete: jest.fn().mockResolvedValue({ uid: '1' }),
@@ -60,7 +60,7 @@ describe('AuthService', () => {
       findMany: jest.fn().mockResolvedValue([]),
       findFirst: jest.fn().mockResolvedValue({ uid: '1', token: 'mock_refresh_token' }),
     },
-    email_verification: {
+    emailVerification: {
       create: jest.fn().mockResolvedValue({ uid: '1', code: '123456' }),
       delete: jest.fn().mockResolvedValue({ uid: '1' }),
       deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
@@ -254,7 +254,7 @@ describe('AuthService', () => {
       const now = new Date();
       const futureDate = new Date(now.getTime() + 60000); // 1 minute in the future
 
-      mockPrismaService.email_verification.findFirst.mockResolvedValue({
+      mockPrismaService.emailVerification.findFirst.mockResolvedValue({
         uid: '1',
         code: '123456',
         expiresAt: futureDate,
@@ -271,7 +271,7 @@ describe('AuthService', () => {
     });
 
     it('should throw BadRequestException for invalid or expired code', async () => {
-      mockPrismaService.email_verification.findFirst.mockResolvedValue(null);
+      mockPrismaService.emailVerification.findFirst.mockResolvedValue(null);
 
       await expect(service.verifyEmailCode('1', '123456')).rejects.toThrow(BadRequestException);
     });
@@ -314,7 +314,7 @@ describe('AuthService', () => {
     it('should refresh tokens successfully', async () => {
       const refreshTokenDto: RefreshTokenDto = { refreshToken: 'valid_refresh_token' };
 
-      mockPrismaService.refresh_tokens.findFirst.mockResolvedValue({
+      mockPrismaService.refreshTokens.findFirst.mockResolvedValue({
         uid: '1',
         token: 'valid_refresh_token',
         userUid: '1',
@@ -345,7 +345,7 @@ describe('AuthService', () => {
       const refreshTokenDto: RefreshTokenDto = { refreshToken: 'expired_token' };
 
       mockJwtService.verifyAsync.mockResolvedValue({ uid: '1' });
-      mockPrismaService.refresh_tokens.findFirst.mockResolvedValue(null);
+      mockPrismaService.refreshTokens.findFirst.mockResolvedValue(null);
 
       await expect(service.refreshToken(refreshTokenDto)).rejects.toThrow(UnauthorizedException);
     });

@@ -43,7 +43,7 @@ export class AuthGuard implements CanActivate {
       }
 
       // Verify that the token still exists in the database
-      const tokenRecord = await this.prisma.user_tokens.findFirst({
+      const tokenRecord = await this.prisma.userTokens.findFirst({
         where: {
           token,
           userUid: userUid,

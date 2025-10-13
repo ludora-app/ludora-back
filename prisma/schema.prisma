@@ -105,33 +105,33 @@ model Users {
   emailVerified    Boolean   @default(false) @map("email_verified")
   type             User_type @default(USER) @map("type")
 
-  Message             Messages[]
+  messages            Messages[]
   // Event               Events[]
-  Conversation_member Conversation_members[]
+  conversationMembers ConversationMembers[]
   // Get_notification    Get_notifications[]
 
-  Friends_sent     Friends[] @relation("friend1")
-  Friends_received Friends[] @relation("friend2")
+  friendsSent     Friends[] @relation("friend1")
+  friendsReceived Friends[] @relation("friend2")
 
-  Conversation_options Conversation_options[]
+  conversationOptions ConversationOptions[]
 
-  Session_invitations Session_invitations[]
+  sessionInvitations SessionInvitations[]
 
-  Session_players Session_players[]
+  sessionPlayers SessionPlayers[]
 
-  Evaluator_rating User_ratings[] @relation(name: "EvaluatorRelation")
+  evaluatorRating UserRatings[] @relation(name: "EvaluatorRelation")
 
-  Evaluated_rating User_ratings[] @relation(name: "EvaluatedRelation")
+  evaluatedRating UserRatings[] @relation(name: "EvaluatedRelation")
 
-  User_global_rating User_global_ratings[]
-  Email_verification Email_verification[]
-  User_tokens        User_tokens[]
-  Refresh_tokens     Refresh_tokens[]
+  userGlobalRatings  UserGlobalRatings[]
+  emailVerifications EmailVerification[]
+  userTokens         UserTokens[]
+  refreshTokens      RefreshTokens[]
 
   @@schema("auth")
 }
 
-model Email_verification {
+model EmailVerification {
   uid       String   @id @default(cuid())
   userUid   String   @map("user_uid")
   code      String
@@ -140,10 +140,11 @@ model Email_verification {
 
   user Users @relation(fields: [userUid], references: [uid], onDelete: Cascade)
 
+  @@map("Email_verification")
   @@schema("auth")
 }
 
-model User_tokens {
+model UserTokens {
   uid       String   @id @default(cuid())
   userUid   String   @map("user_uid")
   deviceUid String?  @map("deviceUid")
@@ -153,10 +154,11 @@ model User_tokens {
 
   user Users @relation(fields: [userUid], references: [uid])
 
+  @@map("User_tokens")
   @@schema("auth")
 }
 
-model Refresh_tokens {
+model RefreshTokens {
   uid       String   @id @default(cuid())
   userUid   String   @map("user_uid")
   deviceUid String?  @map("deviceUid")
@@ -167,10 +169,11 @@ model Refresh_tokens {
 
   user Users @relation(fields: [userUid], references: [uid], onDelete: Cascade)
 
+  @@map("Refresh_tokens")
   @@schema("auth")
 }
 
-model User_ratings {
+model UserRatings {
   evaluatorUid String   @map("evaluator_uid")
   evaluatedUid String   @map("evaluated_uid")
   note1        Int      @map("note_1")
@@ -185,10 +188,11 @@ model User_ratings {
   evaluated Users @relation(fields: [evaluatedUid], references: [uid], name: "EvaluatedRelation")
 
   @@id([evaluatorUid, evaluatedUid])
+  @@map("User_ratings")
   @@schema("ratings")
 }
 
-model User_global_ratings {
+model UserGlobalRatings {
   userUid   String   @map("user_uid")
   sportName String   @map("sport_name")
   rating    Float
@@ -199,29 +203,30 @@ model User_global_ratings {
   sport Sports @relation(fields: [sportName], references: [name])
 
   @@id([userUid, sportName])
+  @@map("User_global_ratings")
   @@schema("ratings")
 }
 
 model Partners {
-  uid                   String                  @id @default(cuid())
-  name                  String
-  imageUrl              String?                 @map("image_url")
-  address               String
-  latitude              Float
-  longitude             Float
-  phone                 String
-  email                 String
-  createdAt             DateTime                @default(now()) @map("created_at")
-  updatedAt             DateTime                @updatedAt @map("updated_at")
+  uid                 String                @id @default(cuid())
+  name                String
+  imageUrl            String?               @map("image_url")
+  address             String
+  latitude            Float
+  longitude           Float
+  phone               String
+  email               String
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
   //todo: add stripe account uid
-  Fields                Fields[]
-  Partner_sports        Partner_sports[]
-  Partner_opening_hours Partner_opening_hours[]
+  fields              Fields[]
+  partnerSports       PartnerSports[]
+  partnerOpeningHours PartnerOpeningHours[]
 
   @@schema("infrastructure")
 }
 
-model Partner_opening_hours {
+model PartnerOpeningHours {
   uid        String   @id @default(cuid())
   partnerUid String   @map("partner_uid")
   dayOfWeek  Int      @map("day_of_week")
@@ -234,19 +239,21 @@ model Partner_opening_hours {
   partner Partners @relation(fields: [partnerUid], references: [uid], onDelete: Cascade)
 
   @@unique([partnerUid, dayOfWeek])
+  @@map("Partner_opening_hours")
   @@schema("infrastructure")
 }
 
-model Partner_sports {
+model PartnerSports {
   partnerUid String   @map("partner_uid")
   sport      String
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  partner        Partners @relation(fields: [partnerUid], references: [uid])
-  sport_relation Sports   @relation(fields: [sport], references: [name])
+  partner       Partners @relation(fields: [partnerUid], references: [uid])
+  sportRelation Sports   @relation(fields: [sport], references: [name])
 
   @@id([partnerUid, sport])
+  @@map("Partner_sports")
   @@schema("infrastructure")
 }
 
@@ -257,10 +264,10 @@ model Sports {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  Fields Fields[]
+  fields Fields[]
 
-  User_global_rating User_global_ratings[]
-  Partner_sports     Partner_sports[]
+  userGlobalRatings UserGlobalRatings[]
+  partnerSports     PartnerSports[]
 
   @@schema("infrastructure")
 }
@@ -276,15 +283,15 @@ model Fields {
   entryFee   Float      @map("entry_fee")
   gameMode   Game_modes @map("game_mode")
 
-  Field_images   Field_images[]
-  partner        Partners       @relation(fields: [partnerUid], references: [uid])
-  sport_relation Sports         @relation(fields: [sport], references: [name])
-  sessions       Sessions[]
+  fieldImages   FieldImages[]
+  partner       Partners      @relation(fields: [partnerUid], references: [uid])
+  sportRelation Sports        @relation(fields: [sport], references: [name])
+  sessions      Sessions[]
 
   @@schema("infrastructure")
 }
 
-model Field_images {
+model FieldImages {
   uid       String   @id @default(cuid())
   fieldUid  String   @map("field_uid")
   url       String
@@ -294,6 +301,7 @@ model Field_images {
 
   field Fields @relation(fields: [fieldUid], references: [uid])
 
+  @@map("Field_images")
   @@schema("infrastructure")
 }
 
@@ -313,19 +321,19 @@ model Sessions {
   createdAt         DateTime   @default(now()) @map("created_at")
   updatedAt         DateTime   @updatedAt @map("updated_at")
 
-  Session_invitations Session_invitations[]
+  sessionInvitations SessionInvitations[]
 
-  Session_images Session_images[]
+  sessionImages SessionImages[]
 
-  Session_teams Session_teams[]
+  sessionTeams SessionTeams[]
 
-  Session_players Session_players[]
-  field           Fields            @relation(fields: [fieldUid], references: [uid])
+  sessionPlayers SessionPlayers[]
+  field          Fields           @relation(fields: [fieldUid], references: [uid])
 
   @@schema("sessions")
 }
 
-model Session_invitations {
+model SessionInvitations {
   sessionUid String            @map("session_uid")
   userUid    String
   status     Invitation_status @default(PENDING)
@@ -336,10 +344,11 @@ model Session_invitations {
   user    Users    @relation(fields: [userUid], references: [uid])
 
   @@id([sessionUid, userUid])
+  @@map("Session_invitations")
   @@schema("sessions")
 }
 
-model Session_images {
+model SessionImages {
   uid        String   @id @default(cuid())
   sessionUid String   @map("session_uid")
   url        String
@@ -349,10 +358,11 @@ model Session_images {
 
   session Sessions @relation(fields: [sessionUid], references: [uid])
 
+  @@map("Session_images")
   @@schema("sessions")
 }
 
-model Session_teams {
+model SessionTeams {
   uid        String     @id @default(cuid())
   sessionUid String     @map("session_uid")
   teamLabel  Team_label @map("team_label")
@@ -362,38 +372,41 @@ model Session_teams {
 
   session Sessions @relation(fields: [sessionUid], references: [uid])
 
-  Session_players Session_players[]
+  sessionPlayers SessionPlayers[]
 
+  @@unique([sessionUid, teamLabel])
+  @@map("Session_teams")
   @@schema("sessions")
 }
 
-model Session_players {
+model SessionPlayers {
   sessionUid String   @map("session_uid")
   teamUid    String   @map("team_uid")
   userUid    String
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  session Sessions      @relation(fields: [sessionUid], references: [uid])
-  team    Session_teams @relation(fields: [teamUid], references: [uid])
-  user    Users         @relation(fields: [userUid], references: [uid])
+  session Sessions     @relation(fields: [sessionUid], references: [uid])
+  team    SessionTeams @relation(fields: [teamUid], references: [uid])
+  user    Users        @relation(fields: [userUid], references: [uid])
 
   @@unique([sessionUid, teamUid, userUid])
+  @@map("Session_players")
   @@schema("sessions")
 }
 
 model Conversations {
-  uid                 String                 @id @default(cuid())
-  eventUid            String?                @map("event_uid")
+  uid                 String                @id @default(cuid())
+  eventUid            String?               @map("event_uid")
   name                String?
   type                Conversation_type
-  createdAt           DateTime               @default(now()) @map("created_at")
-  updatedAt           DateTime               @updatedAt @map("updated_at")
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
   // todo: image_url
-  Message             Messages[]
-  Conversation_member Conversation_members[]
+  messages            Messages[]
+  conversationMembers ConversationMembers[]
 
-  Conversation_options Conversation_options[]
+  conversationOptions ConversationOptions[]
 
   @@schema("social")
 }
@@ -414,7 +427,7 @@ model Messages {
   @@schema("social")
 }
 
-model Conversation_options {
+model ConversationOptions {
   conversationUid String
   userUid         String
   isAdmin         Boolean  @default(false) @map("is_admin")
@@ -428,10 +441,11 @@ model Conversation_options {
   conversation Conversations @relation(fields: [conversationUid], references: [uid])
 
   @@unique([conversationUid, userUid])
+  @@map("Conversation_options")
   @@schema("social")
 }
 
-model Conversation_members {
+model ConversationMembers {
   conversationUid String
   userUid         String
   isAdmin         Boolean @default(false) @map("is_admin")
@@ -440,6 +454,7 @@ model Conversation_members {
   user         Users         @relation(fields: [userUid], references: [uid])
 
   @@id([conversationUid, userUid])
+  @@map("Conversation_members")
   @@schema("social")
 }
 

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Session_teams, Team_label } from '@prisma/client';
+import { SessionTeams, Team_label } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { SessionUtils } from './utils/session-utils';
 
 @Injectable()
 export class SessionTeamsService {
@@ -8,7 +9,7 @@ export class SessionTeamsService {
   private logger = new Logger(SessionTeamsService.name);
 
   async createDefaultTeams(sessionUid: string): Promise<void> {
-    await this.prisma.session_teams.createMany({
+    await this.prisma.sessionTeams.createMany({
       data: [
         {
           sessionUid: sessionUid,
@@ -28,18 +29,35 @@ export class SessionTeamsService {
 
   async findTeamsBySessionUid(
     sessionUid: string,
-  ): Promise<{ items: Session_teams[]; nextCursor: string | null; totalCount: number }> {
-    const teams = await this.prisma.session_teams.findMany({
+  ): Promise<{ items: SessionTeams[]; nextCursor: string | null; totalCount: number }> {
+    const teams = await this.prisma.sessionTeams.findMany({
       where: {
         sessionUid: sessionUid,
       },
+      include: {
+        sessionPlayers: {
+          select: {
+            userUid: true,
+            teamUid: true,
+            user: {
+              select: {
+                firstname: true,
+                lastname: true,
+                imageUrl: true,
+              },
+            },
+          },
+        },
+      },
     });
 
-    return { items: teams, totalCount: teams.length, nextCursor: null };
+    const formattedTeams = teams.map((team) => SessionUtils.formatSessionPlayers(team));
+
+    return { items: formattedTeams, totalCount: teams.length, nextCursor: null };
   }
 
-  async findOneByUid(uid: string): Promise<Session_teams> {
-    return this.prisma.session_teams.findUnique({
+  async findOneByUid(uid: string): Promise<SessionTeams> {
+    return this.prisma.sessionTeams.findUnique({
       where: {
         uid: uid,
       },

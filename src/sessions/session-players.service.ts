@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { SessionPlayers } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSessionPlayerDto } from './dto/input/create-session-player.dto';
 
@@ -14,7 +15,7 @@ export class SessionPlayersService {
    * @param userUid
    */
   async addDefaultPlayer(createSessionPlayerDto: CreateSessionPlayerDto): Promise<void> {
-    await this.prisma.session_players.create({
+    await this.prisma.sessionPlayers.create({
       data: {
         sessionUid: createSessionPlayerDto.sessionUid,
         teamUid: createSessionPlayerDto.teamUid,
@@ -24,5 +25,21 @@ export class SessionPlayersService {
     this.logger.log(
       `Default player ${createSessionPlayerDto.userUid} added to session ${createSessionPlayerDto.sessionUid}`,
     );
+  }
+
+  /**
+   * This function finds players by session UID using Prisma in TypeScript.
+   * @param {string} sessionUid - The `sessionUid` parameter is a string that represents the unique
+   * identifier of a session. This function `findPlayersBySessionUid` is an asynchronous function that
+   * returns a Promise, which resolves to an array of `Session_players` objects that are associated with
+   * the provided `sessionUid`.
+   * @returns The `findPlayersBySessionUid` function is returning a Promise that resolves to an array of
+   * `Session_players` objects. The function uses Prisma's `findMany` method to query the database for
+   * `Session_players` records that match the provided `sessionUid`.
+   */
+  async findPlayersBySessionUid(sessionUid: string): Promise<SessionPlayers[]> {
+    return this.prisma.sessionPlayers.findMany({
+      where: { sessionUid: sessionUid },
+    });
   }
 }
