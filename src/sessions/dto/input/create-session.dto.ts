@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { Game_modes } from '@prisma/client';
+import { ApiProperty } from '@nestjs/swagger';
 import { IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateSessionDto {

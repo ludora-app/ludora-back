@@ -18,8 +18,8 @@ import { SessionInvitationsModule } from './session-invitations/session-invitati
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([
       {
-        ttl: 60000, // 1 minute
         limit: 10, // 10 requests per minute
+        ttl: 60000, // 1 minute
       },
     ]),
     SharedModule,

@@ -55,7 +55,7 @@ export class AuthGuard implements CanActivate {
 
       // Check if the user is verified and active
       const user = await this.prisma.users.findUnique({
-        select: { emailVerified: true, uid: true, isConnected: true },
+        select: { emailVerified: true, isConnected: true, uid: true },
         where: { uid: userUid },
       });
 

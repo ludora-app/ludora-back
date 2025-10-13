@@ -80,9 +80,9 @@ export class UsersService {
       select: {
         email: true,
         firstname: true,
-        uid: true,
         imageUrl: true,
         lastname: true,
+        uid: true,
       },
     };
 

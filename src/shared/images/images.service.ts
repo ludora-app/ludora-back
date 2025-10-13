@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { AwsService } from 'src/shared/aws/aws.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { S3FoldersName } from '../constants/constants';
 import { CreateImageDto } from './dto/create-image.dto';

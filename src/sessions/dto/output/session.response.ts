@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PaginationResponseDto } from 'src/interfaces/pagination-response-type';
 import { Sport } from 'src/shared/constants/constants';
+import { PaginationResponseDto } from 'src/interfaces/pagination-response-type';
 
 /**
  * @description standard response for a session

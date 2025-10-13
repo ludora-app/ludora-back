@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { Team_label } from '@prisma/client';
+import { ApiProperty } from '@nestjs/swagger';
 import { PaginationResponseDto } from 'src/interfaces/pagination-response-type';
 
 /**
@@ -48,8 +48,8 @@ export class SessionTeamResponse {
 
   @ApiProperty({
     description: 'Players in the team',
-    type: [FlattenedSessionPlayer],
     readOnly: true,
+    type: [FlattenedSessionPlayer],
   })
   readonly Session_players?: FlattenedSessionPlayer[];
 }
