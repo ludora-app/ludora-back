@@ -20,7 +20,7 @@ export class UpdateSessionInvitationDto {
     example: 'cmajhjkjf000bq77q4b5ugn8b',
     required: true,
   })
-  userId: string;
+  userUid: string;
 
   @IsString()
   @IsNotEmpty()

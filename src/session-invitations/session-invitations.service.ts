@@ -4,6 +4,7 @@ import { USERSELECT } from 'src/shared/constants/select-user';
 import { SessionsService } from 'src/sessions/sessions.service';
 import { Invitation_status, SessionInvitations } from '@prisma/client';
 import { SessionPlayersService } from 'src/sessions/session-players.service';
+import { CreateSessionPlayerDto } from 'src/sessions/dto/input/create-session-player.dto';
 import {
   BadRequestException,
   ConflictException,
@@ -191,7 +192,7 @@ export class SessionInvitationsService {
         sessionUid,
       },
     };
-    //cursor on userId since sessionUid doesnt change here
+    //cursor on userUid since sessionUid doesnt change here
     if (cursor) {
       const [cursorSessionId, cursorSenderId, cursorReceiverId] = cursor.split(':');
       query.cursor = {
@@ -251,11 +252,11 @@ export class SessionInvitationsService {
     return invitation;
   }
 
-  async update(updateSessionInvitationDto: UpdateSessionInvitationDto) {
+  async update(updateSessionInvitationDto: UpdateSessionInvitationDto): Promise<void> {
     //todo: use memberservice to create a member if the status is accepted
     const existingInvitation = await this.findOne(
       updateSessionInvitationDto.sessionUid,
-      updateSessionInvitationDto.userId,
+      updateSessionInvitationDto.userUid,
     );
 
     if (!existingInvitation) {
@@ -267,10 +268,10 @@ export class SessionInvitationsService {
     }
     // let isSender;
     let isReceiver;
-    if (updateSessionInvitationDto.userId === existingInvitation.senderUid) {
+    if (updateSessionInvitationDto.userUid === existingInvitation.senderUid) {
       // isSender = true;
     }
-    if (updateSessionInvitationDto.userId === existingInvitation.receiverUid) {
+    if (updateSessionInvitationDto.userUid === existingInvitation.receiverUid) {
       isReceiver = true;
     }
 
@@ -278,9 +279,14 @@ export class SessionInvitationsService {
     if (isReceiver && updateSessionInvitationDto.status !== Invitation_status.ACCEPTED) {
       throw new BadRequestException(`You cannot change the status of the sender or the receiver`);
     }
-    // todo: use the member service to create a member if the status is accepted
-    const updatedInvitation = await this.prisma.$transaction([
-      this.prisma.sessionInvitations.update({
+    const createSessionPlayerDto: CreateSessionPlayerDto = {
+      sessionUid: existingInvitation.sessionUid,
+      teamUid: existingInvitation.sessionUid,
+      userUid: existingInvitation.receiverUid,
+    };
+
+    await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.sessionInvitations.update({
         data: { status: updateSessionInvitationDto.status },
         where: {
           sessionUid_senderUid_receiverUid: {
@@ -289,22 +295,19 @@ export class SessionInvitationsService {
             sessionUid: existingInvitation.sessionUid,
           },
         },
-      }),
-      // this.playersService.addDefaultPlayer({
-      //   sessionUid: existingInvitation.sessionUid,
-      //   teamUid: existingInvitation.sessionUid,
-      //   userUid: existingInvitation.receiverUid,
-      // }),
-    ]);
+      });
+
+      await this.playersService.addPlayerToSession(createSessionPlayerDto, tx);
+
+      return updated;
+    });
 
     this.logger.log(
       `Session invitation with sessionUid${existingInvitation.sessionUid} updated to ${updateSessionInvitationDto.status}`,
     );
-
-    return updatedInvitation;
   }
 
-  remove(sessionUid: string, userId: string) {
-    return `This action removes session invitation for session ${sessionUid} and user ${userId}`;
+  remove(sessionUid: string, userUid: string) {
+    return `This action removes session invitation for session ${sessionUid} and user ${userUid}`;
   }
 }

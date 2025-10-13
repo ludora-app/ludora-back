@@ -65,6 +65,7 @@ describe('SessionsController', () => {
       teamsPerGame: 2,
       title: 'Test Session Title',
       gameMode: Game_modes.FIVE_V_FIVE,
+      userUid: 'user-uid-1',
     };
 
     it('should create a session', async () => {
@@ -226,7 +227,7 @@ describe('SessionsController', () => {
       gameMode: Game_modes.FIVE_V_FIVE,
     };
 
-    it('should update a session', async () => {
+    it('should update a session and return no content (204)', async () => {
       const updatedSessionData = {
         uid: sessionUid,
         title: 'Updated Session Title',
@@ -244,11 +245,7 @@ describe('SessionsController', () => {
 
       const result = await controller.update(sessionUid, updateSessionDto);
 
-      expect(result).toEqual({
-        data: updatedSessionData,
-        message: 'Session updated successfully',
-        status: 200,
-      });
+      expect(result).toBeUndefined();
       expect(service.update).toHaveBeenCalledWith(sessionUid, updateSessionDto);
     });
 

@@ -8,12 +8,14 @@ import { SessionTeamsService } from './session-teams.service';
 import { CreateSessionDto } from './dto/input/create-session.dto';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
+import { SessionPlayersService } from './session-players.service';
 
 @Injectable()
 export class SessionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly sessionTeamsService: SessionTeamsService,
+    private readonly sessionPlayersService: SessionPlayersService,
   ) {}
 
   async create(createSessionDto: CreateSessionDto): Promise<Sessions> {
@@ -85,21 +87,40 @@ export class SessionsService {
       autoTitle = `Session de ${field.sport} le ${DateUtils.formatDate(startDate)}`;
     }
 
-    const newSession = await this.prisma.sessions.create({
-      data: {
-        description: createSessionDto.description,
-        endDate: endDate,
-        fieldUid: field.uid,
-        gameMode: field.gameMode,
-        maxPlayersPerTeam: createSessionDto.maxPlayersPerTeam,
-        minPlayersPerTeam: createSessionDto.minPlayersPerTeam,
-        sport: field.sport as Sport,
-        startDate: startDate,
-        teamsPerGame: createSessionDto.teamsPerGame,
-        title: createSessionDto.title ? createSessionDto.title : autoTitle,
-      },
+    const newSession = await this.prisma.$transaction(async (tx) => {
+      const createdSession = await tx.sessions.create({
+        data: {
+          description: createSessionDto.description,
+          endDate: endDate,
+          fieldUid: field.uid,
+          gameMode: field.gameMode,
+          maxPlayersPerTeam: createSessionDto.maxPlayersPerTeam,
+          minPlayersPerTeam: createSessionDto.minPlayersPerTeam,
+          sport: field.sport as Sport,
+          startDate: startDate,
+          teamsPerGame: createSessionDto.teamsPerGame,
+          title: createSessionDto.title ? createSessionDto.title : autoTitle,
+        },
+      });
+      // create default teams in transaction and fetch them back
+      const defaultTeams = await this.sessionTeamsService.createDefaultTeams(
+        createdSession.uid,
+        tx,
+      );
+      // pick team A for the creator
+      const teamA = defaultTeams.find((t) => t.teamLabel === 'A');
+      if (teamA && createSessionDto.userUid) {
+        await this.sessionPlayersService.addPlayerToSession(
+          {
+            sessionUid: createdSession.uid,
+            teamUid: teamA.uid,
+            userUid: createSessionDto.userUid,
+          },
+          tx,
+        );
+      }
+      return createdSession;
     });
-    await this.sessionTeamsService.createDefaultTeams(newSession.uid);
 
     return newSession;
   }

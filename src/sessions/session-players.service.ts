@@ -1,5 +1,5 @@
-import { SessionPlayers } from '@prisma/client';
 import { Injectable, Logger } from '@nestjs/common';
+import { Prisma, SessionPlayers } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 import { CreateSessionPlayerDto } from './dto/input/create-session-player.dto';
@@ -25,6 +25,23 @@ export class SessionPlayersService {
     });
     this.logger.log(
       `Default player ${createSessionPlayerDto.userUid} added to session ${createSessionPlayerDto.sessionUid}`,
+    );
+  }
+
+  async addPlayerToSession(
+    createSessionPlayerDto: CreateSessionPlayerDto,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    const client = tx ?? this.prisma;
+    await client.sessionPlayers.create({
+      data: {
+        sessionUid: createSessionPlayerDto.sessionUid,
+        teamUid: createSessionPlayerDto.teamUid,
+        userUid: createSessionPlayerDto.userUid,
+      },
+    });
+    this.logger.log(
+      `Player ${createSessionPlayerDto.userUid} added to session ${createSessionPlayerDto.sessionUid}`,
     );
   }
 

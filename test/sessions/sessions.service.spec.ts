@@ -9,6 +9,7 @@ import { SessionFilterDto } from '../../src/sessions/dto/input/session-filter.dt
 import { UpdateSessionDto } from '../../src/sessions/dto/input/update-session.dto';
 import { SessionTeamsService } from '../../src/sessions/session-teams.service';
 import { SessionsService } from './../../src/sessions/sessions.service';
+import { SessionPlayersService } from '../../src/sessions/session-players.service';
 
 jest.mock('src/shared/utils/date.utils', () => ({
   DateUtils: {
@@ -47,6 +48,7 @@ describe('SessionsService', () => {
         {
           provide: PrismaService,
           useValue: {
+            $transaction: jest.fn(),
             fields: {
               findUnique: jest.fn(),
             },
@@ -66,6 +68,12 @@ describe('SessionsService', () => {
           provide: SessionTeamsService,
           useValue: {
             createDefaultTeams: jest.fn(),
+          },
+        },
+        {
+          provide: SessionPlayersService,
+          useValue: {
+            addPlayerToSession: jest.fn(),
           },
         },
       ],
@@ -95,6 +103,7 @@ describe('SessionsService', () => {
       teamsPerGame: 2,
       title: 'Test Session Title',
       gameMode: Game_modes.FIVE_V_FIVE,
+      userUid: 'user-uid-1',
     };
 
     const mockField = {
@@ -136,6 +145,23 @@ describe('SessionsService', () => {
       );
       (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
       (prismaService.sessions.create as jest.Mock).mockResolvedValue(mockCreatedSession);
+      // mock transaction to use same session mocks
+      (prismaService.$transaction as jest.Mock).mockImplementation(async (cb: any) => {
+        const tx = { sessions: prismaService.sessions } as any;
+        return cb(tx);
+      });
+      // teams created in tx and returned including team A
+      const teamsService = (service as any)['sessionTeamsService'] as SessionTeamsService;
+      (teamsService.createDefaultTeams as jest.Mock).mockResolvedValue([
+        {
+          uid: 'team-a',
+          sessionUid: 'session-uid-1',
+          teamLabel: 'A',
+          teamName: 'Team A',
+          createdAt: mockCurrentDate,
+          updatedAt: mockCurrentDate,
+        },
+      ]);
 
       // Act
       const result = await service.create(createSessionDto);
@@ -170,6 +196,21 @@ describe('SessionsService', () => {
         ...mockCreatedSession,
         title: `Session de FOOTBALL le 2023-01-01`,
       });
+      (prismaService.$transaction as jest.Mock).mockImplementation(async (cb: any) => {
+        const tx = { sessions: prismaService.sessions } as any;
+        return cb(tx);
+      });
+      const teamsService = (service as any)['sessionTeamsService'] as SessionTeamsService;
+      (teamsService.createDefaultTeams as jest.Mock).mockResolvedValue([
+        {
+          uid: 'team-a',
+          sessionUid: 'session-uid-1',
+          teamLabel: 'A',
+          teamName: 'Team A',
+          createdAt: mockCurrentDate,
+          updatedAt: mockCurrentDate,
+        },
+      ]);
 
       // Act
       await service.create(dtoWithoutTitle);

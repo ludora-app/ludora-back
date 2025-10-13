@@ -30,6 +30,15 @@ export class CreateSessionDto {
   })
   fieldUid: string;
 
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: 'The uid of the creator',
+    example: 'cmajhjkjf000bq77q4b5ugn8b',
+    required: true,
+  })
+  userUid: string;
+
   @IsEnum(Game_modes)
   @IsNotEmpty()
   @ApiProperty({

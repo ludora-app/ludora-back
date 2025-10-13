@@ -3,6 +3,7 @@ import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
 import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import {
   ApiBadRequestResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -14,6 +15,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   NotFoundException,
   Param,
   Patch,
@@ -98,21 +101,18 @@ export class SessionsController {
 
   @Patch(':uid')
   @ApiOperation({ summary: 'Update a session by uid' })
-  @ApiOkResponse({ type: ResponseTypeDto<Sessions> })
+  @ApiNoContentResponse({ description: 'Session updated successfully' })
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
   @ApiNotFoundResponse({ type: NotFoundException })
+  @HttpCode(HttpStatus.NO_CONTENT)
   async update(
     @Param('uid') uid: string,
     @Body() updateSessionDto: UpdateSessionDto,
-  ): Promise<ResponseType<SessionResponse>> {
-    const updatedSession = await this.sessionsService.update(uid, updateSessionDto);
+  ): Promise<void> {
+    await this.sessionsService.update(uid, updateSessionDto);
 
-    return {
-      data: updatedSession,
-      message: 'Session updated successfully',
-      status: 200,
-    };
+    return;
   }
 
   @Delete(':uid')

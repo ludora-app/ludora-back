@@ -7,6 +7,6 @@ import { SessionPlayersService } from './session-players.service';
 
 @Module({
   controllers: [SessionsController],
-  providers: [SessionsService, SessionTeamsService, SessionTeamsService, SessionPlayersService],
+  providers: [SessionsService, SessionTeamsService, SessionPlayersService],
 })
 export class SessionsModule {}

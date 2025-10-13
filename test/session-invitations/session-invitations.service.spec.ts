@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Invitation_status } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -8,22 +8,24 @@ import { UsersService } from 'src/users/users.service';
 import { CreateSessionInvitationDto } from '../../src/session-invitations/dto/input/create-session-invitation.dto';
 import { UpdateSessionInvitationDto } from '../../src/session-invitations/dto/input/update-session-invitation.dto';
 import { SessionInvitationsService } from '../../src/session-invitations/session-invitations.service';
+import { SessionPlayersService } from 'src/sessions/session-players.service';
 
 describe('SessionInvitationsService', () => {
   let service: SessionInvitationsService;
   let prismaService: PrismaService;
   let sessionsService: SessionsService;
   let usersService: UsersService;
+  let playersService: SessionPlayersService;
 
   const mockPrismaService = {
     sessionInvitations: {
       create: jest.fn(),
-      findUnique: jest.fn(),
+      findFirst: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
-      delete: jest.fn(),
     },
-  };
+    $transaction: jest.fn(),
+  } as unknown as PrismaService;
 
   const mockSessionsService = {
     findOne: jest.fn(),
@@ -32,49 +34,26 @@ describe('SessionInvitationsService', () => {
   const mockUsersService = {
     findOne: jest.fn(),
   };
+  const mockSessionPlayersService = {
+    addPlayerToSession: jest.fn(),
+  };
 
   const mockSession = {
     id: 'session-123',
-    fieldId: 'field-123',
-    title: 'Test Session',
-    startDate: new Date('2023-01-10T14:00:00Z'),
-    endDate: new Date('2023-01-10T16:00:00Z'),
-    sport: 'Football',
-    gameMode: 'ELEVEN_V_ELEVEN',
-    maxPlayersPerTeam: 11,
-    teamsPerGame: 2,
-    minPlayersPerTeam: 8,
-    description: 'Test session description',
-    createdAt: new Date('2023-01-01T12:00:00Z'),
-    updatedAt: new Date('2023-01-01T12:00:00Z'),
-  };
+  } as any;
 
-  const mockUser = {
-    id: 'user-123',
-    email: 'test@example.com',
-    firstname: 'John',
-    lastname: 'Doe',
-    birthdate: new Date('1990-01-01'),
-    sex: 'MALE',
-    phone: '+1234567890',
-    imageUrl: 'https://example.com/avatar.jpg',
-    bio: 'Test bio',
-    provider: 'LUDORA',
-    isConnected: true,
-    stripeAccountId: null,
-    createdAt: new Date('2023-01-01T12:00:00Z'),
-    updatedAt: new Date('2023-01-01T12:00:00Z'),
-    emailVerified: true,
-    type: 'USER',
-  };
+  const mockUser = { id: 'user-123' } as any;
 
   const mockInvitation = {
     sessionUid: 'session-123',
-    userId: 'user-123',
+    senderUid: 'sender-123',
+    receiverUid: 'user-123',
     status: Invitation_status.PENDING,
     createdAt: new Date('2023-01-01T12:00:00Z'),
     updatedAt: new Date('2023-01-01T12:00:00Z'),
-  };
+  } as any;
+
+  const senderUid = 'sender-123';
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -92,6 +71,10 @@ describe('SessionInvitationsService', () => {
           provide: UsersService,
           useValue: mockUsersService,
         },
+        {
+          provide: SessionPlayersService,
+          useValue: mockSessionPlayersService,
+        },
       ],
     }).compile();
 
@@ -99,6 +82,7 @@ describe('SessionInvitationsService', () => {
     prismaService = module.get<PrismaService>(PrismaService);
     sessionsService = module.get<SessionsService>(SessionsService);
     usersService = module.get<UsersService>(UsersService);
+    playersService = module.get<SessionPlayersService>(SessionPlayersService);
 
     // Reset all mocks before each test
     jest.clearAllMocks();
@@ -111,144 +95,247 @@ describe('SessionInvitationsService', () => {
   describe('create', () => {
     const createDto: CreateSessionInvitationDto = {
       sessionUid: 'session-123',
-      userId: 'user-123',
+      receiverUid: 'user-123',
     };
 
     it('should create a session invitation successfully', async () => {
-      // Arrange
       mockSessionsService.findOne.mockResolvedValue(mockSession);
       mockUsersService.findOne.mockResolvedValue(mockUser);
-      mockPrismaService.sessionInvitations.findUnique.mockResolvedValue(null);
-      mockPrismaService.sessionInvitations.create.mockResolvedValue(mockInvitation);
+      (prismaService.sessionInvitations.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.sessionInvitations.create as jest.Mock).mockResolvedValue(mockInvitation);
 
-      // Act
-      const result = await service.create(createDto);
+      const result = await service.create(senderUid, createDto);
 
-      // Assert
       expect(result).toEqual(mockInvitation);
       expect(sessionsService.findOne).toHaveBeenCalledWith('session-123');
       expect(usersService.findOne).toHaveBeenCalledWith('user-123', USERSELECT.findOne);
-      expect(prismaService.sessionInvitations.findUnique).toHaveBeenCalledWith({
-        where: {
-          sessionUid_userId: {
-            sessionUid: 'session-123',
-            userId: 'user-123',
-          },
-        },
+      expect(prismaService.sessionInvitations.findFirst).toHaveBeenCalledWith({
+        where: { receiverUid: 'user-123', sessionUid: 'session-123' },
       });
       expect(prismaService.sessionInvitations.create).toHaveBeenCalledWith({
-        data: {
-          sessionUid: 'session-123',
-          userId: 'user-123',
-        },
+        data: { receiverUid: 'user-123', senderUid, sessionUid: 'session-123' },
       });
     });
 
     it('should throw BadRequestException when session does not exist', async () => {
-      // Arrange
       mockSessionsService.findOne.mockResolvedValue(null);
 
-      // Act & Assert
-      await expect(service.create(createDto)).rejects.toThrow(
-        new BadRequestException('Session not found'),
-      );
-
+      await expect(service.create(senderUid, createDto)).rejects.toThrow(BadRequestException);
       expect(sessionsService.findOne).toHaveBeenCalledWith('session-123');
       expect(usersService.findOne).not.toHaveBeenCalled();
-      expect(prismaService.sessionInvitations.findUnique).not.toHaveBeenCalled();
+      expect(prismaService.sessionInvitations.findFirst).not.toHaveBeenCalled();
       expect(prismaService.sessionInvitations.create).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when user does not exist', async () => {
-      // Arrange
       mockSessionsService.findOne.mockResolvedValue(mockSession);
       mockUsersService.findOne.mockResolvedValue(null);
 
-      // Act & Assert
-      await expect(service.create(createDto)).rejects.toThrow(
-        new BadRequestException('User not found'),
-      );
-
+      await expect(service.create(senderUid, createDto)).rejects.toThrow(BadRequestException);
       expect(sessionsService.findOne).toHaveBeenCalledWith('session-123');
       expect(usersService.findOne).toHaveBeenCalledWith('user-123', USERSELECT.findOne);
-      expect(prismaService.sessionInvitations.findUnique).not.toHaveBeenCalled();
+      expect(prismaService.sessionInvitations.findFirst).not.toHaveBeenCalled();
       expect(prismaService.sessionInvitations.create).not.toHaveBeenCalled();
     });
 
-    it('should throw ConflictException when invitation already exists', async () => {
-      // Arrange
+    it('should throw BadRequestException when inviting self', async () => {
       mockSessionsService.findOne.mockResolvedValue(mockSession);
       mockUsersService.findOne.mockResolvedValue(mockUser);
-      mockPrismaService.sessionInvitations.findUnique.mockResolvedValue(mockInvitation);
-
-      // Act & Assert
-      await expect(service.create(createDto)).rejects.toThrow(
-        new ConflictException('User already invited to the session'),
-      );
-
-      expect(sessionsService.findOne).toHaveBeenCalledWith('session-123');
-      expect(usersService.findOne).toHaveBeenCalledWith('user-123', USERSELECT.findOne);
-      expect(prismaService.sessionInvitations.findUnique).toHaveBeenCalledWith({
-        where: {
-          sessionUid_userId: {
-            sessionUid: 'session-123',
-            userId: 'user-123',
-          },
-        },
-      });
+      const selfDto = { ...createDto, receiverUid: senderUid };
+      await expect(service.create(senderUid, selfDto)).rejects.toThrow(BadRequestException);
       expect(prismaService.sessionInvitations.create).not.toHaveBeenCalled();
+    });
+
+    it('should throw ConflictException when existing invitation is PENDING or ACCEPTED', async () => {
+      mockSessionsService.findOne.mockResolvedValue(mockSession);
+      mockUsersService.findOne.mockResolvedValue(mockUser);
+
+      (prismaService.sessionInvitations.findFirst as jest.Mock).mockResolvedValue({
+        status: Invitation_status.PENDING,
+      });
+      await expect(service.create(senderUid, createDto)).rejects.toThrow(ConflictException);
+
+      (prismaService.sessionInvitations.findFirst as jest.Mock).mockResolvedValue({
+        status: Invitation_status.ACCEPTED,
+      });
+      await expect(service.create(senderUid, createDto)).rejects.toThrow(ConflictException);
+    });
+
+    it('should create when previous invitation was REJECTED', async () => {
+      mockSessionsService.findOne.mockResolvedValue(mockSession);
+      mockUsersService.findOne.mockResolvedValue(mockUser);
+      (prismaService.sessionInvitations.findFirst as jest.Mock).mockResolvedValue({
+        status: Invitation_status.REJECTED,
+      });
+      (prismaService.sessionInvitations.create as jest.Mock).mockResolvedValue(mockInvitation);
+
+      const result = await service.create(senderUid, createDto);
+      expect(result).toEqual(mockInvitation);
     });
   });
 
-  describe('findAll', () => {
-    it('should return a placeholder string', () => {
-      // Act
-      const result = service.findAll();
+  describe('findAllByReceiverId', () => {
+    it('should return paginated invitations for a receiver', async () => {
+      mockUsersService.findOne.mockResolvedValue(mockUser);
+      const items = [mockInvitation];
+      (prismaService.sessionInvitations.findMany as jest.Mock).mockResolvedValue(items);
 
-      // Assert
-      expect(result).toBe('This action returns all session invitations');
+      const result = await service.findAllByReceiverId('user-123', { limit: 10 } as any);
+      expect(result).toEqual({ items, nextCursor: null, totalCount: 1 });
+      expect(prismaService.sessionInvitations.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 11,
+          where: expect.objectContaining({ receiverUid: 'user-123' }),
+        }),
+      );
+    });
+
+    it('should throw NotFoundException when user does not exist', async () => {
+      mockUsersService.findOne.mockResolvedValue(null);
+      await expect(service.findAllByReceiverId('user-404', { limit: 10 } as any)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('findAllBySessionId', () => {
+    it('should return paginated invitations for a session', async () => {
+      mockSessionsService.findOne.mockResolvedValue(mockSession);
+      const items = [mockInvitation];
+      (prismaService.sessionInvitations.findMany as jest.Mock).mockResolvedValue(items);
+
+      const result = await service.findAllBySessionId('session-123', { limit: 10 } as any);
+      expect(result).toEqual({ items, nextCursor: null, totalCount: 1 });
+      expect(prismaService.sessionInvitations.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 11,
+          where: expect.objectContaining({ sessionUid: 'session-123' }),
+        }),
+      );
+    });
+
+    it('should throw NotFoundException when session does not exist', async () => {
+      mockSessionsService.findOne.mockResolvedValue(null);
+      await expect(service.findAllBySessionId('session-404', { limit: 10 } as any)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('findOne', () => {
-    it('should return a placeholder string with parameters', () => {
-      // Act
-      const result = service.findOne('session-123', 'user-456');
+    it('should return an invitation', async () => {
+      mockSessionsService.findOne.mockResolvedValue(mockSession);
+      mockUsersService.findOne.mockResolvedValue(mockUser);
+      (prismaService.sessionInvitations.findFirst as jest.Mock).mockResolvedValue(mockInvitation);
 
-      // Assert
-      expect(result).toBe(
-        'This action returns session invitation for session session-123 and user user-456',
-      );
+      const result = await service.findOne('session-123', 'user-123');
+      expect(result).toEqual(mockInvitation);
+    });
+
+    it('should throw NotFoundException when session not found', async () => {
+      mockSessionsService.findOne.mockResolvedValue(null);
+      await expect(service.findOne('session-404', 'user-123')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when user not found', async () => {
+      mockSessionsService.findOne.mockResolvedValue(mockSession);
+      mockUsersService.findOne.mockResolvedValue(null);
+      await expect(service.findOne('session-123', 'user-404')).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('update', () => {
-    it('should return a placeholder string with parameters', () => {
-      // Arrange
-      const updateDto: UpdateSessionInvitationDto = {
-        sessionUid: 'session-456',
-        userId: 'user-789',
+    const existingInvitation = {
+      sessionUid: 'session-123',
+      senderUid: 'sender-123',
+      receiverUid: 'user-123',
+      status: Invitation_status.PENDING,
+    } as any;
+
+    it('should update status to ACCEPTED and add player', async () => {
+      jest.spyOn(service, 'findOne').mockResolvedValue(existingInvitation);
+
+      const txUpdateMock = jest
+        .fn()
+        .mockResolvedValue({ ...existingInvitation, status: Invitation_status.ACCEPTED });
+      (prismaService.$transaction as jest.Mock).mockImplementation(async (cb: any) => {
+        const tx = { sessionInvitations: { update: txUpdateMock } } as any;
+        return await cb(tx);
+      });
+
+      const dto: UpdateSessionInvitationDto = {
+        status: Invitation_status.ACCEPTED,
+        userUid: 'user-123',
+        sessionUid: 'session-123',
       };
 
-      // Act
-      const result = service.update('session-123', 'user-456', updateDto);
-
-      // Assert
-      expect(result).toBe(
-        'This action updates session invitation for session session-123 and user user-456',
+      await expect(service.update(dto)).resolves.toBeUndefined();
+      expect(prismaService.$transaction).toHaveBeenCalled();
+      expect(playersService.addPlayerToSession).toHaveBeenCalledWith(
+        { sessionUid: 'session-123', teamUid: 'session-123', userUid: 'user-123' },
+        expect.any(Object),
       );
+      expect(txUpdateMock).toHaveBeenCalledWith({
+        data: { status: Invitation_status.ACCEPTED },
+        where: {
+          sessionUid_senderUid_receiverUid: {
+            receiverUid: 'user-123',
+            senderUid: 'sender-123',
+            sessionUid: 'session-123',
+          },
+        },
+      });
+    });
+
+    it('should throw NotFoundException when invitation does not exist', async () => {
+      jest.spyOn(service, 'findOne').mockResolvedValue(null as any);
+      const dto: UpdateSessionInvitationDto = {
+        status: Invitation_status.ACCEPTED,
+        userUid: 'user-123',
+        sessionUid: 'session-123',
+      };
+      await expect(service.update(dto)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when status is unchanged', async () => {
+      jest.spyOn(service, 'findOne').mockResolvedValue(existingInvitation);
+      const dto: UpdateSessionInvitationDto = {
+        status: Invitation_status.PENDING,
+        userUid: 'user-123',
+        sessionUid: 'session-123',
+      };
+      await expect(service.update(dto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when receiver changes status to non-ACCEPTED', async () => {
+      jest.spyOn(service, 'findOne').mockResolvedValue(existingInvitation);
+      const dto: UpdateSessionInvitationDto = {
+        status: Invitation_status.REJECTED,
+        userUid: 'user-123',
+        sessionUid: 'session-123',
+      };
+      await expect(service.update(dto)).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('remove', () => {
-    it('should return a placeholder string with parameters', () => {
-      // Act
+    it('should return placeholder message', () => {
       const result = service.remove('session-123', 'user-456');
-
-      // Assert
       expect(result).toBe(
         'This action removes session invitation for session session-123 and user user-456',
       );
     });
   });
+
+  // describe('findAll', () => {
+  //   it('should return a placeholder string', () => {
+  //     // Act
+  //     const result = service.findAll();
+
+  //     // Assert
+  //     expect(result).toBe('This action returns all session invitations');
+  //   });
+  // });
+
+  // Removed obsolete placeholder-only tests for findOne/update/remove since service now performs real lookups
 });
