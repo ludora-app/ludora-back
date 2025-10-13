@@ -9,7 +9,7 @@ export class SessionInvitationResponse {
     readOnly: true,
     type: String,
   })
-  sessionId: string;
+  sessionUid: string;
 
   @ApiProperty({
     description: "Session invitation's receiver ID",
@@ -17,7 +17,7 @@ export class SessionInvitationResponse {
     readOnly: true,
     type: String,
   })
-  receiverId: string;
+  receiverUid: string;
 
   @ApiProperty({
     description: "Session invitation's sender ID",
@@ -25,7 +25,7 @@ export class SessionInvitationResponse {
     readOnly: true,
     type: String,
   })
-  senderId: string;
+  senderUid: string;
 
   @ApiProperty({
     description: "Session invitation's status",

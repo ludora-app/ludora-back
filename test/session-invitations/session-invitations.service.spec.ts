@@ -16,7 +16,7 @@ describe('SessionInvitationsService', () => {
   let usersService: UsersService;
 
   const mockPrismaService = {
-    session_invitations: {
+    sessionInvitations: {
       create: jest.fn(),
       findUnique: jest.fn(),
       findMany: jest.fn(),
@@ -69,7 +69,7 @@ describe('SessionInvitationsService', () => {
   };
 
   const mockInvitation = {
-    sessionId: 'session-123',
+    sessionUid: 'session-123',
     userId: 'user-123',
     status: Invitation_status.PENDING,
     createdAt: new Date('2023-01-01T12:00:00Z'),
@@ -110,7 +110,7 @@ describe('SessionInvitationsService', () => {
 
   describe('create', () => {
     const createDto: CreateSessionInvitationDto = {
-      sessionId: 'session-123',
+      sessionUid: 'session-123',
       userId: 'user-123',
     };
 
@@ -118,8 +118,8 @@ describe('SessionInvitationsService', () => {
       // Arrange
       mockSessionsService.findOne.mockResolvedValue(mockSession);
       mockUsersService.findOne.mockResolvedValue(mockUser);
-      mockPrismaService.session_invitations.findUnique.mockResolvedValue(null);
-      mockPrismaService.session_invitations.create.mockResolvedValue(mockInvitation);
+      mockPrismaService.sessionInvitations.findUnique.mockResolvedValue(null);
+      mockPrismaService.sessionInvitations.create.mockResolvedValue(mockInvitation);
 
       // Act
       const result = await service.create(createDto);
@@ -128,17 +128,17 @@ describe('SessionInvitationsService', () => {
       expect(result).toEqual(mockInvitation);
       expect(sessionsService.findOne).toHaveBeenCalledWith('session-123');
       expect(usersService.findOne).toHaveBeenCalledWith('user-123', USERSELECT.findOne);
-      expect(prismaService.session_invitations.findUnique).toHaveBeenCalledWith({
+      expect(prismaService.sessionInvitations.findUnique).toHaveBeenCalledWith({
         where: {
-          sessionId_userId: {
-            sessionId: 'session-123',
+          sessionUid_userId: {
+            sessionUid: 'session-123',
             userId: 'user-123',
           },
         },
       });
-      expect(prismaService.session_invitations.create).toHaveBeenCalledWith({
+      expect(prismaService.sessionInvitations.create).toHaveBeenCalledWith({
         data: {
-          sessionId: 'session-123',
+          sessionUid: 'session-123',
           userId: 'user-123',
         },
       });
@@ -155,8 +155,8 @@ describe('SessionInvitationsService', () => {
 
       expect(sessionsService.findOne).toHaveBeenCalledWith('session-123');
       expect(usersService.findOne).not.toHaveBeenCalled();
-      expect(prismaService.session_invitations.findUnique).not.toHaveBeenCalled();
-      expect(prismaService.session_invitations.create).not.toHaveBeenCalled();
+      expect(prismaService.sessionInvitations.findUnique).not.toHaveBeenCalled();
+      expect(prismaService.sessionInvitations.create).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when user does not exist', async () => {
@@ -171,15 +171,15 @@ describe('SessionInvitationsService', () => {
 
       expect(sessionsService.findOne).toHaveBeenCalledWith('session-123');
       expect(usersService.findOne).toHaveBeenCalledWith('user-123', USERSELECT.findOne);
-      expect(prismaService.session_invitations.findUnique).not.toHaveBeenCalled();
-      expect(prismaService.session_invitations.create).not.toHaveBeenCalled();
+      expect(prismaService.sessionInvitations.findUnique).not.toHaveBeenCalled();
+      expect(prismaService.sessionInvitations.create).not.toHaveBeenCalled();
     });
 
     it('should throw ConflictException when invitation already exists', async () => {
       // Arrange
       mockSessionsService.findOne.mockResolvedValue(mockSession);
       mockUsersService.findOne.mockResolvedValue(mockUser);
-      mockPrismaService.session_invitations.findUnique.mockResolvedValue(mockInvitation);
+      mockPrismaService.sessionInvitations.findUnique.mockResolvedValue(mockInvitation);
 
       // Act & Assert
       await expect(service.create(createDto)).rejects.toThrow(
@@ -188,15 +188,15 @@ describe('SessionInvitationsService', () => {
 
       expect(sessionsService.findOne).toHaveBeenCalledWith('session-123');
       expect(usersService.findOne).toHaveBeenCalledWith('user-123', USERSELECT.findOne);
-      expect(prismaService.session_invitations.findUnique).toHaveBeenCalledWith({
+      expect(prismaService.sessionInvitations.findUnique).toHaveBeenCalledWith({
         where: {
-          sessionId_userId: {
-            sessionId: 'session-123',
+          sessionUid_userId: {
+            sessionUid: 'session-123',
             userId: 'user-123',
           },
         },
       });
-      expect(prismaService.session_invitations.create).not.toHaveBeenCalled();
+      expect(prismaService.sessionInvitations.create).not.toHaveBeenCalled();
     });
   });
 
@@ -226,7 +226,7 @@ describe('SessionInvitationsService', () => {
     it('should return a placeholder string with parameters', () => {
       // Arrange
       const updateDto: UpdateSessionInvitationDto = {
-        sessionId: 'session-456',
+        sessionUid: 'session-456',
         userId: 'user-789',
       };
 

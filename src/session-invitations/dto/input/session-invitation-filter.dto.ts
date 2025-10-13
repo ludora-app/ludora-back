@@ -6,7 +6,7 @@ import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 export class SessionInvitationFilterDto {
   @IsString()
   @IsOptional()
-  sessionId: string;
+  sessionUid: string;
 
   @IsString()
   @IsOptional()

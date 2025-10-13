@@ -116,7 +116,8 @@ model Users {
 
   conversationOptions ConversationOptions[]
 
-  sessionInvitations SessionInvitations[]
+  Sent_invitations     SessionInvitations[] @relation(name: "senderRelation")
+  Received_invitations SessionInvitations[] @relation(name: "receiverRelation")
 
   sessionPlayers SessionPlayers[]
 
@@ -336,16 +337,18 @@ model Sessions {
 }
 
 model SessionInvitations {
-  sessionUid String            @map("session_uid")
-  userUid    String
-  status     Invitation_status @default(PENDING)
-  createdAt  DateTime          @default(now()) @map("created_at")
-  updatedAt  DateTime          @updatedAt @map("updated_at")
+  sessionUid  String            @map("session_uid")
+  senderUid   String            @map("sender_uid")
+  receiverUid String            @map("receiver_uid")
+  status      Invitation_status @default(PENDING)
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
 
-  session Sessions @relation(fields: [sessionUid], references: [uid])
-  user    Users    @relation(fields: [userUid], references: [uid])
+  session  Sessions @relation(fields: [sessionUid], references: [uid])
+  sender   Users    @relation(fields: [senderUid], references: [uid], name: "senderRelation")
+  receiver Users    @relation(fields: [receiverUid], references: [uid], name: "receiverRelation")
 
-  @@unique([sessionUid, userUid])
+  @@unique([sessionUid, senderUid, receiverUid])
   @@map("Session_invitations")
   @@schema("sessions")
 }

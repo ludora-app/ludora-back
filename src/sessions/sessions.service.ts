@@ -4,10 +4,10 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { DateUtils } from './../shared/utils/date.utils';
+import { SessionTeamsService } from './session-teams.service';
 import { CreateSessionDto } from './dto/input/create-session.dto';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
-import { SessionTeamsService } from './session-teams.service';
 
 @Injectable()
 export class SessionsService {
@@ -187,13 +187,13 @@ export class SessionsService {
         endDate: true,
         fieldUid: true,
         gameMode: true,
-        uid: true,
         maxPlayersPerTeam: true,
         minPlayersPerTeam: true,
         sport: true,
         startDate: true,
         teamsPerGame: true,
         title: true,
+        uid: true,
         updatedAt: true,
       },
     });

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SessionTeams, Team_label } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+
 import { SessionUtils } from './utils/session-utils';
 
 @Injectable()
@@ -31,29 +32,29 @@ export class SessionTeamsService {
     sessionUid: string,
   ): Promise<{ items: SessionTeams[]; nextCursor: string | null; totalCount: number }> {
     const teams = await this.prisma.sessionTeams.findMany({
-      where: {
-        sessionUid: sessionUid,
-      },
       include: {
         sessionPlayers: {
           select: {
-            userUid: true,
             teamUid: true,
             user: {
               select: {
                 firstname: true,
-                lastname: true,
                 imageUrl: true,
+                lastname: true,
               },
             },
+            userUid: true,
           },
         },
+      },
+      where: {
+        sessionUid: sessionUid,
       },
     });
 
     const formattedTeams = teams.map((team) => SessionUtils.formatSessionPlayers(team));
 
-    return { items: formattedTeams, totalCount: teams.length, nextCursor: null };
+    return { items: formattedTeams, nextCursor: null, totalCount: teams.length };
   }
 
   async findOneByUid(uid: string): Promise<SessionTeams> {

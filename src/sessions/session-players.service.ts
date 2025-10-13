@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { SessionPlayers } from '@prisma/client';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+
 import { CreateSessionPlayerDto } from './dto/input/create-session-player.dto';
 
 @Injectable()

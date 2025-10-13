@@ -10,7 +10,7 @@ export class CreateSessionInvitationDto {
     readOnly: true,
     type: String,
   })
-  sessionId: string;
+  sessionUid: string;
 
   @IsString()
   @IsNotEmpty()
@@ -20,5 +20,5 @@ export class CreateSessionInvitationDto {
     readOnly: true,
     type: String,
   })
-  receiverId: string;
+  receiverUid: string;
 }

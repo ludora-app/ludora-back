@@ -47,10 +47,10 @@ export class SessionInvitationsController {
     @Req() request: Request,
     @Body() createSessionInvitationDto: CreateSessionInvitationDto,
   ): Promise<ResponseType<SessionInvitationResponse>> {
-    const senderId = request['user'].id;
+    const senderUid = request['user'].id;
 
     const invitation = await this.sessionInvitationsService.create(
-      senderId,
+      senderUid,
       createSessionInvitationDto,
     );
 
@@ -86,17 +86,17 @@ export class SessionInvitationsController {
     };
   }
 
-  @Get('all-by-session/:sessionId')
+  @Get('all-by-session/:sessionUid')
   @ApiOperation({ summary: 'Get all session invitations by session ID' })
   @ApiOkResponse({ type: PaginatedSessionInvitationResponse })
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
   async findAllBySessionId(
-    @Param('sessionId') sessionId: string,
+    @Param('sessionUid') sessionUid: string,
     @Query() sessionInvitationFilterDto: SessionInvitationFilterDto,
   ): Promise<PaginationResponseTypeDto<SessionInvitationResponse>> {
     const sessionInvitations = await this.sessionInvitationsService.findAllBySessionId(
-      sessionId,
+      sessionUid,
       sessionInvitationFilterDto,
     );
 
@@ -107,17 +107,17 @@ export class SessionInvitationsController {
     };
   }
 
-  @Get(':sessionId/:receiverId')
+  @Get(':sessionUid/:receiverUid')
   @ApiOperation({ summary: 'Get a session invitation by session ID and receiver ID' })
   @ApiOkResponse({ type: ResponseTypeDto<SessionInvitationResponse> })
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
   @ApiNotFoundResponse({ type: NotFoundException })
   async findOne(
-    @Param('sessionId') sessionId: string,
-    @Param('receiverId') receiverId: string,
+    @Param('sessionUid') sessionUid: string,
+    @Param('receiverUid') receiverUid: string,
   ): Promise<ResponseType<SessionInvitationResponse>> {
-    const invitation = await this.sessionInvitationsService.findOne(sessionId, receiverId);
+    const invitation = await this.sessionInvitationsService.findOne(sessionUid, receiverUid);
 
     if (!invitation) {
       throw new NotFoundException('Session invitation not found');
@@ -135,8 +135,8 @@ export class SessionInvitationsController {
     return this.sessionInvitationsService.update(updateSessionInvitationDto);
   }
 
-  @Delete(':sessionId/:userId')
-  remove(@Param('sessionId') sessionId: string, @Param('userId') userId: string) {
-    return this.sessionInvitationsService.remove(sessionId, userId);
+  @Delete(':sessionUid/:userId')
+  remove(@Param('sessionUid') sessionUid: string, @Param('userId') userId: string) {
+    return this.sessionInvitationsService.remove(sessionUid, userId);
   }
 }
