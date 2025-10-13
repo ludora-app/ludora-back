@@ -51,7 +51,7 @@ export class SessionTeamsService {
       },
     });
 
-    const formattedTeams = SessionUtils.formatSessionPlayers(teams);
+    const formattedTeams = teams.map((team) => SessionUtils.formatSessionPlayers(team));
 
     return { items: formattedTeams, totalCount: teams.length, nextCursor: null };
   }
