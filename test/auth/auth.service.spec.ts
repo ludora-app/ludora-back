@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Sex, User_type } from '@prisma/client';
@@ -81,6 +82,9 @@ describe('AuthService', () => {
   const mockEmailsService = {
     sendEmail: jest.fn().mockResolvedValue(undefined),
   };
+  const mockConfigService = {
+    getOrThrow: jest.fn().mockReturnValue('test-secret'),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -102,6 +106,10 @@ describe('AuthService', () => {
           provide: EmailsService,
           useValue: mockEmailsService,
         },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
+        },
       ],
     }).compile();
 
@@ -110,6 +118,7 @@ describe('AuthService', () => {
     module.get<JwtService>(JwtService);
     module.get<UsersService>(UsersService);
     module.get<EmailsService>(EmailsService);
+    module.get<ConfigService>(ConfigService);
   });
 
   afterEach(() => {

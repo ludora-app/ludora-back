@@ -1,6 +1,7 @@
 import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { User_type } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
@@ -26,7 +27,10 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly userService: UsersService,
     private readonly emailsService: EmailsService,
+    private readonly configService: ConfigService,
   ) {}
+  private readonly NODE_ENV = this.configService.getOrThrow('NODE_ENV');
+  private readonly TOKEN_EXPIRATION_TIME = this.NODE_ENV === 'production' ? '15m' : '1d';
 
   async register(
     registerDto: RegisterUserDto,
@@ -59,7 +63,7 @@ export class AuthService {
       const payload: { uid: string; deviceUid?: string } = { uid: newUser.uid };
       if (deviceUid) payload.deviceUid = deviceUid;
 
-      const accessToken = this.jwt.sign(payload, { expiresIn: '15m' });
+      const accessToken = this.jwt.sign(payload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
       const refreshToken = this.jwt.sign(payload, { expiresIn: '7d' });
 
       // Créer le token d'accès
