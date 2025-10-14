@@ -4,14 +4,14 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Sex, User_type } from '@prisma/client';
 import * as argon2 from 'argon2';
-import { AuthService } from 'src/auth/auth.service';
-import { RefreshTokenDto } from 'src/auth/dto';
+import { AuthB2CService } from 'src/auth-b2c/auth-b2c.service';
+import { RefreshTokenDto } from 'src/auth-b2c/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { UsersService } from 'src/users/users.service';
 
-describe('AuthService', () => {
-  let service: AuthService;
+describe('AuthB2CService', () => {
+  let service: AuthB2CService;
 
   const mockPrismaService = {
     $transaction: jest.fn().mockImplementation((callback) => {
@@ -89,7 +89,7 @@ describe('AuthService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AuthService,
+        AuthB2CService,
         {
           provide: PrismaService,
           useValue: mockPrismaService,
@@ -113,7 +113,7 @@ describe('AuthService', () => {
       ],
     }).compile();
 
-    service = module.get<AuthService>(AuthService);
+    service = module.get<AuthB2CService>(AuthB2CService);
     module.get<PrismaService>(PrismaService);
     module.get<JwtService>(JwtService);
     module.get<UsersService>(UsersService);

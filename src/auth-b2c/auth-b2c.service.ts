@@ -18,10 +18,10 @@ import {
   RefreshTokenDto,
   RegisterUserDto,
   VerifyMailDto,
-} from 'src/auth/dto';
+} from 'src/auth-b2c/dto';
 
 @Injectable()
-export class AuthService {
+export class AuthB2CService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly jwt: JwtService,

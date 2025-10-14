@@ -1,5 +1,5 @@
 import { Controller, Get, Res } from '@nestjs/common';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { Public } from 'src/shared/decorators/public.decorator';
 import { PrometheusController } from '@willsoto/nestjs-prometheus';
 
 @Controller('metrics')

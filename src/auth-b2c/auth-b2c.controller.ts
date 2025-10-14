@@ -33,15 +33,15 @@ import {
   VerifyEmailResponseDto,
   VerifyMailDto,
   VerifyTokenResponseDto,
-} from 'src/auth/dto';
+} from 'src/auth-b2c/dto';
 
-import { AuthService } from './auth.service';
-import { Public } from './decorators/public.decorator';
+import { AuthB2CService } from './auth-b2c.service';
+import { Public } from '../shared/decorators/public.decorator';
 import { VerifyEmailCodeDto } from './dto/input/verify-email-code.dto';
 
-@Controller('auth')
-export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+@Controller('auth-b2c')
+export class AuthB2CController {
+  constructor(private readonly authService: AuthB2CService) {}
 
   @Public()
   @Post('register')

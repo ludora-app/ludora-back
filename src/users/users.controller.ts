@@ -1,6 +1,6 @@
 import { Users } from '@prisma/client';
-import { Public } from 'src/auth/decorators/public.decorator';
 import { ResponseTypeDto } from 'src/interfaces/response-type';
+import { Public } from 'src/shared/decorators/public.decorator';
 import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import {
   ApiBadRequestResponse,

@@ -6,13 +6,13 @@ import { UsersModule } from 'src/users/users.module';
 import { SharedModule } from 'src/shared/shared.module';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
-import { AuthService } from './auth.service';
-import { AuthGuard } from './guards/auth.guard';
-import { AuthController } from './auth.controller';
+import { AuthB2CService } from './auth-b2c.service';
+import { AuthB2CGuard } from './guards/auth-b2c.guard';
+import { AuthB2CController } from './auth-b2c.controller';
 
 @Module({
-  controllers: [AuthController],
-  exports: [AuthService],
+  controllers: [AuthB2CController],
+  exports: [AuthB2CService],
   imports: [
     JwtModule.registerAsync({
       global: true,
@@ -31,11 +31,11 @@ import { AuthController } from './auth.controller';
     }),
   ],
   providers: [
-    AuthService,
+    AuthB2CService,
     {
       provide: APP_GUARD,
-      useClass: AuthGuard,
+      useClass: AuthB2CGuard,
     },
   ],
 })
-export class AuthModule {}
+export class AuthB2CModule {}

@@ -1,6 +1,6 @@
 import * as argon2 from 'argon2';
-import { CreateImageDto } from 'src/auth/dto';
 import { Prisma, Users } from '@prisma/client';
+import { CreateImageDto } from 'src/auth-b2c/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { S3FoldersName } from 'src/shared/constants/constants';
 import { EmailsService } from 'src/shared/emails/emails.service';

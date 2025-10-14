@@ -28,6 +28,7 @@ enum Sex {
 enum User_type {
   USER
   ADMIN
+  PARTNER
 
   @@schema("auth")
 }
