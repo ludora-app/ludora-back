@@ -1,10 +1,10 @@
 import { Sessions } from '@prisma/client';
 import { Sport } from 'src/shared/constants/constants';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { DateUtils } from './../shared/utils/date.utils';
-import { SessionTeamsService } from './session-teams.service';
 import { CreateSessionDto } from './dto/input/create-session.dto';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';

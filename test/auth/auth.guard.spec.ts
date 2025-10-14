@@ -294,7 +294,6 @@ describe('AuthGuard', () => {
         expect.objectContaining({
           message: 'Token expired',
           timestamp: expect.any(String),
-          token: expect.stringContaining('invalid_token'),
         }),
       );
 

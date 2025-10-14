@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SessionTeams, Team_label } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SessionTeamsService } from '../../src/sessions/session-teams.service';
+import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 
 describe('SessionTeamsService', () => {
   let service: SessionTeamsService;

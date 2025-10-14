@@ -1,10 +1,10 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Game_modes } from '@prisma/client';
+import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 import { CreateSessionDto } from 'src/sessions/dto/input/create-session.dto';
 import { SessionFilterDto } from 'src/sessions/dto/input/session-filter.dto';
 import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
-import { SessionTeamsService } from 'src/sessions/session-teams.service';
 import { SessionsController } from 'src/sessions/sessions.controller';
 import { SessionsService } from 'src/sessions/sessions.service';
 import { Sport } from 'src/shared/constants/constants';
