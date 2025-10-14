@@ -2,7 +2,6 @@ import * as argon2 from 'argon2';
 import { CreateImageDto } from 'src/auth/dto';
 import { Prisma, Users } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SuccessTypeDto } from 'src/interfaces/success-type';
 import { S3FoldersName } from 'src/shared/constants/constants';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { ImagesService } from 'src/shared/images/images.service';
@@ -146,7 +145,7 @@ export class UsersService {
     });
   }
 
-  async update(uid: string, updateUserDto: UpdateUserDto): Promise<Users> {
+  async update(uid: string, updateUserDto: UpdateUserDto): Promise<void> {
     const existingUser = await this.findOne(uid, USERSELECT.findMe);
 
     if (!existingUser) throw new NotFoundException('User not found');
@@ -158,16 +157,15 @@ export class UsersService {
       where: { uid },
     });
 
-    if (updatedUser) {
-      return updatedUser;
-    } else {
+    if (!updatedUser) {
       throw new BadRequestException('User not updated');
     }
+    return;
   }
 
   //? this method needs to change the password after all the verification is done
   //todo: new method that send the verification email ? And verify if the user.provider is google ?
-  async updatePassword(uid: string, updatePasswordDto: UpdatePasswordDto): Promise<SuccessTypeDto> {
+  async updatePassword(uid: string, updatePasswordDto: UpdatePasswordDto): Promise<void> {
     const { newPassword, oldPassword } = updatePasswordDto;
     const existingUser = await this.prismaService.users.findUnique({
       where: { uid },
@@ -196,13 +194,13 @@ export class UsersService {
         recipients: [updatedUser.email],
         template: 'passwordReset',
       });
-      return { message: 'User password updated successfully', status: 200 };
+      return;
     } else {
       throw new BadRequestException('User not updated');
     }
   }
 
-  async deactivate(uid: string): Promise<SuccessTypeDto> {
+  async deactivate(uid: string): Promise<void> {
     const existingUser = await this.prismaService.users.findUnique({
       where: { uid },
     });
@@ -216,10 +214,10 @@ export class UsersService {
       where: { uid },
     });
 
-    return { message: `User ${uid} has been deactivated`, status: 200 };
+    return;
   }
 
-  async remove(uid: string): Promise<SuccessTypeDto> {
+  async remove(uid: string): Promise<void> {
     const existingUser = await this.prismaService.users.findUnique({
       where: { uid },
     });
@@ -230,7 +228,7 @@ export class UsersService {
       where: { uid },
     });
 
-    return { message: `User ${uid} has been deleted`, status: 200 };
+    return;
   }
 
   /**

@@ -39,7 +39,7 @@ describe('SessionInvitationsController', () => {
 
   describe('create', () => {
     it('should create an invitation and wrap response', async () => {
-      const req: any = { user: { id: 'sender-1' } };
+      const req: any = { user: { uid: 'sender-1' } };
       const dto: CreateSessionInvitationDto = {
         sessionUid: 'sess-1',
         receiverUid: 'user-2',
@@ -62,7 +62,7 @@ describe('SessionInvitationsController', () => {
     });
 
     it('should throw BadRequestException when service returns null', async () => {
-      const req: any = { user: { id: 'sender-1' } };
+      const req: any = { user: { uid: 'sender-1' } };
       const dto: CreateSessionInvitationDto = {
         sessionUid: 'sess-1',
         receiverUid: 'user-2',
@@ -156,15 +156,18 @@ describe('SessionInvitationsController', () => {
 
   describe('update', () => {
     it('should call service.update and return void', async () => {
-      const dto: UpdateSessionInvitationDto = {
-        status: 'ACCEPTED' as any,
-        userUid: 'user-2',
-        sessionUid: 'sess-1',
-      };
+      const sessionUid = 'sess-1';
+      const body = { status: 'ACCEPTED' as any };
+      const req: any = { user: { uid: 'user-2' } };
+
       mockSessionInvitationsService.update.mockResolvedValue(undefined);
 
-      await expect(controller.update(dto)).resolves.toBeUndefined();
-      expect(mockSessionInvitationsService.update).toHaveBeenCalledWith(dto);
+      await expect(controller.update(sessionUid, body, req)).resolves.toBeUndefined();
+      expect(mockSessionInvitationsService.update).toHaveBeenCalledWith({
+        sessionUid: 'sess-1',
+        status: 'ACCEPTED',
+        userUid: 'user-2',
+      });
     });
   });
 

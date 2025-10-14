@@ -1,8 +1,10 @@
+import { Invitation_status } from '@prisma/client';
 import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
 import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -15,6 +17,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   NotFoundException,
   Param,
   Patch,
@@ -26,8 +30,8 @@ import {
 
 import { SessionInvitationsService } from './session-invitations.service';
 import { CreateSessionInvitationDto } from './dto/input/create-session-invitation.dto';
-import { SessionInvitationFilterDto } from './dto/input/session-invitation-filter.dto';
 import { UpdateSessionInvitationDto } from './dto/input/update-session-invitation.dto';
+import { SessionInvitationFilterDto } from './dto/input/session-invitation-filter.dto';
 import {
   PaginatedSessionInvitationResponse,
   SessionInvitationResponse,
@@ -47,7 +51,7 @@ export class SessionInvitationsController {
     @Req() request: Request,
     @Body() createSessionInvitationDto: CreateSessionInvitationDto,
   ): Promise<ResponseType<SessionInvitationResponse>> {
-    const senderUid = request['user'].id;
+    const senderUid = request['user'].uid;
 
     const invitation = await this.sessionInvitationsService.create(
       senderUid,
@@ -130,8 +134,24 @@ export class SessionInvitationsController {
     };
   }
 
-  @Patch()
-  update(@Body() updateSessionInvitationDto: UpdateSessionInvitationDto) {
+  @Patch(':sessionUid')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Update a session invitation by session UID' })
+  @ApiNoContentResponse({ description: 'Session invitation updated successfully' })
+  @ApiBadRequestResponse({ type: BadRequestException })
+  @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  @ApiNotFoundResponse({ type: NotFoundException })
+  update(
+    @Param('sessionUid') sessionUid: string,
+    @Body() body: { status: Invitation_status },
+    @Req() request: Request,
+  ): Promise<void> {
+    const userUid = request['user'].uid;
+    const updateSessionInvitationDto: UpdateSessionInvitationDto = {
+      sessionUid,
+      status: body.status,
+      userUid,
+    };
     return this.sessionInvitationsService.update(updateSessionInvitationDto);
   }
 

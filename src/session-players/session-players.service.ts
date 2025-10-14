@@ -51,4 +51,10 @@ export class SessionPlayersService {
       where: { sessionUid: sessionUid },
     });
   }
+
+  async findOne(sessionUid: string, userUid: string): Promise<SessionPlayers> {
+    return this.prisma.sessionPlayers.findFirst({
+      where: { sessionUid: sessionUid, userUid: userUid },
+    });
+  }
 }

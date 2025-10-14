@@ -235,9 +235,7 @@ describe('UsersService', () => {
 
       const result = await service.update('1', updateUserDto);
 
-      expect(result).toBeDefined();
-      expect(result.uid).toBe('1');
-      expect(result.bio).toBe('updated bio');
+      expect(result).toBeUndefined();
     });
 
     it('should throw BadRequestException if update fails', async () => {
@@ -273,7 +271,7 @@ describe('UsersService', () => {
 
       const result = await service.updatePassword('1', updatePasswordDto);
 
-      expect(result.message).toBe('User password updated successfully');
+      expect(result).toBeUndefined();
       expect(mockPrismaService.users.update).toHaveBeenCalled();
       expect(mockEmailsService.sendEmail).toHaveBeenCalledWith({
         data: { name: 'John' },
@@ -305,10 +303,7 @@ describe('UsersService', () => {
 
       const result = await service.deactivate('1');
 
-      expect(result).toEqual({
-        message: 'User 1 has been deactivated',
-        status: 200,
-      });
+      expect(result).toBeUndefined();
       expect(mockPrismaService.users.update).toHaveBeenCalledWith({
         data: { isConnected: false },
         where: { uid: '1' },
@@ -329,9 +324,9 @@ describe('UsersService', () => {
 
       const result = await service.remove('1');
 
-      expect(result).toEqual({
-        message: 'User 1 has been deleted',
-        status: 200,
+      expect(result).toBeUndefined();
+      expect(mockPrismaService.users.delete).toHaveBeenCalledWith({
+        where: { uid: '1' },
       });
     });
 

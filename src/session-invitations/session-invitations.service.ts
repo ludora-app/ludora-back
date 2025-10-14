@@ -40,7 +40,17 @@ export class SessionInvitationsService {
       this.logger.error(`Session ${createSessionInvitationDto.sessionUid} not found`);
       throw new BadRequestException('Session not found');
     }
-    // checks if the receiver exists
+    // ? checks if the sender is a player in the session
+    const existingPlayer = await this.playersService.findOne(
+      createSessionInvitationDto.sessionUid,
+      senderUid,
+    );
+
+    if (!existingPlayer) {
+      throw new BadRequestException('Sender is not a player in the session');
+    }
+
+    // ? checks if the receiver exists
     const existingReceiver = await this.usersService.findOne(
       createSessionInvitationDto.receiverUid,
       USERSELECT.findOne,
@@ -56,7 +66,7 @@ export class SessionInvitationsService {
       throw new BadRequestException('You cannot invite yourself to a session');
     }
 
-    // checks if the user is already invited to the session
+    // ? checks if the user is already invited to the session
     const existingInvitation = await this.prisma.sessionInvitations.findFirst({
       where: {
         receiverUid: createSessionInvitationDto.receiverUid,
@@ -75,18 +85,58 @@ export class SessionInvitationsService {
       );
       throw new ConflictException('User already invited to the session');
     }
+    if (!existingInvitation) {
+      const invitation = await this.prisma.sessionInvitations.create({
+        data: {
+          receiverUid: createSessionInvitationDto.receiverUid,
+          senderUid,
+          sessionUid: createSessionInvitationDto.sessionUid,
+        },
+      });
+      this.logger.log(
+        `User ${createSessionInvitationDto.receiverUid} invited to the session ${createSessionInvitationDto.sessionUid} by User${senderUid}`,
+      );
+      return invitation;
+    }
 
-    const invitation = await this.prisma.sessionInvitations.create({
-      data: {
-        receiverUid: createSessionInvitationDto.receiverUid,
-        senderUid,
-        sessionUid: createSessionInvitationDto.sessionUid,
-      },
-    });
-    this.logger.log(
-      `User ${createSessionInvitationDto.receiverUid} invited to the session ${createSessionInvitationDto.sessionUid} by User${senderUid}`,
-    );
-    return invitation;
+    // ? if the sender canceled the invitation and tries to invite again the same user, we update the invitation to pending
+    if (
+      existingInvitation &&
+      existingInvitation.senderUid === senderUid &&
+      existingInvitation.status === Invitation_status.CANCELED
+    ) {
+      const invitation = await this.prisma.sessionInvitations.update({
+        data: {
+          status: Invitation_status.PENDING,
+        },
+        where: {
+          sessionUid_senderUid_receiverUid: {
+            receiverUid: createSessionInvitationDto.receiverUid,
+            senderUid: senderUid,
+            sessionUid: createSessionInvitationDto.sessionUid,
+          },
+        },
+      });
+      this.logger.log(
+        `User ${createSessionInvitationDto.receiverUid} reinvited to the session ${createSessionInvitationDto.sessionUid} by User${senderUid} after being canceled`,
+      );
+      return invitation;
+    }
+
+    // ? if the invitation was rejected, create a new one
+    if (existingInvitation && existingInvitation.status === Invitation_status.REJECTED) {
+      const invitation = await this.prisma.sessionInvitations.create({
+        data: {
+          receiverUid: createSessionInvitationDto.receiverUid,
+          senderUid,
+          sessionUid: createSessionInvitationDto.sessionUid,
+        },
+      });
+      this.logger.log(
+        `User ${createSessionInvitationDto.receiverUid} re-invited to the session ${createSessionInvitationDto.sessionUid} by User${senderUid} after rejection`,
+      );
+      return invitation;
+    }
   }
 
   async findAllByReceiverId(
@@ -252,9 +302,32 @@ export class SessionInvitationsService {
     return invitation;
   }
 
+  /**
+   * This function finds a session invitation by session UID and user UID using Prisma in TypeScript.
+   * Used in order to check if an invitation exists independently of the sender or the receiver in the update method.
+   * @param {string} sessionUid
+   * @param {string} userUid
+   * @returns The `findOneSessionBySenderOrReceiver` function is returning a Promise that resolves to
+   * a `SessionInvitations` object. The function uses Prisma's `findFirst` method to query the database
+   * for a `SessionInvitations` record that matches the provided `sessionUid` and either `senderUid`
+   * or `receiverUid` equals to `userUid`.
+   */
+  async findOneSessionBySenderOrReceiver(sessionUid: string, userUid: string) {
+    const existingSession = await this.sessionsService.findOne(sessionUid);
+    if (!existingSession) {
+      throw new NotFoundException(`Session ${sessionUid} not found`);
+    }
+    const invitation = await this.prisma.sessionInvitations.findFirst({
+      where: {
+        OR: [{ senderUid: userUid }, { receiverUid: userUid }],
+        sessionUid,
+      },
+    });
+    return invitation;
+  }
+
   async update(updateSessionInvitationDto: UpdateSessionInvitationDto): Promise<void> {
-    //todo: use memberservice to create a member if the status is accepted
-    const existingInvitation = await this.findOne(
+    const existingInvitation = await this.findOneSessionBySenderOrReceiver(
       updateSessionInvitationDto.sessionUid,
       updateSessionInvitationDto.userUid,
     );
@@ -266,27 +339,36 @@ export class SessionInvitationsService {
     if (updateSessionInvitationDto.status === existingInvitation.status) {
       throw new BadRequestException(`Status ${updateSessionInvitationDto.status} is already set`);
     }
-    // let isSender;
+    let isSender;
     let isReceiver;
     if (updateSessionInvitationDto.userUid === existingInvitation.senderUid) {
-      // isSender = true;
+      isSender = true;
     }
     if (updateSessionInvitationDto.userUid === existingInvitation.receiverUid) {
       isReceiver = true;
     }
 
-    //todo: add a CANCELED status
-    if (isReceiver && updateSessionInvitationDto.status !== Invitation_status.ACCEPTED) {
-      throw new BadRequestException(`You cannot change the status of the sender or the receiver`);
+    if (
+      isReceiver &&
+      updateSessionInvitationDto.status !== Invitation_status.ACCEPTED &&
+      updateSessionInvitationDto.status !== Invitation_status.REJECTED
+    ) {
+      throw new BadRequestException(
+        `The status ${updateSessionInvitationDto.status} is not allowed for the receiver`,
+      );
+    }
+    if (isSender && updateSessionInvitationDto.status !== Invitation_status.CANCELED) {
+      throw new BadRequestException(
+        `The status ${updateSessionInvitationDto.status} is not allowed for the sender`,
+      );
     }
     const createSessionPlayerDto: CreateSessionPlayerDto = {
       sessionUid: existingInvitation.sessionUid,
       teamUid: existingInvitation.sessionUid,
       userUid: existingInvitation.receiverUid,
     };
-
-    await this.prisma.$transaction(async (tx) => {
-      const updated = await tx.sessionInvitations.update({
+    if (isSender && updateSessionInvitationDto.status === Invitation_status.CANCELED) {
+      await this.prisma.sessionInvitations.update({
         data: { status: updateSessionInvitationDto.status },
         where: {
           sessionUid_senderUid_receiverUid: {
@@ -296,11 +378,26 @@ export class SessionInvitationsService {
           },
         },
       });
+      return;
+    }
+    if (isReceiver && updateSessionInvitationDto.status === Invitation_status.ACCEPTED) {
+      await this.prisma.$transaction(async (tx) => {
+        const updated = await tx.sessionInvitations.update({
+          data: { status: updateSessionInvitationDto.status },
+          where: {
+            sessionUid_senderUid_receiverUid: {
+              receiverUid: existingInvitation.receiverUid,
+              senderUid: existingInvitation.senderUid,
+              sessionUid: existingInvitation.sessionUid,
+            },
+          },
+        });
 
-      await this.playersService.addPlayerToSession(createSessionPlayerDto, tx);
+        await this.playersService.addPlayerToSession(createSessionPlayerDto, tx);
 
-      return updated;
-    });
+        return updated;
+      });
+    }
 
     this.logger.log(
       `Session invitation with sessionUid${existingInvitation.sessionUid} updated to ${updateSessionInvitationDto.status}`,
