@@ -1,10 +1,10 @@
-import { AwsService } from 'src/shared/aws/aws.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { S3FoldersName } from '../constants/constants';
 import { CreateImageDto } from './dto/create-image.dto';
 import { UpdateImageDto } from './dto/update-image.dto';
+import { StorageService } from '../storage/storage.service';
 
 /**
  * Service responsible for handling image operations
@@ -14,7 +14,7 @@ import { UpdateImageDto } from './dto/update-image.dto';
 export class ImagesService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly awsService: AwsService,
+    private readonly storageService: StorageService,
   ) {}
 
   async getImagesBySessionUid(sessionUid: string) {
@@ -37,7 +37,7 @@ export class ImagesService {
     const folder = 'sessions';
     const response = await Promise.all(
       images.map(async (image) => {
-        const url = await this.awsService.getSignedUrl(folder, image.url);
+        const url = await this.storageService.getSignedUrl(folder, image.url);
         return { order: image.order, url };
       }),
     );
@@ -63,7 +63,7 @@ export class ImagesService {
     }
 
     const folder = 'sessions';
-    const response = await this.awsService.getSignedUrl(folder, image.url);
+    const response = await this.storageService.getSignedUrl(folder, image.url);
 
     return response;
   }
@@ -78,7 +78,7 @@ export class ImagesService {
       throw new NotFoundException(`User with uid ${userUid} not found`);
     }
     const folder = 'users';
-    const response = await this.awsService.getSignedUrl(folder, profilePic.imageUrl);
+    const response = await this.storageService.getSignedUrl(folder, profilePic.imageUrl);
 
     return response;
   }
@@ -87,7 +87,7 @@ export class ImagesService {
     const { file, name } = createImageDto;
 
     try {
-      const fileS3 = await this.awsService.upload(folder, name, file);
+      const fileS3 = await this.storageService.upload(folder, name, file);
 
       if (!fileS3?.message) {
         throw new BadRequestException('Error uploading image');
