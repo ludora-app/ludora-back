@@ -10,6 +10,8 @@ import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SharedModule } from './shared/shared.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { SessionTeamsModule } from './session-teams/session-teams.module';
+import { SessionPlayersModule } from './session-players/session-players.module';
 import { SessionInvitationsModule } from './session-invitations/session-invitations.module';
 
 @Module({
@@ -29,6 +31,8 @@ import { SessionInvitationsModule } from './session-invitations/session-invitati
     SessionsModule,
     ScheduleModule.forRoot(),
     SessionInvitationsModule,
+    SessionTeamsModule,
+    SessionPlayersModule,
   ],
 
   providers: [AppService],

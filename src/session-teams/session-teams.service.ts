@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma, SessionTeams, Team_label } from '@prisma/client';
-
-import { SessionUtils, SessionTeamWithPlayers } from './utils/session-utils';
+import { SessionTeamWithPlayers, SessionUtils } from 'src/sessions/utils/session-utils';
 
 @Injectable()
 export class SessionTeamsService {

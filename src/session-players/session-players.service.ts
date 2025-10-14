@@ -8,26 +8,17 @@ import { CreateSessionPlayerDto } from './dto/input/create-session-player.dto';
 export class SessionPlayersService {
   constructor(private readonly prisma: PrismaService) {}
   private logger = new Logger(SessionPlayersService.name);
-  /**
-   * Add the session creator as a default player to the team
-   * Only use this method when creating a session so there's no need to check for the existing session and team
-   * @param sessionUid
-   * @param teamUid
-   * @param userUid
-   */
-  async addDefaultPlayer(createSessionPlayerDto: CreateSessionPlayerDto): Promise<void> {
-    await this.prisma.sessionPlayers.create({
-      data: {
-        sessionUid: createSessionPlayerDto.sessionUid,
-        teamUid: createSessionPlayerDto.teamUid,
-        userUid: createSessionPlayerDto.userUid,
-      },
-    });
-    this.logger.log(
-      `Default player ${createSessionPlayerDto.userUid} added to session ${createSessionPlayerDto.sessionUid}`,
-    );
-  }
 
+  /**
+   * This function adds a player to a session in a TypeScript application using Prisma for database
+   * operations.
+   * @param {CreateSessionPlayerDto} createSessionPlayerDto - The `createSessionPlayerDto` parameter is
+   * an object that contains the following properties:
+   * @param [tx] - The `tx` parameter in the `addPlayerToSession` function is an optional parameter of
+   * type `Prisma.TransactionClient`. It is used to pass a transaction client to the function for
+   * performing database operations within a transaction. If `tx` is provided, the function will use it
+   * as the client
+   */
   async addPlayerToSession(
     createSessionPlayerDto: CreateSessionPlayerDto,
     tx?: Prisma.TransactionClient,

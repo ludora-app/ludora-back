@@ -8,7 +8,7 @@ import { UsersService } from 'src/users/users.service';
 import { CreateSessionInvitationDto } from '../../src/session-invitations/dto/input/create-session-invitation.dto';
 import { UpdateSessionInvitationDto } from '../../src/session-invitations/dto/input/update-session-invitation.dto';
 import { SessionInvitationsService } from '../../src/session-invitations/session-invitations.service';
-import { SessionPlayersService } from 'src/sessions/session-players.service';
+import { SessionPlayersService } from 'src/session-players/session-players.service';
 
 describe('SessionInvitationsService', () => {
   let service: SessionInvitationsService;

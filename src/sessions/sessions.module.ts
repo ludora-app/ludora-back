@@ -1,12 +1,14 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
+import { SessionTeamsModule } from 'src/session-teams/session-teams.module';
+import { SessionPlayersModule } from 'src/session-players/session-players.module';
 
 import { SessionsService } from './sessions.service';
 import { SessionsController } from './sessions.controller';
-import { SessionTeamsService } from './session-teams.service';
-import { SessionPlayersService } from './session-players.service';
 
 @Module({
   controllers: [SessionsController],
-  providers: [SessionsService, SessionTeamsService, SessionPlayersService],
+  exports: [SessionsService],
+  imports: [forwardRef(() => SessionTeamsModule), forwardRef(() => SessionPlayersModule)],
+  providers: [SessionsService],
 })
 export class SessionsModule {}

@@ -7,9 +7,9 @@ import { DateUtils } from 'src/shared/utils/date.utils';
 import { CreateSessionDto } from '../../src/sessions/dto/input/create-session.dto';
 import { SessionFilterDto } from '../../src/sessions/dto/input/session-filter.dto';
 import { UpdateSessionDto } from '../../src/sessions/dto/input/update-session.dto';
-import { SessionTeamsService } from '../../src/sessions/session-teams.service';
 import { SessionsService } from './../../src/sessions/sessions.service';
-import { SessionPlayersService } from '../../src/sessions/session-players.service';
+import { SessionPlayersService } from '../../src/session-players/session-players.service';
+import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 
 jest.mock('src/shared/utils/date.utils', () => ({
   DateUtils: {

@@ -74,7 +74,6 @@ export class AuthGuard implements CanActivate {
       console.error('🔒 Auth Guard Error:', {
         message: error.message,
         timestamp: new Date().toISOString(),
-        token: token?.substring(0, 20) + '...',
       });
 
       // if it's already a UnauthorizedException, we throw it
