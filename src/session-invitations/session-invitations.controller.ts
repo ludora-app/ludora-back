@@ -4,6 +4,7 @@ import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-ty
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -135,6 +136,11 @@ export class SessionInvitationsController {
 
   @Patch(':sessionUid')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Update a session invitation by session UID' })
+  @ApiNoContentResponse({ description: 'Session invitation updated successfully' })
+  @ApiBadRequestResponse({ type: BadRequestException })
+  @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  @ApiNotFoundResponse({ type: NotFoundException })
   update(
     @Param('sessionUid') sessionUid: string,
     @Body() body: { status: Invitation_status },

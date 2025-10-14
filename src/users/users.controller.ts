@@ -4,6 +4,7 @@ import { ResponseTypeDto } from 'src/interfaces/response-type';
 import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import {
   ApiBadRequestResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -14,6 +15,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   NotFoundException,
   Param,
   Patch,
@@ -145,13 +148,12 @@ export class UsersController {
     description: 'User not found',
     type: NotFoundException,
   })
-  async update(
-    @Req() request: Request,
-    @Body() updateUserDto: UpdateUserDto,
-  ): Promise<ResponseTypeDto<Users>> {
+  @ApiNoContentResponse({ description: 'User updated successfully' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async update(@Req() request: Request, @Body() updateUserDto: UpdateUserDto): Promise<void> {
     const uid = request['user'].uid;
-    const data = await this.usersService.update(uid, updateUserDto);
-    return { data, message: 'User updated successfully', status: 200 };
+    await this.usersService.update(uid, updateUserDto);
+    return;
   }
 
   @Patch('/update-password')
@@ -166,7 +168,12 @@ export class UsersController {
     description: 'User not found',
     type: NotFoundException,
   })
-  updatePassword(@Req() request: Request, @Body() updatePasswordDto: UpdatePasswordDto) {
+  @ApiNoContentResponse({ description: 'Password updated successfully' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  updatePassword(
+    @Req() request: Request,
+    @Body() updatePasswordDto: UpdatePasswordDto,
+  ): Promise<void> {
     const uid = request['user'].uid;
     return this.usersService.updatePassword(uid, updatePasswordDto);
   }
@@ -183,6 +190,8 @@ export class UsersController {
     description: 'User not found',
     type: NotFoundException,
   })
+  @ApiNoContentResponse({ description: 'User deactivated successfully' })
+  @HttpCode(HttpStatus.NO_CONTENT)
   deactivate(@Req() request: Request) {
     const uid = request['user'].uid;
     return this.usersService.deactivate(uid);
@@ -200,6 +209,8 @@ export class UsersController {
     description: 'User not found',
     type: NotFoundException,
   })
+  @ApiNoContentResponse({ description: 'User deleted successfully' })
+  @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Req() request: Request) {
     const uid = request['user'].uid;
     return this.usersService.remove(uid);
