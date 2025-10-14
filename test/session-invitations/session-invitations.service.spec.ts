@@ -36,6 +36,7 @@ describe('SessionInvitationsService', () => {
   };
   const mockSessionPlayersService = {
     addPlayerToSession: jest.fn(),
+    findOne: jest.fn(),
   };
 
   const mockSession = {
@@ -100,6 +101,7 @@ describe('SessionInvitationsService', () => {
 
     it('should create a session invitation successfully', async () => {
       mockSessionsService.findOne.mockResolvedValue(mockSession);
+      mockSessionPlayersService.findOne.mockResolvedValue({ userUid: senderUid });
       mockUsersService.findOne.mockResolvedValue(mockUser);
       (prismaService.sessionInvitations.findFirst as jest.Mock).mockResolvedValue(null);
       (prismaService.sessionInvitations.create as jest.Mock).mockResolvedValue(mockInvitation);
@@ -108,6 +110,7 @@ describe('SessionInvitationsService', () => {
 
       expect(result).toEqual(mockInvitation);
       expect(sessionsService.findOne).toHaveBeenCalledWith('session-123');
+      expect(playersService.findOne).toHaveBeenCalledWith('session-123', senderUid);
       expect(usersService.findOne).toHaveBeenCalledWith('user-123', USERSELECT.findOne);
       expect(prismaService.sessionInvitations.findFirst).toHaveBeenCalledWith({
         where: { receiverUid: 'user-123', sessionUid: 'session-123' },
@@ -129,10 +132,12 @@ describe('SessionInvitationsService', () => {
 
     it('should throw BadRequestException when user does not exist', async () => {
       mockSessionsService.findOne.mockResolvedValue(mockSession);
+      mockSessionPlayersService.findOne.mockResolvedValue({ userUid: senderUid });
       mockUsersService.findOne.mockResolvedValue(null);
 
       await expect(service.create(senderUid, createDto)).rejects.toThrow(BadRequestException);
       expect(sessionsService.findOne).toHaveBeenCalledWith('session-123');
+      expect(playersService.findOne).toHaveBeenCalledWith('session-123', senderUid);
       expect(usersService.findOne).toHaveBeenCalledWith('user-123', USERSELECT.findOne);
       expect(prismaService.sessionInvitations.findFirst).not.toHaveBeenCalled();
       expect(prismaService.sessionInvitations.create).not.toHaveBeenCalled();
