@@ -122,6 +122,21 @@ export class SessionInvitationsService {
       );
       return invitation;
     }
+
+    // ? if the invitation was rejected, create a new one
+    if (existingInvitation && existingInvitation.status === Invitation_status.REJECTED) {
+      const invitation = await this.prisma.sessionInvitations.create({
+        data: {
+          receiverUid: createSessionInvitationDto.receiverUid,
+          senderUid,
+          sessionUid: createSessionInvitationDto.sessionUid,
+        },
+      });
+      this.logger.log(
+        `User ${createSessionInvitationDto.receiverUid} re-invited to the session ${createSessionInvitationDto.sessionUid} by User${senderUid} after rejection`,
+      );
+      return invitation;
+    }
   }
 
   async findAllByReceiverId(

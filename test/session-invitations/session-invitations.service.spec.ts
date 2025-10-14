@@ -145,6 +145,7 @@ describe('SessionInvitationsService', () => {
 
     it('should throw BadRequestException when inviting self', async () => {
       mockSessionsService.findOne.mockResolvedValue(mockSession);
+      mockSessionPlayersService.findOne.mockResolvedValue({ userUid: senderUid });
       mockUsersService.findOne.mockResolvedValue(mockUser);
       const selfDto = { ...createDto, receiverUid: senderUid };
       await expect(service.create(senderUid, selfDto)).rejects.toThrow(BadRequestException);
@@ -153,6 +154,7 @@ describe('SessionInvitationsService', () => {
 
     it('should throw ConflictException when existing invitation is PENDING or ACCEPTED', async () => {
       mockSessionsService.findOne.mockResolvedValue(mockSession);
+      mockSessionPlayersService.findOne.mockResolvedValue({ userUid: senderUid });
       mockUsersService.findOne.mockResolvedValue(mockUser);
 
       (prismaService.sessionInvitations.findFirst as jest.Mock).mockResolvedValue({
@@ -168,6 +170,7 @@ describe('SessionInvitationsService', () => {
 
     it('should create when previous invitation was REJECTED', async () => {
       mockSessionsService.findOne.mockResolvedValue(mockSession);
+      mockSessionPlayersService.findOne.mockResolvedValue({ userUid: senderUid });
       mockUsersService.findOne.mockResolvedValue(mockUser);
       (prismaService.sessionInvitations.findFirst as jest.Mock).mockResolvedValue({
         status: Invitation_status.REJECTED,
@@ -293,7 +296,7 @@ describe('SessionInvitationsService', () => {
     });
 
     it('should throw NotFoundException when invitation does not exist', async () => {
-      jest.spyOn(service, 'findOne').mockResolvedValue(null as any);
+      jest.spyOn(service, 'findOneSessionBySenderOrReceiver').mockResolvedValue(null as any);
       const dto: UpdateSessionInvitationDto = {
         status: Invitation_status.ACCEPTED,
         userUid: 'user-123',
@@ -303,7 +306,7 @@ describe('SessionInvitationsService', () => {
     });
 
     it('should throw BadRequestException when status is unchanged', async () => {
-      jest.spyOn(service, 'findOne').mockResolvedValue(existingInvitation);
+      jest.spyOn(service, 'findOneSessionBySenderOrReceiver').mockResolvedValue(existingInvitation);
       const dto: UpdateSessionInvitationDto = {
         status: Invitation_status.PENDING,
         userUid: 'user-123',
@@ -312,14 +315,21 @@ describe('SessionInvitationsService', () => {
       await expect(service.update(dto)).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw BadRequestException when receiver changes status to non-ACCEPTED', async () => {
-      jest.spyOn(service, 'findOne').mockResolvedValue(existingInvitation);
-      const dto: UpdateSessionInvitationDto = {
-        status: Invitation_status.REJECTED,
+    it('should throw BadRequestException when receiver changes status to PENDING or CANCELED', async () => {
+      jest.spyOn(service, 'findOneSessionBySenderOrReceiver').mockResolvedValue(existingInvitation);
+      const dtoPending: UpdateSessionInvitationDto = {
+        status: Invitation_status.PENDING,
         userUid: 'user-123',
         sessionUid: 'session-123',
       };
-      await expect(service.update(dto)).rejects.toThrow(BadRequestException);
+      await expect(service.update(dtoPending)).rejects.toThrow(BadRequestException);
+
+      const dtoCanceled: UpdateSessionInvitationDto = {
+        status: Invitation_status.CANCELED,
+        userUid: 'user-123',
+        sessionUid: 'session-123',
+      };
+      await expect(service.update(dtoCanceled)).rejects.toThrow(BadRequestException);
     });
   });
 

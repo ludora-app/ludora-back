@@ -123,16 +123,11 @@ describe('UsersController', () => {
       const updateDto: UpdateUserDto = {
         firstname: 'Updated Name',
       };
-      const updatedUser = { ...mockUser, firstname: 'Updated Name' };
-      mockUsersService.update.mockResolvedValue(updatedUser);
+      mockUsersService.update.mockResolvedValue(undefined);
 
       const result = await controller.update(mockRequest as any, updateDto);
 
-      expect(result).toEqual({
-        data: updatedUser,
-        message: 'User updated successfully',
-        status: 200,
-      });
+      expect(result).toBeUndefined();
       expect(service.update).toHaveBeenCalledWith('1', updateDto);
     });
   });
