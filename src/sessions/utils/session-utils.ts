@@ -31,11 +31,11 @@ export class SessionUtils {
     return {
       ...rest,
       sessionPlayers: (sessionPlayers || []).map((player) => ({
-        userUid: player.userUid,
-        teamUid: player.teamUid,
         firstname: player.user.firstname,
-        lastname: player.user.lastname,
         imageUrl: player.user.imageUrl,
+        lastname: player.user.lastname,
+        teamUid: player.teamUid,
+        userUid: player.userUid,
       })),
     };
   }

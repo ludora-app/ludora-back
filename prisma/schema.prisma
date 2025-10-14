@@ -36,6 +36,7 @@ enum Invitation_status {
   PENDING
   ACCEPTED
   REJECTED
+  CANCELED
 
   @@schema("shared")
 }
@@ -115,7 +116,8 @@ model Users {
 
   conversationOptions ConversationOptions[]
 
-  sessionInvitations SessionInvitations[]
+  Sent_invitations     SessionInvitations[] @relation(name: "senderRelation")
+  Received_invitations SessionInvitations[] @relation(name: "receiverRelation")
 
   sessionPlayers SessionPlayers[]
 
@@ -188,6 +190,7 @@ model UserRatings {
   evaluated Users @relation(fields: [evaluatedUid], references: [uid], name: "EvaluatedRelation")
 
   @@id([evaluatorUid, evaluatedUid])
+  @@unique([evaluatorUid, evaluatedUid])
   @@map("User_ratings")
   @@schema("ratings")
 }
@@ -202,7 +205,7 @@ model UserGlobalRatings {
   user  Users  @relation(fields: [userUid], references: [uid])
   sport Sports @relation(fields: [sportName], references: [name])
 
-  @@id([userUid, sportName])
+  @@unique([userUid, sportName])
   @@map("User_global_ratings")
   @@schema("ratings")
 }
@@ -252,7 +255,7 @@ model PartnerSports {
   partner       Partners @relation(fields: [partnerUid], references: [uid])
   sportRelation Sports   @relation(fields: [sport], references: [name])
 
-  @@id([partnerUid, sport])
+  @@unique([partnerUid, sport])
   @@map("Partner_sports")
   @@schema("infrastructure")
 }
@@ -334,16 +337,18 @@ model Sessions {
 }
 
 model SessionInvitations {
-  sessionUid String            @map("session_uid")
-  userUid    String
-  status     Invitation_status @default(PENDING)
-  createdAt  DateTime          @default(now()) @map("created_at")
-  updatedAt  DateTime          @updatedAt @map("updated_at")
+  sessionUid  String            @map("session_uid")
+  senderUid   String            @map("sender_uid")
+  receiverUid String            @map("receiver_uid")
+  status      Invitation_status @default(PENDING)
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
 
-  session Sessions @relation(fields: [sessionUid], references: [uid])
-  user    Users    @relation(fields: [userUid], references: [uid])
+  session  Sessions @relation(fields: [sessionUid], references: [uid])
+  sender   Users    @relation(fields: [senderUid], references: [uid], name: "senderRelation")
+  receiver Users    @relation(fields: [receiverUid], references: [uid], name: "receiverRelation")
 
-  @@id([sessionUid, userUid])
+  @@unique([sessionUid, senderUid, receiverUid])
   @@map("Session_invitations")
   @@schema("sessions")
 }

@@ -26,7 +26,7 @@ CREATE TYPE "auth"."Sex" AS ENUM ('MALE', 'FEMALE', 'OTHER');
 CREATE TYPE "auth"."User_type" AS ENUM ('USER', 'ADMIN');
 
 -- CreateEnum
-CREATE TYPE "shared"."Invitation_status" AS ENUM ('PENDING', 'ACCEPTED', 'REJECTED');
+CREATE TYPE "shared"."Invitation_status" AS ENUM ('PENDING', 'ACCEPTED', 'REJECTED', 'CANCELED');
 
 -- CreateEnum
 CREATE TYPE "sessions"."Team_label" AS ENUM ('A', 'B');
@@ -123,9 +123,7 @@ CREATE TABLE "ratings"."User_global_ratings" (
     "sport_name" TEXT NOT NULL,
     "rating" DOUBLE PRECISION NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "User_global_ratings_pkey" PRIMARY KEY ("user_uid","sport_name")
+    "updated_at" TIMESTAMP(3) NOT NULL
 );
 
 -- CreateTable
@@ -163,9 +161,7 @@ CREATE TABLE "infrastructure"."Partner_sports" (
     "partner_uid" TEXT NOT NULL,
     "sport" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Partner_sports_pkey" PRIMARY KEY ("partner_uid","sport")
+    "updated_at" TIMESTAMP(3) NOT NULL
 );
 
 -- CreateTable
@@ -228,12 +224,11 @@ CREATE TABLE "sessions"."Sessions" (
 -- CreateTable
 CREATE TABLE "sessions"."Session_invitations" (
     "session_uid" TEXT NOT NULL,
-    "userUid" TEXT NOT NULL,
+    "sender_uid" TEXT NOT NULL,
+    "receiver_uid" TEXT NOT NULL,
     "status" "shared"."Invitation_status" NOT NULL DEFAULT 'PENDING',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Session_invitations_pkey" PRIMARY KEY ("session_uid","userUid")
+    "updated_at" TIMESTAMP(3) NOT NULL
 );
 
 -- CreateTable
@@ -337,10 +332,25 @@ CREATE UNIQUE INDEX "Users_stripe_account_uid_key" ON "auth"."Users"("stripe_acc
 CREATE UNIQUE INDEX "Refresh_tokens_token_key" ON "auth"."Refresh_tokens"("token");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "User_ratings_evaluator_uid_evaluated_uid_key" ON "ratings"."User_ratings"("evaluator_uid", "evaluated_uid");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_global_ratings_user_uid_sport_name_key" ON "ratings"."User_global_ratings"("user_uid", "sport_name");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Partner_opening_hours_partner_uid_day_of_week_key" ON "infrastructure"."Partner_opening_hours"("partner_uid", "day_of_week");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Partner_sports_partner_uid_sport_key" ON "infrastructure"."Partner_sports"("partner_uid", "sport");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Sports_name_key" ON "infrastructure"."Sports"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Session_invitations_session_uid_sender_uid_receiver_uid_key" ON "sessions"."Session_invitations"("session_uid", "sender_uid", "receiver_uid");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Session_teams_session_uid_team_label_key" ON "sessions"."Session_teams"("session_uid", "team_label");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Session_players_session_uid_team_uid_userUid_key" ON "sessions"."Session_players"("session_uid", "team_uid", "userUid");
@@ -397,7 +407,10 @@ ALTER TABLE "sessions"."Sessions" ADD CONSTRAINT "Sessions_field_uid_fkey" FOREI
 ALTER TABLE "sessions"."Session_invitations" ADD CONSTRAINT "Session_invitations_session_uid_fkey" FOREIGN KEY ("session_uid") REFERENCES "sessions"."Sessions"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "sessions"."Session_invitations" ADD CONSTRAINT "Session_invitations_userUid_fkey" FOREIGN KEY ("userUid") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "sessions"."Session_invitations" ADD CONSTRAINT "Session_invitations_sender_uid_fkey" FOREIGN KEY ("sender_uid") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "sessions"."Session_invitations" ADD CONSTRAINT "Session_invitations_receiver_uid_fkey" FOREIGN KEY ("receiver_uid") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "sessions"."Session_images" ADD CONSTRAINT "Session_images_session_uid_fkey" FOREIGN KEY ("session_uid") REFERENCES "sessions"."Sessions"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;

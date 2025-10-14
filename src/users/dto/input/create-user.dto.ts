@@ -1,5 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { Sex } from '@prisma/client';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsStrongPassword } from 'src/users/password.validator';
 import {
   IsAlpha,
   IsDateString,
@@ -12,7 +13,6 @@ import {
   MinLength,
   Validate,
 } from 'class-validator';
-import { IsStrongPassword } from 'src/users/password.validator';
 
 export class CreateUserDto {
   @IsEmail()

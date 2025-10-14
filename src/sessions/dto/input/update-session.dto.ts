@@ -1,5 +1,5 @@
-import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { Game_modes } from '@prisma/client';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { IsDateString, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 
 import { CreateSessionDto } from './create-session.dto';

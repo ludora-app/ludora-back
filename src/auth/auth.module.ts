@@ -1,15 +1,14 @@
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
+import { APP_GUARD } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
+import { UsersModule } from 'src/users/users.module';
+import { SharedModule } from 'src/shared/shared.module';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
-import { SharedModule } from 'src/shared/shared.module';
-import { UsersModule } from 'src/users/users.module';
-
-import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './guards/auth.guard';
+import { AuthController } from './auth.controller';
 
 @Module({
   controllers: [AuthController],

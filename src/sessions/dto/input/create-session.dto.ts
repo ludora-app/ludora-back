@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { Game_modes } from '@prisma/client';
+import { ApiProperty } from '@nestjs/swagger';
 import { IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateSessionDto {
@@ -29,6 +29,15 @@ export class CreateSessionDto {
     required: true,
   })
   fieldUid: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: 'The uid of the creator',
+    example: 'cmajhjkjf000bq77q4b5ugn8b',
+    required: true,
+  })
+  userUid: string;
 
   @IsEnum(Game_modes)
   @IsNotEmpty()

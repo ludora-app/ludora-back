@@ -1,3 +1,13 @@
+import { Throttle } from '@nestjs/throttler';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { SuccessTypeDto } from 'src/interfaces/success-type';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiConflictResponse,
+  ApiConsumes,
+  ApiOperation,
+} from '@nestjs/swagger';
 import {
   BadRequestException,
   Body,
@@ -10,15 +20,6 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import {
-  ApiBadRequestResponse,
-  ApiBody,
-  ApiConflictResponse,
-  ApiConsumes,
-  ApiOperation,
-} from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import {
   CreateImageDto,
   LoginDto,
@@ -33,7 +34,6 @@ import {
   VerifyMailDto,
   VerifyTokenResponseDto,
 } from 'src/auth/dto';
-import { SuccessTypeDto } from 'src/interfaces/success-type';
 
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
@@ -181,7 +181,7 @@ export class AuthController {
     summary: 'Logout user from current device',
   })
   async logout(@Request() req): Promise<LogoutResponseDto> {
-    const { uid, deviceUid } = req.user;
+    const { deviceUid, uid } = req.user;
     await this.authService.logout(uid, deviceUid);
 
     return {

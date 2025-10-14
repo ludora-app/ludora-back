@@ -1,10 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Request } from 'express';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { Request } from 'express';
-
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
@@ -56,7 +55,7 @@ export class AuthGuard implements CanActivate {
 
       // Check if the user is verified and active
       const user = await this.prisma.users.findUnique({
-        select: { emailVerified: true, uid: true, isConnected: true },
+        select: { emailVerified: true, isConnected: true, uid: true },
         where: { uid: userUid },
       });
 

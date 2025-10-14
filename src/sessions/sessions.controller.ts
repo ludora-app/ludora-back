@@ -1,9 +1,22 @@
+import { Sessions } from '@prisma/client';
+import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
+import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
+import {
+  ApiBadRequestResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import {
   BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   NotFoundException,
   Param,
   Patch,
@@ -11,29 +24,18 @@ import {
   Query,
   UnauthorizedException,
 } from '@nestjs/common';
-import {
-  ApiBadRequestResponse,
-  ApiBearerAuth,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
-import { Sessions } from '@prisma/client';
-import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
-import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
 
+import { SessionsService } from './sessions.service';
+import { SessionTeamsService } from './session-teams.service';
 import { CreateSessionDto } from './dto/input/create-session.dto';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
+import { PaginatedSessionResponse, SessionResponse } from './dto/output/session.response';
 import {
   PaginatedSessionTeamResponse,
   SessionTeamResponse,
 } from './dto/output/session-team.response';
-import { PaginatedSessionResponse, SessionResponse } from './dto/output/session.response';
-import { SessionTeamsService } from './session-teams.service';
-import { SessionsService } from './sessions.service';
-@ApiBearerAuth()
+
 @Controller('sessions')
 export class SessionsController {
   constructor(
@@ -99,21 +101,18 @@ export class SessionsController {
 
   @Patch(':uid')
   @ApiOperation({ summary: 'Update a session by uid' })
-  @ApiOkResponse({ type: ResponseTypeDto<Sessions> })
+  @ApiNoContentResponse({ description: 'Session updated successfully' })
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
   @ApiNotFoundResponse({ type: NotFoundException })
+  @HttpCode(HttpStatus.NO_CONTENT)
   async update(
     @Param('uid') uid: string,
     @Body() updateSessionDto: UpdateSessionDto,
-  ): Promise<ResponseType<SessionResponse>> {
-    const updatedSession = await this.sessionsService.update(uid, updateSessionDto);
+  ): Promise<void> {
+    await this.sessionsService.update(uid, updateSessionDto);
 
-    return {
-      data: updatedSession,
-      message: 'Session updated successfully',
-      status: 200,
-    };
+    return;
   }
 
   @Delete(':uid')
