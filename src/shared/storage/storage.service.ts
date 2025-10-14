@@ -1,17 +1,17 @@
 import { ConfigService } from '@nestjs/config';
-import { DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, S3 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { PutObjectCommand, S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
-
+import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 @Injectable()
-export class AwsService {
-  private readonly s3Client = new S3Client({
+export class StorageService {
+  private readonly s3 = new S3({
     credentials: {
-      accessKeyId: this.configService.get('AWS_ACCESS_KEY'),
-      secretAccessKey: this.configService.get('AWS_SECRET_ACCESS_KEY'),
+      accessKeyId: this.configService.get('CLOUDFLARE_R2_ACCESS_KEY_ID'),
+      secretAccessKey: this.configService.get('CLOUDFLARE_R2_SECRET_KEY'),
     },
-    region: this.configService.get('AWS_S3_REGION'),
+    endpoint: this.configService.get('CLOUDFLARE_R2_API'),
+    region: 'auto',
   });
 
   constructor(private readonly configService: ConfigService) {}
@@ -28,10 +28,10 @@ export class AwsService {
 
       const key = `${folder}/${processedFilename}`;
 
-      await this.s3Client.send(
+      await this.s3.send(
         new PutObjectCommand({
           Body: file,
-          Bucket: this.configService.getOrThrow('AWS_S3_BUCKET'),
+          Bucket: this.configService.getOrThrow('CLOUDFLARE_R2_BUCKET'),
           Key: key,
         }),
       );
@@ -55,11 +55,11 @@ export class AwsService {
       const key = `${folder}/${filename}`;
 
       const command = new GetObjectCommand({
-        Bucket: this.configService.getOrThrow('AWS_S3_BUCKET'),
+        Bucket: this.configService.getOrThrow('CLOUDFLARE_R2_BUCKET'),
         Key: key,
       });
 
-      const signedUrl = await getSignedUrl(this.s3Client, command, {
+      const signedUrl = await getSignedUrl(this.s3, command, {
         expiresIn,
       });
 
@@ -75,9 +75,9 @@ export class AwsService {
    */
   async deleteFile(filename: string): Promise<void> {
     try {
-      await this.s3Client.send(
+      await this.s3.send(
         new DeleteObjectCommand({
-          Bucket: this.configService.getOrThrow('AWS_S3_BUCKET'),
+          Bucket: this.configService.getOrThrow('CLOUDFLARE_R2_BUCKET'),
           Key: filename,
         }),
       );
@@ -87,4 +87,3 @@ export class AwsService {
     }
   }
 }
-//todo: trouver la config pour bloquer les fichiers dans le bucket S3

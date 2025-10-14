@@ -1,11 +1,11 @@
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Controller, Get, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
 
-import { AwsService } from './aws.service';
+import { StorageService } from './storage.service';
 
 @Controller('aws')
-export class AwsController {
-  constructor(private readonly awsService: AwsService) {}
+export class StorageController {
+  constructor(private readonly storageService: StorageService) {}
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
@@ -13,11 +13,11 @@ export class AwsController {
     if (!file) {
       throw new Error('No file uploaded');
     }
-    return this.awsService.upload('users', file.originalname, file.buffer);
+    return this.storageService.upload('users', file.originalname, file.buffer);
   }
 
   @Get('get-signed-url')
   async getSignedUrl(@Query('filename') filename: string) {
-    return this.awsService.getSignedUrl('users', filename);
+    return this.storageService.getSignedUrl('users', filename);
   }
 }
