@@ -5,15 +5,16 @@ import { SharedModule } from 'src/shared/shared.module';
 import { SessionsModule } from 'src/sessions/sessions.module';
 import { SessionsService } from 'src/sessions/sessions.service';
 import { SessionTeamsModule } from 'src/session-teams/session-teams.module';
-import { SessionPlayersService } from 'src/sessions/session-players.service';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';
+import { SessionPlayersModule } from 'src/session-players/session-players.module';
+import { SessionPlayersService } from 'src/session-players/session-players.service';
 
 import { SessionInvitationsService } from './session-invitations.service';
 import { SessionInvitationsController } from './session-invitations.controller';
 
 @Module({
   controllers: [SessionInvitationsController],
-  imports: [SessionsModule, UsersModule, SharedModule, SessionTeamsModule],
+  imports: [SessionsModule, UsersModule, SharedModule, SessionTeamsModule, SessionPlayersModule],
   providers: [
     SessionInvitationsService,
     SessionsService,

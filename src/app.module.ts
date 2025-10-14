@@ -12,6 +12,7 @@ import { SharedModule } from './shared/shared.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { SessionTeamsModule } from './session-teams/session-teams.module';
 import { SessionInvitationsModule } from './session-invitations/session-invitations.module';
+import { SessionPlayersModule } from './session-players/session-players.module';
 
 @Module({
   controllers: [AppController],
@@ -31,6 +32,7 @@ import { SessionInvitationsModule } from './session-invitations/session-invitati
     ScheduleModule.forRoot(),
     SessionInvitationsModule,
     SessionTeamsModule,
+    SessionPlayersModule,
   ],
 
   providers: [AppService],

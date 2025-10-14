@@ -3,12 +3,12 @@ import { Sport } from 'src/shared/constants/constants';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { SessionPlayersService } from 'src/session-players/session-players.service';
 
 import { DateUtils } from './../shared/utils/date.utils';
 import { CreateSessionDto } from './dto/input/create-session.dto';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
-import { SessionPlayersService } from './session-players.service';
 
 @Injectable()
 export class SessionsService {

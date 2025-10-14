@@ -3,8 +3,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { SessionsService } from 'src/sessions/sessions.service';
 import { Invitation_status, SessionInvitations } from '@prisma/client';
-import { SessionPlayersService } from 'src/sessions/session-players.service';
-import { CreateSessionPlayerDto } from 'src/sessions/dto/input/create-session-player.dto';
+import { SessionPlayersService } from 'src/session-players/session-players.service';
+import { CreateSessionPlayerDto } from 'src/session-players/dto/input/create-session-player.dto';
 import {
   BadRequestException,
   ConflictException,
