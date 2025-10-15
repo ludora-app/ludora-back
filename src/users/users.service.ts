@@ -30,7 +30,7 @@ export class UsersService {
   ) {
     const prisma = tx ?? this.prismaService;
 
-    const { email, firstname, lastname, password } = createUserDto;
+    const { email, firstname, lastname } = createUserDto;
     const formattedFirst = firstname.charAt(0).toUpperCase() + firstname.slice(1);
     const formattedLast = lastname.charAt(0).toUpperCase() + lastname.slice(1);
     const formattedEmail = email.toLowerCase();
@@ -42,8 +42,6 @@ export class UsersService {
     if (existingUser) {
       throw new ConflictException('User already exists');
     }
-
-    const hashedPassword = await argon2.hash(password);
 
     let imageUrl = { data: '' };
 
@@ -59,7 +57,7 @@ export class UsersService {
         firstname: formattedFirst,
         imageUrl: imageUrl.data,
         lastname: formattedLast,
-        password: hashedPassword,
+        password: createUserDto.password,
         phone: createUserDto.phone,
         sex: createUserDto.sex,
       },
