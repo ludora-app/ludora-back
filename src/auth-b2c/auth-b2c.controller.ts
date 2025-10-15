@@ -22,14 +22,13 @@ import {
 } from '@nestjs/common';
 import {
   CreateImageDto,
-  LoginDto,
+  LoginB2CDto,
   LoginResponseDto,
   LogoutResponseDto,
   RefreshTokenDto,
   RefreshTokenResponseDto,
+  RegisterB2CWithFileDto,
   RegisterResponseDto,
-  RegisterUserDto,
-  RegisterUserWithFileDto,
   VerifyEmailResponseDto,
   VerifyMailDto,
   VerifyTokenResponseDto,
@@ -48,7 +47,7 @@ export class AuthB2CController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Create a user account' })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: RegisterUserWithFileDto })
+  @ApiBody({ type: RegisterB2CWithFileDto })
   @ApiBadRequestResponse({
     description: 'Error during registration',
     type: BadRequestException,
@@ -58,7 +57,7 @@ export class AuthB2CController {
     type: ConflictException,
   })
   async register(
-    @Body() registerDto: RegisterUserDto,
+    @Body() registerDto: RegisterB2CWithFileDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<RegisterResponseDto> {
     if (file) {
@@ -93,7 +92,7 @@ export class AuthB2CController {
   @ApiBadRequestResponse({
     type: BadRequestException,
   })
-  async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
+  async login(@Body() loginDto: LoginB2CDto): Promise<LoginResponseDto> {
     const tokens = await this.authService.login(loginDto);
     return {
       data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },

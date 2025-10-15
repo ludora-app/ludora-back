@@ -32,7 +32,7 @@ export class UsersService {
 
     const { email, firstname, lastname } = createUserDto;
     const formattedFirst = firstname.charAt(0).toUpperCase() + firstname.slice(1);
-    const formattedLast = lastname.charAt(0).toUpperCase() + lastname.slice(1);
+    const formattedLast = lastname.toUpperCase();
     const formattedEmail = email.toLowerCase();
 
     const existingUser = await prisma.users.findUnique({

@@ -13,7 +13,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 
-export class RegisterUserDto {
+export class RegisterB2CDto {
   @IsEnum(User_type)
   @ApiProperty({
     description: 'user type (USER or ADMIN)',
@@ -94,7 +94,7 @@ export class RegisterUserDto {
   readonly sex?: Sex;
 }
 
-export class RegisterUserWithFileDto extends RegisterUserDto {
+export class RegisterB2CWithFileDto extends RegisterB2CDto {
   @ApiProperty({
     description: 'File image (avatar)',
     format: 'binary',
