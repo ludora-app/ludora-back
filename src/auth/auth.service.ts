@@ -44,13 +44,15 @@ export class AuthService {
       if (type === User_type.USER) {
         const { bio, birthdate, email, firstname, lastname, password, phone, sex } = registerDto;
 
+        const hashedPassword = await argon2.hash(password);
+
         const userDto: CreateUserDto = {
           bio,
           birthdate,
           email,
           firstname,
           lastname,
-          password,
+          password: hashedPassword,
           phone,
           sex,
         };
