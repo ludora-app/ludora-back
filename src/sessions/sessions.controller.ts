@@ -1,4 +1,5 @@
 import { Sessions } from '@prisma/client';
+import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
 import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import {
@@ -23,6 +24,7 @@ import {
   Post,
   Query,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 
 import { SessionsService } from './sessions.service';
@@ -32,6 +34,7 @@ import { UpdateSessionDto } from './dto/input/update-session.dto';
 import { PaginatedSessionResponse, SessionResponse } from './dto/output/session.response';
 
 @Controller('sessions')
+@UseGuards(AuthB2CGuard)
 export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}
 

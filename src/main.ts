@@ -26,7 +26,6 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('swagger', app, document);
   }
-  app.useGlobalInterceptors();
   await app.listen(process.env.PORT ?? 2424);
 }
 bootstrap();

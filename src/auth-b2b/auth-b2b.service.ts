@@ -74,9 +74,12 @@ export class AuthB2BService {
 
     const result = await this.prisma.$transaction(async (tx) => {
       const newUser = await this.userService.create(userDto, createImageDto, tx);
-      await this.partnerService.create(partnerDto, tx);
+      const newPartner = await this.partnerService.create(partnerDto, tx);
 
-      const payload: { uid: string } = { uid: newUser.uid };
+      const payload: { uid: string; organisationUid: string } = {
+        organisationUid: newPartner.uid,
+        uid: newUser.uid,
+      };
       const accessToken = this.jwt.sign(payload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
       const refreshToken = this.jwt.sign(payload, { expiresIn: '7d' });
 

@@ -18,6 +18,7 @@ import {
   Req,
   Request,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import {
@@ -35,10 +36,12 @@ import {
 } from 'src/auth-b2c/dto';
 
 import { AuthB2CService } from './auth-b2c.service';
+import { AuthB2CGuard } from './guards/auth-b2c.guard';
 import { Public } from '../shared/decorators/public.decorator';
 import { VerifyEmailCodeDto } from './dto/input/verify-email-code.dto';
 
 @Controller('auth-b2c')
+@UseGuards(AuthB2CGuard)
 export class AuthB2CController {
   constructor(private readonly authService: AuthB2CService) {}
 

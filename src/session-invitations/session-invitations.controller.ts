@@ -1,4 +1,5 @@
 import { Invitation_status } from '@prisma/client';
+import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
 import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import {
@@ -26,6 +27,7 @@ import {
   Query,
   Req,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 
 import { SessionInvitationsService } from './session-invitations.service';
@@ -38,6 +40,7 @@ import {
 } from './dto/output/session-invitation-response';
 
 @Controller('session-invitations')
+@UseGuards(AuthB2CGuard)
 export class SessionInvitationsController {
   constructor(private readonly sessionInvitationsService: SessionInvitationsService) {}
 

@@ -16,13 +16,16 @@ import {
   Controller,
   Post,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 
 import { AuthB2BService } from './auth-b2b.service';
+import { AuthB2BGuard } from './guards/auth-b2b.guard';
 import { RegisterB2BWithFileDto } from './dto/input/register-b2b.dto';
 
 @Controller('auth-b2b')
+@UseGuards(AuthB2BGuard)
 export class AuthB2BController {
   constructor(private readonly authService: AuthB2BService) {}
 
