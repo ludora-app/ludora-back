@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Partners, Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 import { CreatePartnerDto } from './dto/create-partner.dto';
@@ -7,18 +8,26 @@ import { UpdatePartnerDto } from './dto/update-partner.dto';
 @Injectable()
 export class PartnersService {
   constructor(private readonly prisma: PrismaService) {}
-  async create(createPartnerDto: CreatePartnerDto) {
-    // const { address, email, imageUrl, name, phone } = createPartnerDto;
-    // //todo: add google maps api to get latitude and longitude from the address
-    // const partner = await this.prisma.partners.create({
-    //   data: {
-    //     address,
-    //     email,
-    //     imageUrl,
-    //     name,
-    //     phone,
-    //   },
-    // });
+
+  async create(
+    createPartnerDto: CreatePartnerDto,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Partners> {
+    const prisma = tx ?? this.prisma;
+    const { address, email, imageUrl, latitude, longitude, name, phone } = createPartnerDto;
+    // const coordinates = await this.geolocalisation.getLatitudeAndLongitude(address);
+    const newPartner = await prisma.partners.create({
+      data: {
+        address,
+        email,
+        imageUrl,
+        latitude,
+        longitude,
+        name,
+        phone,
+      },
+    });
+    return newPartner;
   }
 
   async findAll() {

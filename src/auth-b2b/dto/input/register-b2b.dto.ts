@@ -103,3 +103,13 @@ export class RegisterB2BDto {
   })
   partnerEmail?: string;
 }
+
+export class RegisterB2BWithFileDto extends RegisterB2BDto {
+  @ApiProperty({
+    description: 'File image (avatar)',
+    format: 'binary',
+    required: false,
+    type: 'string',
+  })
+  file?: any;
+}

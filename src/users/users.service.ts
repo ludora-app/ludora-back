@@ -23,7 +23,7 @@ export class UsersService {
     private readonly emailsService: EmailsService,
   ) {}
 
-  async createUser(
+  async create(
     createUserDto: CreateUserDto,
     createImageDto?: CreateImageDto,
     tx?: Prisma.TransactionClient,
@@ -34,6 +34,7 @@ export class UsersService {
     const formattedFirst = firstname.charAt(0).toUpperCase() + firstname.slice(1);
     const formattedLast = lastname.toUpperCase();
     const formattedEmail = email.toLowerCase();
+    const formattedBirthdate = createUserDto.birthdate ? new Date(createUserDto.birthdate) : null;
 
     const existingUser = await prisma.users.findUnique({
       where: { email: formattedEmail },
@@ -52,7 +53,7 @@ export class UsersService {
     const newUser = await prisma.users.create({
       data: {
         bio: createUserDto.bio,
-        birthdate: new Date(createUserDto.birthdate),
+        birthdate: formattedBirthdate,
         email: formattedEmail,
         firstname: formattedFirst,
         imageUrl: imageUrl.data,
@@ -60,6 +61,7 @@ export class UsersService {
         password: createUserDto.password,
         phone: createUserDto.phone,
         sex: createUserDto.sex,
+        ...(createUserDto.type && { type: createUserDto.type }),
       },
     });
 

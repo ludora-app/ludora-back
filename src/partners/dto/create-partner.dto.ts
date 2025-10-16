@@ -1,5 +1,6 @@
+import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
+import { IsEmail, IsNumber, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
 
 export class CreatePartnerDto {
   @IsString()
@@ -35,4 +36,26 @@ export class CreatePartnerDto {
     example: 'partner@example.com',
   })
   email?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @ApiProperty({
+    description: 'Latitude of the user',
+    example: '48.8588443',
+    required: false,
+    type: Number,
+  })
+  latitude?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @ApiProperty({
+    description: 'Longitude of the user',
+    example: '2.2943506',
+    required: false,
+    type: Number,
+  })
+  longitude?: number;
 }

@@ -57,7 +57,7 @@ export class AuthB2CService {
           sex,
         };
 
-        newUser = await this.userService.createUser(userDto, createImageDto, tx);
+        newUser = await this.userService.create(userDto, createImageDto, tx);
       } else {
         throw new BadRequestException('Invalid user type');
       }
