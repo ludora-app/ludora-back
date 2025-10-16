@@ -8,17 +8,17 @@ import { UpdatePartnerDto } from './dto/update-partner.dto';
 export class PartnersService {
   constructor(private readonly prisma: PrismaService) {}
   async create(createPartnerDto: CreatePartnerDto) {
-    const { address, email, imageUrl, name, phone } = createPartnerDto;
-    //todo: add google maps api to get latitude and longitude from the address
-    const partner = await this.prisma.partners.create({
-      data: {
-        address,
-        email,
-        imageUrl,
-        name,
-        phone,
-      },
-    });
+    // const { address, email, imageUrl, name, phone } = createPartnerDto;
+    // //todo: add google maps api to get latitude and longitude from the address
+    // const partner = await this.prisma.partners.create({
+    //   data: {
+    //     address,
+    //     email,
+    //     imageUrl,
+    //     name,
+    //     phone,
+    //   },
+    // });
   }
 
   async findAll() {

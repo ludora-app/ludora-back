@@ -10,10 +10,18 @@ import { MetricsController } from './metrics/metrics.controller';
 import { StorageController } from './storage/storage.controller';
 import { WebsocketsService } from './websockets/websockets.service';
 import { WebsocketsGateway } from './websockets/websockets.gateway';
+import { GeolocalisationService } from './geolocalisation/geolocalisation.service';
 
 @Module({
   controllers: [EmailsController, StorageController, MetricsController, MetricsController],
-  exports: [EmailsService, StorageService, ImagesService, WebsocketsGateway, WebsocketsService],
+  exports: [
+    EmailsService,
+    StorageService,
+    ImagesService,
+    WebsocketsGateway,
+    WebsocketsService,
+    GeolocalisationService,
+  ],
   imports: [
     PrometheusModule.register({
       controller: MetricsController,
@@ -30,6 +38,7 @@ import { WebsocketsGateway } from './websockets/websockets.gateway';
       help: 'Active users',
       name: 'active_users',
     }),
+    GeolocalisationService,
   ],
 })
 export class SharedModule {}

@@ -12,7 +12,7 @@ export class AuthB2BService {
   ) {}
 
   async register(dto: RegisterB2BDto) {
-    const { userAddress, userEmail, userFirstname, userLastname, userPassword, userPhone } = dto;
+    const { userEmail, userFirstname, userLastname, userPassword, userPhone } = dto;
     const existingUser = await this.userService.findOneByEmail(userEmail);
     if (existingUser) {
       throw new ConflictException('User already exists');
