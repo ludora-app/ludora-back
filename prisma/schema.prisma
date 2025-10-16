@@ -213,13 +213,13 @@ model UserGlobalRatings {
 
 model Partners {
   uid                 String                @id @default(cuid())
-  name                String
+  name                String                @unique
   imageUrl            String?               @map("image_url")
   address             String
   latitude            Float
   longitude           Float
   phone               String
-  email               String
+  email               String                @unique
   createdAt           DateTime              @default(now()) @map("created_at")
   updatedAt           DateTime              @updatedAt @map("updated_at")
   //todo: add stripe account uid

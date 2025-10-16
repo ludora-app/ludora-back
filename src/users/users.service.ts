@@ -1,6 +1,6 @@
 import * as argon2 from 'argon2';
-import { Prisma, Users } from '@prisma/client';
 import { CreateImageDto } from 'src/auth-b2c/dto';
+import { Prisma, Provider, Users } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { S3FoldersName } from 'src/shared/constants/constants';
 import { EmailsService } from 'src/shared/emails/emails.service';
@@ -161,8 +161,6 @@ export class UsersService {
     return;
   }
 
-  //? this method needs to change the password after all the verification is done
-  //todo: new method that send the verification email ? And verify if the user.provider is google ?
   async updatePassword(uid: string, updatePasswordDto: UpdatePasswordDto): Promise<void> {
     const { newPassword, oldPassword } = updatePasswordDto;
     const existingUser = await this.prismaService.users.findUnique({
@@ -170,6 +168,10 @@ export class UsersService {
     });
 
     if (!existingUser) throw new NotFoundException('User not found');
+
+    if (existingUser.provider !== Provider.LUDORA) {
+      throw new BadRequestException('Only LUDORA users can update their password');
+    }
 
     const isPasswordValid = await argon2.verify(existingUser.password, oldPassword);
 

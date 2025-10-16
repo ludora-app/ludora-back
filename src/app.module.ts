@@ -14,6 +14,7 @@ import { SessionsModule } from './sessions/sessions.module';
 import { SessionTeamsModule } from './session-teams/session-teams.module';
 import { SessionPlayersModule } from './session-players/session-players.module';
 import { SessionInvitationsModule } from './session-invitations/session-invitations.module';
+import { PartnersModule } from './partners/partners.module';
 
 @Module({
   controllers: [AppController],
@@ -35,6 +36,7 @@ import { SessionInvitationsModule } from './session-invitations/session-invitati
     SessionTeamsModule,
     SessionPlayersModule,
     AuthB2BModule,
+    PartnersModule,
   ],
 
   providers: [AppService],
