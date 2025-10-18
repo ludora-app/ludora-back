@@ -1,6 +1,7 @@
 import { Users } from '@prisma/client';
-import { Public } from 'src/auth/decorators/public.decorator';
 import { ResponseTypeDto } from 'src/interfaces/response-type';
+import { Public } from 'src/shared/decorators/public.decorator';
+import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import {
   ApiBadRequestResponse,
@@ -22,6 +23,7 @@ import {
   Patch,
   Query,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 
 import { UsersService } from './users.service';
@@ -37,6 +39,7 @@ import {
 } from './dto';
 
 @Controller('users')
+@UseGuards(AuthB2CGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 

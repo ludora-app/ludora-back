@@ -1,13 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Sex, User_type } from '@prisma/client';
-import { AuthController } from 'src/auth/auth.controller';
-import { AuthService } from 'src/auth/auth.service';
-import { VerifyEmailCodeDto } from 'src/auth/dto/input/verify-email-code.dto';
+import { AuthB2CController } from 'src/auth-b2c/auth-b2c.controller';
+import { AuthB2CService } from 'src/auth-b2c/auth-b2c.service';
+import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { VerifyEmailCodeDto } from 'src/auth-b2c/dto/input/verify-email-code.dto';
 
-describe('AuthController', () => {
-  let controller: AuthController;
+describe('AuthB2CController', () => {
+  let controller: AuthB2CController;
 
-  const mockAuthService = {
+  const mockAuthB2CService = {
     login: jest.fn(),
     register: jest.fn(),
     resendVerificationCode: jest.fn(),
@@ -19,19 +20,26 @@ describe('AuthController', () => {
     logoutAllDevices: jest.fn(),
   };
 
+  const mockAuthGuard = {
+    canActivate: jest.fn(() => true),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [AuthController],
+      controllers: [AuthB2CController],
       providers: [
         {
-          provide: AuthService,
-          useValue: mockAuthService,
+          provide: AuthB2CService,
+          useValue: mockAuthB2CService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthB2CGuard)
+      .useValue(mockAuthGuard)
+      .compile();
 
-    controller = module.get<AuthController>(AuthController);
-    module.get<AuthService>(AuthService);
+    controller = module.get<AuthB2CController>(AuthB2CController);
+    module.get<AuthB2CService>(AuthB2CService);
   });
 
   afterEach(() => {
@@ -52,7 +60,7 @@ describe('AuthController', () => {
         type: User_type.USER,
       };
 
-      mockAuthService.register.mockResolvedValue({
+      mockAuthB2CService.register.mockResolvedValue({
         accessToken: 'mock_token',
         refreshToken: 'mock_refresh_token',
       });
@@ -64,7 +72,7 @@ describe('AuthController', () => {
         message: 'User created successfully',
         status: 201,
       });
-      expect(mockAuthService.register).toHaveBeenCalledWith(registerDto);
+      expect(mockAuthB2CService.register).toHaveBeenCalledWith(registerDto);
     });
 
     it('should register a new user with file', async () => {
@@ -85,7 +93,7 @@ describe('AuthController', () => {
         originalname: 'test.jpg',
       } as Express.Multer.File;
 
-      mockAuthService.register.mockResolvedValue({
+      mockAuthB2CService.register.mockResolvedValue({
         accessToken: 'mock_token',
         refreshToken: 'mock_refresh_token',
       });
@@ -97,7 +105,7 @@ describe('AuthController', () => {
         message: 'User created successfully',
         status: 201,
       });
-      expect(mockAuthService.register).toHaveBeenCalled();
+      expect(mockAuthB2CService.register).toHaveBeenCalled();
     });
   });
 
@@ -108,7 +116,7 @@ describe('AuthController', () => {
         password: 'password',
       };
 
-      mockAuthService.login.mockResolvedValue({
+      mockAuthB2CService.login.mockResolvedValue({
         accessToken: 'mock_token',
         refreshToken: 'mock_refresh_token',
       });
@@ -120,7 +128,7 @@ describe('AuthController', () => {
         message: 'Token created successfully',
         status: 200,
       });
-      expect(mockAuthService.login).toHaveBeenCalledWith(loginDto);
+      expect(mockAuthB2CService.login).toHaveBeenCalledWith(loginDto);
     });
   });
 
@@ -128,7 +136,7 @@ describe('AuthController', () => {
     it('should verify email availability', async () => {
       const verifyMailDto = { email: 'test@test.com' };
 
-      mockAuthService.verifyEmail.mockResolvedValue(true);
+      mockAuthB2CService.verifyEmail.mockResolvedValue(true);
 
       const result = await controller.verifyEmail(verifyMailDto);
 
@@ -136,7 +144,7 @@ describe('AuthController', () => {
         data: { isAvailable: true },
         message: 'Email is available',
       });
-      expect(mockAuthService.verifyEmail).toHaveBeenCalledWith(verifyMailDto);
+      expect(mockAuthB2CService.verifyEmail).toHaveBeenCalledWith(verifyMailDto);
     });
   });
 
@@ -146,7 +154,7 @@ describe('AuthController', () => {
         user: { uid: '1' },
       };
 
-      mockAuthService.verifyToken.mockResolvedValue(true);
+      mockAuthB2CService.verifyToken.mockResolvedValue(true);
 
       const result = await controller.verifyToken(mockRequest as any);
 
@@ -154,7 +162,7 @@ describe('AuthController', () => {
         data: { isValid: true },
         message: 'token is valid',
       });
-      expect(mockAuthService.verifyToken).toHaveBeenCalledWith('1');
+      expect(mockAuthB2CService.verifyToken).toHaveBeenCalledWith('1');
     });
   });
 
@@ -165,7 +173,7 @@ describe('AuthController', () => {
       };
       const dto: VerifyEmailCodeDto = { code: '123456' };
 
-      mockAuthService.verifyEmailCode.mockResolvedValue(undefined);
+      mockAuthB2CService.verifyEmailCode.mockResolvedValue(undefined);
 
       const result = await controller.verifyEmailCode(mockRequest as any, dto);
 
@@ -173,7 +181,7 @@ describe('AuthController', () => {
         message: 'Email vérifié avec succès',
         status: 200,
       });
-      expect(mockAuthService.verifyEmailCode).toHaveBeenCalledWith('1', '123456');
+      expect(mockAuthB2CService.verifyEmailCode).toHaveBeenCalledWith('1', '123456');
     });
   });
 
@@ -183,7 +191,7 @@ describe('AuthController', () => {
         user: { uid: '1' },
       };
 
-      mockAuthService.resendVerificationCode.mockResolvedValue(undefined);
+      mockAuthB2CService.resendVerificationCode.mockResolvedValue(undefined);
 
       const result = await controller.resendVerificationCode(mockRequest as any);
 
@@ -191,7 +199,7 @@ describe('AuthController', () => {
         message: 'Nouveau code de vérification envoyé',
         status: 200,
       });
-      expect(mockAuthService.resendVerificationCode).toHaveBeenCalledWith('1');
+      expect(mockAuthB2CService.resendVerificationCode).toHaveBeenCalledWith('1');
     });
   });
 
@@ -199,7 +207,7 @@ describe('AuthController', () => {
     it('should refresh tokens successfully', async () => {
       const refreshTokenDto = { refreshToken: 'valid_refresh_token' };
 
-      mockAuthService.refreshToken.mockResolvedValue({
+      mockAuthB2CService.refreshToken.mockResolvedValue({
         accessToken: 'new_access_token',
         refreshToken: 'new_refresh_token',
       });
@@ -211,7 +219,7 @@ describe('AuthController', () => {
         message: 'Tokens refreshed successfully',
         status: 200,
       });
-      expect(mockAuthService.refreshToken).toHaveBeenCalledWith(refreshTokenDto);
+      expect(mockAuthB2CService.refreshToken).toHaveBeenCalledWith(refreshTokenDto);
     });
   });
 
@@ -221,7 +229,7 @@ describe('AuthController', () => {
         user: { uid: '1', deviceUid: 'device123' },
       };
 
-      mockAuthService.logout.mockResolvedValue(undefined);
+      mockAuthB2CService.logout.mockResolvedValue(undefined);
 
       const result = await controller.logout(mockRequest as any);
 
@@ -229,7 +237,7 @@ describe('AuthController', () => {
         message: 'Logged out successfully',
         status: 200,
       });
-      expect(mockAuthService.logout).toHaveBeenCalledWith('1', 'device123');
+      expect(mockAuthB2CService.logout).toHaveBeenCalledWith('1', 'device123');
     });
   });
 
@@ -239,7 +247,7 @@ describe('AuthController', () => {
         user: { uid: '1' },
       };
 
-      mockAuthService.logoutAllDevices.mockResolvedValue(undefined);
+      mockAuthB2CService.logoutAllDevices.mockResolvedValue(undefined);
 
       const result = await controller.logoutAllDevices(mockRequest as any);
 
@@ -247,7 +255,7 @@ describe('AuthController', () => {
         message: 'Logged out from all devices successfully',
         status: 200,
       });
-      expect(mockAuthService.logoutAllDevices).toHaveBeenCalledWith('1');
+      expect(mockAuthB2CService.logoutAllDevices).toHaveBeenCalledWith('1');
     });
   });
 });

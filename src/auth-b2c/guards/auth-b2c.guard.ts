@@ -2,18 +2,21 @@ import { Request } from 'express';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { USERSELECT } from 'src/shared/constants/select-user';
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { IS_PUBLIC_KEY } from '../../shared/decorators/public.decorator';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class AuthB2CGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     private readonly reflector: Reflector,
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly usersService: UsersService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -54,10 +57,7 @@ export class AuthGuard implements CanActivate {
       }
 
       // Check if the user is verified and active
-      const user = await this.prisma.users.findUnique({
-        select: { emailVerified: true, isConnected: true, uid: true },
-        where: { uid: userUid },
-      });
+      const user = await this.usersService.findOne(userUid, USERSELECT.findOne);
 
       if (!user) {
         throw new UnauthorizedException('User not found');

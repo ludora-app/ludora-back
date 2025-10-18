@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Game_modes } from '@prisma/client';
+import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 import { CreateSessionDto } from 'src/sessions/dto/input/create-session.dto';
 import { SessionFilterDto } from 'src/sessions/dto/input/session-filter.dto';
@@ -27,6 +28,10 @@ describe('SessionsController', () => {
     findOneByUid: jest.fn(),
   };
 
+  const mockAuthGuard = {
+    canActivate: jest.fn(() => true),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SessionsController],
@@ -40,7 +45,10 @@ describe('SessionsController', () => {
           useValue: mockSessionTeamsService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthB2CGuard)
+      .useValue(mockAuthGuard)
+      .compile();
 
     controller = module.get<SessionsController>(SessionsController);
     service = module.get<SessionsService>(SessionsService);

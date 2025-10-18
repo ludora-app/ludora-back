@@ -99,7 +99,7 @@ describe('UsersService', () => {
         data: 'image-url',
       });
 
-      const result = await service.createUser(createUserDto);
+      const result = await service.create(createUserDto);
 
       expect(result).toBeDefined();
       expect(mockPrismaService.users.create).toHaveBeenCalled();
@@ -110,7 +110,7 @@ describe('UsersService', () => {
     it('should throw ConflictException if user already exists', async () => {
       mockPrismaService.users.findUnique.mockResolvedValueOnce({ uid: '1' });
 
-      await expect(service.createUser(createUserDto)).rejects.toThrow(ConflictException);
+      await expect(service.create(createUserDto)).rejects.toThrow(ConflictException);
     });
   });
 
@@ -262,6 +262,7 @@ describe('UsersService', () => {
         firstname: 'John',
         email: 'test@test.com',
         password: 'hashedOldPassword',
+        provider: 'LUDORA',
       });
       mockPrismaService.users.update.mockResolvedValueOnce({
         uid: '1',

@@ -14,14 +14,14 @@ import {
 } from '@nestjs/common';
 import {
   CreateImageDto,
-  LoginDto,
+  LoginB2CDto,
   RefreshTokenDto,
-  RegisterUserDto,
+  RegisterB2CDto,
   VerifyMailDto,
-} from 'src/auth/dto';
+} from 'src/auth-b2c/dto';
 
 @Injectable()
-export class AuthService {
+export class AuthB2CService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly jwt: JwtService,
@@ -33,7 +33,7 @@ export class AuthService {
   private readonly TOKEN_EXPIRATION_TIME = this.NODE_ENV === 'production' ? '15m' : '1d';
 
   async register(
-    registerDto: RegisterUserDto,
+    registerDto: RegisterB2CDto,
     createImageDto?: CreateImageDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const { deviceUid, type } = registerDto;
@@ -57,7 +57,7 @@ export class AuthService {
           sex,
         };
 
-        newUser = await this.userService.createUser(userDto, createImageDto, tx);
+        newUser = await this.userService.create(userDto, createImageDto, tx);
       } else {
         throw new BadRequestException('Invalid user type');
       }
@@ -95,9 +95,9 @@ export class AuthService {
     return { accessToken: result.accessToken, refreshToken: result.refreshToken };
   }
 
-  async login(loginDto: LoginDto): Promise<{ accessToken: string; refreshToken: string }> {
+  async login(loginB2CDto: LoginB2CDto): Promise<{ accessToken: string; refreshToken: string }> {
     try {
-      const { deviceUid, email, password } = loginDto;
+      const { deviceUid, email, password } = loginB2CDto;
       const formattedEmail = email.toLowerCase();
 
       const user = await this.userService.findOneByEmail(formattedEmail);

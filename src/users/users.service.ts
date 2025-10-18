@@ -1,6 +1,6 @@
 import * as argon2 from 'argon2';
-import { CreateImageDto } from 'src/auth/dto';
-import { Prisma, Users } from '@prisma/client';
+import { CreateImageDto } from 'src/auth-b2c/dto';
+import { Prisma, Provider, Users } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { S3FoldersName } from 'src/shared/constants/constants';
 import { EmailsService } from 'src/shared/emails/emails.service';
@@ -23,7 +23,7 @@ export class UsersService {
     private readonly emailsService: EmailsService,
   ) {}
 
-  async createUser(
+  async create(
     createUserDto: CreateUserDto,
     createImageDto?: CreateImageDto,
     tx?: Prisma.TransactionClient,
@@ -32,8 +32,9 @@ export class UsersService {
 
     const { email, firstname, lastname } = createUserDto;
     const formattedFirst = firstname.charAt(0).toUpperCase() + firstname.slice(1);
-    const formattedLast = lastname.charAt(0).toUpperCase() + lastname.slice(1);
+    const formattedLast = lastname.toUpperCase();
     const formattedEmail = email.toLowerCase();
+    const formattedBirthdate = createUserDto.birthdate ? new Date(createUserDto.birthdate) : null;
 
     const existingUser = await prisma.users.findUnique({
       where: { email: formattedEmail },
@@ -52,7 +53,7 @@ export class UsersService {
     const newUser = await prisma.users.create({
       data: {
         bio: createUserDto.bio,
-        birthdate: new Date(createUserDto.birthdate),
+        birthdate: formattedBirthdate,
         email: formattedEmail,
         firstname: formattedFirst,
         imageUrl: imageUrl.data,
@@ -60,6 +61,7 @@ export class UsersService {
         password: createUserDto.password,
         phone: createUserDto.phone,
         sex: createUserDto.sex,
+        ...(createUserDto.type && { type: createUserDto.type }),
       },
     });
 
@@ -161,8 +163,6 @@ export class UsersService {
     return;
   }
 
-  //? this method needs to change the password after all the verification is done
-  //todo: new method that send the verification email ? And verify if the user.provider is google ?
   async updatePassword(uid: string, updatePasswordDto: UpdatePasswordDto): Promise<void> {
     const { newPassword, oldPassword } = updatePasswordDto;
     const existingUser = await this.prismaService.users.findUnique({
@@ -170,6 +170,10 @@ export class UsersService {
     });
 
     if (!existingUser) throw new NotFoundException('User not found');
+
+    if (existingUser.provider !== Provider.LUDORA) {
+      throw new BadRequestException('Only LUDORA users can update their password');
+    }
 
     const isPasswordValid = await argon2.verify(existingUser.password, oldPassword);
 

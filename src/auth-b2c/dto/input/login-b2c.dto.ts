@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsStrongPassword } from 'src/users/password.validator';
 import { IsEmail, IsOptional, MinLength, Validate } from 'class-validator';
 
-export class LoginDto {
+export class LoginB2CDto {
   @IsEmail()
   @ApiProperty({
     description: 'User email',

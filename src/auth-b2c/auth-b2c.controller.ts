@@ -18,37 +18,39 @@ import {
   Req,
   Request,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import {
   CreateImageDto,
-  LoginDto,
+  LoginB2CDto,
   LoginResponseDto,
   LogoutResponseDto,
   RefreshTokenDto,
   RefreshTokenResponseDto,
+  RegisterB2CWithFileDto,
   RegisterResponseDto,
-  RegisterUserDto,
-  RegisterUserWithFileDto,
   VerifyEmailResponseDto,
   VerifyMailDto,
   VerifyTokenResponseDto,
-} from 'src/auth/dto';
+} from 'src/auth-b2c/dto';
 
-import { AuthService } from './auth.service';
-import { Public } from './decorators/public.decorator';
+import { AuthB2CService } from './auth-b2c.service';
+import { AuthB2CGuard } from './guards/auth-b2c.guard';
+import { Public } from '../shared/decorators/public.decorator';
 import { VerifyEmailCodeDto } from './dto/input/verify-email-code.dto';
 
-@Controller('auth')
-export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+@Controller('auth-b2c')
+@UseGuards(AuthB2CGuard)
+export class AuthB2CController {
+  constructor(private readonly authService: AuthB2CService) {}
 
   @Public()
   @Post('register')
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Create a user account' })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: RegisterUserWithFileDto })
+  @ApiBody({ type: RegisterB2CWithFileDto })
   @ApiBadRequestResponse({
     description: 'Error during registration',
     type: BadRequestException,
@@ -58,7 +60,7 @@ export class AuthController {
     type: ConflictException,
   })
   async register(
-    @Body() registerDto: RegisterUserDto,
+    @Body() registerDto: RegisterB2CWithFileDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<RegisterResponseDto> {
     if (file) {
@@ -93,7 +95,7 @@ export class AuthController {
   @ApiBadRequestResponse({
     type: BadRequestException,
   })
-  async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
+  async login(@Body() loginDto: LoginB2CDto): Promise<LoginResponseDto> {
     const tokens = await this.authService.login(loginDto);
     return {
       data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },

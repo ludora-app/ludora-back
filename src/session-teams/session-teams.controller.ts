@@ -1,5 +1,6 @@
 import { ResponseTypeDto } from 'src/interfaces/response-type';
 import { SessionsService } from 'src/sessions/sessions.service';
+import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import {
   ApiBadRequestResponse,
@@ -17,6 +18,7 @@ import {
   NotFoundException,
   Param,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 
 import { SessionTeamsService } from './session-teams.service';
@@ -26,6 +28,7 @@ import {
 } from './dto/output/session-team.response';
 
 @Controller('session-teams')
+@UseGuards(AuthB2CGuard)
 export class SessionTeamsController {
   constructor(
     @Inject(forwardRef(() => SessionsService)) private readonly sessionsService: SessionsService,

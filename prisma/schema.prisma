@@ -28,6 +28,7 @@ enum Sex {
 enum User_type {
   USER
   ADMIN
+  PARTNER
 
   @@schema("auth")
 }
@@ -104,7 +105,7 @@ model Users {
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
   emailVerified    Boolean   @default(false) @map("email_verified")
-  type             User_type @default(USER) @map("type")
+  type             User_type @default(USER)
 
   messages            Messages[]
   // Event               Events[]
@@ -147,29 +148,33 @@ model EmailVerification {
 }
 
 model UserTokens {
-  uid       String   @id @default(cuid())
-  userUid   String   @map("user_uid")
-  deviceUid String?  @map("deviceUid")
-  token     String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  uid             String   @id @default(cuid())
+  userUid         String   @map("user_uid")
+  deviceUid       String?  @map("device_uid")
+  organisationUid String?  @map("organisation_uid")
+  token           String
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  user Users @relation(fields: [userUid], references: [uid])
+  user    Users     @relation(fields: [userUid], references: [uid])
+  partner Partners? @relation(fields: [organisationUid], references: [uid], onDelete: SetNull)
 
   @@map("User_tokens")
   @@schema("auth")
 }
 
 model RefreshTokens {
-  uid       String   @id @default(cuid())
-  userUid   String   @map("user_uid")
-  deviceUid String?  @map("deviceUid")
-  token     String   @unique
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  uid             String   @id @default(cuid())
+  userUid         String   @map("user_uid")
+  deviceUid       String?  @map("device_uid")
+  organisationUid String?  @map("organisation_uid")
+  token           String   @unique
+  expiresAt       DateTime @map("expires_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  user Users @relation(fields: [userUid], references: [uid], onDelete: Cascade)
+  user    Users     @relation(fields: [userUid], references: [uid], onDelete: Cascade)
+  partner Partners? @relation(fields: [organisationUid], references: [uid], onDelete: SetNull)
 
   @@map("Refresh_tokens")
   @@schema("auth")
@@ -212,19 +217,21 @@ model UserGlobalRatings {
 
 model Partners {
   uid                 String                @id @default(cuid())
-  name                String
+  name                String                @unique
   imageUrl            String?               @map("image_url")
   address             String
   latitude            Float
   longitude           Float
   phone               String
-  email               String
+  email               String                @unique
   createdAt           DateTime              @default(now()) @map("created_at")
   updatedAt           DateTime              @updatedAt @map("updated_at")
   //todo: add stripe account uid
   fields              Fields[]
   partnerSports       PartnerSports[]
   partnerOpeningHours PartnerOpeningHours[]
+  UserTokens          UserTokens[]
+  RefreshTokens       RefreshTokens[]
 
   @@schema("infrastructure")
 }
