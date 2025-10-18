@@ -6,15 +6,17 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateCreateStripeAccountDto } from 'src/payment/dto/input/create-stripe-account.dto';
 import { PaymentIntentDto } from 'src/payment/dto/input/payment-intent.dto';
 import { BankDetailsDto, UpdateBankDetailsDto } from 'src/payment/dto/input/bank-details.dto';
 import { PaymentService } from 'src/payment/payment.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateStripeAccountDto } from 'src/payment/dto/input/create-stripe-account.dto';
+import { UsersService } from 'src/users/users.service';
 
 describe('PaymentService', () => {
   let service: PaymentService;
   let prismaService: PrismaService;
+  let usersService: UsersService;
   let configService: ConfigService;
 
   const mockPrismaService = {
@@ -26,6 +28,12 @@ describe('PaymentService', () => {
 
   const mockConfigService = {
     getOrThrow: jest.fn().mockReturnValue('stripe_secret_key'),
+  };
+
+  const mockUsersService = {
+    findOne: jest.fn(),
+    addStripeAccountId: jest.fn(),
+    removeStripeAccountId: jest.fn(),
   };
 
   const mockStripe = {
@@ -59,11 +67,16 @@ describe('PaymentService', () => {
           provide: ConfigService,
           useValue: mockConfigService,
         },
+        {
+          provide: UsersService,
+          useValue: mockUsersService,
+        },
       ],
     }).compile();
 
     service = module.get<PaymentService>(PaymentService);
     prismaService = module.get<PrismaService>(PrismaService);
+    usersService = module.get<UsersService>(UsersService);
     configService = module.get<ConfigService>(ConfigService);
 
     // Mock Stripe instance
@@ -76,7 +89,7 @@ describe('PaymentService', () => {
 
   describe('createStripeAccountToken', () => {
     const userId = 'user-1';
-    const stripeAccountData: CreateCreateStripeAccountDto = {
+    const stripeAccountData: CreateStripeAccountDto = {
       firstname: 'John',
       lastname: 'Doe',
       address: {
@@ -99,7 +112,7 @@ describe('PaymentService', () => {
         phone: '+1234567890',
       };
 
-      mockPrismaService.users.findUnique.mockResolvedValue(mockUser);
+      mockUsersService.findOne.mockResolvedValue(mockUser);
       mockStripe.tokens.create.mockResolvedValue({ id: 'token-1' });
 
       const result = await service.createStripeAccountToken(userId, stripeAccountData);
@@ -131,8 +144,8 @@ describe('PaymentService', () => {
       });
     });
 
-    it('should throw NotFoundException if user not found', async () => {
-      mockPrismaService.users.findUnique.mockResolvedValue(null);
+    it('should throw InternalServerErrorException if user not found', async () => {
+      mockUsersService.findOne.mockResolvedValue(null);
 
       await expect(service.createStripeAccountToken(userId, stripeAccountData)).rejects.toThrow(
         InternalServerErrorException,
@@ -142,7 +155,7 @@ describe('PaymentService', () => {
 
   describe('createStripeConnectAccount', () => {
     const userId = 'user-1';
-    const stripeAccountData: CreateCreateStripeAccountDto = {
+    const stripeAccountData: CreateStripeAccountDto = {
       firstname: 'John',
       lastname: 'Doe',
       address: {
@@ -158,30 +171,27 @@ describe('PaymentService', () => {
 
     it('should create a Stripe Connect account successfully', async () => {
       const mockUser = {
-        id: userId,
+        uid: userId,
         email: 'john@example.com',
+        birthdate: new Date('1990-01-01'),
+        phone: '+1234567890',
         stripeAccountId: null,
       };
 
-      mockPrismaService.users.findUnique.mockResolvedValue(mockUser);
+      mockUsersService.findOne
+        .mockResolvedValueOnce(mockUser) // First call in createStripeAccountToken
+        .mockResolvedValueOnce(mockUser); // Second call in createStripeConnectAccount
       mockStripe.tokens.create.mockResolvedValue({ id: 'token-1' });
       mockStripe.accounts.create.mockResolvedValue({ id: 'account-1' });
-      mockPrismaService.users.update.mockResolvedValue({
-        ...mockUser,
-        stripeAccountId: 'account-1',
-      });
+      mockUsersService.addStripeAccountId.mockResolvedValue(undefined);
 
-      const result = await service.createStripeConnectAccount(userId, stripeAccountData);
+      await service.createStripeConnectAccount(userId, stripeAccountData);
 
-      expect(result).toEqual({
-        message: 'stripe connect account created',
-        status: 201,
-      });
       expect(mockStripe.accounts.create).toHaveBeenCalledWith({
         account_token: 'token-1',
         business_profile: {
           mcc: '7299',
-          product_description: 'Participate to events in the app',
+          product_description: 'Participate to sessions in the app',
           url: null,
         },
         capabilities: {
@@ -192,19 +202,25 @@ describe('PaymentService', () => {
         email: 'john@example.com',
         type: 'custom',
       });
+      expect(mockUsersService.addStripeAccountId).toHaveBeenCalledWith(userId, 'account-1');
     });
 
-    it('should throw BadRequestException if Stripe account already exists', async () => {
+    it('should throw InternalServerErrorException if Stripe account already exists', async () => {
       const mockUser = {
-        id: userId,
+        uid: userId,
         email: 'john@example.com',
+        birthdate: new Date('1990-01-01'),
+        phone: '+1234567890',
         stripeAccountId: 'existing-account',
       };
 
-      mockPrismaService.users.findUnique.mockResolvedValue(mockUser);
+      mockUsersService.findOne
+        .mockResolvedValueOnce(mockUser) // First call in createStripeAccountToken
+        .mockResolvedValueOnce(mockUser); // Second call with existing account
+      mockStripe.tokens.create.mockResolvedValue({ id: 'token-1' });
 
       await expect(service.createStripeConnectAccount(userId, stripeAccountData)).rejects.toThrow(
-        BadRequestException,
+        InternalServerErrorException,
       );
     });
   });
@@ -221,20 +237,17 @@ describe('PaymentService', () => {
         email: 'john@example.com',
       };
 
-      mockPrismaService.users.findUnique.mockResolvedValue(mockUser);
+      mockUsersService.findOne.mockResolvedValue(mockUser);
       mockStripe.accounts.retrieve.mockResolvedValue(mockStripeAccount);
 
       const result = await service.getStripeConnectAccount(userId);
 
-      expect(result).toEqual({
-        data: mockStripeAccount,
-        message: 'stripe connect account fetched',
-        status: 200,
-      });
+      expect(result).toEqual(mockStripeAccount);
+      expect(mockStripe.accounts.retrieve).toHaveBeenCalledWith('account-1');
     });
 
     it('should throw InternalServerErrorException if Stripe account not found', async () => {
-      mockPrismaService.users.findUnique.mockResolvedValue({ stripeAccountId: null });
+      mockUsersService.findOne.mockResolvedValue({ stripeAccountId: null });
 
       await expect(service.getStripeConnectAccount(userId)).rejects.toThrow(
         InternalServerErrorException,
@@ -250,20 +263,29 @@ describe('PaymentService', () => {
         stripeAccountId: 'account-1',
       };
 
-      mockPrismaService.users.findUnique.mockResolvedValue(mockUser);
-      mockStripe.accounts.del.mockResolvedValue({ deleted: true });
-      mockPrismaService.users.update.mockResolvedValue({ ...mockUser, stripeAccountId: null });
+      mockUsersService.findOne.mockResolvedValue(mockUser);
+      mockStripe.accounts.del.mockResolvedValue({ deleted: true, id: 'account-1' });
+      mockUsersService.removeStripeAccountId.mockResolvedValue(undefined);
 
-      const result = await service.deleteStripeConnectAccount(userId);
+      await service.deleteStripeConnectAccount(userId);
 
-      expect(result).toEqual({
-        message: 'account deleted successfully',
-        status: 200,
-      });
+      expect(mockStripe.accounts.del).toHaveBeenCalledWith('account-1');
+      expect(mockUsersService.removeStripeAccountId).toHaveBeenCalledWith(userId);
     });
 
     it('should throw BadRequestException if Stripe account not found', async () => {
-      mockPrismaService.users.findUnique.mockResolvedValue({ stripeAccountId: null });
+      mockUsersService.findOne.mockResolvedValue({ stripeAccountId: null });
+
+      await expect(service.deleteStripeConnectAccount(userId)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if deletion fails', async () => {
+      const mockUser = {
+        stripeAccountId: 'account-1',
+      };
+
+      mockUsersService.findOne.mockResolvedValue(mockUser);
+      mockStripe.accounts.del.mockResolvedValue(null);
 
       await expect(service.deleteStripeConnectAccount(userId)).rejects.toThrow(BadRequestException);
     });
@@ -316,15 +338,22 @@ describe('PaymentService', () => {
           stripeAccountId: 'account-1',
         };
 
-        mockPrismaService.users.findUnique.mockResolvedValue(mockUser);
+        mockUsersService.findOne.mockResolvedValue(mockUser);
         mockStripe.accounts.listExternalAccounts.mockResolvedValue({ data: [] });
         mockStripe.accounts.createExternalAccount.mockResolvedValue({ id: bankAccountId });
 
-        const result = await service.addBankAccount(userId, bankDetails);
+        await service.addBankAccount(userId, bankDetails);
 
-        expect(result).toEqual({
-          message: 'Bank account added successfully',
-          status: 201,
+        expect(mockStripe.accounts.createExternalAccount).toHaveBeenCalledWith('account-1', {
+          external_account: {
+            account_holder_name: 'John Doe',
+            account_holder_type: 'individual',
+            account_number: 'FR123456789',
+            country: 'FR',
+            currency: 'eur',
+            object: 'bank_account',
+            routing_number: '12345',
+          },
         });
       });
 
@@ -333,7 +362,7 @@ describe('PaymentService', () => {
           stripeAccountId: 'account-1',
         };
 
-        mockPrismaService.users.findUnique.mockResolvedValue(mockUser);
+        mockUsersService.findOne.mockResolvedValue(mockUser);
         mockStripe.accounts.listExternalAccounts.mockResolvedValue({
           data: Array(4).fill({ id: 'existing-account' }),
         });
@@ -356,12 +385,16 @@ describe('PaymentService', () => {
             country: 'FR',
             currency: 'eur',
             default_for_currency: true,
+            account_holder_name: 'John Doe',
             last4: '1234',
             status: 'verified',
+            routing_number: '12345',
+            future_requirements: null,
+            requirements: null,
           },
         ];
 
-        mockPrismaService.users.findUnique.mockResolvedValue(mockUser);
+        mockUsersService.findOne.mockResolvedValue(mockUser);
         mockStripe.accounts.listExternalAccounts.mockResolvedValue({
           data: mockBankAccounts,
         });
@@ -369,13 +402,23 @@ describe('PaymentService', () => {
         const result = await service.getBankAccountsList(userId);
 
         expect(result).toEqual({
-          data: {
-            items: mockBankAccounts,
-            nextCursor: null,
-            totalCount: 1,
-          },
-          message: 'Bank accounts fetched successfully',
-          status: 200,
+          items: [
+            {
+              id: 'ba_1',
+              bank_name: 'Bank',
+              country: 'FR',
+              currency: 'eur',
+              default_for_currency: true,
+              holder_name: 'John Doe',
+              last4: '1234',
+              status: 'verified',
+              routing_number: '12345',
+              future_requirements: null,
+              requirements: null,
+            },
+          ],
+          nextCursor: null,
+          totalCount: 1,
         });
       });
     });
@@ -400,11 +443,11 @@ describe('PaymentService', () => {
 
         const result = await service.getBankAccount(userId, bankAccountId);
 
-        expect(result).toEqual({
-          data: mockBankAccount,
-          message: 'Bank account fetched successfully',
-          status: 200,
-        });
+        expect(result).toEqual(mockBankAccount);
+        expect(mockStripe.accounts.retrieveExternalAccount).toHaveBeenCalledWith(
+          'account-1',
+          bankAccountId,
+        );
       });
     });
 
@@ -420,12 +463,13 @@ describe('PaymentService', () => {
         mockPrismaService.users.findUnique.mockResolvedValue(mockUser);
         mockStripe.accounts.updateExternalAccount.mockResolvedValue({ id: bankAccountId });
 
-        const result = await service.updateDefaultBankAccount(userId, bankAccountId, updateDetails);
+        await service.updateDefaultBankAccount(userId, bankAccountId, updateDetails);
 
-        expect(result).toEqual({
-          message: 'Bank account updated successfully',
-          status: 200,
-        });
+        expect(mockStripe.accounts.updateExternalAccount).toHaveBeenCalledWith(
+          'account-1',
+          bankAccountId,
+          { default_for_currency: true },
+        );
       });
     });
 
@@ -438,12 +482,12 @@ describe('PaymentService', () => {
         mockPrismaService.users.findUnique.mockResolvedValue(mockUser);
         mockStripe.accounts.deleteExternalAccount.mockResolvedValue({ deleted: true });
 
-        const result = await service.deleteBankAccount(userId, bankAccountId);
+        await service.deleteBankAccount(userId, bankAccountId);
 
-        expect(result).toEqual({
-          message: 'banck account deleted successfully',
-          status: 200,
-        });
+        expect(mockStripe.accounts.deleteExternalAccount).toHaveBeenCalledWith(
+          'account-1',
+          bankAccountId,
+        );
       });
     });
   });
