@@ -75,7 +75,8 @@ export class ImagesService {
     });
 
     if (!profilePic) {
-      throw new NotFoundException(`User with uid ${userUid} not found`);
+      // throw new NotFoundException(`User with uid ${userUid} not found`);
+      return null;
     }
     const folder = 'users';
     const response = await this.storageService.getSignedUrl(folder, profilePic.imageUrl);

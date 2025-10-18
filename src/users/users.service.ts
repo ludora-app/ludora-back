@@ -125,10 +125,15 @@ export class UsersService {
       where: { uid },
     });
 
-    let imageUrl = await this.imageService.getProfilePic(existingUser.uid);
-    if (!imageUrl) {
-      imageUrl = '';
+    if (!existingUser) {
+      return null;
     }
+
+    let imageUrl = '';
+    // await this.imageService.getProfilePic(existingUser.uid);
+    // if (!imageUrl) {
+    //   imageUrl = '';
+    // }
     const user = { ...existingUser, imageUrl };
     return user;
   }

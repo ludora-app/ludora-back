@@ -54,8 +54,8 @@ export class PaymentController {
     type: BadRequestException,
   })
   async getStripeConnectAccount(@Req() request: Request): Promise<ResponseTypeDto<Stripe.Account>> {
-    const userId = request['user'].id;
-    const stripeAccount = await this.paymentService.getStripeConnectAccount(userId);
+    const userUid = request['user'].uid;
+    const stripeAccount = await this.paymentService.getStripeConnectAccount(userUid);
 
     return {
       data: stripeAccount,
@@ -79,7 +79,7 @@ export class PaymentController {
     @Req() request: Request,
     @Body() stripeAccountData: CreateStripeAccountDto,
   ): Promise<void> {
-    const userId = request['user'].id;
+    const userId = request['user'].uid;
     return this.paymentService.createStripeConnectAccount(userId, stripeAccountData);
   }
 
@@ -113,7 +113,7 @@ export class PaymentController {
     @Body() bankDetails: BankDetailsDto,
     @Req() request: Request,
   ): Promise<void> {
-    const userId = request['user'].id;
+    const userId = request['user'].uid;
     await this.paymentService.addBankAccount(userId, bankDetails);
   }
 
@@ -158,7 +158,7 @@ export class PaymentController {
     @Req() request: Request,
     @Param('bankAccountId') bankAccountId: string,
   ): Promise<ResponseTypeDto<Stripe.ExternalAccount>> {
-    const userId = request['user'].id;
+    const userId = request['user'].uid;
     const bankAccount = await this.paymentService.getBankAccount(userId, bankAccountId);
     return {
       data: bankAccount,
@@ -184,7 +184,7 @@ export class PaymentController {
     @Req() request: Request,
     @Param('bankAccountId') bankAccountId: string,
   ) {
-    const userId = request['user'].id;
+    const userId = request['user'].uid;
     return this.paymentService.updateDefaultBankAccount(userId, bankAccountId, bankDetails);
   }
 
@@ -201,7 +201,7 @@ export class PaymentController {
     type: BadRequestException,
   })
   async deleteBankAccount(@Param('bankAccountId') bankAccountId: string, @Req() request: Request) {
-    const userId = request['user'].id;
+    const userId = request['user'].uid;
     return this.paymentService.deleteBankAccount(userId, bankAccountId);
   }
 }

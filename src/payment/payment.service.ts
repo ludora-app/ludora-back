@@ -107,31 +107,34 @@ export class PaymentService {
   }
 
   async getStripeConnectAccount(userUid: string): Promise<Stripe.Account> {
-    try {
-      const { stripeAccountId } = await this.usersService.findOne(
-        userUid,
-        USERSELECT.stripeAccountId,
-      );
+    const user = await this.usersService.findOne(userUid, USERSELECT.stripeAccountId);
 
-      if (!stripeAccountId) {
-        throw new NotFoundException('Stripe account not found');
-      }
-      const stripeAccount = await this.stripe.accounts.retrieve(stripeAccountId);
-      return stripeAccount;
-    } catch (error) {
-      throw new InternalServerErrorException(error.message);
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
+
+    if (!user.stripeAccountId) {
+      throw new NotFoundException('Stripe account not found');
+    }
+
+    const stripeAccountId = user.stripeAccountId;
+    const stripeAccount = await this.stripe.accounts.retrieve(stripeAccountId);
+    return stripeAccount;
   }
 
   async deleteStripeConnectAccount(userUid: string): Promise<void> {
     try {
-      const { stripeAccountId } = await this.usersService.findOne(
-        userUid,
-        USERSELECT.stripeAccountId,
-      );
-      if (!stripeAccountId) {
+      const user = await this.usersService.findOne(userUid, USERSELECT.stripeAccountId);
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (!user.stripeAccountId) {
         throw new NotFoundException('Stripe account not found');
       }
+
+      const stripeAccountId = user.stripeAccountId;
 
       const deletedAccount = await this.stripe.accounts.del(stripeAccountId);
 
@@ -174,10 +177,17 @@ export class PaymentService {
 
   async addBankAccount(userUid: string, bankDetails: BankDetailsDto): Promise<void> {
     try {
-      const { stripeAccountId } = await this.usersService.findOne(
-        userUid,
-        USERSELECT.stripeAccountId,
-      );
+      const user = await this.usersService.findOne(userUid, USERSELECT.stripeAccountId);
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (!user.stripeAccountId) {
+        throw new NotFoundException('Stripe account not found');
+      }
+
+      const stripeAccountId = user.stripeAccountId;
 
       const userBankAccount = await this.stripe.accounts.listExternalAccounts(stripeAccountId, {
         object: 'bank_account',
@@ -207,10 +217,18 @@ export class PaymentService {
     totalCount: number;
   }> {
     try {
-      const { stripeAccountId } = await this.usersService.findOne(
-        userUid,
-        USERSELECT.stripeAccountId,
-      );
+      const user = await this.usersService.findOne(userUid, USERSELECT.stripeAccountId);
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (!user.stripeAccountId) {
+        throw new NotFoundException('Stripe account not found');
+      }
+
+      const stripeAccountId = user.stripeAccountId;
+
       const bankAccounts = await this.stripe.accounts.listExternalAccounts(stripeAccountId, {
         object: 'bank_account',
       });
@@ -240,12 +258,21 @@ export class PaymentService {
 
   async getBankAccount(userUid: string, bankAccountId: string): Promise<Stripe.ExternalAccount> {
     try {
-      const { stripeAccountId } = await this.prismaService.users.findUnique({
+      const user = await this.prismaService.users.findUnique({
         select: { stripeAccountId: true },
         where: { uid: userUid },
       });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (!user.stripeAccountId) {
+        throw new NotFoundException('Stripe account not found');
+      }
+
       const bankAccount = await this.stripe.accounts.retrieveExternalAccount(
-        stripeAccountId,
+        user.stripeAccountId,
         bankAccountId,
       );
       return bankAccount;
@@ -260,11 +287,20 @@ export class PaymentService {
     bankDetails: UpdateBankDetailsDto,
   ): Promise<void> {
     try {
-      const { stripeAccountId } = await this.prismaService.users.findUnique({
+      const user = await this.prismaService.users.findUnique({
         select: { stripeAccountId: true },
         where: { uid: userUid },
       });
-      await this.stripe.accounts.updateExternalAccount(stripeAccountId, bankAccountId, {
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (!user.stripeAccountId) {
+        throw new NotFoundException('Stripe account not found');
+      }
+
+      await this.stripe.accounts.updateExternalAccount(user.stripeAccountId, bankAccountId, {
         default_for_currency: bankDetails.defaultForCurrency,
       });
     } catch (error) {
@@ -274,11 +310,20 @@ export class PaymentService {
 
   async deleteBankAccount(userUid: string, bankAccountId: string): Promise<void> {
     try {
-      const { stripeAccountId } = await this.prismaService.users.findUnique({
+      const user = await this.prismaService.users.findUnique({
         select: { stripeAccountId: true },
         where: { uid: userUid },
       });
-      await this.stripe.accounts.deleteExternalAccount(stripeAccountId, bankAccountId);
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (!user.stripeAccountId) {
+        throw new NotFoundException('Stripe account not found');
+      }
+
+      await this.stripe.accounts.deleteExternalAccount(user.stripeAccountId, bankAccountId);
     } catch (error) {
       throw new BadRequestException(error.message);
     }

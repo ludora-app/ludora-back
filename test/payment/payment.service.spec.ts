@@ -246,12 +246,10 @@ describe('PaymentService', () => {
       expect(mockStripe.accounts.retrieve).toHaveBeenCalledWith('account-1');
     });
 
-    it('should throw InternalServerErrorException if Stripe account not found', async () => {
+    it('should throw NotFoundException if Stripe account not found', async () => {
       mockUsersService.findOne.mockResolvedValue({ stripeAccountId: null });
 
-      await expect(service.getStripeConnectAccount(userId)).rejects.toThrow(
-        InternalServerErrorException,
-      );
+      await expect(service.getStripeConnectAccount(userId)).rejects.toThrow(NotFoundException);
     });
   });
 

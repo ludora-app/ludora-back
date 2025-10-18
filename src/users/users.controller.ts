@@ -115,6 +115,10 @@ export class UsersController {
 
     const data = await this.usersService.findOne(uid, USERSELECT.findMe);
 
+    if (!data) {
+      throw new NotFoundException('User not found');
+    }
+
     return { data, message: 'User fetched successfully', status: 200 };
   }
 
