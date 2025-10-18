@@ -1,0 +1,286 @@
+import Stripe from 'stripe';
+import { ConfigService } from '@nestjs/config';
+import { UsersService } from 'src/users/users.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { USERSELECT } from 'src/shared/constants/select-user';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+
+import { PaymentIntentDto } from './dto/input/payment-intent.dto';
+import { CreateStripeAccountDto } from './dto/input/create-stripe-account.dto';
+import { BankDetailsDto, UpdateBankDetailsDto } from './dto/input/bank-details.dto';
+
+@Injectable()
+export class PaymentService {
+  private readonly stripe: Stripe;
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly configService: ConfigService,
+    private readonly usersService: UsersService,
+  ) {
+    this.stripe = new Stripe(this.configService.getOrThrow('STRIPE_SECRET_KEY'), {
+      apiVersion: '2025-08-27.basil',
+      typescript: true,
+    });
+  }
+  async createStripeAccountToken(userUid: string, stripeAccountData: CreateStripeAccountDto) {
+    try {
+      const user = await this.usersService.findOne(userUid, USERSELECT.createStripeAccountToken);
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const accountToken = await this.stripe.tokens.create({
+        account: {
+          business_type: 'individual',
+          individual: {
+            address: {
+              city: stripeAccountData.address.city, // city : Paris
+              country: stripeAccountData.address.countryCode, // pays : FR
+              line1: stripeAccountData.address.line1, // address : 123 Main St
+              line2: stripeAccountData.address.line2, // address complement : Apt 1
+              postal_code: stripeAccountData.address.postalCode, // postal code : 94000
+            },
+            dob: {
+              day: new Date(user.birthdate).getUTCDate(),
+              month: new Date(user.birthdate).getUTCMonth() + 1,
+              year: new Date(user.birthdate).getUTCFullYear(),
+            },
+            email: user.email,
+            first_name: stripeAccountData.firstname,
+            last_name: stripeAccountData.lastname,
+            phone: user.phone,
+          },
+          tos_shown_and_accepted: true, // Confirms that the user accepts the Stripe terms of service
+        },
+      });
+
+      return accountToken.id;
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  async createStripeConnectAccount(
+    userUid: string,
+    stripeAccountData: CreateStripeAccountDto,
+  ): Promise<void> {
+    try {
+      const stripeAccountToken = await this.createStripeAccountToken(userUid, stripeAccountData);
+      const existingUser = await this.usersService.findOne(
+        userUid,
+        USERSELECT.createStripeConnectAccount,
+      );
+
+      if (!existingUser) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (existingUser.stripeAccountId) {
+        throw new BadRequestException('Stripe account already exists');
+      }
+      const stripeAccount = await this.stripe.accounts.create({
+        account_token: stripeAccountToken,
+        business_profile: {
+          mcc: '7299',
+          product_description: 'Participate to sessions in the app',
+          url: null,
+        },
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true },
+        },
+        country: stripeAccountData.address.countryCode, // country : FR
+        email: existingUser.email,
+        type: 'custom',
+      });
+
+      await this.usersService.addStripeAccountId(userUid, stripeAccount.id);
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  async getStripeConnectAccount(userUid: string): Promise<Stripe.Account> {
+    try {
+      const { stripeAccountId } = await this.usersService.findOne(
+        userUid,
+        USERSELECT.stripeAccountId,
+      );
+
+      if (!stripeAccountId) {
+        throw new NotFoundException('Stripe account not found');
+      }
+      const stripeAccount = await this.stripe.accounts.retrieve(stripeAccountId);
+      return stripeAccount;
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  async deleteStripeConnectAccount(userUid: string): Promise<void> {
+    try {
+      const { stripeAccountId } = await this.usersService.findOne(
+        userUid,
+        USERSELECT.stripeAccountId,
+      );
+      if (!stripeAccountId) {
+        throw new NotFoundException('Stripe account not found');
+      }
+
+      const deletedAccount = await this.stripe.accounts.del(stripeAccountId);
+
+      if (deletedAccount) {
+        await this.usersService.removeStripeAccountId(userUid);
+      } else {
+        throw new BadRequestException('Error deleting account');
+      }
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  /**
+   * The function `createPaymentIntent` in TypeScript creates a Stripe PaymentIntent with specified
+   * details and transfers the payment to a connected account.
+   * @param {PaymentIntentDto} paymentIntent - The `paymentIntent` parameter in the `createPaymentIntent`
+   * function is of type `PaymentIntentDto`, which likely contains the following properties:
+   * @returns The `createPaymentIntent` function returns a Promise that resolves to a Stripe
+   * PaymentIntent object.
+   */
+  async createPaymentIntent(paymentIntent: PaymentIntentDto): Promise<Stripe.PaymentIntent> {
+    const { amount, connectedAccountId, currency, paymentMethodId } = paymentIntent;
+    try {
+      const paymentIntent = await this.stripe.paymentIntents.create({
+        amount,
+        confirm: true,
+        currency,
+        payment_method: paymentMethodId,
+        transfer_data: {
+          destination: connectedAccountId,
+        },
+      });
+
+      return paymentIntent;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async addBankAccount(userUid: string, bankDetails: BankDetailsDto): Promise<void> {
+    try {
+      const { stripeAccountId } = await this.usersService.findOne(
+        userUid,
+        USERSELECT.stripeAccountId,
+      );
+
+      const userBankAccount = await this.stripe.accounts.listExternalAccounts(stripeAccountId, {
+        object: 'bank_account',
+      });
+      if (userBankAccount.data.length >= 4) {
+        throw new BadRequestException('You can only have 4 bank accounts');
+      }
+      await this.stripe.accounts.createExternalAccount(stripeAccountId, {
+        external_account: {
+          account_holder_name: bankDetails.holderName,
+          account_holder_type: 'individual',
+          account_number: bankDetails.accountNumber,
+          country: 'FR',
+          currency: 'eur',
+          object: 'bank_account',
+          routing_number: bankDetails.routingNumber,
+        },
+      });
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async getBankAccountsList(userUid: string): Promise<{
+    items: any[];
+    nextCursor: string | null;
+    totalCount: number;
+  }> {
+    try {
+      const { stripeAccountId } = await this.usersService.findOne(
+        userUid,
+        USERSELECT.stripeAccountId,
+      );
+      const bankAccounts = await this.stripe.accounts.listExternalAccounts(stripeAccountId, {
+        object: 'bank_account',
+      });
+      const filteredAccounts = bankAccounts.data.map((account: Stripe.BankAccount) => ({
+        bank_name: account.bank_name,
+        country: account.country,
+        currency: account.currency,
+        default_for_currency: account.default_for_currency,
+        future_requirements: account.future_requirements,
+        holder_name: account.account_holder_name,
+        id: account.id,
+        last4: account.last4,
+        requirements: account.requirements,
+        routing_number: account.routing_number,
+        status: account.status,
+      }));
+
+      return {
+        items: filteredAccounts,
+        nextCursor: null,
+        totalCount: bankAccounts.data.length,
+      };
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
+  }
+
+  async getBankAccount(userUid: string, bankAccountId: string): Promise<Stripe.ExternalAccount> {
+    try {
+      const { stripeAccountId } = await this.prismaService.users.findUnique({
+        select: { stripeAccountId: true },
+        where: { uid: userUid },
+      });
+      const bankAccount = await this.stripe.accounts.retrieveExternalAccount(
+        stripeAccountId,
+        bankAccountId,
+      );
+      return bankAccount;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async updateDefaultBankAccount(
+    userUid: string,
+    bankAccountId: string,
+    bankDetails: UpdateBankDetailsDto,
+  ): Promise<void> {
+    try {
+      const { stripeAccountId } = await this.prismaService.users.findUnique({
+        select: { stripeAccountId: true },
+        where: { uid: userUid },
+      });
+      await this.stripe.accounts.updateExternalAccount(stripeAccountId, bankAccountId, {
+        default_for_currency: bankDetails.defaultForCurrency,
+      });
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async deleteBankAccount(userUid: string, bankAccountId: string): Promise<void> {
+    try {
+      const { stripeAccountId } = await this.prismaService.users.findUnique({
+        select: { stripeAccountId: true },
+        where: { uid: userUid },
+      });
+      await this.stripe.accounts.deleteExternalAccount(stripeAccountId, bankAccountId);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+}

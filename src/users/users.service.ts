@@ -145,6 +145,36 @@ export class UsersService {
     });
   }
 
+  async findOneByStripeAccountId(stripeAccountId: string): Promise<{ stripeAccountId: string }> {
+    return await this.prismaService.users.findUnique({
+      select: { stripeAccountId: true },
+      where: { stripeAccountId },
+    });
+  }
+
+  /**
+   * The function `addStripeAccountId` updates a user's Stripe account ID.
+   * @param {string} uid - The `uid` parameter in the `addStripeAccountId` function is a string that
+   * represents the unique identifier of a user. It is used to identify the user whose Stripe account ID
+   * is being updated in the database.
+   * @param {string} stripeAccountId - The `stripeAccountId` parameter is a string that represents the
+   * unique identifier for a user's Stripe account. This identifier is used to associate the user with
+   * their Stripe account for processing payments and managing transactions.
+   */
+  async addStripeAccountId(uid: string, stripeAccountId: string): Promise<void> {
+    await this.prismaService.users.update({
+      data: { stripeAccountId },
+      where: { uid },
+    });
+  }
+
+  async removeStripeAccountId(uid: string): Promise<void> {
+    await this.prismaService.users.update({
+      data: { stripeAccountId: null },
+      where: { uid },
+    });
+  }
+
   async update(uid: string, updateUserDto: UpdateUserDto): Promise<void> {
     const existingUser = await this.findOne(uid, USERSELECT.findMe);
 
