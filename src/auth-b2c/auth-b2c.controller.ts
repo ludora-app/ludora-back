@@ -73,7 +73,7 @@ export class AuthB2CController {
       const tokens = await this.authService.register(registerDto, createImageDto);
       return {
         data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
-        message: 'Partner created successfully',
+        message: 'User created successfully',
         status: 201,
       };
     }
@@ -81,7 +81,7 @@ export class AuthB2CController {
     const tokens = await this.authService.register(registerDto);
     return {
       data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
-      message: 'Partner created successfully',
+      message: 'User created successfully',
       status: 201,
     };
   }

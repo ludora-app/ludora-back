@@ -1,5 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { SessionTeamsController } from 'src/session-teams/session-teams.controller';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 import { SessionsService } from 'src/sessions/sessions.service';
@@ -17,6 +18,10 @@ describe('SessionTeamsController', () => {
     findOne: jest.fn(),
   };
 
+  const mockAuthGuard = {
+    canActivate: jest.fn(() => true),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SessionTeamsController],
@@ -30,7 +35,10 @@ describe('SessionTeamsController', () => {
           useValue: mockSessionsService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthB2CGuard)
+      .useValue(mockAuthGuard)
+      .compile();
 
     controller = module.get<SessionTeamsController>(SessionTeamsController);
   });

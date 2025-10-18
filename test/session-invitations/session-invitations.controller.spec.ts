@@ -5,6 +5,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CreateSessionInvitationDto } from '../../src/session-invitations/dto/input/create-session-invitation.dto';
 import { UpdateSessionInvitationDto } from '../../src/session-invitations/dto/input/update-session-invitation.dto';
 import { SessionInvitationFilterDto } from '../../src/session-invitations/dto/input/session-invitation-filter.dto';
+import { AuthB2CGuard } from '../../src/auth-b2c/guards/auth-b2c.guard';
 
 describe('SessionInvitationsController', () => {
   let controller: SessionInvitationsController;
@@ -18,6 +19,10 @@ describe('SessionInvitationsController', () => {
     remove: jest.fn(),
   };
 
+  const mockAuthGuard = {
+    canActivate: jest.fn(() => true),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SessionInvitationsController],
@@ -27,7 +32,10 @@ describe('SessionInvitationsController', () => {
           useValue: mockSessionInvitationsService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthB2CGuard)
+      .useValue(mockAuthGuard)
+      .compile();
 
     controller = module.get<SessionInvitationsController>(SessionInvitationsController);
     jest.clearAllMocks();

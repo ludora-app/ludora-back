@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { SessionPlayersController } from 'src/session-players/session-players.controller';
 import { SessionPlayersService } from 'src/session-players/session-players.service';
 
@@ -9,6 +10,10 @@ describe('SessionPlayersController', () => {
   //   addPlayerToSession: jest.fn(),
   // };
 
+  const mockAuthGuard = {
+    canActivate: jest.fn(() => true),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SessionPlayersController],
@@ -18,7 +23,10 @@ describe('SessionPlayersController', () => {
       //     useValue: mockSessionPlayersService,
       //   },
       // ],
-    }).compile();
+    })
+      .overrideGuard(AuthB2CGuard)
+      .useValue(mockAuthGuard)
+      .compile();
 
     controller = module.get<SessionPlayersController>(SessionPlayersController);
   });

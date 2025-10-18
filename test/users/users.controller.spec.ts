@@ -3,6 +3,7 @@ import { USERSELECT } from 'src/shared/constants/select-user';
 import { UpdatePasswordDto, UpdateUserDto, UserFilterDto } from 'src/users/dto';
 import { UsersController } from 'src/users/users.controller';
 import { UsersService } from 'src/users/users.service';
+import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -27,6 +28,10 @@ describe('UsersController', () => {
     name: 'Test User',
   };
 
+  const mockAuthGuard = {
+    canActivate: jest.fn(() => true),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
@@ -36,7 +41,10 @@ describe('UsersController', () => {
           useValue: mockUsersService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthB2CGuard)
+      .useValue(mockAuthGuard)
+      .compile();
 
     controller = module.get<UsersController>(UsersController);
     service = module.get<UsersService>(UsersService);

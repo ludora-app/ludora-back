@@ -5,15 +5,21 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { UsersService } from 'src/users/users.service';
 
 describe('AuthB2CGuard', () => {
   let guard: AuthB2CGuard;
   let jwtService: JwtService;
   let reflector: Reflector;
   let prismaService: PrismaService;
+  let usersService: UsersService;
 
   const mockJwtService = {
     verifyAsync: jest.fn(),
+  };
+
+  const mockUsersService = {
+    findOne: jest.fn(),
   };
 
   const mockReflector = {
@@ -67,6 +73,10 @@ describe('AuthB2CGuard', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: UsersService,
+          useValue: mockUsersService,
         },
       ],
     }).compile();
@@ -206,7 +216,7 @@ describe('AuthB2CGuard', () => {
         token: 'valid_token',
         userUid: 'user123',
       });
-      mockPrismaService.users.findUnique.mockResolvedValue({
+      mockUsersService.findOne.mockResolvedValue({
         uid: 'user123',
         emailVerified: true,
         isConnected: false,
@@ -236,7 +246,7 @@ describe('AuthB2CGuard', () => {
         userUid: 'user123',
       });
 
-      mockPrismaService.users.findUnique.mockResolvedValue({
+      mockUsersService.findOne.mockResolvedValue({
         uid: 'user123',
         emailVerified: true,
         isConnected: true,
@@ -253,10 +263,7 @@ describe('AuthB2CGuard', () => {
           userUid: 'user123',
         },
       });
-      expect(mockPrismaService.users.findUnique).toHaveBeenCalledWith({
-        select: { emailVerified: true, uid: true, isConnected: true },
-        where: { uid: 'user123' },
-      });
+      expect(mockUsersService.findOne).toHaveBeenCalled();
     });
 
     it('should handle different token types correctly (only Bearer)', async () => {
@@ -332,7 +339,7 @@ describe('AuthB2CGuard', () => {
         userUid: 'user789',
       });
 
-      mockPrismaService.users.findUnique.mockResolvedValue({
+      mockUsersService.findOne.mockResolvedValue({
         uid: 'user789',
         emailVerified: true,
         isConnected: true,

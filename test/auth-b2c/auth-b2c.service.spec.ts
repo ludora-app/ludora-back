@@ -75,6 +75,7 @@ describe('AuthB2CService', () => {
   };
 
   const mockUsersService = {
+    create: jest.fn(),
     createUser: jest.fn(),
     findOneByEmail: jest.fn(),
   };
@@ -147,14 +148,14 @@ describe('AuthB2CService', () => {
         ...registerDto,
       };
 
-      mockUsersService.createUser.mockResolvedValue(mockUser);
+      mockUsersService.create.mockResolvedValue(mockUser);
 
       jest.spyOn(service, 'sendVerificationEmail').mockResolvedValue();
 
       const result = await service.register(registerDto);
 
       expect(result).toEqual({ accessToken: 'mock_token', refreshToken: 'mock_token' });
-      expect(mockUsersService.createUser).toHaveBeenCalled();
+      expect(mockUsersService.create).toHaveBeenCalled();
       expect(service.sendVerificationEmail).toHaveBeenCalledWith('1', 'test@test.com');
     });
 
