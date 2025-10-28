@@ -7,16 +7,21 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 
 import { PaymentIntentDto } from './dto/input/payment-intent.dto';
+import { ConfirmPaymentIntentDto } from './dto/input/confirm-payment.dto';
+import { PaymentIntentTestDto } from './dto/input/payment-intent-test.dto';
 import { CreateStripeAccountDto } from './dto/input/create-stripe-account.dto';
 import { BankDetailsDto, UpdateBankDetailsDto } from './dto/input/bank-details.dto';
 
 @Injectable()
 export class PaymentService {
   private readonly stripe: Stripe;
+  private readonly logger = new Logger(PaymentService.name);
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly configService: ConfigService,
@@ -27,6 +32,7 @@ export class PaymentService {
       typescript: true,
     });
   }
+
   async createStripeAccountToken(userUid: string, stripeAccountData: CreateStripeAccountDto) {
     try {
       const user = await this.usersService.findOne(userUid, USERSELECT.createStripeAccountToken);
@@ -59,7 +65,6 @@ export class PaymentService {
           tos_shown_and_accepted: true, // Confirms that the user accepts the Stripe terms of service
         },
       });
-
       return accountToken.id;
     } catch (error) {
       throw new InternalServerErrorException(error.message);
@@ -71,7 +76,6 @@ export class PaymentService {
     stripeAccountData: CreateStripeAccountDto,
   ): Promise<void> {
     try {
-      const stripeAccountToken = await this.createStripeAccountToken(userUid, stripeAccountData);
       const existingUser = await this.usersService.findOne(
         userUid,
         USERSELECT.createStripeConnectAccount,
@@ -84,6 +88,9 @@ export class PaymentService {
       if (existingUser.stripeAccountId) {
         throw new BadRequestException('Stripe account already exists');
       }
+
+      const stripeAccountToken = await this.createStripeAccountToken(userUid, stripeAccountData);
+
       const stripeAccount = await this.stripe.accounts.create({
         account_token: stripeAccountToken,
         business_profile: {
@@ -101,8 +108,11 @@ export class PaymentService {
       });
 
       await this.usersService.addStripeAccountId(userUid, stripeAccount.id);
+
+      this.logger.log(`Stripe account created for user ${userUid}: ${stripeAccount.id}`);
     } catch (error) {
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(`Error creating Stripe account for user ${userUid}: ${error.message}`);
+      throw new BadRequestException(error.message);
     }
   }
 
@@ -161,16 +171,55 @@ export class PaymentService {
     try {
       const paymentIntent = await this.stripe.paymentIntents.create({
         amount,
-        confirm: true,
         currency,
         payment_method: paymentMethodId,
+        // Add to support all payment types
+        automatic_payment_methods: {
+          allow_redirects: 'never', // Important for mobile
+          enabled: true,
+        },
+        // The mobile client will confirm after presenting the wallet
+        confirm: false,
+        // Configuration for Stripe Connect
         transfer_data: {
           destination: connectedAccountId,
+        },
+        // Useful metadata for tracking
+        metadata: {
+          platform: 'mobile',
         },
       });
 
       return paymentIntent;
     } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  /**
+   * Confirm an existing PaymentIntent (used by mobile wallets)
+   * @param confirmPaymentIntent - DTO containing the PaymentIntent ID and optional PaymentMethod ID
+   */
+  async confirmPaymentIntent(
+    confirmPaymentIntent: ConfirmPaymentIntentDto,
+  ): Promise<Stripe.PaymentIntent> {
+    const { paymentIntentId, paymentMethodId } = confirmPaymentIntent;
+    try {
+      const confirmParams: Stripe.PaymentIntentConfirmParams = {};
+
+      if (paymentMethodId) {
+        confirmParams.payment_method = paymentMethodId;
+      }
+
+      const paymentIntent = await this.stripe.paymentIntents.confirm(
+        paymentIntentId,
+        confirmParams,
+      );
+
+      this.logger.log(`PaymentIntent confirmed: ${paymentIntentId}`);
+      return paymentIntent;
+    } catch (error) {
+      this.logger.error(`Error confirming PaymentIntent: ${error.message}`);
       throw new BadRequestException(error.message);
     }
   }
@@ -325,6 +374,53 @@ export class PaymentService {
 
       await this.stripe.accounts.deleteExternalAccount(user.stripeAccountId, bankAccountId);
     } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  // ===== TESTING METHODS (DEVELOPMENT ONLY) =====
+
+  /**
+   * Retrieve a test PaymentMethod predefined by Stripe
+   * Use the official test PaymentMethods instead of creating with raw card data
+   * Documentation: https://docs.stripe.com/testing#cards
+   */
+  async createPaymentMethodForTesting(): Promise<Stripe.PaymentMethod> {
+    try {
+      // Use a test PaymentMethod predefined by Stripe
+      // pm_card_visa is a test PaymentMethod that simulates a valid Visa card
+      const testPaymentMethodId = 'pm_card_visa';
+
+      const paymentMethod = await this.stripe.paymentMethods.retrieve(testPaymentMethodId);
+
+      this.logger.log(`Test PaymentMethod retrieved: ${paymentMethod.id}`);
+      return paymentMethod;
+    } catch (error) {
+      this.logger.error(`Error retrieving test PaymentMethod: ${error.message}`);
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  /**
+   * Create a complete PaymentIntent with an automatically generated PaymentMethod
+   * Useful for tests without frontend
+   */
+  async createPaymentIntentWithTestCard(
+    paymentIntent: PaymentIntentTestDto,
+  ): Promise<Stripe.PaymentIntent> {
+    try {
+      // Create a test PaymentMethod
+      const testPaymentMethod = await this.createPaymentMethodForTesting();
+
+      // Create the PaymentIntent with the test PaymentMethod
+      const fullPaymentIntent: PaymentIntentDto = {
+        ...paymentIntent,
+        paymentMethodId: testPaymentMethod.id,
+      };
+
+      return await this.createPaymentIntent(fullPaymentIntent);
+    } catch (error) {
+      this.logger.error(`Error creating PaymentIntent with test card: ${error.message}`);
       throw new BadRequestException(error.message);
     }
   }

@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { SuccessTypeDto } from 'src/interfaces/success-type';
 import { ResponseTypeDto } from 'src/interfaces/response-type';
+import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import {
@@ -28,6 +29,8 @@ import {
 import { PaymentService } from './payment.service';
 import { PaymentIntentDto } from './dto/input/payment-intent.dto';
 import { BankAccountDataDto } from './dto/output/stripe-responses.dto';
+import { ConfirmPaymentIntentDto } from './dto/input/confirm-payment.dto';
+import { PaymentIntentTestDto } from './dto/input/payment-intent-test.dto';
 import { CreateStripeAccountDto } from './dto/input/create-stripe-account.dto';
 import { StripeAccountResponseDto } from './dto/output/stripe-connect-response.dto';
 import { BankDetailsDto, UpdateBankDetailsDto } from './dto/input/bank-details.dto';
@@ -84,15 +87,33 @@ export class PaymentController {
   }
 
   @Post('payment-intent')
-  async createPaymentIntent(@Body() { amount, connectedAccountId, paymentMethodId }) {
-    const currency = 'EUR';
-    const paymentIntent: PaymentIntentDto = {
-      amount,
-      connectedAccountId,
-      currency,
-      paymentMethodId,
-    };
-    return this.paymentService.createPaymentIntent(paymentIntent);
+  @ApiOperation({
+    summary: 'Create a payment intent with Stripe',
+  })
+  @ApiOkResponse({
+    description: 'Payment intent created successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error creating payment intent',
+    type: BadRequestException,
+  })
+  async createPaymentIntent(@Body() paymentIntentDto: PaymentIntentDto) {
+    return this.paymentService.createPaymentIntent(paymentIntentDto);
+  }
+
+  @Post('payment-intent/confirm')
+  @ApiOperation({
+    summary: 'Confirm a payment intent (for mobile wallets)',
+  })
+  @ApiOkResponse({
+    description: 'Payment intent confirmed successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error confirming payment intent',
+    type: BadRequestException,
+  })
+  async confirmPaymentIntent(@Body() confirmPaymentIntent: ConfirmPaymentIntentDto) {
+    return this.paymentService.confirmPaymentIntent(confirmPaymentIntent);
   }
 
   // add bank account to connect account
@@ -203,5 +224,39 @@ export class PaymentController {
   async deleteBankAccount(@Param('bankAccountId') bankAccountId: string, @Req() request: Request) {
     const userId = request['user'].uid;
     return this.paymentService.deleteBankAccount(userId, bankAccountId);
+  }
+
+  // ===== TESTING ENDPOINTS (DEVELOPMENT ONLY) =====
+
+  @UseGuards(DevOnlyGuard)
+  @Post('payment-intent/test')
+  @ApiOperation({
+    summary: 'Create a payment intent with a test card (for development only)',
+  })
+  @ApiOkResponse({
+    description: 'Payment intent created successfully with test card',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error creating payment intent with test card',
+    type: BadRequestException,
+  })
+  async createPaymentIntentWithTestCard(@Body() paymentIntentData: PaymentIntentTestDto) {
+    return this.paymentService.createPaymentIntentWithTestCard(paymentIntentData);
+  }
+
+  @UseGuards(DevOnlyGuard)
+  @Post('payment-method/test')
+  @ApiOperation({
+    summary: 'Create a test payment method (for development only)',
+  })
+  @ApiOkResponse({
+    description: 'Test payment method created successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error creating test payment method',
+    type: BadRequestException,
+  })
+  async createTestPaymentMethod() {
+    return this.paymentService.createPaymentMethodForTesting();
   }
 }
