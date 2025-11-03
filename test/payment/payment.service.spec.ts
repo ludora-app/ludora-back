@@ -205,7 +205,7 @@ describe('PaymentService', () => {
       expect(mockUsersService.addStripeAccountId).toHaveBeenCalledWith(userId, 'account-1');
     });
 
-    it('should throw InternalServerErrorException if Stripe account already exists', async () => {
+    it('should throw BadRequestException if Stripe account already exists', async () => {
       const mockUser = {
         uid: userId,
         email: 'john@example.com',
@@ -214,13 +214,11 @@ describe('PaymentService', () => {
         stripeAccountId: 'existing-account',
       };
 
-      mockUsersService.findOne
-        .mockResolvedValueOnce(mockUser) // First call in createStripeAccountToken
-        .mockResolvedValueOnce(mockUser); // Second call with existing account
+      mockUsersService.findOne.mockResolvedValue(mockUser);
       mockStripe.tokens.create.mockResolvedValue({ id: 'token-1' });
 
       await expect(service.createStripeConnectAccount(userId, stripeAccountData)).rejects.toThrow(
-        InternalServerErrorException,
+        BadRequestException,
       );
     });
   });
@@ -311,11 +309,18 @@ describe('PaymentService', () => {
       expect(result).toEqual(mockPaymentIntent);
       expect(mockStripe.paymentIntents.create).toHaveBeenCalledWith({
         amount: 1000,
-        confirm: true,
         currency: 'eur',
         payment_method: 'pm_1',
+        automatic_payment_methods: {
+          allow_redirects: 'never',
+          enabled: true,
+        },
+        confirm: false,
         transfer_data: {
           destination: 'account-1',
+        },
+        metadata: {
+          platform: 'mobile',
         },
       });
     });

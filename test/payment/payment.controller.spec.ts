@@ -1,10 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { PaymentController } from 'src/payment/payment.controller';
 import { PaymentService } from 'src/payment/payment.service';
 import { PaymentIntentDto } from 'src/payment/dto/input/payment-intent.dto';
 import { BankDetailsDto, UpdateBankDetailsDto } from 'src/payment/dto/input/bank-details.dto';
 import { CreateStripeAccountDto } from 'src/payment/dto/input/create-stripe-account.dto';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 
 describe('PaymentController', () => {
   let controller: PaymentController;
@@ -22,7 +24,20 @@ describe('PaymentController', () => {
     deleteBankAccount: jest.fn(),
   };
 
+  const mockConfigService = {
+    get: jest.fn((key: string) => {
+      if (key === 'NODE_ENV') {
+        return 'test';
+      }
+      return undefined;
+    }),
+  };
+
   const mockAuthGuard = {
+    canActivate: jest.fn(() => true),
+  };
+
+  const mockDevOnlyGuard = {
     canActivate: jest.fn(() => true),
   };
 
@@ -41,10 +56,16 @@ describe('PaymentController', () => {
           provide: PaymentService,
           useValue: mockStripeService,
         },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
+        },
       ],
     })
       .overrideGuard(AuthB2CGuard)
       .useValue(mockAuthGuard)
+      .overrideGuard(DevOnlyGuard)
+      .useValue(mockDevOnlyGuard)
       .compile();
 
     controller = module.get<PaymentController>(PaymentController);
@@ -115,10 +136,11 @@ describe('PaymentController', () => {
   // });
 
   describe('createPaymentIntent', () => {
-    const paymentIntentData = {
+    const paymentIntentData: PaymentIntentDto = {
       amount: 1000,
       connectedAccountId: 'account-1',
       paymentMethodId: 'pm_1',
+      currency: 'eur',
     };
 
     it('should create payment intent', async () => {
@@ -133,10 +155,7 @@ describe('PaymentController', () => {
       const result = await controller.createPaymentIntent(paymentIntentData);
 
       expect(result).toEqual(expectedResult);
-      expect(mockStripeService.createPaymentIntent).toHaveBeenCalledWith({
-        ...paymentIntentData,
-        currency: 'EUR',
-      });
+      expect(mockStripeService.createPaymentIntent).toHaveBeenCalledWith(paymentIntentData);
     });
   });
 
