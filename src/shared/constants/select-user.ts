@@ -3,11 +3,28 @@
 import { Prisma } from '@prisma/client';
 
 export const USERSELECT: Record<string, Prisma.UsersSelect> = {
+  createStripeAccountToken: {
+    birthdate: true,
+    email: true,
+    firstname: true,
+    lastname: true,
+    phone: true,
+  },
+
+  createStripeConnectAccount: {
+    birthdate: true,
+    email: true,
+    firstname: true,
+    lastname: true,
+    stripeAccountId: true,
+    uid: true,
+  },
+
   findAll: {
     email: true,
     firstname: true,
     sex: true,
-    stripeAccountUid: true,
+    stripeAccountId: true,
     type: true,
     uid: true,
   },
@@ -21,15 +38,19 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     isConnected: true,
     lastname: true,
     phone: true,
-    stripeAccountUid: true,
+    stripeAccountId: true,
     type: true,
     uid: true,
   },
+
   findOne: {
     bio: true,
     firstname: true,
     imageUrl: true,
     lastname: true,
     uid: true,
+  },
+  stripeAccountId: {
+    stripeAccountId: true,
   },
 };

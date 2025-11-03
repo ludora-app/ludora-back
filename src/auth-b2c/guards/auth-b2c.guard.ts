@@ -63,10 +63,6 @@ export class AuthB2CGuard implements CanActivate {
         throw new UnauthorizedException('User not found');
       }
 
-      if (!user.isConnected) {
-        throw new UnauthorizedException('User account disabled');
-      }
-
       request['user'] = payload;
       return true;
     } catch (error) {

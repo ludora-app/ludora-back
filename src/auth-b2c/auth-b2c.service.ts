@@ -111,7 +111,7 @@ export class AuthB2CService {
       }
 
       const payload = { uid: user.uid, ...(deviceUid && { deviceUid }) };
-      const accessToken = this.jwt.sign(payload, { expiresIn: '15m' });
+      const accessToken = this.jwt.sign(payload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
       const refreshToken = this.jwt.sign(payload, { expiresIn: '1year' });
 
       const existingTokens = await this.prismaService.userTokens.findMany({
@@ -408,7 +408,7 @@ export class AuthB2CService {
 
       // Générer de nouveaux tokens
       const newPayload = { uid: userUid, ...(deviceUid && { deviceUid }) };
-      const newAccessToken = this.jwt.sign(newPayload, { expiresIn: '15m' });
+      const newAccessToken = this.jwt.sign(newPayload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
       const newRefreshToken = this.jwt.sign(newPayload, { expiresIn: '7d' });
 
       // Mettre à jour les tokens en base de données

@@ -89,23 +89,23 @@ enum Game_modes {
 }
 
 model Users {
-  uid              String    @id @default(cuid())
-  email            String    @unique
-  password         String?
-  firstname        String?
-  lastname         String?
-  birthdate        DateTime?
-  sex              Sex?      @map("sex")
-  phone            String?
-  imageUrl         String?   @map("image_url")
-  bio              String?
-  provider         Provider  @default(LUDORA)
-  isConnected      Boolean   @default(true) @map("is_connected")
-  stripeAccountUid String?   @unique @map("stripe_account_uid")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
-  emailVerified    Boolean   @default(false) @map("email_verified")
-  type             User_type @default(USER)
+  uid             String    @id @default(cuid())
+  email           String    @unique
+  password        String?
+  firstname       String?
+  lastname        String?
+  birthdate       DateTime?
+  sex             Sex?      @map("sex")
+  phone           String?
+  imageUrl        String?   @map("image_url")
+  bio             String?
+  provider        Provider  @default(LUDORA)
+  isConnected     Boolean   @default(true) @map("is_connected")
+  stripeAccountId String?   @unique @map("stripe_account_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  emailVerified   Boolean   @default(false) @map("email_verified")
+  type            User_type @default(USER)
 
   messages            Messages[]
   // Event               Events[]

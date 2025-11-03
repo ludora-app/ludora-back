@@ -8,6 +8,7 @@ import { AppController } from './app.controller';
 import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SharedModule } from './shared/shared.module';
+import { PaymentModule } from './payment/payment.module';
 import { AuthB2CModule } from './auth-b2c/auth-b2c.module';
 import { AuthB2BModule } from './auth-b2b/auth-b2b.module';
 import { SessionsModule } from './sessions/sessions.module';
@@ -37,6 +38,7 @@ import { SessionInvitationsModule } from './session-invitations/session-invitati
     SessionPlayersModule,
     AuthB2BModule,
     PartnersModule,
+    PaymentModule,
   ],
 
   providers: [AppService],

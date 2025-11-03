@@ -201,32 +201,6 @@ describe('AuthB2CGuard', () => {
       );
     });
 
-    it('should throw UnauthorizedException when user account is disabled', async () => {
-      const { context, mockGetRequest } = createMockExecutionContext();
-      mockReflector.getAllAndOverride.mockReturnValue(false);
-      const mockRequest = {
-        headers: {
-          authorization: 'Bearer valid_token',
-        },
-      };
-      mockGetRequest.mockReturnValue(mockRequest);
-      mockJwtService.verifyAsync.mockResolvedValue({ uid: 'user123' });
-      mockPrismaService.userTokens.findFirst.mockResolvedValue({
-        uid: 'token123',
-        token: 'valid_token',
-        userUid: 'user123',
-      });
-      mockUsersService.findOne.mockResolvedValue({
-        uid: 'user123',
-        emailVerified: true,
-        isConnected: false,
-      });
-
-      await expect(guard.canActivate(context)).rejects.toThrow(
-        new UnauthorizedException('User account disabled'),
-      );
-    });
-
     it('should return true and attach user to request when token is valid', async () => {
       const { context, mockGetRequest } = createMockExecutionContext();
       mockReflector.getAllAndOverride.mockReturnValue(false);
