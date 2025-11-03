@@ -131,6 +131,7 @@ model Users {
   userTokens         UserTokens[]
   refreshTokens      RefreshTokens[]
 
+  @@index([createdAt])
   @@schema("auth")
 }
 
@@ -143,6 +144,7 @@ model EmailVerification {
 
   user Users @relation(fields: [userUid], references: [uid], onDelete: Cascade)
 
+  @@index([userUid])
   @@map("Email_verification")
   @@schema("auth")
 }
@@ -159,6 +161,7 @@ model UserTokens {
   user    Users     @relation(fields: [userUid], references: [uid])
   partner Partners? @relation(fields: [organisationUid], references: [uid], onDelete: SetNull)
 
+  @@index([userUid])
   @@map("User_tokens")
   @@schema("auth")
 }
@@ -176,6 +179,7 @@ model RefreshTokens {
   user    Users     @relation(fields: [userUid], references: [uid], onDelete: Cascade)
   partner Partners? @relation(fields: [organisationUid], references: [uid], onDelete: SetNull)
 
+  @@index([userUid])
   @@map("Refresh_tokens")
   @@schema("auth")
 }
@@ -196,6 +200,7 @@ model UserRatings {
 
   @@id([evaluatorUid, evaluatedUid])
   @@unique([evaluatorUid, evaluatedUid])
+  @@index([evaluatedUid])
   @@map("User_ratings")
   @@schema("ratings")
 }
@@ -249,6 +254,7 @@ model PartnerOpeningHours {
   partner Partners @relation(fields: [partnerUid], references: [uid], onDelete: Cascade)
 
   @@unique([partnerUid, dayOfWeek])
+  @@index([partnerUid])
   @@map("Partner_opening_hours")
   @@schema("infrastructure")
 }
@@ -263,6 +269,8 @@ model PartnerSports {
   sportRelation Sports   @relation(fields: [sport], references: [name])
 
   @@unique([partnerUid, sport])
+  @@index([partnerUid])
+  @@index([sport])
   @@map("Partner_sports")
   @@schema("infrastructure")
 }
@@ -298,6 +306,9 @@ model Fields {
   sportRelation Sports        @relation(fields: [sport], references: [name])
   sessions      Sessions[]
 
+  @@index([partnerUid])
+  @@index([longitude, latitude])
+  @@index([sport])
   @@schema("infrastructure")
 }
 
@@ -311,6 +322,7 @@ model FieldImages {
 
   field Fields @relation(fields: [fieldUid], references: [uid])
 
+  @@index([fieldUid])
   @@map("Field_images")
   @@schema("infrastructure")
 }
@@ -340,6 +352,9 @@ model Sessions {
   sessionPlayers SessionPlayers[]
   field          Fields           @relation(fields: [fieldUid], references: [uid])
 
+  @@index([fieldUid])
+  @@index([startDate, endDate])
+  @@index([sport])
   @@schema("sessions")
 }
 
@@ -356,6 +371,8 @@ model SessionInvitations {
   receiver Users    @relation(fields: [receiverUid], references: [uid], name: "receiverRelation")
 
   @@unique([sessionUid, senderUid, receiverUid])
+  @@index([sessionUid])
+  @@index([receiverUid])
   @@map("Session_invitations")
   @@schema("sessions")
 }
@@ -403,6 +420,8 @@ model SessionPlayers {
   user    Users        @relation(fields: [userUid], references: [uid])
 
   @@unique([sessionUid, teamUid, userUid])
+  @@index([sessionUid])
+  @@index([userUid])
   @@map("Session_players")
   @@schema("sessions")
 }
@@ -436,6 +455,8 @@ model Messages {
   sender       Users         @relation(fields: [senderUid], references: [uid])
   conversation Conversations @relation(fields: [conversationUid], references: [uid])
 
+  @@index([conversationUid])
+  @@index([createdAt])
   @@schema("social")
 }
 
@@ -453,6 +474,8 @@ model ConversationOptions {
   conversation Conversations @relation(fields: [conversationUid], references: [uid])
 
   @@unique([conversationUid, userUid])
+  @@index([conversationUid])
+  @@index([userUid])
   @@map("Conversation_options")
   @@schema("social")
 }
@@ -466,6 +489,7 @@ model ConversationMembers {
   user         Users         @relation(fields: [userUid], references: [uid])
 
   @@id([conversationUid, userUid])
+  @@index([userUid])
   @@map("Conversation_members")
   @@schema("social")
 }
