@@ -3,7 +3,7 @@ import { Controller, Get, Post, Query, UploadedFile, UseInterceptors } from '@ne
 
 import { StorageService } from './storage.service';
 
-@Controller('aws')
+@Controller('storage')
 export class StorageController {
   constructor(private readonly storageService: StorageService) {}
 

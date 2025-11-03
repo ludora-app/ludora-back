@@ -13,4 +13,4 @@ import { PaymentController } from './payment.controller';
   imports: [UsersModule, SharedModule],
   providers: [PaymentService, PrismaService, UsersService, ImagesService],
 })
-export class StripeModule {}
+export class PaymentModule {}
