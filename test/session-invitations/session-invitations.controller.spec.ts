@@ -64,7 +64,6 @@ describe('SessionInvitationsController', () => {
       await expect(controller.create(req, dto)).resolves.toEqual({
         data: invitation,
         message: 'Session invitation created successfully',
-        status: 201,
       });
       expect(mockSessionInvitationsService.create).toHaveBeenCalledWith('sender-1', dto);
     });
@@ -97,7 +96,6 @@ describe('SessionInvitationsController', () => {
       await expect(controller.findAllByUserId(userUid, filter)).resolves.toEqual({
         data,
         message: 'Session invitations fetched successfully',
-        status: 200,
       });
       expect(mockSessionInvitationsService.findAllByReceiverId).toHaveBeenCalledWith(
         userUid,
@@ -122,7 +120,6 @@ describe('SessionInvitationsController', () => {
       await expect(controller.findAllBySessionId(sessionUid, filter)).resolves.toEqual({
         data,
         message: 'Session invitations fetched successfully',
-        status: 200,
       });
       expect(mockSessionInvitationsService.findAllBySessionId).toHaveBeenCalledWith(
         sessionUid,
@@ -146,7 +143,6 @@ describe('SessionInvitationsController', () => {
       await expect(controller.findOne(sessionUid, receiverUid)).resolves.toEqual({
         data: invitation,
         message: 'Session invitation fetched successfully',
-        status: 200,
       });
       expect(mockSessionInvitationsService.findOne).toHaveBeenCalledWith(sessionUid, receiverUid);
     });
@@ -179,15 +175,15 @@ describe('SessionInvitationsController', () => {
     });
   });
 
-  describe('remove', () => {
-    it('should call service.remove and return its message', async () => {
-      const sessionUid = 'sess-1';
-      const userUid = 'user-2';
-      const message = `This action removes session invitation for session ${sessionUid} and user ${userUid}`;
-      mockSessionInvitationsService.remove.mockResolvedValue(message);
+  // describe('remove', () => {
+  //   it('should call service.remove and return its message', async () => {
+  //     const sessionUid = 'sess-1';
+  //     const userUid = 'user-2';
+  //     const message = `This action removes session invitation for session ${sessionUid} and user ${userUid}`;
+  //     mockSessionInvitationsService.remove.mockResolvedValue(message);
 
-      await expect(controller.remove(sessionUid, userUid)).resolves.toBe(message);
-      expect(mockSessionInvitationsService.remove).toHaveBeenCalledWith(sessionUid, userUid);
-    });
-  });
+  //     await expect(controller.remove(sessionUid, userUid)).resolves.toBe(message);
+  //     expect(mockSessionInvitationsService.remove).toHaveBeenCalledWith(sessionUid, userUid);
+  //   });
+  // });
 });

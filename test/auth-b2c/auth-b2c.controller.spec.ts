@@ -70,7 +70,6 @@ describe('AuthB2CController', () => {
       expect(result).toEqual({
         data: { accessToken: 'mock_token', refreshToken: 'mock_refresh_token' },
         message: 'User created successfully',
-        status: 201,
       });
       expect(mockAuthB2CService.register).toHaveBeenCalledWith(registerDto);
     });
@@ -103,7 +102,6 @@ describe('AuthB2CController', () => {
       expect(result).toEqual({
         data: { accessToken: 'mock_token', refreshToken: 'mock_refresh_token' },
         message: 'User created successfully',
-        status: 201,
       });
       expect(mockAuthB2CService.register).toHaveBeenCalled();
     });
@@ -126,7 +124,6 @@ describe('AuthB2CController', () => {
       expect(result).toEqual({
         data: { accessToken: 'mock_token', refreshToken: 'mock_refresh_token' },
         message: 'Token created successfully',
-        status: 200,
       });
       expect(mockAuthB2CService.login).toHaveBeenCalledWith(loginDto);
     });
@@ -178,8 +175,7 @@ describe('AuthB2CController', () => {
       const result = await controller.verifyEmailCode(mockRequest as any, dto);
 
       expect(result).toEqual({
-        message: 'Email vérifié avec succès',
-        status: 200,
+        message: 'Email verified successfully',
       });
       expect(mockAuthB2CService.verifyEmailCode).toHaveBeenCalledWith('1', '123456');
     });
@@ -196,8 +192,7 @@ describe('AuthB2CController', () => {
       const result = await controller.resendVerificationCode(mockRequest as any);
 
       expect(result).toEqual({
-        message: 'Nouveau code de vérification envoyé',
-        status: 200,
+        message: 'Verification code resent successfully',
       });
       expect(mockAuthB2CService.resendVerificationCode).toHaveBeenCalledWith('1');
     });
@@ -217,7 +212,6 @@ describe('AuthB2CController', () => {
       expect(result).toEqual({
         data: { accessToken: 'new_access_token', refreshToken: 'new_refresh_token' },
         message: 'Tokens refreshed successfully',
-        status: 200,
       });
       expect(mockAuthB2CService.refreshToken).toHaveBeenCalledWith(refreshTokenDto);
     });
@@ -235,7 +229,6 @@ describe('AuthB2CController', () => {
 
       expect(result).toEqual({
         message: 'Logged out successfully',
-        status: 200,
       });
       expect(mockAuthB2CService.logout).toHaveBeenCalledWith('1', 'device123');
     });
@@ -253,7 +246,6 @@ describe('AuthB2CController', () => {
 
       expect(result).toEqual({
         message: 'Logged out from all devices successfully',
-        status: 200,
       });
       expect(mockAuthB2CService.logoutAllDevices).toHaveBeenCalledWith('1');
     });

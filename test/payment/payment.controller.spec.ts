@@ -123,7 +123,7 @@ describe('PaymentController', () => {
   //   it('should delete Stripe Connect account', async () => {
   //     const expectedResult = {
   //       message: 'account deleted successfully',
-  //       status: 200,
+  //
   //     };
 
   //     mockStripeService.deleteStripeConnectAccount.mockResolvedValue(expectedResult);
@@ -201,7 +201,6 @@ describe('PaymentController', () => {
         expect(result).toEqual({
           data: mockData,
           message: 'Bank accounts fetched successfully',
-          status: 200,
         });
         expect(mockStripeService.getBankAccountsList).toHaveBeenCalledWith('user-1');
       });
@@ -227,8 +226,7 @@ describe('PaymentController', () => {
 
         expect(result).toEqual({
           data: mockBankAccount,
-          message: 'Bank account fetched successfully',
-          status: 200,
+          message: 'Bank account retrieved successfully',
         });
         expect(mockStripeService.getBankAccount).toHaveBeenCalledWith('user-1', bankAccountId);
       });

@@ -70,7 +70,6 @@ describe('SessionTeamsController', () => {
 
       expect(mockSessionsService.findOne).toHaveBeenCalledWith('session-1');
       expect(mockSessionTeamsService.findTeamsBySessionUid).toHaveBeenCalledWith('session-1');
-      expect(result.status).toBe(200);
       expect(result.data.items.length).toBe(1);
       expect(result.message).toContain('session-1');
     });
@@ -112,7 +111,6 @@ describe('SessionTeamsController', () => {
       const result = await controller.findOneTeamByUid('team-1');
 
       expect(mockSessionTeamsService.findOneByUid).toHaveBeenCalledWith('team-1');
-      expect(result.status).toBe(200);
       expect(result.data.uid).toBe('team-1');
     });
 
