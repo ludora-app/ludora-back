@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { makeCounterProvider, PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 import { EmailsService } from './emails/emails.service';
-import { ImagesService } from './images/images.service';
 import { MetricsService } from './metrics/metrics.service';
 import { StorageService } from './storage/storage.service';
 import { EmailsController } from './emails/emails.controller';
@@ -17,7 +16,6 @@ import { GeolocalisationService } from './geolocalisation/geolocalisation.servic
   exports: [
     EmailsService,
     StorageService,
-    ImagesService,
     WebsocketsGateway,
     WebsocketsService,
     GeolocalisationService,
@@ -30,7 +28,6 @@ import { GeolocalisationService } from './geolocalisation/geolocalisation.servic
   providers: [
     EmailsService,
     StorageService,
-    ImagesService,
     WebsocketsGateway,
     WebsocketsService,
     MetricsService,

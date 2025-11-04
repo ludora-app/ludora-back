@@ -1,7 +1,9 @@
 import { Sessions } from '@prisma/client';
-import { Sport } from 'src/shared/constants/constants';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { StorageService } from 'src/shared/storage/storage.service';
+import { StorageFolderName, Sport } from 'src/shared/constants/constants';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';
+import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { SessionPlayersService } from 'src/session-players/session-players.service';
 
@@ -16,6 +18,7 @@ export class SessionsService {
     private readonly prisma: PrismaService,
     private readonly sessionTeamsService: SessionTeamsService,
     private readonly sessionPlayersService: SessionPlayersService,
+    private readonly storageService: StorageService,
   ) {}
 
   async create(createSessionDto: CreateSessionDto): Promise<Sessions> {
@@ -298,5 +301,41 @@ export class SessionsService {
 
   remove(uid: string) {
     return `This action removes a #${uid} session`;
+  }
+
+  async getImagesBySessionUid(sessionUid: string): Promise<ImageResponseDto[]> {
+    const images = await this.prisma.sessionImages.findMany({
+      orderBy: { createdAt: 'asc' },
+      where: { sessionUid },
+    });
+
+    if (!images || images.length === 0) {
+      return [];
+    }
+    const response = await Promise.all(
+      images.map(async (image) => {
+        const url = await this.storageService.getSignedUrl(StorageFolderName.SESSIONS, image.url);
+        return { order: image.order, url };
+      }),
+    );
+
+    return response;
+  }
+
+  async getFirstImageBySessionUid(sessionUid: string): Promise<ImageResponseDto | null> {
+    const image = await this.prisma.sessionImages.findFirst({
+      where: {
+        OR: [{ order: 1 }, { order: null }, { order: undefined }],
+        sessionUid,
+      },
+    });
+
+    if (!image) {
+      return null;
+    }
+
+    const url = await this.storageService.getSignedUrl(StorageFolderName.SESSIONS, image.url);
+
+    return { order: image.order, url };
   }
 }

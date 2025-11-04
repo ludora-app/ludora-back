@@ -1,4 +1,4 @@
-export * from 'src/shared/images/dto/create-image.dto';
+export * from 'src/shared/images/dto/input/create-image.dto';
 export * from './input/login-b2c.dto';
 export * from './input/refresh-token.dto';
 export * from './input/register-b2c.dto';

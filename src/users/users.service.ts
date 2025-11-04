@@ -2,9 +2,9 @@ import * as argon2 from 'argon2';
 import { CreateImageDto } from 'src/auth-b2c/dto';
 import { Prisma, Provider, Users } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { S3FoldersName } from 'src/shared/constants/constants';
 import { EmailsService } from 'src/shared/emails/emails.service';
-import { ImagesService } from 'src/shared/images/images.service';
+import { StorageFolderName } from 'src/shared/constants/constants';
+import { StorageService } from 'src/shared/storage/storage.service';
 import {
   BadRequestException,
   ConflictException,
@@ -19,8 +19,8 @@ import { CreateUserDto, UpdatePasswordDto, UpdateUserDto, UserFilterDto } from '
 export class UsersService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly imageService: ImagesService,
     private readonly emailsService: EmailsService,
+    private readonly storageService: StorageService,
   ) {}
 
   async create(
@@ -47,7 +47,11 @@ export class UsersService {
     let imageUrl = { data: '' };
 
     if (createImageDto) {
-      imageUrl = await this.imageService.create(S3FoldersName.USERS, createImageDto);
+      imageUrl = await this.storageService.upload(
+        StorageFolderName.USERS,
+        createImageDto.name,
+        createImageDto.file,
+      );
     }
 
     const newUser = await prisma.users.create({

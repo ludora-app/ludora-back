@@ -1,7 +1,11 @@
-// ? This files contains the common select objects for the users service
-
 import { Prisma } from '@prisma/client';
-
+/**
+ * This object contains the common select objects for the users service
+ * @example
+ * const select = USERSELECT.findMe;
+ * const user = await this.usersService.findOne(uid, select);
+ * return { data: user, message: 'User fetched successfully' };
+ */
 export const USERSELECT: Record<string, Prisma.UsersSelect> = {
   createStripeAccountToken: {
     birthdate: true,

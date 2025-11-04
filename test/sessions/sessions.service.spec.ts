@@ -10,6 +10,7 @@ import { UpdateSessionDto } from '../../src/sessions/dto/input/update-session.dt
 import { SessionsService } from './../../src/sessions/sessions.service';
 import { SessionPlayersService } from '../../src/session-players/session-players.service';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';
+import { StorageService } from 'src/shared/storage/storage.service';
 
 jest.mock('src/shared/utils/date.utils', () => ({
   DateUtils: {
@@ -22,6 +23,10 @@ jest.mock('src/shared/utils/date.utils', () => ({
     }),
   },
 }));
+const mockStorageService = {
+  upload: jest.fn(),
+  getSignedUrl: jest.fn(),
+};
 
 describe('SessionsService', () => {
   let service: SessionsService;
@@ -75,6 +80,10 @@ describe('SessionsService', () => {
           useValue: {
             addPlayerToSession: jest.fn(),
           },
+        },
+        {
+          provide: StorageService,
+          useValue: mockStorageService,
         },
       ],
     }).compile();

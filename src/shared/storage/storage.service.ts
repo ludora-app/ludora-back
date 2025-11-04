@@ -36,7 +36,7 @@ export class StorageService {
         }),
       );
 
-      const response = { message: processedFilename };
+      const response = { data: processedFilename };
       return response;
     } catch (error) {
       console.error('Erreur upload:', error);
