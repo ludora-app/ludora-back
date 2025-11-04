@@ -14,7 +14,7 @@ export enum Sport {
   PING_PONG = 'PING-PONG',
 }
 
-export enum S3FoldersName {
+export enum StorageFolderName {
   SESSIONS = 'sessions',
   USERS = 'users',
   PARTNERS = 'partners',

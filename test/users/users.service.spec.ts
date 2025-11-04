@@ -4,7 +4,7 @@ import { Sex } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
-import { ImagesService } from 'src/shared/images/images.service';
+import { StorageService } from 'src/shared/storage/storage.service';
 import { UsersService } from 'src/users/users.service';
 
 // Mock argon2
@@ -32,9 +32,9 @@ describe('UsersService', () => {
     $transaction: jest.fn((callback) => callback(mockPrismaService)),
   };
 
-  const mockImagesService = {
-    createUserImage: jest.fn(),
-    getProfilePic: jest.fn(),
+  const mockStorageService = {
+    upload: jest.fn(),
+    getSignedUrl: jest.fn(),
   };
 
   const mockEmailsService = {
@@ -50,8 +50,8 @@ describe('UsersService', () => {
           useValue: mockPrismaService,
         },
         {
-          provide: ImagesService,
-          useValue: mockImagesService,
+          provide: StorageService,
+          useValue: mockStorageService,
         },
         {
           provide: EmailsService,
@@ -62,7 +62,7 @@ describe('UsersService', () => {
 
     service = module.get<UsersService>(UsersService);
     module.get<PrismaService>(PrismaService);
-    module.get<ImagesService>(ImagesService);
+    module.get<StorageService>(StorageService);
     module.get<EmailsService>(EmailsService);
   });
 
@@ -95,7 +95,7 @@ describe('UsersService', () => {
         phone: '1234567890',
         sex: Sex.MALE,
       });
-      mockImagesService.createUserImage.mockResolvedValueOnce({
+      mockStorageService.upload.mockResolvedValueOnce({
         data: 'image-url',
       });
 
