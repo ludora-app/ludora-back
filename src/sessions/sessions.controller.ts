@@ -4,6 +4,7 @@ import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
 import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import {
   ApiBadRequestResponse,
+  ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -40,17 +41,14 @@ export class SessionsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new session' })
-  @ApiOkResponse({ type: ResponseTypeDto<Sessions> })
+  @ApiCreatedResponse({ type: ResponseTypeDto<Sessions> })
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  @HttpCode(HttpStatus.CREATED)
   async create(@Body() createSessionDto: CreateSessionDto): Promise<ResponseType<SessionResponse>> {
     const newSession = await this.sessionsService.create(createSessionDto);
 
-    return {
-      data: newSession,
-      message: 'Session created successfully',
-      status: 201,
-    };
+    return { data: newSession, message: 'Session created successfully' };
   }
 
   @Get('/all')
@@ -58,6 +56,7 @@ export class SessionsController {
   @ApiOkResponse({ type: PaginatedSessionResponse })
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  @HttpCode(HttpStatus.OK)
   async findAll(
     @Query() filter: SessionFilterDto,
   ): Promise<PaginationResponseTypeDto<SessionResponse>> {
@@ -66,7 +65,6 @@ export class SessionsController {
     return {
       data: sessions,
       message: 'Sessions fetched successfully',
-      status: 200,
     };
   }
 
@@ -86,7 +84,6 @@ export class SessionsController {
     return {
       data: session,
       message: 'Session fetched successfully',
-      status: 200,
     };
   }
 

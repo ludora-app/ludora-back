@@ -6,6 +6,7 @@ import {
   ApiBody,
   ApiConflictResponse,
   ApiConsumes,
+  ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
@@ -14,6 +15,8 @@ import {
   Body,
   ConflictException,
   Controller,
+  HttpCode,
+  HttpStatus,
   Post,
   UploadedFile,
   UseGuards,
@@ -33,6 +36,10 @@ export class AuthB2BController {
   @Public()
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Create a partner and user account' })
+  @ApiCreatedResponse({
+    description: 'Partner and user created successfully',
+    type: RegisterResponseDto,
+  })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: RegisterB2BWithFileDto })
   @ApiBadRequestResponse({
@@ -47,6 +54,7 @@ export class AuthB2BController {
     description: 'Partner and user created successfully',
     type: RegisterResponseDto,
   })
+  @HttpCode(HttpStatus.CREATED)
   async register(
     @Body() registerDto: RegisterB2BWithFileDto,
     @UploadedFile() file: Express.Multer.File,
@@ -62,7 +70,6 @@ export class AuthB2BController {
       return {
         data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
         message: 'Partner and user created successfully',
-        status: 201,
       };
     }
 
@@ -70,7 +77,6 @@ export class AuthB2BController {
     return {
       data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
       message: 'Partner and user created successfully',
-      status: 201,
     };
   }
 }

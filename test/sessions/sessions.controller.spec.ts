@@ -97,7 +97,6 @@ describe('SessionsController', () => {
       expect(result).toEqual({
         data: createdSession,
         message: 'Session created successfully',
-        status: 201,
       });
       expect(service.create).toHaveBeenCalledWith(createSessionDto);
     });
@@ -146,7 +145,6 @@ describe('SessionsController', () => {
       expect(result).toEqual({
         data: sessionsData,
         message: 'Sessions fetched successfully',
-        status: 200,
       });
       expect(service.findAll).toHaveBeenCalledWith(sessionFilterDto);
     });
@@ -179,7 +177,6 @@ describe('SessionsController', () => {
       expect(result).toEqual({
         data: paginatedData,
         message: 'Sessions fetched successfully',
-        status: 200,
       });
       expect(service.findAll).toHaveBeenCalledWith(paginatedFilter);
     });
@@ -209,7 +206,6 @@ describe('SessionsController', () => {
       expect(result).toEqual({
         data: sessionData,
         message: 'Session fetched successfully',
-        status: 200,
       });
       expect(service.findOne).toHaveBeenCalledWith(sessionUid);
     });

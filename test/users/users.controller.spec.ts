@@ -68,7 +68,6 @@ describe('UsersController', () => {
       expect(result).toEqual({
         data: { items: [mockUser], nextCursor: null, totalCount: 1 },
         message: 'Users fetched successfully',
-        status: 200,
       });
       expect(service.findAll).toHaveBeenCalledWith(filters);
     });
@@ -83,7 +82,6 @@ describe('UsersController', () => {
       expect(result).toEqual({
         data: mockUser,
         message: 'User fetched successfully',
-        status: 200,
       });
       expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findOne);
     });
@@ -102,7 +100,6 @@ describe('UsersController', () => {
       expect(result).toEqual({
         data: mockUser,
         message: 'User fetched successfully',
-        status: 200,
       });
       expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findMe);
     });
@@ -117,7 +114,6 @@ describe('UsersController', () => {
       expect(result).toEqual({
         data: mockUser,
         message: 'User fetched successfully',
-        status: 200,
       });
       expect(service.findOneByEmail).toHaveBeenCalledWith('test@test.com');
     });
@@ -151,14 +147,12 @@ describe('UsersController', () => {
       };
       mockUsersService.updatePassword.mockResolvedValue({
         message: 'User password updated successfully',
-        status: 200,
       });
 
       const result = await controller.updatePassword(mockRequest as any, updatePasswordDto);
 
       expect(result).toEqual({
         message: 'User password updated successfully',
-        status: 200,
       });
       expect(service.updatePassword).toHaveBeenCalledWith('1', updatePasswordDto);
     });
@@ -171,14 +165,12 @@ describe('UsersController', () => {
       };
       mockUsersService.deactivate.mockResolvedValue({
         message: 'User 1 has been deactivated',
-        status: 200,
       });
 
       const result = await controller.deactivate(mockRequest as any);
 
       expect(result).toEqual({
         message: 'User 1 has been deactivated',
-        status: 200,
       });
       expect(service.deactivate).toHaveBeenCalledWith('1');
     });
@@ -191,14 +183,12 @@ describe('UsersController', () => {
       };
       mockUsersService.remove.mockResolvedValue({
         message: 'User 1 has been deleted',
-        status: 200,
       });
 
       const result = await controller.remove(mockRequest as any);
 
       expect(result).toEqual({
         message: 'User 1 has been deleted',
-        status: 200,
       });
       expect(service.remove).toHaveBeenCalledWith('1');
     });

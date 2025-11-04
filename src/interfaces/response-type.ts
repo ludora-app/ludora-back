@@ -11,7 +11,4 @@ export abstract class ResponseTypeDto<T> {
 
   @ApiProperty({ readOnly: true, required: true })
   readonly data: T;
-
-  @ApiProperty({ example: 200, readOnly: true, required: false })
-  readonly status?: number;
 }

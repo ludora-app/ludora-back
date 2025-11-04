@@ -59,7 +59,6 @@ describe('AuthB2BController', () => {
       expect(result).toEqual({
         data: { accessToken: 'mock_b2b_token', refreshToken: 'mock_b2b_refresh_token' },
         message: 'Partner and user created successfully',
-        status: 201,
       });
       expect(mockAuthB2BService.register).toHaveBeenCalledWith(registerDto);
     });
@@ -92,7 +91,6 @@ describe('AuthB2BController', () => {
       expect(result).toEqual({
         data: { accessToken: 'mock_b2b_token', refreshToken: 'mock_b2b_refresh_token' },
         message: 'Partner and user created successfully',
-        status: 201,
       });
       expect(mockAuthB2BService.register).toHaveBeenCalled();
       expect(mockAuthB2BService.register).toHaveBeenCalledWith(

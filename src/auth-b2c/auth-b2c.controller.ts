@@ -6,6 +6,8 @@ import {
   ApiBody,
   ApiConflictResponse,
   ApiConsumes,
+  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
 import {
@@ -14,6 +16,8 @@ import {
   ConflictException,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Post,
   Req,
   Request,
@@ -49,6 +53,10 @@ export class AuthB2CController {
   @Post('register')
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Create a user account' })
+  @ApiCreatedResponse({
+    description: 'User created successfully',
+    type: RegisterResponseDto,
+  })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: RegisterB2CWithFileDto })
   @ApiBadRequestResponse({
@@ -59,6 +67,7 @@ export class AuthB2CController {
     description: 'User already exists',
     type: ConflictException,
   })
+  @HttpCode(HttpStatus.CREATED)
   async register(
     @Body() registerDto: RegisterB2CWithFileDto,
     @UploadedFile() file: Express.Multer.File,
@@ -74,7 +83,6 @@ export class AuthB2CController {
       return {
         data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
         message: 'User created successfully',
-        status: 201,
       };
     }
 
@@ -82,7 +90,6 @@ export class AuthB2CController {
     return {
       data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
       message: 'User created successfully',
-      status: 201,
     };
   }
 
@@ -100,7 +107,6 @@ export class AuthB2CController {
     return {
       data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
       message: 'Token created successfully',
-      status: 200,
     };
   }
 
@@ -113,6 +119,11 @@ export class AuthB2CController {
     description: 'Error during email verification',
     type: BadRequestException,
   })
+  @ApiOkResponse({
+    description: 'Email verified successfully',
+    type: VerifyEmailResponseDto,
+  })
+  @HttpCode(HttpStatus.OK)
   async verifyEmail(@Body() verifyMailDto: VerifyMailDto): Promise<VerifyEmailResponseDto> {
     const isAvailable = await this.authService.verifyEmail(verifyMailDto);
     return {
@@ -129,6 +140,11 @@ export class AuthB2CController {
     description: 'Error during token verification',
     type: BadRequestException,
   })
+  @ApiOkResponse({
+    description: 'Token is valid',
+    type: VerifyTokenResponseDto,
+  })
+  @HttpCode(HttpStatus.OK)
   async verifyToken(@Req() request: Request): Promise<VerifyTokenResponseDto> {
     const uid = request['user'].uid;
 
@@ -137,6 +153,18 @@ export class AuthB2CController {
   }
 
   @Post('verify-email-code')
+  @ApiOperation({
+    summary: 'Verify the email code',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error during email code verification',
+    type: BadRequestException,
+  })
+  @ApiOkResponse({
+    description: 'Email code verified successfully',
+    type: VerifyEmailResponseDto,
+  })
+  @HttpCode(HttpStatus.OK)
   async verifyEmailCode(
     @Request() req,
     @Body() verifyEmailCodeDto: VerifyEmailCodeDto,
@@ -144,21 +172,30 @@ export class AuthB2CController {
     await this.authService.verifyEmailCode(req.user.uid, verifyEmailCodeDto.code);
 
     return {
-      message: 'Email vérifié avec succès',
-      status: 200,
+      message: 'Email verified successfully',
     };
   }
 
   @Post('resend-verification-code')
+  @ApiOperation({
+    summary: 'Resend the verification code',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error during verification code resend',
+    type: BadRequestException,
+  })
+  @ApiOkResponse({
+    description: 'Verification code resent successfully',
+    type: SuccessTypeDto,
+  })
+  @HttpCode(HttpStatus.OK)
   async resendVerificationCode(@Request() req): Promise<SuccessTypeDto> {
     await this.authService.resendVerificationCode(req.user.uid);
 
     return {
-      message: 'Nouveau code de vérification envoyé',
-      status: 200,
+      message: 'Verification code resent successfully',
     };
   }
-
   @Public()
   @Post('refresh-token')
   @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 tentatives par minute
@@ -169,12 +206,16 @@ export class AuthB2CController {
     description: 'Error during token refresh',
     type: BadRequestException,
   })
+  @ApiOkResponse({
+    description: 'Tokens refreshed successfully',
+    type: RefreshTokenResponseDto,
+  })
+  @HttpCode(HttpStatus.OK)
   async refreshToken(@Body() refreshTokenDto: RefreshTokenDto): Promise<RefreshTokenResponseDto> {
     const tokens = await this.authService.refreshToken(refreshTokenDto);
     return {
       data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
       message: 'Tokens refreshed successfully',
-      status: 200,
     };
   }
 
@@ -182,13 +223,17 @@ export class AuthB2CController {
   @ApiOperation({
     summary: 'Logout user from current device',
   })
+  @ApiOkResponse({
+    description: 'Logged out successfully',
+    type: LogoutResponseDto,
+  })
+  @HttpCode(HttpStatus.OK)
   async logout(@Request() req): Promise<LogoutResponseDto> {
     const { deviceUid, uid } = req.user;
     await this.authService.logout(uid, deviceUid);
 
     return {
       message: 'Logged out successfully',
-      status: 200,
     };
   }
 
@@ -196,13 +241,17 @@ export class AuthB2CController {
   @ApiOperation({
     summary: 'Logout user from all devices',
   })
+  @ApiOkResponse({
+    description: 'Logged out from all devices successfully',
+    type: LogoutResponseDto,
+  })
+  @HttpCode(HttpStatus.OK)
   async logoutAllDevices(@Request() req): Promise<LogoutResponseDto> {
     const { uid } = req.user;
     await this.authService.logoutAllDevices(uid);
 
     return {
       message: 'Logged out from all devices successfully',
-      status: 200,
     };
   }
 

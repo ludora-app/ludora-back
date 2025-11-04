@@ -55,6 +55,7 @@ export class UsersController {
     description: 'Error fetching users',
     type: BadRequestException,
   })
+  @HttpCode(HttpStatus.OK)
   async findAll(
     @Query() filters: UserFilterDto,
   ): Promise<PaginationResponseTypeDto<FindAllUsersResponseDataDto>> {
@@ -63,7 +64,6 @@ export class UsersController {
     return {
       data,
       message: 'Users fetched successfully',
-      status: 200,
     };
   }
 
@@ -91,7 +91,7 @@ export class UsersController {
       throw new NotFoundException('User not found');
     }
 
-    return { data, message: 'User fetched successfully', status: 200 };
+    return { data, message: 'User fetched successfully' };
   }
 
   @Get('/')
@@ -119,7 +119,7 @@ export class UsersController {
       throw new NotFoundException('User not found');
     }
 
-    return { data, message: 'User fetched successfully', status: 200 };
+    return { data, message: 'User fetched successfully' };
   }
 
   @Get('/email/:email')
@@ -140,7 +140,7 @@ export class UsersController {
       throw new NotFoundException(`Error finding user by email: ${email}`);
     }
 
-    return { data, message: 'User fetched successfully', status: 200 };
+    return { data, message: 'User fetched successfully' };
   }
 
   @Patch('/update')

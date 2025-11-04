@@ -1,11 +1,11 @@
 import Stripe from 'stripe';
-import { SuccessTypeDto } from 'src/interfaces/success-type';
 import { ResponseTypeDto } from 'src/interfaces/response-type';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
 import {
   ApiBadRequestResponse,
+  ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
@@ -150,6 +150,7 @@ export class PaymentController {
     description: 'Error retrieving bank accounts',
     type: BadRequestException,
   })
+  @HttpCode(HttpStatus.OK)
   async getBankAccountsList(
     @Req() request: Request,
   ): Promise<PaginationResponseTypeDto<BankAccountListResponseDataDto>> {
@@ -158,7 +159,6 @@ export class PaymentController {
     return {
       data: result,
       message: 'Bank accounts fetched successfully',
-      status: 200,
     };
   }
 
@@ -175,6 +175,7 @@ export class PaymentController {
     description: 'Error retrieving bank account',
     type: BadRequestException,
   })
+  @HttpCode(HttpStatus.OK)
   async getBankAccount(
     @Req() request: Request,
     @Param('bankAccountId') bankAccountId: string,
@@ -183,8 +184,7 @@ export class PaymentController {
     const bankAccount = await this.paymentService.getBankAccount(userId, bankAccountId);
     return {
       data: bankAccount,
-      message: 'Bank account fetched successfully',
-      status: 200,
+      message: 'Bank account retrieved successfully',
     };
   }
 
@@ -192,14 +192,14 @@ export class PaymentController {
   @ApiOperation({
     summary: 'Update a bank account',
   })
-  @ApiOkResponse({
+  @ApiNoContentResponse({
     description: 'Bank account updated successfully',
-    type: SuccessTypeDto,
   })
   @ApiBadRequestResponse({
     description: 'Error updating bank account',
     type: BadRequestException,
   })
+  @HttpCode(HttpStatus.NO_CONTENT)
   async updateBankAccount(
     @Body() bankDetails: UpdateBankDetailsDto,
     @Req() request: Request,
@@ -213,15 +213,18 @@ export class PaymentController {
   @ApiOperation({
     summary: 'Delete a bank account',
   })
-  @ApiOkResponse({
+  @ApiNoContentResponse({
     description: 'Bank account deleted successfully',
-    type: SuccessTypeDto,
   })
   @ApiBadRequestResponse({
     description: 'Error deleting bank account',
     type: BadRequestException,
   })
-  async deleteBankAccount(@Param('bankAccountId') bankAccountId: string, @Req() request: Request) {
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteBankAccount(
+    @Param('bankAccountId') bankAccountId: string,
+    @Req() request: Request,
+  ): Promise<void> {
     const userId = request['user'].uid;
     return this.paymentService.deleteBankAccount(userId, bankAccountId);
   }
@@ -233,15 +236,23 @@ export class PaymentController {
   @ApiOperation({
     summary: 'Create a payment intent with a test card (for development only)',
   })
-  @ApiOkResponse({
+  @ApiCreatedResponse({
     description: 'Payment intent created successfully with test card',
   })
   @ApiBadRequestResponse({
     description: 'Error creating payment intent with test card',
     type: BadRequestException,
   })
-  async createPaymentIntentWithTestCard(@Body() paymentIntentData: PaymentIntentTestDto) {
-    return this.paymentService.createPaymentIntentWithTestCard(paymentIntentData);
+  @HttpCode(HttpStatus.CREATED)
+  async createPaymentIntentWithTestCard(
+    @Body() paymentIntentData: PaymentIntentTestDto,
+  ): Promise<ResponseTypeDto<Stripe.PaymentIntent>> {
+    const paymentIntent =
+      await this.paymentService.createPaymentIntentWithTestCard(paymentIntentData);
+    return {
+      data: paymentIntent,
+      message: 'Payment intent created successfully with test card',
+    };
   }
 
   @UseGuards(DevOnlyGuard)
