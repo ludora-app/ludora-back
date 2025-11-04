@@ -59,7 +59,6 @@ export class SessionTeamsController {
     return {
       data: teams,
       message: `Teams fetched successfully for session ${sessionUid}`,
-      status: 200,
     };
   }
 
@@ -79,7 +78,6 @@ export class SessionTeamsController {
     return {
       data: team,
       message: 'Team fetched successfully',
-      status: 200,
     };
   }
 }

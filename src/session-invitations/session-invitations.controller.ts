@@ -5,6 +5,7 @@ import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-ty
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
+  ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -16,7 +17,6 @@ import {
   Body,
   ConflictException,
   Controller,
-  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -46,10 +46,11 @@ export class SessionInvitationsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new session invitation' })
-  @ApiOkResponse({ type: ResponseTypeDto<SessionInvitationResponse> })
+  @ApiCreatedResponse({ type: ResponseTypeDto<SessionInvitationResponse> })
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
   @ApiConflictResponse({ type: ConflictException })
+  @HttpCode(HttpStatus.CREATED)
   async create(
     @Req() request: Request,
     @Body() createSessionInvitationDto: CreateSessionInvitationDto,
@@ -68,7 +69,6 @@ export class SessionInvitationsController {
     return {
       data: invitation,
       message: 'Session invitation created successfully',
-      status: 201,
     };
   }
 
@@ -77,6 +77,7 @@ export class SessionInvitationsController {
   @ApiOkResponse({ type: PaginatedSessionInvitationResponse })
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  @HttpCode(HttpStatus.OK)
   async findAllByUserId(
     @Param('userUid') userUid: string,
     @Query() sessionInvitationFilterDto: SessionInvitationFilterDto,
@@ -89,7 +90,6 @@ export class SessionInvitationsController {
     return {
       data: sessionInvitations,
       message: 'Session invitations fetched successfully',
-      status: 200,
     };
   }
 
@@ -98,6 +98,7 @@ export class SessionInvitationsController {
   @ApiOkResponse({ type: PaginatedSessionInvitationResponse })
   @ApiBadRequestResponse({ type: BadRequestException })
   @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  @HttpCode(HttpStatus.OK)
   async findAllBySessionId(
     @Param('sessionUid') sessionUid: string,
     @Query() sessionInvitationFilterDto: SessionInvitationFilterDto,
@@ -110,7 +111,6 @@ export class SessionInvitationsController {
     return {
       data: sessionInvitations,
       message: 'Session invitations fetched successfully',
-      status: 200,
     };
   }
 
@@ -133,7 +133,6 @@ export class SessionInvitationsController {
     return {
       data: invitation,
       message: 'Session invitation fetched successfully',
-      status: 200,
     };
   }
 
@@ -158,8 +157,8 @@ export class SessionInvitationsController {
     return this.sessionInvitationsService.update(updateSessionInvitationDto);
   }
 
-  @Delete(':sessionUid/:userId')
-  remove(@Param('sessionUid') sessionUid: string, @Param('userId') userId: string) {
-    return this.sessionInvitationsService.remove(sessionUid, userId);
-  }
+  // @Delete(':sessionUid/:userId')
+  // remove(@Param('sessionUid') sessionUid: string, @Param('userId') userId: string) {
+  //   return this.sessionInvitationsService.remove(sessionUid, userId);
+  // }
 }

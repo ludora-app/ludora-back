@@ -2,7 +2,6 @@ import { Type } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 
 export interface PaginationResponseTypeDto<T = unknown> {
-  status?: number;
   message?: string;
   data: {
     items: T[];
