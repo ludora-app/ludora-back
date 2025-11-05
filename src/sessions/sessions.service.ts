@@ -338,4 +338,21 @@ export class SessionsService {
 
     return { order: image.order, url };
   }
+
+  /**
+   * This TypeScript function retrieves the count of sessions created within the last 24 hours using
+   * Prisma.
+   * @returns The `getCreatedSessionsCount` method returns a Promise that resolves to a number
+   * representing the count of sessions created within the last 24 hours from the current time.
+   * @description This method is used in the metrics service to get the count of sessions created within the last 24 hours.
+   */
+  async getCreatedSessionsCount(): Promise<number> {
+    return await this.prisma.sessions.count({
+      where: {
+        createdAt: {
+          gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        },
+      },
+    });
+  }
 }

@@ -3,7 +3,13 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { UsersModule } from 'src/users/users.module';
 import { UsersService } from 'src/users/users.service';
 import { SharedModule } from 'src/shared/shared.module';
+import { SessionsModule } from 'src/sessions/sessions.module';
+import { SessionsService } from 'src/sessions/sessions.service';
+import { SessionTeamsModule } from 'src/session-teams/session-teams.module';
 import { makeGaugeProvider, PrometheusModule } from '@willsoto/nestjs-prometheus';
+import { SessionPlayersModule } from 'src/session-players/session-players.module';
+import { SessionInvitationsModule } from 'src/session-invitations/session-invitations.module';
+import { SessionInvitationsService } from 'src/session-invitations/session-invitations.service';
 
 import { MetricsService } from './metrics.service';
 import { MetricsController } from './metrics.controller';
@@ -17,6 +23,10 @@ import { MetricsController } from './metrics.controller';
     ScheduleModule.forRoot(),
     UsersModule,
     SharedModule,
+    SessionsModule,
+    SessionTeamsModule,
+    SessionPlayersModule,
+    SessionInvitationsModule,
   ],
   providers: [
     MetricsService,
@@ -24,7 +34,17 @@ import { MetricsController } from './metrics.controller';
       help: 'Number of active users',
       name: 'active_users',
     }),
+    makeGaugeProvider({
+      help: 'Number of sessions created within the last 24 hours',
+      name: 'sessions_created_last_24_hours',
+    }),
+    makeGaugeProvider({
+      help: 'Number of total pending invitations',
+      name: 'total_pending_invitations',
+    }),
     UsersService,
+    SessionsService,
+    SessionInvitationsService,
   ],
 })
 export class MetricsModule {}

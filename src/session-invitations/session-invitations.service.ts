@@ -407,4 +407,12 @@ export class SessionInvitationsService {
   remove(sessionUid: string, userUid: string) {
     return `This action removes session invitation for session ${sessionUid} and user ${userUid}`;
   }
+
+  async getTotalPendingInvitations(): Promise<number> {
+    return await this.prisma.sessionInvitations.count({
+      where: {
+        status: Invitation_status.PENDING,
+      },
+    });
+  }
 }
