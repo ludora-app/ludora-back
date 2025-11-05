@@ -7,7 +7,7 @@ import { InjectMetric } from '@willsoto/nestjs-prometheus';
 @Injectable()
 export class MetricsService {
   private readonly logger = new Logger(MetricsService.name);
-  private activeUsersGauge: Gauge<string>;
+  private activeUsersGauge: Gauge<number>;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -23,6 +23,6 @@ export class MetricsService {
         isConnected: true,
       },
     });
-    this.activeUsersCounter.inc(activeUsers);
+    this.activeUsersGauge.set(activeUsers);
   }
 }

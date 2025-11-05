@@ -132,6 +132,7 @@ model Users {
   refreshTokens      RefreshTokens[]
 
   @@index([createdAt])
+  @@index([isConnected])
   @@schema("auth")
 }
 
