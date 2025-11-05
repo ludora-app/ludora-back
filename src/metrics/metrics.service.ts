@@ -1,5 +1,6 @@
 import { Gauge } from 'prom-client';
-import { Injectable, Logger } from '@nestjs/common';
+import { PinoLogger } from 'nestjs-pino';
+import { Injectable } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
@@ -8,8 +9,6 @@ import { SessionInvitationsService } from 'src/session-invitations/session-invit
 
 @Injectable()
 export class MetricsService {
-  private readonly logger = new Logger(MetricsService.name);
-
   constructor(
     @InjectMetric('active_users') private activeUsersGauge: Gauge<string>,
     @InjectMetric('sessions_created_last_24_hours')
@@ -18,13 +17,15 @@ export class MetricsService {
     private readonly userService: UsersService,
     private readonly sessionsService: SessionsService,
     private readonly sessionInvitationsService: SessionInvitationsService,
-  ) {}
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(MetricsService.name);
+  }
 
   @Cron(CronExpression.EVERY_30_SECONDS)
   async handleCronThirtySeconds() {
     const activeUsers = await this.userService.getActiveUsersCount();
     this.logger.debug(`Cron job "activeUsersCounter" executed: ${activeUsers} active users`);
-
     this.activeUsersGauge.set(activeUsers);
   }
 

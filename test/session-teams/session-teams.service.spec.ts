@@ -1,13 +1,14 @@
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SessionTeams, Team_label } from '@prisma/client';
+import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 
 describe('SessionTeamsService', () => {
   let service: SessionTeamsService;
   let prismaService: PrismaService;
-  let logger: Logger;
+  let logger: PinoLogger;
 
   const mockPrismaService = {
     sessionTeams: {
@@ -15,6 +16,14 @@ describe('SessionTeamsService', () => {
       findMany: jest.fn(),
       findUnique: jest.fn(),
     },
+  };
+  const mockLogger = {
+    setContext: jest.fn(),
+    info: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+    warn: jest.fn(),
+    log: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -25,15 +34,19 @@ describe('SessionTeamsService', () => {
           provide: PrismaService,
           useValue: mockPrismaService,
         },
+        {
+          provide: PinoLogger,
+          useValue: mockLogger,
+        },
       ],
     }).compile();
 
     service = module.get<SessionTeamsService>(SessionTeamsService);
     prismaService = module.get<PrismaService>(PrismaService);
-    logger = service['logger'] as Logger;
+    logger = module.get<PinoLogger>(PinoLogger);
 
     // Mock the logger to avoid console output during tests
-    jest.spyOn(logger, 'log').mockImplementation();
+    jest.spyOn(logger, 'info').mockImplementation();
   });
 
   afterEach(() => {
@@ -71,7 +84,7 @@ describe('SessionTeamsService', () => {
           },
         ],
       });
-      expect(logger.log).toHaveBeenCalledWith(`Default teams created for session ${sessionUid}`);
+      expect(logger.info).toHaveBeenCalledWith(`Default teams created for session ${sessionUid}`);
     });
 
     it('should handle database errors when creating teams', async () => {
@@ -95,7 +108,7 @@ describe('SessionTeamsService', () => {
           },
         ],
       });
-      expect(logger.log).not.toHaveBeenCalled();
+      expect(logger.info).not.toHaveBeenCalled();
     });
 
     it('should create teams with correct structure', async () => {
@@ -408,7 +421,7 @@ describe('SessionTeamsService', () => {
       // Assert
       expect(result.items).toHaveLength(2);
       expect(result.totalCount).toBe(2);
-      expect(logger.log).toHaveBeenCalledWith(`Default teams created for session ${sessionUid}`);
+      expect(logger.info).toHaveBeenCalledWith(`Default teams created for session ${sessionUid}`);
     });
 
     it('should maintain data consistency across operations', async () => {

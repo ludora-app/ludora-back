@@ -12,12 +12,14 @@ import { PaymentService } from 'src/payment/payment.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateStripeAccountDto } from 'src/payment/dto/input/create-stripe-account.dto';
 import { UsersService } from 'src/users/users.service';
+import { PinoLogger } from 'nestjs-pino';
 
 describe('PaymentService', () => {
   let service: PaymentService;
   let prismaService: PrismaService;
   let usersService: UsersService;
   let configService: ConfigService;
+  let logger: PinoLogger;
 
   const mockPrismaService = {
     users: {
@@ -54,6 +56,14 @@ describe('PaymentService', () => {
       create: jest.fn(),
     },
   };
+  const mockLogger = {
+    setContext: jest.fn(),
+    info: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+    warn: jest.fn(),
+    log: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -71,6 +81,10 @@ describe('PaymentService', () => {
           provide: UsersService,
           useValue: mockUsersService,
         },
+        {
+          provide: PinoLogger,
+          useValue: mockLogger,
+        },
       ],
     }).compile();
 
@@ -78,7 +92,7 @@ describe('PaymentService', () => {
     prismaService = module.get<PrismaService>(PrismaService);
     usersService = module.get<UsersService>(UsersService);
     configService = module.get<ConfigService>(ConfigService);
-
+    logger = module.get<PinoLogger>(PinoLogger);
     // Mock Stripe instance
     (service as any).stripe = mockStripe;
   });
