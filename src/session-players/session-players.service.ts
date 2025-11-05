@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { PinoLogger } from 'nestjs-pino';
+import { Injectable } from '@nestjs/common';
 import { Prisma, SessionPlayers } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -6,8 +7,12 @@ import { CreateSessionPlayerDto } from './dto/input/create-session-player.dto';
 
 @Injectable()
 export class SessionPlayersService {
-  constructor(private readonly prisma: PrismaService) {}
-  private logger = new Logger(SessionPlayersService.name);
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(SessionPlayersService.name);
+  }
 
   /**
    * This function adds a player to a session in a TypeScript application using Prisma for database
@@ -31,7 +36,7 @@ export class SessionPlayersService {
         userUid: createSessionPlayerDto.userUid,
       },
     });
-    this.logger.log(
+    this.logger.info(
       `Player ${createSessionPlayerDto.userUid} added to session ${createSessionPlayerDto.sessionUid}`,
     );
   }

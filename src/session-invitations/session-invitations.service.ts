@@ -1,3 +1,4 @@
+import { PinoLogger } from 'nestjs-pino';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
@@ -9,7 +10,6 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 
@@ -23,9 +23,10 @@ export class SessionInvitationsService {
     private readonly sessionsService: SessionsService,
     private readonly usersService: UsersService,
     private readonly playersService: SessionPlayersService,
-  ) {}
-
-  private logger = new Logger(SessionInvitationsService.name);
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(SessionInvitationsService.name);
+  }
 
   async create(
     senderUid: string,
@@ -93,7 +94,7 @@ export class SessionInvitationsService {
           sessionUid: createSessionInvitationDto.sessionUid,
         },
       });
-      this.logger.log(
+      this.logger.info(
         `User ${createSessionInvitationDto.receiverUid} invited to the session ${createSessionInvitationDto.sessionUid} by User${senderUid}`,
       );
       return invitation;
@@ -117,7 +118,7 @@ export class SessionInvitationsService {
           },
         },
       });
-      this.logger.log(
+      this.logger.info(
         `User ${createSessionInvitationDto.receiverUid} reinvited to the session ${createSessionInvitationDto.sessionUid} by User${senderUid} after being canceled`,
       );
       return invitation;
@@ -132,7 +133,7 @@ export class SessionInvitationsService {
           sessionUid: createSessionInvitationDto.sessionUid,
         },
       });
-      this.logger.log(
+      this.logger.info(
         `User ${createSessionInvitationDto.receiverUid} re-invited to the session ${createSessionInvitationDto.sessionUid} by User${senderUid} after rejection`,
       );
       return invitation;
@@ -399,12 +400,20 @@ export class SessionInvitationsService {
       });
     }
 
-    this.logger.log(
+    this.logger.info(
       `Session invitation with sessionUid${existingInvitation.sessionUid} updated to ${updateSessionInvitationDto.status}`,
     );
   }
 
   remove(sessionUid: string, userUid: string) {
     return `This action removes session invitation for session ${sessionUid} and user ${userUid}`;
+  }
+
+  async getTotalPendingInvitations(): Promise<number> {
+    return await this.prisma.sessionInvitations.count({
+      where: {
+        status: Invitation_status.PENDING,
+      },
+    });
   }
 }

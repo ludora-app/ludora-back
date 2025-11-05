@@ -1,12 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { PinoLogger } from 'nestjs-pino';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma, SessionTeams, Team_label } from '@prisma/client';
 import { SessionTeamWithPlayers, SessionUtils } from 'src/sessions/utils/session-utils';
 
 @Injectable()
 export class SessionTeamsService {
-  constructor(private readonly prisma: PrismaService) {}
-  private logger = new Logger(SessionTeamsService.name);
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(SessionTeamsService.name);
+  }
 
   /**
    * @description The function `createDefaultTeams` creates default teams for a session and returns their UIDs.
@@ -32,7 +37,7 @@ export class SessionTeamsService {
       ],
     });
 
-    this.logger.log(`Default teams created for session ${sessionUid}`);
+    this.logger.info(`Default teams created for session ${sessionUid}`);
 
     return db.sessionTeams.findMany({ where: { sessionUid } });
   }

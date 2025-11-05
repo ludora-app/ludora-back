@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { PinoLogger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -7,7 +8,6 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 
@@ -20,17 +20,18 @@ import { BankDetailsDto, UpdateBankDetailsDto } from './dto/input/bank-details.d
 @Injectable()
 export class PaymentService {
   private readonly stripe: Stripe;
-  private readonly logger = new Logger(PaymentService.name);
 
   constructor(
     private readonly prismaService: PrismaService,
     private readonly configService: ConfigService,
     private readonly usersService: UsersService,
+    private readonly logger: PinoLogger,
   ) {
     this.stripe = new Stripe(this.configService.getOrThrow('STRIPE_SECRET_KEY'), {
       apiVersion: '2025-08-27.basil',
       typescript: true,
     });
+    this.logger.setContext(PaymentService.name);
   }
 
   async createStripeAccountToken(userUid: string, stripeAccountData: CreateStripeAccountDto) {
@@ -109,7 +110,7 @@ export class PaymentService {
 
       await this.usersService.addStripeAccountId(userUid, stripeAccount.id);
 
-      this.logger.log(`Stripe account created for user ${userUid}: ${stripeAccount.id}`);
+      this.logger.info(`Stripe account created for user ${userUid}: ${stripeAccount.id}`);
     } catch (error) {
       this.logger.error(`Error creating Stripe account for user ${userUid}: ${error.message}`);
       throw new BadRequestException(error.message);
@@ -216,7 +217,7 @@ export class PaymentService {
         confirmParams,
       );
 
-      this.logger.log(`PaymentIntent confirmed: ${paymentIntentId}`);
+      this.logger.info(`PaymentIntent confirmed: ${paymentIntentId}`);
       return paymentIntent;
     } catch (error) {
       this.logger.error(`Error confirming PaymentIntent: ${error.message}`);
@@ -393,7 +394,7 @@ export class PaymentService {
 
       const paymentMethod = await this.stripe.paymentMethods.retrieve(testPaymentMethodId);
 
-      this.logger.log(`Test PaymentMethod retrieved: ${paymentMethod.id}`);
+      this.logger.info(`Test PaymentMethod retrieved: ${paymentMethod.id}`);
       return paymentMethod;
     } catch (error) {
       this.logger.error(`Error retrieving test PaymentMethod: ${error.message}`);

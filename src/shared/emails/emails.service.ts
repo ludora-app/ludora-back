@@ -1,6 +1,7 @@
 import * as nodemailer from 'nodemailer';
+import { PinoLogger } from 'nestjs-pino';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Injectable, Logger } from '@nestjs/common';
 
 import { emailTemplates } from './templates/emails.templates';
 
@@ -10,15 +11,17 @@ import { emailTemplates } from './templates/emails.templates';
  */
 @Injectable()
 export class EmailsService {
-  private readonly logger = new Logger(EmailsService.name);
-
   private readonly transporter: nodemailer.Transporter;
 
   /**
    * Creates an instance of EmailsService
    * @param {ConfigService} configService - The configuration service for accessing environment variables
    */
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(EmailsService.name);
     this.transporter = this.createTransporter();
   }
 
@@ -82,7 +85,7 @@ export class EmailsService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      this.logger.log(`Email sent successfully to ${dto.recipients.join(', ')}`);
+      this.logger.info(`Email sent successfully to ${dto.recipients.join(', ')}`);
     } catch (error) {
       this.logger.error(`Failed to send email: ${error.message}`);
       throw error;

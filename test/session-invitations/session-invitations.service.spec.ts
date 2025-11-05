@@ -9,6 +9,7 @@ import { CreateSessionInvitationDto } from '../../src/session-invitations/dto/in
 import { UpdateSessionInvitationDto } from '../../src/session-invitations/dto/input/update-session-invitation.dto';
 import { SessionInvitationsService } from '../../src/session-invitations/session-invitations.service';
 import { SessionPlayersService } from 'src/session-players/session-players.service';
+import { PinoLogger } from 'nestjs-pino';
 
 describe('SessionInvitationsService', () => {
   let service: SessionInvitationsService;
@@ -16,7 +17,7 @@ describe('SessionInvitationsService', () => {
   let sessionsService: SessionsService;
   let usersService: UsersService;
   let playersService: SessionPlayersService;
-
+  let logger: PinoLogger;
   const mockPrismaService = {
     sessionInvitations: {
       create: jest.fn(),
@@ -37,6 +38,14 @@ describe('SessionInvitationsService', () => {
   const mockSessionPlayersService = {
     addPlayerToSession: jest.fn(),
     findOne: jest.fn(),
+  };
+  const mockLogger = {
+    setContext: jest.fn(),
+    info: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+    warn: jest.fn(),
+    log: jest.fn(),
   };
 
   const mockSession = {
@@ -75,6 +84,10 @@ describe('SessionInvitationsService', () => {
         {
           provide: SessionPlayersService,
           useValue: mockSessionPlayersService,
+        },
+        {
+          provide: PinoLogger,
+          useValue: mockLogger,
         },
       ],
     }).compile();
