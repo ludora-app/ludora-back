@@ -25,7 +25,6 @@ export class MetricsService {
   @Cron(CronExpression.EVERY_30_SECONDS)
   async handleCronThirtySeconds() {
     const activeUsers = await this.userService.getActiveUsersCount();
-    this.logger.debug(`Cron job "activeUsersCounter" executed: ${activeUsers} active users`);
     this.activeUsersGauge.set(activeUsers);
   }
 
