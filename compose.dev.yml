@@ -78,8 +78,10 @@ services:
     # Add Traefik labels for secure access
     labels:
       - 'traefik.enable=true'
+      - 'traefik.docker.network=traefik'
       - 'traefik.http.routers.grafana-dev.rule=Host(`grafana.gana-f4ll.fr`)'
       - 'traefik.http.routers.grafana-dev.entrypoints=websecure'
+      - 'traefik.http.routers.grafana-dev.tls=true'
       - 'traefik.http.routers.grafana-dev.tls.certresolver=myresolver'
       - 'traefik.http.services.grafana-dev.loadbalancer.server.port=3000'
   ludora-prometheus:
@@ -95,8 +97,10 @@ services:
     # Add Traefik labels for secure access
     labels:
       - 'traefik.enable=true'
+      - 'traefik.docker.network=traefik'
       - 'traefik.http.routers.prometheus-dev.rule=Host(`prometheus.gana-f4ll.fr`)'
       - 'traefik.http.routers.prometheus-dev.entrypoints=websecure'
+      - 'traefik.http.routers.prometheus-dev.tls=true'
       - 'traefik.http.routers.prometheus-dev.tls.certresolver=myresolver'
       - 'traefik.http.services.prometheus-dev.loadbalancer.server.port=9090'
     # Add development-specific configuration
