@@ -112,6 +112,17 @@ services:
       - '--web.enable-lifecycle'
       - '--log.level=debug' # More verbose logging in dev
 
+  ludora-k6:
+    image: grafana/k6:latest
+    container_name: ludora-k6
+    restart: 'no'
+    volumes:
+      - ./load-tests:/scripts
+    networks:
+      - ludora-network
+    profiles:
+      - tools
+
 volumes:
   postgres-data:
   grafana-data:

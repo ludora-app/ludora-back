@@ -68,7 +68,7 @@ export class AuthB2CService {
       const accessToken = this.jwt.sign(payload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
       const refreshToken = this.jwt.sign(payload, { expiresIn: '7d' });
 
-      // Créer le token d'accès
+      // Create the access token
       await tx.userTokens.create({
         data: {
           deviceUid,
@@ -77,11 +77,11 @@ export class AuthB2CService {
         },
       });
 
-      // Créer le refresh token
+      // Create the refresh token
       await tx.refreshTokens.create({
         data: {
           deviceUid,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
           token: refreshToken,
           userUid: newUser.uid,
         },
@@ -122,17 +122,17 @@ export class AuthB2CService {
       const tokenWithDeviceUid = existingTokens.find((token) => token.deviceUid !== null);
       const tokensWithoutDeviceUid = existingTokens.filter((token) => !token.deviceUid);
 
-      // Gestion des tokens avec transaction pour garantir l'atomicité
+      // Token management with transaction to ensure atomicity
       await this.prismaService.$transaction(async (prisma) => {
         if (deviceUid) {
           if (tokenWithDeviceUid) {
-            // Mise à jour du token existant avec deviceUid
+            // Update existing token with deviceUid
             await prisma.userTokens.update({
               data: { token: accessToken },
               where: { uid: tokenWithDeviceUid.uid },
             });
           } else {
-            // Création d'un nouveau token avec deviceUid
+            // Create a new token with deviceUid
             await prisma.userTokens.create({
               data: {
                 deviceUid,
@@ -142,15 +142,23 @@ export class AuthB2CService {
             });
           }
         } else {
-          // Gestion du token sans deviceUid
+          // Token management without deviceUid
           if (tokensWithoutDeviceUid.length >= 1) {
-            //? on supprime le token le plus ancien sans deviceUid
-            await prisma.userTokens.delete({
-              where: { uid: tokensWithoutDeviceUid[0].uid },
-            });
+            // Delete the oldest token without deviceUid
+            // Use try/catch to avoid race condition errors
+            // If the token has already been deleted by another request, ignore the error
+            try {
+              await prisma.userTokens.delete({
+                where: { uid: tokensWithoutDeviceUid[0].uid },
+              });
+            } catch {
+              // If the token no longer exists (already deleted by another concurrent request),
+              // continue without error
+              // This can happen during load tests with multiple simultaneous requests
+            }
           }
 
-          // Création du nouveau token sans deviceUid
+          // Create new token without deviceUid
           await prisma.userTokens.create({
             data: {
               token: accessToken,
@@ -159,7 +167,7 @@ export class AuthB2CService {
           });
         }
 
-        // Gestion des refresh tokens
+        // Refresh token management
         const existingRefreshTokens = await prisma.refreshTokens.findMany({
           orderBy: { createdAt: 'asc' },
           where: { userUid: user.uid },
@@ -174,7 +182,7 @@ export class AuthB2CService {
 
         if (deviceUid) {
           if (refreshTokenWithDeviceUid) {
-            // Mise à jour du refresh token existant avec deviceUid
+            // Update existing refresh token with deviceUid
             await prisma.refreshTokens.update({
               data: {
                 expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -183,7 +191,7 @@ export class AuthB2CService {
               where: { uid: refreshTokenWithDeviceUid.uid },
             });
           } else {
-            // Création d'un nouveau refresh token avec deviceUid
+            // Create a new refresh token with deviceUid
             await prisma.refreshTokens.create({
               data: {
                 deviceUid,
@@ -194,15 +202,22 @@ export class AuthB2CService {
             });
           }
         } else {
-          // Gestion du refresh token sans deviceUid
+          // Refresh token management without deviceUid
           if (refreshTokensWithoutDeviceUid.length >= 1) {
-            // Supprimer le refresh token le plus ancien sans deviceUid
-            await prisma.refreshTokens.delete({
-              where: { uid: refreshTokensWithoutDeviceUid[0].uid },
-            });
+            // Delete the oldest refresh token without deviceUid
+            // Use try/catch to avoid race condition errors
+            try {
+              await prisma.refreshTokens.delete({
+                where: { uid: refreshTokensWithoutDeviceUid[0].uid },
+              });
+            } catch {
+              // If the token no longer exists (already deleted by another concurrent request),
+              // continue without error
+              // This can happen during load tests with multiple simultaneous requests
+            }
           }
 
-          // Création du nouveau refresh token sans deviceUid
+          // Create new refresh token without deviceUid
           await prisma.refreshTokens.create({
             data: {
               expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -263,7 +278,7 @@ export class AuthB2CService {
     return { accessToken: token };
   }
 
-  // i can return error type here ?
+  // Can I return error type here?
   async verifyToken(uid: string): Promise<boolean> {
     const user = await this.prismaService.users.findUnique({ where: { uid } });
     if (!user) {
@@ -285,14 +300,14 @@ export class AuthB2CService {
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    // Utiliser une transaction pour garantir l'atomicité
+    // Use a transaction to ensure atomicity
     await this.prismaService.$transaction(async (tx) => {
-      // Supprimer les anciens codes de vérification
+      // Delete old verification codes
       await tx.emailVerification.deleteMany({
         where: { userUid: userUid },
       });
 
-      // Créer le nouveau code
+      // Create the new code
       await tx.emailVerification.create({
         data: {
           code: verificationCode,
@@ -302,7 +317,7 @@ export class AuthB2CService {
       });
     });
 
-    // Envoyer l'email en dehors de la transaction
+    // Send the email outside the transaction
     await this.emailsService.sendEmail({
       data: { code: verificationCode },
       recipients: [email],
@@ -319,23 +334,23 @@ export class AuthB2CService {
       where: {
         code,
         expiresAt: {
-          gt: new Date(), // vérifie que le code n'est pas expiré
+          gt: new Date(), // Check that the code is not expired
         },
         userUid: userUid,
       },
     });
 
     if (!verification) {
-      throw new BadRequestException('Code invalide ou expiré');
+      throw new BadRequestException('Invalid or expired code');
     }
 
-    // Mise à jour du statut de vérification de l'utilisateur
+    // Update user verification status
     await this.prismaService.$transaction([
       this.prismaService.users.update({
         data: { emailVerified: true },
         where: { uid: userUid },
       }),
-      // Supprime tous les codes de vérification de l'utilisateur
+      // Delete all user verification codes
       this.prismaService.emailVerification.deleteMany({
         where: { userUid: userUid },
       }),
@@ -348,18 +363,18 @@ export class AuthB2CService {
     });
 
     if (!user) {
-      throw new NotFoundException('Utilisateur non trouvé');
+      throw new NotFoundException('User not found');
     }
 
     if (user.emailVerified) {
-      throw new BadRequestException('Email déjà vérifié');
+      throw new BadRequestException('Email already verified');
     }
 
     await this.prismaService.emailVerification.deleteMany({
       where: { userUid: userUid },
     });
 
-    // Envoyer un nouveau code
+    // Send a new code
     await this.sendVerificationEmail(userUid, user.email);
   }
 
@@ -373,7 +388,7 @@ export class AuthB2CService {
     const { refreshToken } = refreshTokenDto;
 
     try {
-      // Vérifier et décoder le refresh token
+      // Verify and decode the refresh token
       const payload = await this.jwt.verifyAsync(refreshToken);
       const { deviceUid, uid: userUid } = payload;
 
@@ -381,11 +396,11 @@ export class AuthB2CService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      // Vérifier que le refresh token existe encore en base de données
+      // Verify that the refresh token still exists in the database
       const refreshTokenRecord = await this.prismaService.refreshTokens.findFirst({
         where: {
           expiresAt: {
-            gt: new Date(), // Vérifier qu'il n'est pas expiré
+            gt: new Date(), // Verify that it is not expired
           },
           token: refreshToken,
           userUid: userUid,
@@ -396,7 +411,7 @@ export class AuthB2CService {
         throw new UnauthorizedException('Refresh token expired or invalid');
       }
 
-      // Vérifier que l'utilisateur est toujours actif
+      // Verify that the user is still active
       const user = await this.prismaService.users.findUnique({
         select: { emailVerified: true, isConnected: true, uid: true },
         where: { uid: userUid },
@@ -406,19 +421,19 @@ export class AuthB2CService {
         throw new UnauthorizedException('User account disabled');
       }
 
-      // Générer de nouveaux tokens
+      // Generate new tokens
       const newPayload = { uid: userUid, ...(deviceUid && { deviceUid }) };
       const newAccessToken = this.jwt.sign(newPayload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
       const newRefreshToken = this.jwt.sign(newPayload, { expiresIn: '7d' });
 
-      // Mettre à jour les tokens en base de données
+      // Update tokens in the database
       await this.prismaService.$transaction(async (tx) => {
-        // Supprimer l'ancien refresh token
+        // Delete the old refresh token
         await tx.refreshTokens.delete({
           where: { uid: refreshTokenRecord.uid },
         });
 
-        // Créer le nouveau refresh token
+        // Create the new refresh token
         await tx.refreshTokens.create({
           data: {
             deviceUid,
@@ -428,7 +443,7 @@ export class AuthB2CService {
           },
         });
 
-        // Mettre à jour l'access token
+        // Update the access token
         const existingAccessToken = await tx.userTokens.findFirst({
           where: { deviceUid: deviceUid || null, userUid: userUid },
         });
@@ -466,7 +481,7 @@ export class AuthB2CService {
   async logout(userUid: string, deviceUid?: string): Promise<void> {
     await this.prismaService.$transaction(async (tx) => {
       if (deviceUid) {
-        // Logout spécifique à un appareil
+        // Device-specific logout
         await tx.userTokens.deleteMany({
           where: { deviceUid, userUid },
         });
@@ -474,7 +489,7 @@ export class AuthB2CService {
           where: { deviceUid, userUid },
         });
       } else {
-        // Logout de tous les appareils
+        // Logout from all devices
         await tx.userTokens.deleteMany({
           where: { userUid },
         });
