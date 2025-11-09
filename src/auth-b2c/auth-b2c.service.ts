@@ -114,13 +114,26 @@ export class AuthB2CService {
       const accessToken = this.jwt.sign(payload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
       const refreshToken = this.jwt.sign(payload, { expiresIn: '1year' });
 
-      const existingTokens = await this.prismaService.userTokens.findMany({
-        orderBy: { createdAt: 'asc' },
-        where: { userUid: user.uid },
-      });
+      // Optimisation: Paralléliser les requêtes DB indépendantes
+      const [existingTokens, existingRefreshTokens] = await Promise.all([
+        this.prismaService.userTokens.findMany({
+          orderBy: { createdAt: 'asc' },
+          where: { userUid: user.uid },
+        }),
+        this.prismaService.refreshTokens.findMany({
+          orderBy: { createdAt: 'asc' },
+          where: { userUid: user.uid },
+        }),
+      ]);
 
       const tokenWithDeviceUid = existingTokens.find((token) => token.deviceUid !== null);
       const tokensWithoutDeviceUid = existingTokens.filter((token) => !token.deviceUid);
+      const refreshTokenWithDeviceUid = existingRefreshTokens.find(
+        (token) => token.deviceUid !== null,
+      );
+      const refreshTokensWithoutDeviceUid = existingRefreshTokens.filter(
+        (token) => !token.deviceUid,
+      );
 
       // Token management with transaction to ensure atomicity
       await this.prismaService.$transaction(async (prisma) => {
@@ -166,19 +179,6 @@ export class AuthB2CService {
             },
           });
         }
-
-        // Refresh token management
-        const existingRefreshTokens = await prisma.refreshTokens.findMany({
-          orderBy: { createdAt: 'asc' },
-          where: { userUid: user.uid },
-        });
-
-        const refreshTokenWithDeviceUid = existingRefreshTokens.find(
-          (token) => token.deviceUid !== null,
-        );
-        const refreshTokensWithoutDeviceUid = existingRefreshTokens.filter(
-          (token) => !token.deviceUid,
-        );
 
         if (deviceUid) {
           if (refreshTokenWithDeviceUid) {

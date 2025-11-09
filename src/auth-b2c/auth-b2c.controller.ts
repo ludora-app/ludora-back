@@ -95,7 +95,12 @@ export class AuthB2CController {
 
   @Public()
   @Post('/login')
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 tentatives par minute
+  @Throttle({
+    default: {
+      limit: process.env.NODE_ENV === 'production' ? 5 : 1000,
+      ttl: 60000,
+    },
+  })
   @ApiOperation({
     summary: 'Allow the user to login',
   })
