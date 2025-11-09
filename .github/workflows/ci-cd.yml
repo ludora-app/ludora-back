@@ -12,10 +12,10 @@ on:
 
 jobs:
   # ============================================
-  # JOB 1: Format & Lint
+  # JOB 1: FORMAT & LINT
   # ============================================
   format:
-    name: Format & Lint
+    name: FORMAT & LINT
     runs-on: ubuntu-latest
     container:
       image: node:22.13.1-slim
@@ -45,7 +45,7 @@ jobs:
   # JOB 2: Tests
   # ============================================
   test:
-    name: Run Tests
+    name: TESTS
     runs-on: ubuntu-latest
     needs: format
     container:
@@ -120,7 +120,7 @@ jobs:
   # JOB 3: Build
   # ============================================
   build:
-    name: Build Application
+    name: BUILD
     runs-on: ubuntu-latest
     needs: test
     container:
@@ -141,7 +141,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build application
+      - name: BUILD
         run: chmod +x scripts/build.sh && ./scripts/build.sh
       - name: Clean build directory
         run: |
@@ -206,7 +206,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build application
+      - name: BUILD
         run: pnpm build
 
       - name: Setup SSH
@@ -242,14 +242,14 @@ jobs:
             cd ${{ secrets.REMOTE_PATH }}
             git checkout ${{ github.ref_name }}
             git pull
-            
+
             # Set environment file
             export ENV_FILE=".env.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}"
             export COMPOSE_FILE="compose.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}.yml"
-            
+
             echo "📦 Using compose file: $COMPOSE_FILE"
             echo "🔐 Using env file: $ENV_FILE"
-            
+
             # Check if traefik network exists, create if not
             if ! docker network ls | grep -q traefik; then
               echo "🌐 Creating traefik network..."
@@ -257,39 +257,39 @@ jobs:
             else
               echo "✅ Traefik network already exists"
             fi
-            
+
             # Stop containers
             docker compose -f $COMPOSE_FILE down
-            
+
             # Start containers with build
             docker compose -f $COMPOSE_FILE --env-file $ENV_FILE up --build -d
-            
+
             # Wait for containers to be healthy
             echo "⏳ Waiting for containers to be ready..."
             sleep 40
-            
+
             echo "⏳ Waiting for healthcheck to pass..."
             sleep 20
-            
+
             # Check container status
             echo "📊 Container status:"
             docker ps --filter "name=ludora"
-            
+
             # Check API logs
             echo "📝 API logs (last 20 lines):"
             docker logs ludora-api --tail 20
-            
+
             # Restart Traefik to detect new containers
             echo "🔄 Restarting Traefik to detect containers..."
             cd ~/code/traefik && docker compose restart
-            
+
             # Wait a bit for Traefik to restart
             sleep 5
-            
+
             # Verify Traefik detected the containers
             echo "🔍 Checking if Traefik detected ludora-api..."
             docker logs traefik-reverse-proxy-1 --tail 50 | grep -i ludora || echo "⚠️  Ludora not found in Traefik logs"
-            
+
             echo "✅ Deployment completed!"
 
       - name: Deployment Status
