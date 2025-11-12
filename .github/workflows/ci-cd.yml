@@ -179,7 +179,7 @@ jobs:
   # ============================================
   # JOB 4: Deploy (Development or Production)
   # ============================================
-  deploy:
+  DEPLOY:
     name: Deploy to ${{ github.ref == 'refs/heads/main' && 'Production' || 'Development' }}
     runs-on: ubuntu-latest
     needs: build
