@@ -1,6 +1,6 @@
 import { Team_label } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
-import { PaginationResponseDto } from 'src/interfaces/pagination-response-type';
+import { PaginationResponseDto } from 'src/shared/dto/responses/pagination-response-type';
 
 /**
  * @description session player object created by mixing the Session_players and Users table

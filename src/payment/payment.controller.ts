@@ -1,18 +1,11 @@
 import Stripe from 'stripe';
-import { ResponseTypeDto } from 'src/interfaces/response-type';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
-import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
-  ApiBadRequestResponse,
-  ApiCreatedResponse,
-  ApiNoContentResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-} from '@nestjs/swagger';
-import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -25,6 +18,15 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
 import { PaymentService } from './payment.service';
 import { PaymentIntentDto } from './dto/input/payment-intent.dto';
@@ -54,7 +56,11 @@ export class PaymentController {
   })
   @ApiBadRequestResponse({
     description: 'Error retrieving Stripe connect account',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
   })
   async getStripeConnectAccount(@Req() request: Request): Promise<ResponseTypeDto<Stripe.Account>> {
     const userUid = request['user'].uid;
@@ -72,7 +78,11 @@ export class PaymentController {
   })
   @ApiBadRequestResponse({
     description: 'Error creating Stripe connect account',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
   })
   @ApiNoContentResponse({
     description: 'Stripe connect account created successfully',
@@ -95,7 +105,11 @@ export class PaymentController {
   })
   @ApiBadRequestResponse({
     description: 'Error creating payment intent',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
   })
   async createPaymentIntent(@Body() paymentIntentDto: PaymentIntentDto) {
     return this.paymentService.createPaymentIntent(paymentIntentDto);
@@ -110,7 +124,11 @@ export class PaymentController {
   })
   @ApiBadRequestResponse({
     description: 'Error confirming payment intent',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
   })
   async confirmPaymentIntent(@Body() confirmPaymentIntent: ConfirmPaymentIntentDto) {
     return this.paymentService.confirmPaymentIntent(confirmPaymentIntent);
@@ -124,7 +142,11 @@ export class PaymentController {
   })
   @ApiBadRequestResponse({
     description: 'Error adding bank account',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
   })
   @ApiNoContentResponse({
     description: 'Bank account added successfully',
@@ -148,7 +170,7 @@ export class PaymentController {
   })
   @ApiBadRequestResponse({
     description: 'Error retrieving bank accounts',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
   })
   @HttpCode(HttpStatus.OK)
   async getBankAccountsList(
@@ -173,7 +195,11 @@ export class PaymentController {
   })
   @ApiBadRequestResponse({
     description: 'Error retrieving bank account',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
   })
   @HttpCode(HttpStatus.OK)
   async getBankAccount(
@@ -189,15 +215,19 @@ export class PaymentController {
   }
 
   @Put('bank-accounts/:bankAccountId')
+  @ApiBadRequestResponse({
+    description: 'Error updating bank account',
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
+  })
   @ApiOperation({
     summary: 'Update a bank account',
   })
   @ApiNoContentResponse({
     description: 'Bank account updated successfully',
-  })
-  @ApiBadRequestResponse({
-    description: 'Error updating bank account',
-    type: BadRequestException,
   })
   @HttpCode(HttpStatus.NO_CONTENT)
   async updateBankAccount(
@@ -218,7 +248,11 @@ export class PaymentController {
   })
   @ApiBadRequestResponse({
     description: 'Error deleting bank account',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
   })
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteBankAccount(
@@ -241,7 +275,11 @@ export class PaymentController {
   })
   @ApiBadRequestResponse({
     description: 'Error creating payment intent with test card',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
   })
   @HttpCode(HttpStatus.CREATED)
   async createPaymentIntentWithTestCard(
@@ -265,7 +303,11 @@ export class PaymentController {
   })
   @ApiBadRequestResponse({
     description: 'Error creating test payment method',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
   })
   async createTestPaymentMethod() {
     return this.paymentService.createPaymentMethodForTesting();

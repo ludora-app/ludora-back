@@ -1,21 +1,14 @@
 import { Invitation_status } from '@prisma/client';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
-import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
-import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
-import {
-  ApiBadRequestResponse,
-  ApiConflictResponse,
-  ApiCreatedResponse,
-  ApiNoContentResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
+import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
+import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { ResponseType, ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   BadRequestException,
   Body,
-  ConflictException,
   Controller,
   Get,
   HttpCode,
@@ -26,9 +19,18 @@ import {
   Post,
   Query,
   Req,
-  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
 import { SessionInvitationsService } from './session-invitations.service';
 import { CreateSessionInvitationDto } from './dto/input/create-session-invitation.dto';
@@ -47,9 +49,9 @@ export class SessionInvitationsController {
   @Post()
   @ApiOperation({ summary: 'Create a new session invitation' })
   @ApiCreatedResponse({ type: ResponseTypeDto<SessionInvitationResponse> })
-  @ApiBadRequestResponse({ type: BadRequestException })
-  @ApiUnauthorizedResponse({ type: UnauthorizedException })
-  @ApiConflictResponse({ type: ConflictException })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiConflictResponse({ type: ConflictResponseDto })
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Req() request: Request,
@@ -75,8 +77,8 @@ export class SessionInvitationsController {
   @Get('all-by-user/:userUid')
   @ApiOperation({ summary: 'Get all session invitations by user ID' })
   @ApiOkResponse({ type: PaginatedSessionInvitationResponse })
-  @ApiBadRequestResponse({ type: BadRequestException })
-  @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findAllByUserId(
     @Param('userUid') userUid: string,
@@ -96,8 +98,8 @@ export class SessionInvitationsController {
   @Get('all-by-session/:sessionUid')
   @ApiOperation({ summary: 'Get all session invitations by session ID' })
   @ApiOkResponse({ type: PaginatedSessionInvitationResponse })
-  @ApiBadRequestResponse({ type: BadRequestException })
-  @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findAllBySessionId(
     @Param('sessionUid') sessionUid: string,
@@ -117,9 +119,9 @@ export class SessionInvitationsController {
   @Get(':sessionUid/:receiverUid')
   @ApiOperation({ summary: 'Get a session invitation by session ID and receiver ID' })
   @ApiOkResponse({ type: ResponseTypeDto<SessionInvitationResponse> })
-  @ApiBadRequestResponse({ type: BadRequestException })
-  @ApiUnauthorizedResponse({ type: UnauthorizedException })
-  @ApiNotFoundResponse({ type: NotFoundException })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
   async findOne(
     @Param('sessionUid') sessionUid: string,
     @Param('receiverUid') receiverUid: string,
@@ -140,9 +142,9 @@ export class SessionInvitationsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Update a session invitation by session UID' })
   @ApiNoContentResponse({ description: 'Session invitation updated successfully' })
-  @ApiBadRequestResponse({ type: BadRequestException })
-  @ApiUnauthorizedResponse({ type: UnauthorizedException })
-  @ApiNotFoundResponse({ type: NotFoundException })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
   update(
     @Param('sessionUid') sessionUid: string,
     @Body() body: { status: Invitation_status },

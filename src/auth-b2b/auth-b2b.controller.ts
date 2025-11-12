@@ -1,6 +1,18 @@
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Public } from 'src/shared/decorators/public.decorator';
 import { CreateImageDto, RegisterResponseDto } from 'src/auth-b2c/dto';
+import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -10,18 +22,6 @@ import {
   ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
-import {
-  BadRequestException,
-  Body,
-  ConflictException,
-  Controller,
-  HttpCode,
-  HttpStatus,
-  Post,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
 
 import { AuthB2BService } from './auth-b2b.service';
 import { AuthB2BGuard } from './guards/auth-b2b.guard';
@@ -44,11 +44,11 @@ export class AuthB2BController {
   @ApiBody({ type: RegisterB2BWithFileDto })
   @ApiBadRequestResponse({
     description: 'Error during registration',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
   })
   @ApiConflictResponse({
     description: 'Partner or user already exists',
-    type: ConflictException,
+    type: ConflictResponseDto,
   })
   @ApiOkResponse({
     description: 'Partner and user created successfully',

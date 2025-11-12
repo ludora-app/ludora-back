@@ -1,3 +1,4 @@
+import { ApiOperation } from '@nestjs/swagger';
 import { Controller, Get, UseGuards } from '@nestjs/common';
 
 import { AppService } from './app.service';
@@ -15,6 +16,7 @@ export class AppController {
   }
 
   @Public()
+  @ApiOperation({ summary: 'Get the health of the application' })
   @Get('health')
   getHealth(): { status: string; timestamp: string } {
     return {

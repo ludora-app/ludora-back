@@ -1,18 +1,11 @@
 import { Sessions } from '@prisma/client';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
-import { ResponseType, ResponseTypeDto } from 'src/interfaces/response-type';
-import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
+import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { ResponseType, ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
-  ApiBadRequestResponse,
-  ApiCreatedResponse,
-  ApiNoContentResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
-import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -24,9 +17,17 @@ import {
   Patch,
   Post,
   Query,
-  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
 import { SessionsService } from './sessions.service';
 import { CreateSessionDto } from './dto/input/create-session.dto';
@@ -42,8 +43,8 @@ export class SessionsController {
   @Post()
   @ApiOperation({ summary: 'Create a new session' })
   @ApiCreatedResponse({ type: ResponseTypeDto<Sessions> })
-  @ApiBadRequestResponse({ type: BadRequestException })
-  @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createSessionDto: CreateSessionDto): Promise<ResponseType<SessionResponse>> {
     const newSession = await this.sessionsService.create(createSessionDto);
@@ -54,8 +55,8 @@ export class SessionsController {
   @Get('/all')
   @ApiOperation({ summary: 'Get all sessions' })
   @ApiOkResponse({ type: PaginatedSessionResponse })
-  @ApiBadRequestResponse({ type: BadRequestException })
-  @ApiUnauthorizedResponse({ type: UnauthorizedException })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findAll(
     @Query() filter: SessionFilterDto,
@@ -71,9 +72,9 @@ export class SessionsController {
   @Get(':uid')
   @ApiOperation({ summary: 'Get a session by uid' })
   @ApiOkResponse({ type: ResponseTypeDto<Sessions> })
-  @ApiBadRequestResponse({ type: BadRequestException })
-  @ApiUnauthorizedResponse({ type: UnauthorizedException })
-  @ApiNotFoundResponse({ type: NotFoundException })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
   async findOne(@Param('uid') uid: string): Promise<ResponseType<SessionResponse>> {
     const session = await this.sessionsService.findOne(uid);
 
@@ -90,9 +91,9 @@ export class SessionsController {
   @Patch(':uid')
   @ApiOperation({ summary: 'Update a session by uid' })
   @ApiNoContentResponse({ description: 'Session updated successfully' })
-  @ApiBadRequestResponse({ type: BadRequestException })
-  @ApiUnauthorizedResponse({ type: UnauthorizedException })
-  @ApiNotFoundResponse({ type: NotFoundException })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
   async update(
     @Param('uid') uid: string,

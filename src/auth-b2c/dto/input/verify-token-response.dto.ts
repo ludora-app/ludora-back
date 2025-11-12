@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { ResponseTypeDto } from '../../../interfaces/response-type';
+import { ResponseTypeDto } from '../../../shared/dto/responses/response-type';
 
 export class VerifyTokenResponseDataDto {
   @ApiProperty({
