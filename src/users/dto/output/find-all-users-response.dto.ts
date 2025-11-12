@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PaginationResponseDto } from 'src/interfaces/pagination-response-type';
+import { PaginationResponseDto } from 'src/shared/dto/responses/pagination-response-type';
 
 export class FindAllUsersResponseDataDto {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })

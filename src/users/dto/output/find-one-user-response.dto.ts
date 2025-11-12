@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Sex, User_type } from '@prisma/client';
-import { ResponseTypeDto } from 'src/interfaces/response-type';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
 export class FindOneUserResponseDataDto {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })

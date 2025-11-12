@@ -1,6 +1,6 @@
 import { Throttle } from '@nestjs/throttler';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { SuccessTypeDto } from 'src/interfaces/success-type';
+import { SuccessTypeDto } from 'src/shared/dto/responses/success-type';
 import {
   ApiBadRequestResponse,
   ApiBody,

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SuccessTypeDto } from 'src/interfaces/success-type';
+import { SuccessTypeDto } from 'src/shared/dto/responses/success-type';
 
 export class LogoutResponseDto extends SuccessTypeDto {
   @ApiProperty({

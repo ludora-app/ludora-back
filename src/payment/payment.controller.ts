@@ -1,8 +1,8 @@
 import Stripe from 'stripe';
-import { ResponseTypeDto } from 'src/interfaces/response-type';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
-import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,

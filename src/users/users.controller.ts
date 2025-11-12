@@ -1,8 +1,8 @@
 import { Users } from '@prisma/client';
-import { ResponseTypeDto } from 'src/interfaces/response-type';
 import { Public } from 'src/shared/decorators/public.decorator';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
-import { PaginationResponseTypeDto } from 'src/interfaces/pagination-response-type';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   ApiBadRequestResponse,
   ApiNoContentResponse,
