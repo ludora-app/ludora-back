@@ -1,7 +1,19 @@
 import { SessionsService } from 'src/sessions/sessions.service';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
+import {
+  Controller,
+  forwardRef,
+  Get,
+  Inject,
+  NotFoundException,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
@@ -9,17 +21,6 @@ import {
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import {
-  BadRequestException,
-  Controller,
-  forwardRef,
-  Get,
-  Inject,
-  NotFoundException,
-  Param,
-  UnauthorizedException,
-  UseGuards,
-} from '@nestjs/common';
 
 import { SessionTeamsService } from './session-teams.service';
 import {
@@ -38,9 +39,9 @@ export class SessionTeamsController {
   @Get(':sessionUid/teams')
   @ApiOperation({ summary: 'Get all teams linked to a session by session uid' })
   @ApiOkResponse({ type: PaginatedSessionTeamResponse })
-  @ApiBadRequestResponse({ type: BadRequestException })
-  @ApiUnauthorizedResponse({ type: UnauthorizedException })
-  @ApiNotFoundResponse({ type: NotFoundException })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
   async findTeamsBySessionUid(
     @Param('sessionUid') sessionUid: string,
   ): Promise<PaginationResponseTypeDto<SessionTeamResponse>> {
@@ -65,9 +66,9 @@ export class SessionTeamsController {
   @Get('/teams/:uid')
   @ApiOperation({ summary: 'Get a team by its uid' })
   @ApiOkResponse({ type: ResponseTypeDto<SessionTeamResponse> })
-  @ApiBadRequestResponse({ type: BadRequestException })
-  @ApiUnauthorizedResponse({ type: UnauthorizedException })
-  @ApiNotFoundResponse({ type: NotFoundException })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
   async findOneTeamByUid(@Param('uid') uid: string): Promise<ResponseTypeDto<SessionTeamResponse>> {
     const team = await this.teamsService.findOneByUid(uid);
 

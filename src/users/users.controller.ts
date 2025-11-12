@@ -2,6 +2,9 @@ import { Users } from '@prisma/client';
 import { Public } from 'src/shared/decorators/public.decorator';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   ApiBadRequestResponse,
@@ -9,9 +12,9 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -53,7 +56,11 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error fetching users',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
   })
   @HttpCode(HttpStatus.OK)
   async findAll(
@@ -77,11 +84,11 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error fetching user',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
   })
   @ApiNotFoundResponse({
     description: 'User not found',
-    type: NotFoundException,
+    type: NotFoundResponseDto,
   })
   @Public()
   async findOne(@Param('uid') uid: string): Promise<ResponseTypeDto<Users>> {
@@ -104,11 +111,15 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error fetching user',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
   })
   @ApiNotFoundResponse({
     description: 'User not found',
-    type: NotFoundException,
+    type: NotFoundResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
   })
   async findMe(@Req() request: Request): Promise<ResponseTypeDto<Users>> {
     const uid = request['user'].uid;
@@ -128,11 +139,15 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error fetching user',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
   })
   @ApiNotFoundResponse({
     description: 'User not found',
-    type: NotFoundException,
+    type: NotFoundResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
   })
   async findOneByEmail(@Param('email') email: string): Promise<ResponseTypeDto<Users>> {
     const data = await this.usersService.findOneByEmail(email);
@@ -149,11 +164,15 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error updating user',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
   })
   @ApiNotFoundResponse({
     description: 'User not found',
-    type: NotFoundException,
+    type: NotFoundResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
   })
   @ApiNoContentResponse({ description: 'User updated successfully' })
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -169,11 +188,15 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error updating password',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
   })
   @ApiNotFoundResponse({
     description: 'User not found',
-    type: NotFoundException,
+    type: NotFoundResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
   })
   @ApiNoContentResponse({ description: 'Password updated successfully' })
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -191,11 +214,15 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error deactivating user',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
   })
   @ApiNotFoundResponse({
     description: 'User not found',
-    type: NotFoundException,
+    type: NotFoundResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
   })
   @ApiNoContentResponse({ description: 'User deactivated successfully' })
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -210,11 +237,15 @@ export class UsersController {
   })
   @ApiBadRequestResponse({
     description: 'Error deleting user',
-    type: BadRequestException,
+    type: BadRequestResponseDto,
   })
   @ApiNotFoundResponse({
     description: 'User not found',
-    type: NotFoundException,
+    type: NotFoundResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
   })
   @ApiNoContentResponse({ description: 'User deleted successfully' })
   @HttpCode(HttpStatus.NO_CONTENT)
