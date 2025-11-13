@@ -17,6 +17,7 @@ import { PartnersModule } from './partners/partners.module';
 import { SessionTeamsModule } from './session-teams/session-teams.module';
 import { SessionPlayersModule } from './session-players/session-players.module';
 import { SessionInvitationsModule } from './session-invitations/session-invitations.module';
+import { UserHourPreferencesModule } from './user-hour-preferences/user-hour-preferences.module';
 
 const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV === 'development';
 @Module({
@@ -77,6 +78,7 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
     PartnersModule,
     PaymentModule,
     MetricsModule,
+    UserHourPreferencesModule,
   ],
 
   providers: [AppService],
