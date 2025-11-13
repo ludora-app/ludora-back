@@ -49,6 +49,21 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
             );
           },
         },
+        customErrorMessage: (req, res, err) => {
+          return `${req.method} ${req.url} - ${res.statusCode} - ${err.message}`;
+        },
+        customSuccessMessage: (req, res) => {
+          return `${req.method} ${req.url} - ${res.statusCode}`;
+        },
+        serializers: {
+          req: (req) => ({
+            method: req.method,
+            url: req.url,
+          }),
+          res: (res) => ({
+            statusCode: res.statusCode,
+          }),
+        },
         ...(isDevelopment
           ? {
               transport: {
