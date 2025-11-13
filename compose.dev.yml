@@ -41,7 +41,7 @@ services:
       - 'traefik.docker.network=traefik'
       - 'traefik.http.services.ludora-api.loadbalancer.server.port=2424'
       # Add basic auth middleware for Swagger
-      - 'traefik.http.middlewares.swagger-basicauth.basicauth.users=admin:$$apr1$$UbeE3D5n$$AmOhQOJG8rLhgz1Tlejbh/'
+      - 'traefik.http.middlewares.swagger-basicauth.basicauth.users=${BASIC_AUTH_USERNAME}:${BASIC_AUTH_PASSWORD_HASH}'
       # Router for Swagger with basic auth (higher priority)
       - 'traefik.http.routers.ludora-api-swagger.rule=Host(`ludora-api.gana-f4ll.fr`) && PathPrefix(`/swagger`)'
       - 'traefik.http.routers.ludora-api-swagger.entrypoints=websecure'
@@ -121,7 +121,7 @@ services:
       - 'traefik.http.routers.prometheus-dev.tls.certresolver=myresolver'
       - 'traefik.http.services.prometheus-dev.loadbalancer.server.port=9090'
       # Add basic auth middleware for Prometheus
-      - 'traefik.http.middlewares.prometheus-basicauth.basicauth.users=admin:$$apr1$$UbeE3D5n$$AmOhQOJG8rLhgz1Tlejbh/'
+      - 'traefik.http.middlewares.prometheus-basicauth.basicauth.users=${BASIC_AUTH_USERNAME}:${BASIC_AUTH_PASSWORD_HASH}'
       - 'traefik.http.routers.prometheus-dev.middlewares=prometheus-basicauth'
     # Add development-specific configuration
     command:
