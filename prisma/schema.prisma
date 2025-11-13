@@ -5,7 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["auth", "ratings", "infrastructure", "sessions", "social", "shared"]
+  schemas  = ["auth", "ratings", "infrastructure", "sessions", "social", "shared", "user_preferences"]
 }
 
 enum Provider {
@@ -24,56 +24,62 @@ enum Sex {
   @@schema("auth")
 }
 
-enum User_type {
+enum UserType {
   USER
   ADMIN
   PARTNER
 
+  @@map("UserType")
   @@schema("auth")
 }
 
-enum Invitation_status {
+enum InvitationStatus {
   PENDING
   ACCEPTED
   REJECTED
   CANCELED
 
+  @@map("InvitationStatus")
   @@schema("shared")
 }
 
-enum Team_label {
+enum TeamLabel {
   A
   B
 
+  @@map("TeamLabel")
   @@schema("sessions")
 }
 
-enum Message_status {
+enum MessageStatus {
   SENT
   DELIVERED
   READ
 
+  @@map("MessageStatus")
   @@schema("social")
 }
 
-enum Message_type {
+enum MessageType {
   TEXT
   IMAGE
   VIDEO
   AUDIO
 
+  @@map("Message_type")
   @@schema("social")
 }
 
-enum Conversation_type {
+enum ConversationType {
   PRIVATE
   GROUP
   EVENT
 
+  @@map("ConversationType")
   @@schema("social")
 }
 
-enum Game_modes {
+enum GameModes {
   TWO_V_TWO
   THREE_V_THREE
   FOUR_V_FOUR
@@ -84,7 +90,25 @@ enum Game_modes {
   TEN_V_TEN
   ELEVEN_V_ELEVEN
 
+  @@map("GameModes")
   @@schema("sessions")
+}
+
+enum UserHourPreferenceType {
+  RECURRENT
+  ONE_TIME
+
+  @@map("User_hour_preference_type")
+  @@schema("user_preferences")
+}
+
+enum TimePeriod {
+  MORNING
+  AFTERNOON
+  EVENING
+
+  @@map("Time_period")
+  @@schema("user_preferences")
 }
 
 model Users {
@@ -104,7 +128,7 @@ model Users {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
   emailVerified   Boolean   @default(false) @map("email_verified")
-  type            User_type @default(USER)
+  type            UserType  @default(USER)
 
   messages            Messages[]
   // Event               Events[]
@@ -125,10 +149,12 @@ model Users {
 
   evaluatedRating UserRatings[] @relation(name: "EvaluatedRelation")
 
-  userGlobalRatings  UserGlobalRatings[]
-  emailVerifications EmailVerification[]
-  userTokens         UserTokens[]
-  refreshTokens      RefreshTokens[]
+  userGlobalRatings   UserGlobalRatings[]
+  emailVerifications  EmailVerification[]
+  userTokens          UserTokens[]
+  refreshTokens       RefreshTokens[]
+  userSports          UserSports[]
+  userHourPreferences UserHourPreferences[]
 
   @@index([createdAt])
   @@index([isConnected])
@@ -286,20 +312,21 @@ model Sports {
 
   userGlobalRatings UserGlobalRatings[]
   partnerSports     PartnerSports[]
+  userSports        UserSports[]
 
   @@schema("infrastructure")
 }
 
 model Fields {
-  uid        String     @id @default(cuid())
+  uid        String    @id @default(cuid())
   sport      String
-  partnerUid String     @map("partner_uid")
+  partnerUid String    @map("partner_uid")
   name       String?
   address    String
   latitude   Float
   longitude  Float
-  entryFee   Float      @map("entry_fee")
-  gameMode   Game_modes @map("game_mode")
+  entryFee   Float     @map("entry_fee")
+  gameMode   GameModes @map("game_mode")
 
   fieldImages   FieldImages[]
   partner       Partners      @relation(fields: [partnerUid], references: [uid])
@@ -328,20 +355,20 @@ model FieldImages {
 }
 
 model Sessions {
-  uid               String     @id @default(cuid())
-  fieldUid          String     @map("field_uid")
+  uid               String    @id @default(cuid())
+  fieldUid          String    @map("field_uid")
   title             String?
-  startDate         DateTime   @map("start_date")
-  endDate           DateTime   @map("end_date")
+  startDate         DateTime  @map("start_date")
+  endDate           DateTime  @map("end_date")
   sport             String
-  gameMode          Game_modes @map("game_mode")
+  gameMode          GameModes @map("game_mode")
   // visibility        Visibility
-  maxPlayersPerTeam Int        @map("max_players_per_team")
-  teamsPerGame      Int        @map("teams_per_game")
-  minPlayersPerTeam Int        @map("min_players_per_team")
+  maxPlayersPerTeam Int       @map("max_players_per_team")
+  teamsPerGame      Int       @map("teams_per_game")
+  minPlayersPerTeam Int       @map("min_players_per_team")
   description       String?
-  createdAt         DateTime   @default(now()) @map("created_at")
-  updatedAt         DateTime   @updatedAt @map("updated_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
   sessionInvitations SessionInvitations[]
 
@@ -360,12 +387,12 @@ model Sessions {
 }
 
 model SessionInvitations {
-  sessionUid  String            @map("session_uid")
-  senderUid   String            @map("sender_uid")
-  receiverUid String            @map("receiver_uid")
-  status      Invitation_status @default(PENDING)
-  createdAt   DateTime          @default(now()) @map("created_at")
-  updatedAt   DateTime          @updatedAt @map("updated_at")
+  sessionUid  String           @map("session_uid")
+  senderUid   String           @map("sender_uid")
+  receiverUid String           @map("receiver_uid")
+  status      InvitationStatus @default(PENDING)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
 
   session  Sessions @relation(fields: [sessionUid], references: [uid])
   sender   Users    @relation(fields: [senderUid], references: [uid], name: "senderRelation")
@@ -393,12 +420,12 @@ model SessionImages {
 }
 
 model SessionTeams {
-  uid        String     @id @default(cuid())
-  sessionUid String     @map("session_uid")
-  teamLabel  Team_label @map("team_label")
-  teamName   String     @map("team_name")
-  createdAt  DateTime   @default(now()) @map("created_at")
-  updatedAt  DateTime   @updatedAt @map("updated_at")
+  uid        String    @id @default(cuid())
+  sessionUid String    @map("session_uid")
+  teamLabel  TeamLabel @map("team_label")
+  teamName   String    @map("team_name")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
 
   session Sessions @relation(fields: [sessionUid], references: [uid])
 
@@ -431,7 +458,7 @@ model Conversations {
   uid                 String                @id @default(cuid())
   eventUid            String?               @map("event_uid")
   name                String?
-  type                Conversation_type
+  type                ConversationType
   createdAt           DateTime              @default(now()) @map("created_at")
   updatedAt           DateTime              @updatedAt @map("updated_at")
   // todo: image_url
@@ -444,14 +471,14 @@ model Conversations {
 }
 
 model Messages {
-  uid             String         @id @default(cuid())
-  conversationUid String         @map("conversation_uid")
-  senderUid       String         @map("sender_uid")
+  uid             String        @id @default(cuid())
+  conversationUid String        @map("conversation_uid")
+  senderUid       String        @map("sender_uid")
   content         String
-  status          Message_status @default(SENT)
-  type            Message_type
-  createdAt       DateTime       @default(now()) @map("created_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
+  status          MessageStatus @default(SENT)
+  type            MessageType
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
   sender       Users         @relation(fields: [senderUid], references: [uid])
   conversation Conversations @relation(fields: [conversationUid], references: [uid])
@@ -498,13 +525,48 @@ model ConversationMembers {
 model Friends {
   userUid1  String
   userUid2  String
-  status    Invitation_status @map("status")
-  createdAt DateTime          @default(now()) @map("created_at")
-  updatedAt DateTime          @updatedAt @map("updated_at")
-  user1     Users             @relation("friend1", fields: [userUid1], references: [uid])
-  user2     Users             @relation("friend2", fields: [userUid2], references: [uid])
+  status    InvitationStatus @map("status")
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+  user1     Users            @relation("friend1", fields: [userUid1], references: [uid])
+  user2     Users            @relation("friend2", fields: [userUid2], references: [uid])
 
   @@id([userUid1, userUid2])
   @@unique([userUid1, userUid2])
   @@schema("social")
+}
+
+model UserSports {
+  userUid   String   @map("user_uid")
+  sport     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user          Users  @relation(fields: [userUid], references: [uid])
+  sportRelation Sports @relation(fields: [sport], references: [name])
+
+  @@id([userUid, sport])
+  @@unique([userUid, sport])
+  @@index([userUid])
+  @@index([sport])
+  @@map("User_sports")
+  @@schema("user_preferences")
+}
+
+model UserHourPreferences {
+  uid        String                 @id @default(cuid())
+  type       UserHourPreferenceType
+  userUid    String                 @map("user_uid")
+  dayOfWeek  Int                    @map("day_of_week")
+  timePeriod TimePeriod             @map("time_period")
+  createdAt  DateTime               @default(now()) @map("created_at")
+  updatedAt  DateTime               @updatedAt @map("updated_at")
+
+  user Users @relation(fields: [userUid], references: [uid])
+
+  @@index([userUid])
+  @@index([timePeriod])
+  @@index([dayOfWeek])
+  @@map("User_hour_preferences")
+  @@schema("user_preferences")
 }
