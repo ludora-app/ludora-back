@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Sex, User_type } from '@prisma/client';
+import { Sex, UserType } from '@prisma/client';
 import { AuthB2CController } from 'src/auth-b2c/auth-b2c.controller';
 import { AuthB2CService } from 'src/auth-b2c/auth-b2c.service';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
@@ -57,7 +57,7 @@ describe('AuthB2CController', () => {
         password: 'password',
         phone: '1234567890',
         sex: Sex.MALE,
-        type: User_type.USER,
+        type: UserType.USER,
       };
 
       mockAuthB2CService.register.mockResolvedValue({
@@ -84,7 +84,7 @@ describe('AuthB2CController', () => {
         password: 'password',
         phone: '1234567890',
         sex: Sex.MALE,
-        type: User_type.USER,
+        type: UserType.USER,
       };
 
       const mockFile = {

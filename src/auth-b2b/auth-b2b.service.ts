@@ -1,6 +1,6 @@
 import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
-import { User_type } from '@prisma/client';
+import { UserType } from '@prisma/client';
 import { CreateUserDto } from 'src/users/dto';
 import { ConfigService } from '@nestjs/config';
 import { CreateImageDto } from 'src/auth-b2c/dto';
@@ -58,7 +58,7 @@ export class AuthB2BService {
       lastname: userLastname,
       password: hashedPassword,
       phone: userPhone,
-      type: User_type.PARTNER,
+      type: UserType.PARTNER,
     };
 
     const coordinates = await this.geolocalisationService.getLatitudeAndLongitude(partnerAddress);

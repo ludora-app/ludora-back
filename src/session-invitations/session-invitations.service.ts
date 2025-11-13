@@ -3,7 +3,7 @@ import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { SessionsService } from 'src/sessions/sessions.service';
-import { Invitation_status, SessionInvitations } from '@prisma/client';
+import { InvitationStatus, SessionInvitations } from '@prisma/client';
 import { SessionPlayersService } from 'src/session-players/session-players.service';
 import { CreateSessionPlayerDto } from 'src/session-players/dto/input/create-session-player.dto';
 import {
@@ -78,8 +78,8 @@ export class SessionInvitationsService {
     // ? if the user is already invited to the session and did not reject, we throw an error
     if (
       existingInvitation &&
-      (existingInvitation.status === Invitation_status.ACCEPTED ||
-        existingInvitation.status === Invitation_status.PENDING)
+      (existingInvitation.status === InvitationStatus.ACCEPTED ||
+        existingInvitation.status === InvitationStatus.PENDING)
     ) {
       this.logger.error(
         `User ${createSessionInvitationDto.receiverUid} already invited to the session ${createSessionInvitationDto.sessionUid}`,
@@ -104,11 +104,11 @@ export class SessionInvitationsService {
     if (
       existingInvitation &&
       existingInvitation.senderUid === senderUid &&
-      existingInvitation.status === Invitation_status.CANCELED
+      existingInvitation.status === InvitationStatus.CANCELED
     ) {
       const invitation = await this.prisma.sessionInvitations.update({
         data: {
-          status: Invitation_status.PENDING,
+          status: InvitationStatus.PENDING,
         },
         where: {
           sessionUid_senderUid_receiverUid: {
@@ -125,7 +125,7 @@ export class SessionInvitationsService {
     }
 
     // ? if the invitation was rejected, create a new one
-    if (existingInvitation && existingInvitation.status === Invitation_status.REJECTED) {
+    if (existingInvitation && existingInvitation.status === InvitationStatus.REJECTED) {
       const invitation = await this.prisma.sessionInvitations.create({
         data: {
           receiverUid: createSessionInvitationDto.receiverUid,
@@ -163,7 +163,7 @@ export class SessionInvitationsService {
       };
       where: {
         receiverUid: string;
-        status?: Invitation_status;
+        status?: InvitationStatus;
       };
     } = {
       take: limit + 1,
@@ -173,11 +173,11 @@ export class SessionInvitationsService {
     };
 
     if (scope === 'PENDING') {
-      query.where.status = Invitation_status.PENDING;
+      query.where.status = InvitationStatus.PENDING;
     } else if (scope === 'ACCEPTED') {
-      query.where.status = Invitation_status.ACCEPTED;
+      query.where.status = InvitationStatus.ACCEPTED;
     } else if (scope === 'REJECTED') {
-      query.where.status = Invitation_status.REJECTED;
+      query.where.status = InvitationStatus.REJECTED;
     }
 
     //cursor on sessionUid since receiverUid doesnt change here
@@ -235,7 +235,7 @@ export class SessionInvitationsService {
       };
       where: {
         sessionUid: string;
-        status?: Invitation_status;
+        status?: InvitationStatus;
       };
     } = {
       take: limit + 1,
@@ -257,11 +257,11 @@ export class SessionInvitationsService {
     }
 
     if (scope === 'PENDING') {
-      query.where.status = Invitation_status.PENDING;
+      query.where.status = InvitationStatus.PENDING;
     } else if (scope === 'ACCEPTED') {
-      query.where.status = Invitation_status.ACCEPTED;
+      query.where.status = InvitationStatus.ACCEPTED;
     } else if (scope === 'REJECTED') {
-      query.where.status = Invitation_status.REJECTED;
+      query.where.status = InvitationStatus.REJECTED;
     }
 
     const sessionInvitations = await this.prisma.sessionInvitations.findMany({
@@ -351,14 +351,14 @@ export class SessionInvitationsService {
 
     if (
       isReceiver &&
-      updateSessionInvitationDto.status !== Invitation_status.ACCEPTED &&
-      updateSessionInvitationDto.status !== Invitation_status.REJECTED
+      updateSessionInvitationDto.status !== InvitationStatus.ACCEPTED &&
+      updateSessionInvitationDto.status !== InvitationStatus.REJECTED
     ) {
       throw new BadRequestException(
         `The status ${updateSessionInvitationDto.status} is not allowed for the receiver`,
       );
     }
-    if (isSender && updateSessionInvitationDto.status !== Invitation_status.CANCELED) {
+    if (isSender && updateSessionInvitationDto.status !== InvitationStatus.CANCELED) {
       throw new BadRequestException(
         `The status ${updateSessionInvitationDto.status} is not allowed for the sender`,
       );
@@ -368,7 +368,7 @@ export class SessionInvitationsService {
       teamUid: existingInvitation.sessionUid,
       userUid: existingInvitation.receiverUid,
     };
-    if (isSender && updateSessionInvitationDto.status === Invitation_status.CANCELED) {
+    if (isSender && updateSessionInvitationDto.status === InvitationStatus.CANCELED) {
       await this.prisma.sessionInvitations.update({
         data: { status: updateSessionInvitationDto.status },
         where: {
@@ -381,7 +381,7 @@ export class SessionInvitationsService {
       });
       return;
     }
-    if (isReceiver && updateSessionInvitationDto.status === Invitation_status.ACCEPTED) {
+    if (isReceiver && updateSessionInvitationDto.status === InvitationStatus.ACCEPTED) {
       await this.prisma.$transaction(async (tx) => {
         const updated = await tx.sessionInvitations.update({
           data: { status: updateSessionInvitationDto.status },
@@ -412,7 +412,7 @@ export class SessionInvitationsService {
   async getTotalPendingInvitations(): Promise<number> {
     return await this.prisma.sessionInvitations.count({
       where: {
-        status: Invitation_status.PENDING,
+        status: InvitationStatus.PENDING,
       },
     });
   }

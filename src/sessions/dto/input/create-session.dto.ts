@@ -1,4 +1,4 @@
-import { Game_modes } from '@prisma/client';
+import { GameModes } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
@@ -39,14 +39,14 @@ export class CreateSessionDto {
   })
   userUid: string;
 
-  @IsEnum(Game_modes)
+  @IsEnum(GameModes)
   @IsNotEmpty()
   @ApiProperty({
     description: 'The game mode of the session',
     example: 'THREE_VS_THREE',
     required: true,
   })
-  gameMode: Game_modes;
+  gameMode: GameModes;
 
   @IsDateString()
   @IsNotEmpty()

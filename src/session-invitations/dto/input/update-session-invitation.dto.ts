@@ -1,17 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Invitation_status } from '@prisma/client';
+import { InvitationStatus } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 
 export class UpdateSessionInvitationDto {
-  @IsEnum(Invitation_status)
+  @IsEnum(InvitationStatus)
   @IsNotEmpty()
   @ApiProperty({
     description: 'Status of the session invitation',
-    enum: Invitation_status,
-    example: Invitation_status.PENDING,
+    enum: InvitationStatus,
+    example: InvitationStatus.PENDING,
     required: true,
   })
-  status: Invitation_status;
+  status: InvitationStatus;
 
   @IsString()
   @IsNotEmpty()

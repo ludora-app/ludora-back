@@ -2,7 +2,7 @@ import { BadRequestException, NotFoundException, UnauthorizedException } from '@
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Sex, User_type } from '@prisma/client';
+import { Sex, UserType } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { AuthB2CService } from 'src/auth-b2c/auth-b2c.service';
 import { RefreshTokenDto } from 'src/auth-b2c/dto';
@@ -137,7 +137,7 @@ describe('AuthB2CService', () => {
         password: 'password',
         phone: '1234567890',
         sex: Sex.MALE,
-        type: User_type.USER,
+        type: UserType.USER,
       };
 
       const mockUser = {
@@ -163,7 +163,7 @@ describe('AuthB2CService', () => {
       const registerDto = {
         email: 'test@test.com',
         password: 'password',
-        type: 'INVALID_TYPE' as User_type,
+        type: 'INVALID_TYPE' as UserType,
       };
 
       await expect(service.register(registerDto)).rejects.toThrow(BadRequestException);

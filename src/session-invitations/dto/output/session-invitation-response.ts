@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Invitation_status } from '@prisma/client';
+import { InvitationStatus } from '@prisma/client';
 import { PaginationResponseDto } from 'src/shared/dto/responses/pagination-response-type';
 
 export class SessionInvitationResponse {
@@ -29,11 +29,11 @@ export class SessionInvitationResponse {
 
   @ApiProperty({
     description: "Session invitation's status",
-    enum: Invitation_status,
-    example: Invitation_status.PENDING,
+    enum: InvitationStatus,
+    example: InvitationStatus.PENDING,
     readOnly: true,
   })
-  status: Invitation_status;
+  status: InvitationStatus;
 
   @ApiProperty({
     description: "Session invitation's creation date",

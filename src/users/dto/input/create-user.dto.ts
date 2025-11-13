@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Sex, User_type } from '@prisma/client';
+import { Sex, UserType } from '@prisma/client';
 import { IsStrongPassword } from 'src/users/password.validator';
 import {
   IsAlpha,
@@ -96,14 +96,14 @@ export class CreateUserDto {
   })
   readonly bio?: string;
 
-  @IsEnum(User_type)
+  @IsEnum(UserType)
   @IsOptional()
   @ApiProperty({
     description: 'The role of the user',
-    enum: User_type,
-    example: User_type.PARTNER,
+    enum: UserType,
+    example: UserType.PARTNER,
     readOnly: true,
     required: false,
   })
-  readonly type?: User_type;
+  readonly type?: UserType;
 }

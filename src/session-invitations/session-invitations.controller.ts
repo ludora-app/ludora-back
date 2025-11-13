@@ -1,4 +1,4 @@
-import { Invitation_status } from '@prisma/client';
+import { InvitationStatus } from '@prisma/client';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
@@ -147,7 +147,7 @@ export class SessionInvitationsController {
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   update(
     @Param('sessionUid') sessionUid: string,
-    @Body() body: { status: Invitation_status },
+    @Body() body: { status: InvitationStatus },
     @Req() request: Request,
   ): Promise<void> {
     const userUid = request['user'].uid;

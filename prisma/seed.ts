@@ -1,4 +1,4 @@
-import { Game_modes, PrismaClient, Sex, Team_label } from '@prisma/client';
+import { GameModes, PrismaClient, Sex, TeamLabel } from '@prisma/client';
 import * as argon2 from 'argon2';
 
 const prisma = new PrismaClient();
@@ -417,7 +417,7 @@ async function seed() {
         address: field.address,
         latitude: field.latitude,
         longitude: field.longitude,
-        gameMode: field.gameMode as Game_modes,
+        gameMode: field.gameMode as GameModes,
         entryFee: field.entryFee,
       },
     });
@@ -619,70 +619,70 @@ async function seed() {
       startDate: new Date('2025-01-01T10:00:00'),
       endDate: new Date('2025-01-01T11:00:00'),
       sport: createdSports[0].name,
-      gameMode: Game_modes.FIVE_V_FIVE,
+      gameMode: GameModes.FIVE_V_FIVE,
     },
     {
       fieldUid: createdFields[1].uid,
       startDate: new Date('2025-01-02T11:00:00'),
       endDate: new Date('2025-01-02T13:00:00'),
       sport: createdSports[1].name,
-      gameMode: Game_modes.THREE_V_THREE,
+      gameMode: GameModes.THREE_V_THREE,
     },
     {
       fieldUid: createdFields[2].uid,
       startDate: new Date('2025-01-03T14:00:00'),
       endDate: new Date('2025-01-03T15:00:00'),
       sport: createdSports[2].name,
-      gameMode: Game_modes.TWO_V_TWO,
+      gameMode: GameModes.TWO_V_TWO,
     },
     {
       fieldUid: createdFields[3].uid,
       startDate: new Date('2025-01-04T15:00:00'),
       endDate: new Date('2025-01-04T17:00:00'),
       sport: createdSports[3].name,
-      gameMode: Game_modes.FOUR_V_FOUR,
+      gameMode: GameModes.FOUR_V_FOUR,
     },
     {
       fieldUid: createdFields[4].uid,
       startDate: new Date('2025-01-05T16:00:00'),
       endDate: new Date('2025-01-05T18:00:00'),
       sport: createdSports[4].name,
-      gameMode: Game_modes.FOUR_V_FOUR,
+      gameMode: GameModes.FOUR_V_FOUR,
     },
     {
       fieldUid: createdFields[5].uid,
       startDate: new Date('2025-01-06T10:00:00'),
       endDate: new Date('2025-01-06T12:00:00'),
       sport: createdSports[5].name,
-      gameMode: Game_modes.TWO_V_TWO,
+      gameMode: GameModes.TWO_V_TWO,
     },
     {
       fieldUid: createdFields[6].uid,
       startDate: new Date('2025-01-07T13:00:00'),
       endDate: new Date('2025-01-07T14:00:00'),
       sport: createdSports[6].name,
-      gameMode: Game_modes.TWO_V_TWO,
+      gameMode: GameModes.TWO_V_TWO,
     },
     {
       fieldUid: createdFields[0].uid,
       startDate: new Date('2025-12-01T11:00:00'),
       endDate: new Date('2025-12-01T12:00:00'),
       sport: createdSports[0].name,
-      gameMode: Game_modes.ELEVEN_V_ELEVEN,
+      gameMode: GameModes.ELEVEN_V_ELEVEN,
     },
     {
       fieldUid: createdFields[1].uid,
       startDate: new Date('2025-12-02T14:00:00'),
       endDate: new Date('2025-12-02T15:00:00'),
       sport: createdSports[1].name,
-      gameMode: Game_modes.FIVE_V_FIVE,
+      gameMode: GameModes.FIVE_V_FIVE,
     },
     {
       fieldUid: createdFields[2].uid,
       startDate: new Date('2025-12-03T17:00:00'),
       endDate: new Date('2025-12-03T18:00:00'),
       sport: createdSports[2].name,
-      gameMode: Game_modes.TWO_V_TWO,
+      gameMode: GameModes.TWO_V_TWO,
     },
   ];
 
@@ -910,102 +910,102 @@ async function seed() {
   const teams = [
     {
       sessionUid: createdSessions[0].uid,
-      teamLabel: Team_label.A,
+      teamLabel: TeamLabel.A,
       teamName: 'Team A',
     },
     {
       sessionUid: createdSessions[0].uid,
-      teamLabel: Team_label.B,
+      teamLabel: TeamLabel.B,
       teamName: 'Team B',
     },
     {
       sessionUid: createdSessions[1].uid,
-      teamLabel: Team_label.A,
+      teamLabel: TeamLabel.A,
       teamName: 'Team A',
     },
     {
       sessionUid: createdSessions[1].uid,
-      teamLabel: Team_label.B,
+      teamLabel: TeamLabel.B,
       teamName: 'Team B',
     },
     {
       sessionUid: createdSessions[2].uid,
-      teamLabel: Team_label.A,
+      teamLabel: TeamLabel.A,
       teamName: 'Team A',
     },
     {
       sessionUid: createdSessions[2].uid,
-      teamLabel: Team_label.B,
+      teamLabel: TeamLabel.B,
       teamName: 'Team B',
     },
     {
       sessionUid: createdSessions[3].uid,
-      teamLabel: Team_label.A,
+      teamLabel: TeamLabel.A,
       teamName: 'Team A',
     },
     {
       sessionUid: createdSessions[3].uid,
-      teamLabel: Team_label.B,
+      teamLabel: TeamLabel.B,
       teamName: 'Team B',
     },
     {
       sessionUid: createdSessions[4].uid,
-      teamLabel: Team_label.A,
+      teamLabel: TeamLabel.A,
       teamName: 'Team A',
     },
     {
       sessionUid: createdSessions[4].uid,
-      teamLabel: Team_label.B,
+      teamLabel: TeamLabel.B,
       teamName: 'Team B',
     },
     {
       sessionUid: createdSessions[5].uid,
-      teamLabel: Team_label.A,
+      teamLabel: TeamLabel.A,
       teamName: 'Team A',
     },
     {
       sessionUid: createdSessions[5].uid,
-      teamLabel: Team_label.B,
+      teamLabel: TeamLabel.B,
       teamName: 'Team B',
     },
     {
       sessionUid: createdSessions[6].uid,
-      teamLabel: Team_label.A,
+      teamLabel: TeamLabel.A,
       teamName: 'Team A',
     },
     {
       sessionUid: createdSessions[6].uid,
-      teamLabel: Team_label.B,
+      teamLabel: TeamLabel.B,
       teamName: 'Team B',
     },
     {
       sessionUid: createdSessions[7].uid,
-      teamLabel: Team_label.A,
+      teamLabel: TeamLabel.A,
       teamName: 'Team A',
     },
     {
       sessionUid: createdSessions[7].uid,
-      teamLabel: Team_label.B,
+      teamLabel: TeamLabel.B,
       teamName: 'Team B',
     },
     {
       sessionUid: createdSessions[8].uid,
-      teamLabel: Team_label.A,
+      teamLabel: TeamLabel.A,
       teamName: 'Team A',
     },
     {
       sessionUid: createdSessions[8].uid,
-      teamLabel: Team_label.B,
+      teamLabel: TeamLabel.B,
       teamName: 'Team B',
     },
     {
       sessionUid: createdSessions[9].uid,
-      teamLabel: Team_label.A,
+      teamLabel: TeamLabel.A,
       teamName: 'Team A',
     },
     {
       sessionUid: createdSessions[9].uid,
-      teamLabel: Team_label.B,
+      teamLabel: TeamLabel.B,
       teamName: 'Team B',
     },
   ];

@@ -1,4 +1,4 @@
-import { Team_label } from '@prisma/client';
+import { TeamLabel } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { PaginationResponseDto } from 'src/shared/dto/responses/pagination-response-type';
 
@@ -29,8 +29,8 @@ export class SessionTeamResponse {
   @ApiProperty({ example: 'Team A', readOnly: true })
   readonly teamName: string;
 
-  @ApiProperty({ example: Team_label.A, readOnly: true })
-  readonly teamLabel: Team_label;
+  @ApiProperty({ example: TeamLabel.A, readOnly: true })
+  readonly teamLabel: TeamLabel;
 
   @ApiProperty({
     description: 'Session update date',

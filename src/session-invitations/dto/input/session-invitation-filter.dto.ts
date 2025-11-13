@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { Invitation_status } from '@prisma/client';
+import { InvitationStatus } from '@prisma/client';
 import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export class SessionInvitationFilterDto {
@@ -35,11 +35,11 @@ export class SessionInvitationFilterDto {
   cursor?: string;
 
   @IsOptional()
-  @IsEnum(Invitation_status)
+  @IsEnum(InvitationStatus)
   @ApiProperty({
     description: `filtre les sessions en fonction de s'ils sont passés ou à venir, sert pour filtrer mes sessions`,
-    enum: Invitation_status,
-    example: Invitation_status.PENDING,
+    enum: InvitationStatus,
+    example: InvitationStatus.PENDING,
     required: false,
   })
   scope?: string;
