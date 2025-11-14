@@ -537,6 +537,7 @@ model Friends {
 }
 
 model UserSports {
+  uid       String   @id @default(cuid())
   userUid   String   @map("user_uid")
   sport     String
   createdAt DateTime @default(now()) @map("created_at")
@@ -545,7 +546,6 @@ model UserSports {
   user          Users  @relation(fields: [userUid], references: [uid])
   sportRelation Sports @relation(fields: [sport], references: [name])
 
-  @@id([userUid, sport])
   @@unique([userUid, sport])
   @@index([userUid])
   @@index([sport])
