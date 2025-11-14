@@ -18,6 +18,7 @@ import { SessionTeamsModule } from './session-teams/session-teams.module';
 import { SessionPlayersModule } from './session-players/session-players.module';
 import { SessionInvitationsModule } from './session-invitations/session-invitations.module';
 import { UserHourPreferencesModule } from './user-hour-preferences/user-hour-preferences.module';
+import { UserSportPreferencesModule } from './user-sport-preferences/user-sport-preferences.module';
 
 const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV === 'development';
 @Module({
@@ -94,6 +95,7 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
     PaymentModule,
     MetricsModule,
     UserHourPreferencesModule,
+    UserSportPreferencesModule,
   ],
 
   providers: [AppService],
