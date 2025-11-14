@@ -1,7 +1,7 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma, SessionTeams, Team_label } from '@prisma/client';
+import { Prisma, SessionTeams, TeamLabel } from '@prisma/client';
 import { SessionTeamWithPlayers, SessionUtils } from 'src/sessions/utils/session-utils';
 
 @Injectable()
@@ -32,8 +32,8 @@ export class SessionTeamsService {
 
     await db.sessionTeams.createMany({
       data: [
-        { sessionUid: sessionUid, teamLabel: Team_label.A, teamName: 'Team A' },
-        { sessionUid: sessionUid, teamLabel: Team_label.B, teamName: 'Team B' },
+        { sessionUid: sessionUid, teamLabel: TeamLabel.A, teamName: 'Team A' },
+        { sessionUid: sessionUid, teamLabel: TeamLabel.B, teamName: 'Team B' },
       ],
     });
 

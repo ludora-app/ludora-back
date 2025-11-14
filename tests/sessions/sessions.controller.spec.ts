@@ -1,6 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Game_modes } from '@prisma/client';
+import { GameModes } from '@prisma/client';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 import { CreateSessionDto } from 'src/sessions/dto/input/create-session.dto';
@@ -72,7 +72,7 @@ describe('SessionsController', () => {
       minPlayersPerTeam: 3,
       teamsPerGame: 2,
       title: 'Test Session Title',
-      gameMode: Game_modes.FIVE_V_FIVE,
+      gameMode: GameModes.FIVE_V_FIVE,
       userUid: 'user-uid-1',
     };
 
@@ -82,7 +82,7 @@ describe('SessionsController', () => {
         title: 'Test Session Title',
         sport: Sport.FOOTBALL,
         description: 'Test session',
-        gameMode: Game_modes.FIVE_V_FIVE,
+        gameMode: GameModes.FIVE_V_FIVE,
         startDate: '2023-02-15T14:00:00Z',
         endDate: '2023-02-15T16:00:00Z',
         maxPlayersPerTeam: 5,
@@ -191,7 +191,7 @@ describe('SessionsController', () => {
         title: 'Test Session',
         sport: Sport.FOOTBALL,
         description: 'Test session',
-        gameMode: Game_modes.FIVE_V_FIVE,
+        gameMode: GameModes.FIVE_V_FIVE,
         startDate: '2023-02-15T14:00:00Z',
         endDate: '2023-02-15T16:00:00Z',
         maxPlayersPerTeam: 5,
@@ -228,7 +228,7 @@ describe('SessionsController', () => {
       minPlayersPerTeam: 4,
       teamsPerGame: 2,
       title: 'Updated Session Title',
-      gameMode: Game_modes.FIVE_V_FIVE,
+      gameMode: GameModes.FIVE_V_FIVE,
     };
 
     it('should update a session and return no content (204)', async () => {
@@ -237,7 +237,7 @@ describe('SessionsController', () => {
         title: 'Updated Session Title',
         sport: Sport.FOOTBALL,
         description: 'Updated session',
-        gameMode: Game_modes.FIVE_V_FIVE,
+        gameMode: GameModes.FIVE_V_FIVE,
         startDate: '2023-02-15T15:00:00Z',
         endDate: '2023-02-15T17:00:00Z',
         maxPlayersPerTeam: 6,

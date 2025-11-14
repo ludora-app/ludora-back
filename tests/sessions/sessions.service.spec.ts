@@ -1,6 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Game_modes } from '@prisma/client';
+import { GameModes } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Sport } from 'src/shared/constants/constants';
 import { DateUtils } from 'src/shared/utils/date.utils';
@@ -111,7 +111,7 @@ describe('SessionsService', () => {
       minPlayersPerTeam: 3,
       teamsPerGame: 2,
       title: 'Test Session Title',
-      gameMode: Game_modes.FIVE_V_FIVE,
+      gameMode: GameModes.FIVE_V_FIVE,
       userUid: 'user-uid-1',
     };
 
@@ -577,7 +577,7 @@ describe('SessionsService', () => {
       endDate: mockFutureEndDate.toISOString(),
       startDate: mockFutureDate.toISOString(),
       description: 'Updated session',
-      gameMode: Game_modes.FIVE_V_FIVE,
+      gameMode: GameModes.FIVE_V_FIVE,
       maxPlayersPerTeam: 6,
       minPlayersPerTeam: 4,
       teamsPerGame: 2,

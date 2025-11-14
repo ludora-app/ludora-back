@@ -1,4 +1,4 @@
-import { Game_modes } from '@prisma/client';
+import { GameModes } from '@prisma/client';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { IsDateString, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 
@@ -23,14 +23,14 @@ export class UpdateSessionDto extends PartialType(CreateSessionDto) {
   })
   description?: string;
 
-  @IsEnum(Game_modes)
+  @IsEnum(GameModes)
   @IsOptional()
   @ApiProperty({
     description: 'The game mode of the session',
     example: 'THREE_VS_THREE',
     required: true,
   })
-  gameMode: Game_modes;
+  gameMode: GameModes;
 
   @IsDateString()
   @IsOptional()

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Sex, User_type } from '@prisma/client';
+import { Sex, UserType } from '@prisma/client';
 import { IsStrongPassword } from 'src/users/password.validator';
 import {
   IsDateString,
@@ -14,13 +14,13 @@ import {
 } from 'class-validator';
 
 export class RegisterB2CDto {
-  @IsEnum(User_type)
+  @IsEnum(UserType)
   @ApiProperty({
     description: 'user type (USER or ADMIN)',
-    enum: User_type,
-    example: User_type.USER,
+    enum: UserType,
+    example: UserType.USER,
   })
-  readonly type: User_type;
+  readonly type: UserType;
 
   // Propriétés communes
   @IsString()
@@ -72,7 +72,7 @@ export class RegisterB2CDto {
   readonly bio?: string;
 
   // Champs spécifiques à USER
-  @ValidateIf((dto) => dto.type === User_type.USER)
+  @ValidateIf((dto) => dto.type === UserType.USER)
   @IsDateString()
   @ApiProperty({
     description: 'birthdate of user',
@@ -82,7 +82,7 @@ export class RegisterB2CDto {
   })
   readonly birthdate?: string;
 
-  @ValidateIf((dto) => dto.type === User_type.USER)
+  @ValidateIf((dto) => dto.type === UserType.USER)
   @IsEnum(Sex, { message: 'Unknown Sex' })
   @IsOptional()
   @ApiProperty({

@@ -1,6 +1,6 @@
 import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
-import { User_type } from '@prisma/client';
+import { UserType } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -41,7 +41,7 @@ export class AuthB2CService {
     const result = await this.prismaService.$transaction(async (tx) => {
       let newUser;
 
-      if (type === User_type.USER) {
+      if (type === UserType.USER) {
         const { bio, birthdate, email, firstname, lastname, password, phone, sex } = registerDto;
 
         const hashedPassword = await argon2.hash(password);

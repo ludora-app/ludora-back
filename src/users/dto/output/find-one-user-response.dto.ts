@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Sex, User_type } from '@prisma/client';
+import { Sex, UserType } from '@prisma/client';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
 export class FindOneUserResponseDataDto {
@@ -56,8 +56,8 @@ export class FindMeUserResponseDataDto {
   @ApiProperty({ example: true, nullable: true, readOnly: true })
   readonly active?: boolean;
 
-  @ApiProperty({ enum: User_type, example: 'USER', nullable: true, readOnly: true })
-  readonly type: User_type;
+  @ApiProperty({ enum: UserType, example: 'USER', nullable: true, readOnly: true })
+  readonly type: UserType;
 
   @ApiProperty({ example: null, nullable: true, readOnly: true })
   readonly stripe_account_uid?: string;

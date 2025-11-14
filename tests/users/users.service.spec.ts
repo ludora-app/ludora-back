@@ -7,7 +7,6 @@ import { EmailsService } from 'src/shared/emails/emails.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { UsersService } from 'src/users/users.service';
 
-// Mock argon2
 jest.mock('argon2', () => ({
   hash: jest.fn().mockResolvedValue('hashedPassword'),
   verify: jest.fn().mockResolvedValue(true),

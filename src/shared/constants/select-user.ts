@@ -7,6 +7,10 @@ import { Prisma } from '@prisma/client';
  * return { data: user, message: 'User fetched successfully' };
  */
 export const USERSELECT: Record<string, Prisma.UsersSelect> = {
+  checkIfUserExists: {
+    uid: true,
+  },
+
   createStripeAccountToken: {
     birthdate: true,
     email: true,
@@ -54,6 +58,7 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     lastname: true,
     uid: true,
   },
+
   stripeAccountId: {
     stripeAccountId: true,
   },
