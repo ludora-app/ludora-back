@@ -7,7 +7,7 @@ export class BadRequestResponseDto extends HttpErrorDto {
   statusCode: number;
 
   @ApiProperty({
-    example: ['email must be an email', 'password is not strong enough'],
+    example: 'email must be an email',
   })
   message: string;
 

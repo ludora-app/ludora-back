@@ -1,6 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { TimePeriod, UserHourPreferenceType } from '@prisma/client';
+import { PaginationResponseDto } from 'src/shared/dto/responses/pagination-response-type';
 
+/**
+ * @description standard response for a userHourPreference resource
+ */
 export class UserHourPreferenceResponse {
   @ApiProperty({
     description: 'Session creation date',
@@ -35,3 +39,10 @@ export class UserHourPreferenceResponse {
   })
   updatedAt: Date;
 }
+
+/**
+ * @description standard response for a paginated userHourPreference resource, used to type swagger return
+ */
+export const PaginatedUserHourPreferenceResponse = PaginationResponseDto(
+  UserHourPreferenceResponse,
+);

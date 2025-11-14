@@ -25,7 +25,7 @@ export class DateUtils {
    * @returns The method `formatDate` takes a date string as input, formats it using the dayjs library
    * to the format 'DD/MM/YYYY', and returns the formatted date string.
    */
-  public static formatDate(date: string) {
+  public static formatDate(date: string): string {
     return dayjs(date).format('DD/MM/YYYY');
   }
 
@@ -34,7 +34,7 @@ export class DateUtils {
    * @param date - The date to format
    * @returns The formatted hour
    */
-  public static formatHour(date: string) {
+  public static formatHour(date: string): string {
     return dayjs(date).format('HH:mm');
   }
 
@@ -45,11 +45,20 @@ export class DateUtils {
    * @returns "Aujourd'hui" if the date is today
    * @returns "Hier" if the date is yesterday
    */
-  public static getDayOfWeek(date: string) {
+  public static getDayOfWeek(date: string): string {
     return dayjs(date)
       .locale('fr')
       .format('dddd DD/MM')
       .replace(/^\w/, (c) => c.toUpperCase());
+  }
+
+  /**
+   * Get the day of the week number from a date (0 is Sunday, 6 is Saturday)
+   * @param date - The date to get the day of the week number from
+   * @returns The day of the week number
+   */
+  public static getDayOfWeekNumber(date: string): number {
+    return dayjs(date).get('day');
   }
 
   public static getEstimatedTime(startDate: string, endDate: string) {

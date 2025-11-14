@@ -3,7 +3,7 @@ import { Sport } from 'src/shared/constants/constants';
 import { PaginationResponseDto } from 'src/shared/dto/responses/pagination-response-type';
 
 /**
- * @description standard response for a session
+ * @description standard response for a Session resource
  */
 export class SessionResponse {
   @ApiProperty({
