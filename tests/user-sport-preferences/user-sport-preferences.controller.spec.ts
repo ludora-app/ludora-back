@@ -1,0 +1,288 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { UserSports } from '@prisma/client';
+import { UserSportPreferencesController } from '../../src/user-sport-preferences/user-sport-preferences.controller';
+import { UserSportPreferencesService } from '../../src/user-sport-preferences/user-sport-preferences.service';
+import { CreateUserSportPreferenceDto } from '../../src/user-sport-preferences/dto/input/create-user-sport-preference.dto';
+import { Sport } from '../../src/shared/constants/constants';
+
+describe('UserSportPreferencesController', () => {
+  let controller: UserSportPreferencesController;
+  let service: UserSportPreferencesService;
+
+  const mockUserSportPreferencesService = {
+    create: jest.fn(),
+    findAllByUserUid: jest.fn(),
+    remove: jest.fn(),
+  };
+
+  const mockCurrentDate = new Date('2023-01-01T12:00:00Z');
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [UserSportPreferencesController],
+      providers: [
+        { provide: UserSportPreferencesService, useValue: mockUserSportPreferencesService },
+      ],
+    }).compile();
+
+    controller = module.get<UserSportPreferencesController>(UserSportPreferencesController);
+    service = module.get<UserSportPreferencesService>(UserSportPreferencesService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+
+  describe('create', () => {
+    const mockRequest = {
+      user: { uid: 'user-uid-1' },
+    } as any;
+
+    it('should create a sport preference successfully', async () => {
+      const createDto: CreateUserSportPreferenceDto = {
+        sport: Sport.BASKETBALL,
+      };
+
+      const mockCreatedPreference: UserSports = {
+        uid: 'sport-pref-uid-1',
+        sport: Sport.BASKETBALL,
+        userUid: 'user-uid-1',
+        createdAt: mockCurrentDate,
+        updatedAt: mockCurrentDate,
+      };
+
+      mockUserSportPreferencesService.create.mockResolvedValue(mockCreatedPreference);
+
+      const result = await controller.create(createDto, mockRequest);
+
+      expect(result).toEqual(mockCreatedPreference);
+      expect(service.create).toHaveBeenCalledWith(Sport.BASKETBALL, 'user-uid-1');
+    });
+
+    it('should create sport preferences for different sports', async () => {
+      const sports = [Sport.BASKETBALL, Sport.FOOTBALL, Sport.TENNIS, Sport.VOLLEYBALL];
+
+      for (const sport of sports) {
+        const createDto: CreateUserSportPreferenceDto = { sport };
+
+        const mockCreatedPreference: UserSports = {
+          uid: `sport-pref-uid-${sport}`,
+          sport,
+          userUid: 'user-uid-1',
+          createdAt: mockCurrentDate,
+          updatedAt: mockCurrentDate,
+        };
+
+        mockUserSportPreferencesService.create.mockResolvedValue(mockCreatedPreference);
+
+        const result = await controller.create(createDto, mockRequest);
+
+        expect(result).toEqual(mockCreatedPreference);
+        expect(service.create).toHaveBeenCalledWith(sport, 'user-uid-1');
+
+        jest.clearAllMocks();
+      }
+    });
+
+    it('should propagate NotFoundException when user does not exist', async () => {
+      const createDto: CreateUserSportPreferenceDto = {
+        sport: Sport.BASKETBALL,
+      };
+
+      mockUserSportPreferencesService.create.mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
+
+      await expect(controller.create(createDto, mockRequest)).rejects.toThrow(NotFoundException);
+      expect(service.create).toHaveBeenCalledWith(Sport.BASKETBALL, 'user-uid-1');
+    });
+
+    it('should propagate BadRequestException when sport preference already exists', async () => {
+      const createDto: CreateUserSportPreferenceDto = {
+        sport: Sport.BASKETBALL,
+      };
+
+      mockUserSportPreferencesService.create.mockRejectedValue(
+        new BadRequestException('Sport preference already exists'),
+      );
+
+      await expect(controller.create(createDto, mockRequest)).rejects.toThrow(BadRequestException);
+      expect(service.create).toHaveBeenCalledWith(Sport.BASKETBALL, 'user-uid-1');
+    });
+
+    it('should extract userUid from request object', async () => {
+      const createDto: CreateUserSportPreferenceDto = {
+        sport: Sport.FOOTBALL,
+      };
+
+      const differentMockRequest = {
+        user: { uid: 'different-user-uid' },
+      } as any;
+
+      const mockCreatedPreference: UserSports = {
+        uid: 'sport-pref-uid-2',
+        sport: Sport.FOOTBALL,
+        userUid: 'different-user-uid',
+        createdAt: mockCurrentDate,
+        updatedAt: mockCurrentDate,
+      };
+
+      mockUserSportPreferencesService.create.mockResolvedValue(mockCreatedPreference);
+
+      await controller.create(createDto, differentMockRequest);
+
+      expect(service.create).toHaveBeenCalledWith(Sport.FOOTBALL, 'different-user-uid');
+    });
+  });
+
+  describe('findAllByUserUid', () => {
+    const userUid = 'user-uid-1';
+
+    it('should return all sport preferences for a user', async () => {
+      const mockPreferences: UserSports[] = [
+        {
+          uid: 'sport-pref-uid-1',
+          sport: Sport.BASKETBALL,
+          userUid,
+          createdAt: mockCurrentDate,
+          updatedAt: mockCurrentDate,
+        },
+        {
+          uid: 'sport-pref-uid-2',
+          sport: Sport.FOOTBALL,
+          userUid,
+          createdAt: mockCurrentDate,
+          updatedAt: mockCurrentDate,
+        },
+        {
+          uid: 'sport-pref-uid-3',
+          sport: Sport.TENNIS,
+          userUid,
+          createdAt: mockCurrentDate,
+          updatedAt: mockCurrentDate,
+        },
+      ];
+
+      mockUserSportPreferencesService.findAllByUserUid.mockResolvedValue(mockPreferences);
+
+      const result = await controller.findAllByUserUid(userUid);
+
+      expect(result).toEqual(mockPreferences);
+      expect(service.findAllByUserUid).toHaveBeenCalledWith(userUid);
+    });
+
+    it('should return empty array when user has no sport preferences', async () => {
+      mockUserSportPreferencesService.findAllByUserUid.mockResolvedValue([]);
+
+      const result = await controller.findAllByUserUid(userUid);
+
+      expect(result).toEqual([]);
+      expect(service.findAllByUserUid).toHaveBeenCalledWith(userUid);
+    });
+
+    it('should propagate NotFoundException when user does not exist', async () => {
+      mockUserSportPreferencesService.findAllByUserUid.mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
+
+      await expect(controller.findAllByUserUid('non-existent-uid')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(service.findAllByUserUid).toHaveBeenCalledWith('non-existent-uid');
+    });
+
+    it('should handle different user UIDs', async () => {
+      const userIds = ['user-uid-1', 'user-uid-2', 'user-uid-3'];
+
+      for (const uid of userIds) {
+        const mockPreferences: UserSports[] = [
+          {
+            uid: `sport-pref-${uid}`,
+            sport: Sport.BASKETBALL,
+            userUid: uid,
+            createdAt: mockCurrentDate,
+            updatedAt: mockCurrentDate,
+          },
+        ];
+
+        mockUserSportPreferencesService.findAllByUserUid.mockResolvedValue(mockPreferences);
+
+        const result = await controller.findAllByUserUid(uid);
+
+        expect(result).toEqual(mockPreferences);
+        expect(service.findAllByUserUid).toHaveBeenCalledWith(uid);
+
+        jest.clearAllMocks();
+      }
+    });
+  });
+
+  describe('remove', () => {
+    const mockRequest = {
+      user: { uid: 'user-uid-1' },
+    } as any;
+    const sportPreferenceUid = 'sport-pref-uid-1';
+
+    it('should remove a sport preference successfully', async () => {
+      mockUserSportPreferencesService.remove.mockResolvedValue(undefined);
+
+      const result = await controller.remove(sportPreferenceUid, mockRequest);
+
+      expect(result).toBeUndefined();
+      expect(service.remove).toHaveBeenCalledWith(sportPreferenceUid, 'user-uid-1');
+    });
+
+    it('should propagate NotFoundException when sport preference does not exist', async () => {
+      mockUserSportPreferencesService.remove.mockRejectedValue(
+        new NotFoundException('Sport preference not found'),
+      );
+
+      await expect(controller.remove('non-existent-uid', mockRequest)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(service.remove).toHaveBeenCalledWith('non-existent-uid', 'user-uid-1');
+    });
+
+    it('should propagate NotFoundException when userUid does not match', async () => {
+      mockUserSportPreferencesService.remove.mockRejectedValue(
+        new NotFoundException('Sport preference not found'),
+      );
+
+      await expect(controller.remove(sportPreferenceUid, mockRequest)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(service.remove).toHaveBeenCalledWith(sportPreferenceUid, 'user-uid-1');
+    });
+
+    it('should extract userUid from request object', async () => {
+      const differentMockRequest = {
+        user: { uid: 'different-user-uid' },
+      } as any;
+
+      mockUserSportPreferencesService.remove.mockResolvedValue(undefined);
+
+      await controller.remove(sportPreferenceUid, differentMockRequest);
+
+      expect(service.remove).toHaveBeenCalledWith(sportPreferenceUid, 'different-user-uid');
+    });
+
+    it('should handle removal of multiple sport preferences', async () => {
+      const sportPreferenceUids = ['sport-pref-uid-1', 'sport-pref-uid-2', 'sport-pref-uid-3'];
+
+      for (const uid of sportPreferenceUids) {
+        mockUserSportPreferencesService.remove.mockResolvedValue(undefined);
+
+        await controller.remove(uid, mockRequest);
+
+        expect(service.remove).toHaveBeenCalledWith(uid, 'user-uid-1');
+
+        jest.clearAllMocks();
+      }
+    });
+  });
+});
