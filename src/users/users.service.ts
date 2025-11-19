@@ -86,6 +86,11 @@ export class UsersService {
         imageUrl: true,
         lastname: true,
         uid: true,
+        userSports: {
+          select: {
+            sport: true,
+          },
+        },
       },
     };
 

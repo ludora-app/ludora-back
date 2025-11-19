@@ -16,6 +16,9 @@ export class FindAllUsersResponseDataDto {
 
   @ApiProperty({ example: 'https://example.com/image.jpg', nullable: true, readOnly: true })
   readonly imageUrl?: string;
+
+  @ApiProperty({ example: [{ sport: 'BASKETBALL' }], nullable: true, readOnly: true })
+  readonly userSports?: { sport: string }[];
 }
 
 export const FindAllUsersResponseDto = PaginationResponseDto(FindAllUsersResponseDataDto);

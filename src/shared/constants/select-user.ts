@@ -27,16 +27,6 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     stripeAccountId: true,
     uid: true,
   },
-
-  findAll: {
-    email: true,
-    firstname: true,
-    sex: true,
-    stripeAccountId: true,
-    type: true,
-    uid: true,
-  },
-
   findMe: {
     bio: true,
     birthdate: true,
@@ -49,6 +39,11 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     stripeAccountId: true,
     type: true,
     uid: true,
+    userSports: {
+      select: {
+        sport: true,
+      },
+    },
   },
 
   findOne: {
@@ -57,6 +52,11 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     imageUrl: true,
     lastname: true,
     uid: true,
+    userSports: {
+      select: {
+        sport: true,
+      },
+    },
   },
 
   stripeAccountId: {

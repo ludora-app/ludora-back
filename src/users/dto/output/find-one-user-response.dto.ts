@@ -20,6 +20,9 @@ export class FindOneUserResponseDataDto {
 
   @ApiProperty({ example: 'https://example.com/image.jpg', nullable: true, readOnly: true })
   readonly imageUrl?: string;
+
+  @ApiProperty({ example: [{ sport: 'BASKETBALL' }], nullable: true, readOnly: true })
+  readonly userSports?: { sport: string }[];
 }
 
 export class FindMeUserResponseDataDto {
@@ -61,6 +64,9 @@ export class FindMeUserResponseDataDto {
 
   @ApiProperty({ example: null, nullable: true, readOnly: true })
   readonly stripe_account_uid?: string;
+
+  @ApiProperty({ example: [{ sport: 'BASKETBALL' }], nullable: true, readOnly: true })
+  readonly userSports?: { sport: string }[];
 }
 
 export class FindMeUserResponseDto extends ResponseTypeDto<FindMeUserResponseDataDto> {
