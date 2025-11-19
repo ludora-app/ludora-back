@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { UserSports } from '@prisma/client';
+import { UserSports } from 'generated/prisma/client';
 import { UserSportPreferencesController } from '../../src/user-sport-preferences/user-sport-preferences.controller';
 import { UserSportPreferencesService } from '../../src/user-sport-preferences/user-sport-preferences.service';
 import { CreateUserSportPreferenceDto } from '../../src/user-sport-preferences/dto/input/create-user-sport-preference.dto';

@@ -1,7 +1,12 @@
-import { GameModes, PrismaClient, Sex, TeamLabel } from '@prisma/client';
+import { GameModes, PrismaClient, Sex, TeamLabel } from 'generated/prisma/client';
 import * as argon2 from 'argon2';
+import 'dotenv/config';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient();
+const connectionString = `${process.env.DATABASE_URL}`;
+
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
 
 async function hashPassword(password: string): Promise<string> {
   return argon2.hash(password);

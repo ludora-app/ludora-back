@@ -1,5 +1,5 @@
-import { TeamLabel } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
+import { TeamLabel } from 'generated/prisma/client';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 /**

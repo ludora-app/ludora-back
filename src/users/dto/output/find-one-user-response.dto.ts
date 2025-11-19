@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Sex, UserType } from '@prisma/client';
+import { Sex, UserType } from 'generated/prisma/client';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
 export class FindOneUserResponseDataDto {

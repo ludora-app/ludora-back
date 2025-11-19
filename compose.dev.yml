@@ -16,6 +16,7 @@ services:
       - ./src:/usr/src/app/src
       - ./prisma:/usr/src/app/prisma
       - ./tests:/usr/src/app/tests
+      - ./generated:/usr/src/app/generated
       # Exclude node_modules for performance
       - /usr/src/app/node_modules
     environment:

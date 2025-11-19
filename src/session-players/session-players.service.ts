@@ -1,7 +1,7 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Injectable } from '@nestjs/common';
-import { Prisma, SessionPlayers } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Prisma, SessionPlayers } from 'generated/prisma/client';
 
 import { CreateSessionPlayerDto } from './dto/input/create-session-player.dto';
 

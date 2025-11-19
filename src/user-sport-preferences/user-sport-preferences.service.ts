@@ -1,5 +1,5 @@
 import { PinoLogger } from 'nestjs-pino';
-import { UserSports } from '@prisma/client';
+import { UserSports } from 'generated/prisma/client';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';

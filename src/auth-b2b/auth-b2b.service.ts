@@ -1,9 +1,9 @@
 import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
-import { UserType } from '@prisma/client';
 import { CreateUserDto } from 'src/users/dto';
 import { ConfigService } from '@nestjs/config';
 import { CreateImageDto } from 'src/auth-b2c/dto';
+import { UserType } from 'generated/prisma/client';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ConflictException, Injectable } from '@nestjs/common';

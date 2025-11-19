@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { InvitationStatus } from '@prisma/client';
+import { InvitationStatus } from 'generated/prisma/client';
 import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export class SessionInvitationFilterDto {

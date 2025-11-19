@@ -3,7 +3,7 @@ import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { SessionsService } from 'src/sessions/sessions.service';
-import { InvitationStatus, SessionInvitations } from '@prisma/client';
+import { InvitationStatus, SessionInvitations } from 'generated/prisma/client';
 import { SessionPlayersService } from 'src/session-players/session-players.service';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { CreateSessionPlayerDto } from 'src/session-players/dto/input/create-session-player.dto';

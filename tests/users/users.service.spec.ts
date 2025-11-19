@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Sex } from '@prisma/client';
+import { Sex } from 'generated/prisma/client';
 import * as argon2 from 'argon2';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';

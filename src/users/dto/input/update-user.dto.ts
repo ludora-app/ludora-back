@@ -1,4 +1,4 @@
-import { Sex } from '@prisma/client';
+import { Sex } from 'generated/prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { PartialType } from '@nestjs/mapped-types';
 import { IsDateString, IsEnum, IsOptional, IsPhoneNumber, IsString, IsUrl } from 'class-validator';

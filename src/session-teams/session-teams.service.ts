@@ -1,7 +1,7 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma, SessionTeams, TeamLabel } from '@prisma/client';
+import { Prisma, SessionTeams, TeamLabel } from 'generated/prisma/client';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { SessionTeamWithPlayers, SessionUtils } from 'src/sessions/utils/session-utils';
 

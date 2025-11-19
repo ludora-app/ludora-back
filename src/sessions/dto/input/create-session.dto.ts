@@ -1,5 +1,5 @@
-import { GameModes } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
+import { GameModes } from 'generated/prisma/client';
 import { IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateSessionDto {

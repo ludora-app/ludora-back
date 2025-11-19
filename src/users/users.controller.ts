@@ -1,4 +1,4 @@
-import { Users } from '@prisma/client';
+import { Users } from 'generated/prisma/client';
 import { Public } from 'src/shared/decorators/public.decorator';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';

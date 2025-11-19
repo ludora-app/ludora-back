@@ -2,7 +2,7 @@ import { BadRequestException, NotFoundException, UnauthorizedException } from '@
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Sex, UserType } from '@prisma/client';
+import { Sex, UserType } from 'generated/prisma/client';
 import * as argon2 from 'argon2';
 import { AuthB2CService } from 'src/auth-b2c/auth-b2c.service';
 import { RefreshTokenDto } from 'src/auth-b2c/dto';

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { TimePeriod, UserHourPreferenceType } from '@prisma/client';
+import { TimePeriod, UserHourPreferenceType } from 'generated/prisma/client';
 import { UserHourPreferencesController } from '../../src/user-hour-preferences/user-hour-preferences.controller';
 import { UserHourPreferencesService } from '../../src/user-hour-preferences/user-hour-preferences.service';
 import { CreateUserHourPreferenceDto } from '../../src/user-hour-preferences/dto/input/create-user-hour-preference.dto';
