@@ -22,5 +22,5 @@
     // "noUnusedLocals": true
     // "noUnusedParameters": true
   },
-  "exclude": ["node_modules", "dist", "generated"]
+  "exclude": ["node_modules", "dist"]
 }
