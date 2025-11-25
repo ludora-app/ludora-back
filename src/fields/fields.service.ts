@@ -6,7 +6,7 @@ import { StorageService } from 'src/shared/storage/storage.service';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 
 import { UpdateFieldDto } from './dto/input/update-field.dto';
-import { FieldWithImagesDto } from './dto/output/field-with-images.dto';
+import { FieldResponseDto } from './dto/output/field-response';
 import { CreatePublicFieldDto } from './dto/input/create-public-field.dto';
 
 @Injectable()
@@ -20,7 +20,7 @@ export class FieldsService {
   async create(
     createPublicFieldDto: CreatePublicFieldDto,
     tx?: Prisma.TransactionClient,
-  ): Promise<FieldWithImagesDto> {
+  ): Promise<FieldResponseDto> {
     const prisma = tx ?? this.prisma;
     const { address, images, sport } = createPublicFieldDto;
 
@@ -60,8 +60,13 @@ export class FieldsService {
     return `This action returns all fields`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} field`;
+  async findOne(uid: string): Promise<FieldResponseDto> {
+    return this.prisma.fields.findUnique({
+      include: {
+        fieldImages: true,
+      },
+      where: { uid },
+    });
   }
 
   update(id: number, _updateFieldDto: UpdateFieldDto) {

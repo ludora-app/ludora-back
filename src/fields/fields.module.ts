@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { UsersModule } from 'src/users/users.module';
 import { SharedModule } from 'src/shared/shared.module';
 import { PartnersModule } from 'src/partners/partners.module';
 import { PartnersService } from 'src/partners/partners.service';
@@ -10,7 +11,7 @@ import { FieldsController } from './fields.controller';
 
 @Module({
   controllers: [FieldsController],
-  imports: [PartnersModule, SharedModule],
+  imports: [PartnersModule, SharedModule, UsersModule],
   providers: [FieldsService, PartnersService, StorageService, GeolocalisationService],
 })
 export class FieldsModule {}
