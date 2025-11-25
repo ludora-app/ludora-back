@@ -53,7 +53,7 @@ export class UserHourPreferencesController {
     return { data, message: 'User hour preference created successfully' };
   }
 
-  @Get('all-by-user/:userUid')
+  @Get('list-by-user/:userUid')
   @ApiOperation({ summary: 'Get all user hour preferences by user ID' })
   @ApiOkResponse({ type: PaginatedUserHourPreferenceResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })

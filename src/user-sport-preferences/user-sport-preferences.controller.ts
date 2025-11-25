@@ -30,13 +30,13 @@ import { PaginatedUserSportPreferenceResponse } from './dto/output/user-sport-pr
 export class UserSportPreferencesController {
   constructor(private readonly userSportPreferencesService: UserSportPreferencesService) {}
 
+  @Post()
   @ApiOperation({ summary: 'Create a user sport preference' })
   @ApiCreatedResponse({ description: 'User sport preference created successfully' })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.CREATED)
-  @Post()
   create(
     @Body() createUserSportPreferenceDto: CreateUserSportPreferenceDto,
     @Req() request: Request,
@@ -45,23 +45,23 @@ export class UserSportPreferencesController {
     return this.userSportPreferencesService.create(createUserSportPreferenceDto.sport, userUid);
   }
 
+  @Get('list-by-user/:userUid')
   @ApiOperation({ summary: 'Get all user sport preferences by user ID' })
   @ApiOkResponse({ type: PaginatedUserSportPreferenceResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.OK)
-  @Get('all-by-user/:userUid')
   findAllByUserUid(@Param('userUid') userUid: string) {
     return this.userSportPreferencesService.findAllByUserUid(userUid);
   }
 
+  @Delete(':uid')
   @ApiOperation({ summary: 'Delete a user sport preference by uid' })
   @ApiNoContentResponse({ description: 'User sport preference deleted successfully' })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Delete(':uid')
   async remove(@Param('uid') uid: string, @Req() request: Request): Promise<void> {
     const userUid = request['user'].uid;
     await this.userSportPreferencesService.remove(uid, userUid);
