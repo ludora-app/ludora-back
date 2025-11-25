@@ -19,6 +19,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiBody,
   ApiConflictResponse,
   ApiConsumes,
@@ -48,6 +49,7 @@ import { VerifyEmailCodeDto } from './dto/input/verify-email-code.dto';
 
 @Controller('auth-b2c')
 @UseGuards(AuthB2CGuard)
+@ApiBearerAuth('JWT-auth')
 export class AuthB2CController {
   constructor(private readonly authService: AuthB2CService) {}
 

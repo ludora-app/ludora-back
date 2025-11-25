@@ -20,6 +20,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOkResponse,
@@ -43,6 +44,7 @@ import {
 
 @UseGuards(AuthB2CGuard)
 @Controller('payment')
+@ApiBearerAuth('JWT-auth')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 

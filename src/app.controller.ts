@@ -1,5 +1,5 @@
-import { ApiOperation } from '@nestjs/swagger';
 import { Controller, Get, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 
 import { AppService } from './app.service';
 import { Public } from './shared/decorators/public.decorator';
@@ -7,6 +7,7 @@ import { AuthB2CGuard } from './auth-b2c/guards/auth-b2c.guard';
 
 @Controller()
 @UseGuards(AuthB2CGuard)
+@ApiBearerAuth('JWT-auth')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 

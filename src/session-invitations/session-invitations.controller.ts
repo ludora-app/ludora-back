@@ -23,6 +23,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiNoContentResponse,
@@ -43,6 +44,7 @@ import {
 
 @Controller('session-invitations')
 @UseGuards(AuthB2CGuard)
+@ApiBearerAuth('JWT-auth')
 export class SessionInvitationsController {
   constructor(private readonly sessionInvitationsService: SessionInvitationsService) {}
 

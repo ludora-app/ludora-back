@@ -1,5 +1,6 @@
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthB2BGuard } from 'src/auth-b2b/guards/auth-b2b.guard';
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 
 import { PartnersService } from './partners.service';
 import { CreatePartnerDto } from './dto/create-partner.dto';
@@ -9,6 +10,7 @@ export class PartnersController {
   constructor(private readonly partnersService: PartnersService) {}
 
   @UseGuards(AuthB2BGuard)
+  @ApiBearerAuth('JWT-auth')
   @Post()
   create(@Body() createPartnerDto: CreatePartnerDto) {
     return this.partnersService.create(createPartnerDto);

@@ -16,6 +16,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -30,6 +31,7 @@ import {
 
 @Controller('session-teams')
 @UseGuards(AuthB2CGuard)
+@ApiBearerAuth('JWT-auth')
 export class SessionTeamsController {
   constructor(
     @Inject(forwardRef(() => SessionsService)) private readonly sessionsService: SessionsService,

@@ -21,6 +21,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -37,6 +38,7 @@ import { PaginatedSessionResponse, SessionResponse } from './dto/output/session.
 
 @Controller('sessions')
 @UseGuards(AuthB2CGuard)
+@ApiBearerAuth('JWT-auth')
 export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}
 

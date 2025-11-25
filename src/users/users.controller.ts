@@ -7,14 +7,6 @@ import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-respons
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
-  ApiBadRequestResponse,
-  ApiNoContentResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
-import {
   Body,
   Controller,
   Delete,
@@ -28,6 +20,15 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
 import { UsersService } from './users.service';
 import { USERSELECT } from '../shared/constants/select-user';
@@ -43,6 +44,7 @@ import {
 
 @Controller('users')
 @UseGuards(AuthB2CGuard)
+@ApiBearerAuth('JWT-auth')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
