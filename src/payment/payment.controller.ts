@@ -160,7 +160,7 @@ export class PaymentController {
     await this.paymentService.addBankAccount(userId, bankDetails);
   }
 
-  @Get('bank-accounts')
+  @Get('list-bank-accounts')
   @ApiOperation({
     summary: 'Get all bank accounts',
   })
