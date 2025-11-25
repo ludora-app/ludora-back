@@ -5,10 +5,10 @@ import { PartnersService } from './partners.service';
 import { CreatePartnerDto } from './dto/create-partner.dto';
 
 @Controller('partners')
-@UseGuards(AuthB2BGuard)
 export class PartnersController {
   constructor(private readonly partnersService: PartnersService) {}
 
+  @UseGuards(AuthB2BGuard)
   @Post()
   create(@Body() createPartnerDto: CreatePartnerDto) {
     return this.partnersService.create(createPartnerDto);

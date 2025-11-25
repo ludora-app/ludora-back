@@ -15,7 +15,7 @@ services:
     volumes:
       - ./src:/usr/src/app/src
       - ./prisma:/usr/src/app/prisma
-      - ./test:/usr/src/app/test
+      - ./tests:/usr/src/app/tests
       # Exclude node_modules for performance
       - /usr/src/app/node_modules
     environment:

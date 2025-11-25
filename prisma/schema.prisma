@@ -318,18 +318,19 @@ model Sports {
 }
 
 model Fields {
-  uid        String    @id @default(cuid())
+  uid        String     @id @default(cuid())
   sport      String
-  partnerUid String    @map("partner_uid")
+  partnerUid String?    @map("partner_uid")
   name       String?
   address    String
   latitude   Float
   longitude  Float
-  entryFee   Float     @map("entry_fee")
-  gameMode   GameModes @map("game_mode")
+  entryFee   Float?     @map("entry_fee")
+  gameMode   GameModes? @map("game_mode")
+  isVerified Boolean    @default(false) @map("is_verified")
 
   fieldImages   FieldImages[]
-  partner       Partners      @relation(fields: [partnerUid], references: [uid])
+  partner       Partners?     @relation(fields: [partnerUid], references: [uid])
   sportRelation Sports        @relation(fields: [sport], references: [name])
   sessions      Sessions[]
 

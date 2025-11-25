@@ -8,6 +8,7 @@ import { AppController } from './app.controller';
 import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SharedModule } from './shared/shared.module';
+import { FieldsModule } from './fields/fields.module';
 import { PaymentModule } from './payment/payment.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { AuthB2CModule } from './auth-b2c/auth-b2c.module';
@@ -96,6 +97,7 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
     MetricsModule,
     UserHourPreferencesModule,
     UserSportPreferencesModule,
+    FieldsModule,
   ],
 
   providers: [AppService],

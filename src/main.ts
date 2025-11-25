@@ -21,6 +21,17 @@ async function bootstrap() {
       .setTitle('Ludora API v1')
       .setDescription('API for the Ludora app')
       .setVersion('1.0')
+      .addBearerAuth(
+        {
+          bearerFormat: 'JWT',
+          description: 'Enter JWT token',
+          in: 'header',
+          name: 'Authorization',
+          scheme: 'bearer',
+          type: 'http',
+        },
+        'JWT-auth',
+      )
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
