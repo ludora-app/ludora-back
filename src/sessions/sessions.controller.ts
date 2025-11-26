@@ -1,7 +1,7 @@
 import { Sessions } from '@prisma/client';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
-import { ResponseType, ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
@@ -48,7 +48,9 @@ export class SessionsController {
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createSessionDto: CreateSessionDto): Promise<ResponseType<SessionResponse>> {
+  async create(
+    @Body() createSessionDto: CreateSessionDto,
+  ): Promise<ResponseTypeDto<SessionResponse>> {
     const newSession = await this.sessionsService.create(createSessionDto);
 
     return { data: newSession, message: 'Session created successfully' };
@@ -77,7 +79,7 @@ export class SessionsController {
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
-  async findOne(@Param('uid') uid: string): Promise<ResponseType<SessionResponse>> {
+  async findOne(@Param('uid') uid: string): Promise<ResponseTypeDto<SessionResponse>> {
     const session = await this.sessionsService.findOne(uid);
 
     if (!session) {
