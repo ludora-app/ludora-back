@@ -4,12 +4,19 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { PartnersService } from 'src/partners/partners.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { Sport, StorageFolderName } from 'src/shared/constants/constants';
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { FieldFilterDto } from './dto/input/field-filter.dto';
+import { UpdateFieldDto } from './dto/input/update-field.dto';
 import { FieldResponseDto } from './dto/output/field-response';
 import { CreatePublicFieldDto } from './dto/input/create-public-field.dto';
+import { UpdatePrivateFieldDto } from './dto/input/update-private-field.dto';
 
 @Injectable()
 export class FieldsService {
@@ -291,6 +298,7 @@ export class FieldsService {
    * The function `verifyFieldLocation` checks if a field location already exists for a specific sport.
    * If it does, it throws a ConflictException.
    * If a field exists with the same location but different sport, nothing happens.
+   * Only public fields are verified.
    */
   async verifyFieldLocation(
     latitude: number,
@@ -303,13 +311,109 @@ export class FieldsService {
         address,
         latitude,
         longitude,
+        partnerUid: null,
         sport,
       },
     });
 
     if (field) {
+      this.logger.error(`Field location ${address} already exists for sport ${sport}`);
       throw new ConflictException(`Field location ${address} already exists for sport ${sport}`);
     }
     this.logger.debug(`Field location ${address} does not exist for sport ${sport}`);
+  }
+
+  async updatePublicField(uid: string, updateFieldDto: UpdateFieldDto): Promise<void> {
+    const { address, isVerified, name } = updateFieldDto;
+
+    const existingField = await this.findOne(uid);
+
+    if (!existingField) {
+      throw new NotFoundException(`Field with uid ${uid} not found`);
+    }
+
+    let coordinates;
+    if (address) {
+      coordinates = await this.geolocalisationService.getLatitudeAndLongitude(address);
+      await this.verifyFieldLocation(
+        coordinates.lat,
+        coordinates.lng,
+        address,
+        existingField.sport as Sport,
+      );
+    }
+
+    if (existingField.isVerified && !isVerified) {
+      this.logger.error(`You cannot unverify a field that is already verified`);
+      throw new BadRequestException('You cannot unverify a field that is already verified');
+    }
+
+    await this.prisma.fields.update({
+      data: {
+        address,
+        isVerified,
+        latitude: coordinates?.lat ?? existingField.latitude,
+        longitude: coordinates?.lng ?? existingField.longitude,
+        name,
+      },
+      where: { uid },
+    });
+
+    this.logger.debug(`Field ${uid} updated successfully`);
+  }
+
+  async updatePartnerField(
+    uid: string,
+    partnerUid: string,
+    updatePrivateFieldDto: UpdatePrivateFieldDto,
+  ): Promise<void> {
+    const { address, entryFee, gameMode, isVerified, name } = updatePrivateFieldDto;
+
+    const existingField = await this.findOne(uid);
+
+    if (!existingField) {
+      throw new NotFoundException(`Field with uid ${uid} not found`);
+    }
+    const existingPartner = await this.partnersService.findOne(partnerUid);
+
+    if (!existingPartner) {
+      throw new NotFoundException(`Partner with uid ${partnerUid} not found`);
+    }
+    if (existingField.partnerUid !== partnerUid) {
+      throw new BadRequestException(
+        `Field with uid ${uid} is not associated with partner with uid ${partnerUid}`,
+      );
+    }
+
+    let coordinates;
+    if (address) {
+      coordinates = await this.geolocalisationService.getLatitudeAndLongitude(address);
+      await this.verifyFieldLocation(
+        coordinates.lat,
+        coordinates.lng,
+        address,
+        existingField.sport as Sport,
+      );
+    }
+
+    if (existingField.isVerified && !isVerified) {
+      this.logger.error(`You cannot unverify a field that is already verified`);
+      throw new BadRequestException('You cannot unverify a field that is already verified');
+    }
+
+    await this.prisma.fields.update({
+      data: {
+        address,
+        entryFee,
+        gameMode,
+        isVerified,
+        latitude: coordinates?.lat ?? existingField.latitude,
+        longitude: coordinates?.lng ?? existingField.longitude,
+        name,
+      },
+      where: { uid },
+    });
+
+    this.logger.debug(`Field ${uid} updated successfully`);
   }
 }

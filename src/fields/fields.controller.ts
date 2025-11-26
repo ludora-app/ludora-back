@@ -15,6 +15,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -28,14 +29,18 @@ import {
   ApiConflictResponse,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import { FieldsService } from './fields.service';
 import { FieldFilterDto } from './dto/input/field-filter.dto';
+import { UpdateFieldDto } from './dto/input/update-field.dto';
 import { CreatePublicFieldDto } from './dto/input/create-public-field.dto';
+import { UpdatePrivateFieldDto } from './dto/input/update-private-field.dto';
 import { FieldResponseDto, PaginatedFieldResponse } from './dto/output/field-response';
 
 // ? Guards at endpoint level for the whole controller because some routes will be accessible by both B2C and B2B users.
@@ -126,10 +131,34 @@ export class FieldsController {
     };
   }
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateFieldDto: UpdateFieldDto) {
-  //   return this.fieldsService.update(+id, updateFieldDto);
-  // }
+  @Patch('update-public/:uid')
+  @UseGuards(AuthB2CGuard)
+  @ApiNoContentResponse({ description: 'Field updated successfully' })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @ApiOperation({ summary: 'Update a public field' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async updatePublicField(@Param('uid') uid: string, @Body() updateFieldDto: UpdateFieldDto) {
+    return this.fieldsService.updatePublicField(uid, updateFieldDto);
+  }
+
+  @Patch('update-private/:uid')
+  @UseGuards(AuthB2BGuard)
+  @ApiNoContentResponse({ description: 'Field updated successfully' })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @ApiOperation({ summary: 'Update a partner field' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async updatePartnerField(
+    @Req() request: Request,
+    @Param('uid') uid: string,
+    @Body() updatePrivateFieldDto: UpdatePrivateFieldDto,
+  ) {
+    const partnerUid = request['user'].organisationUid;
+    return this.fieldsService.updatePartnerField(uid, partnerUid, updatePrivateFieldDto);
+  }
 
   // @Delete(':id')
   // remove(@Param('id') id: string) {

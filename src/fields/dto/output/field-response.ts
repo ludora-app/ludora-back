@@ -1,4 +1,6 @@
+import { GameModes } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
+import { Sport } from 'src/shared/constants/constants';
 import { PaginationResponseDto } from 'src/shared/dto/responses/pagination-response-type';
 
 export class FieldResponseDto {
@@ -19,6 +21,21 @@ export class FieldResponseDto {
 
   @ApiProperty({ example: [{ order: 1, url: 'https://example.com/image.jpg' }], readOnly: true })
   readonly fieldImages?: FieldImageResponseDto[];
+
+  @ApiProperty({ example: GameModes.THREE_V_THREE, readOnly: true })
+  readonly gameMode?: GameModes;
+
+  @ApiProperty({ example: 10, readOnly: true })
+  readonly entryFee?: number;
+
+  @ApiProperty({ example: true, readOnly: true })
+  readonly isVerified?: boolean;
+
+  @ApiProperty({ example: Sport.BASKETBALL, readOnly: true })
+  readonly sport?: Sport | string;
+
+  @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
+  readonly partnerUid?: string;
 }
 
 export class FieldImageResponseDto {
