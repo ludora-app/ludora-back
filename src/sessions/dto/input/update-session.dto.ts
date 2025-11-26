@@ -30,7 +30,7 @@ export class UpdateSessionDto extends PartialType(CreateSessionDto) {
     example: 'THREE_VS_THREE',
     required: true,
   })
-  gameMode: GameModes;
+  gameMode?: GameModes;
 
   @IsDateString()
   @IsOptional()
@@ -39,7 +39,7 @@ export class UpdateSessionDto extends PartialType(CreateSessionDto) {
     example: '2021-01-01T00:00:00.000Z',
     required: true,
   })
-  startDate: string;
+  startDate?: string;
 
   @IsDateString()
   @IsOptional()
@@ -48,7 +48,7 @@ export class UpdateSessionDto extends PartialType(CreateSessionDto) {
     example: '2021-01-01T00:00:00.000Z',
     required: true,
   })
-  endDate: string;
+  endDate?: string;
 
   @IsNumber()
   @IsOptional()
@@ -57,7 +57,7 @@ export class UpdateSessionDto extends PartialType(CreateSessionDto) {
     example: 5,
     required: true,
   })
-  maxPlayersPerTeam: number;
+  maxPlayersPerTeam?: number;
 
   @IsNumber()
   @IsOptional()
@@ -66,7 +66,7 @@ export class UpdateSessionDto extends PartialType(CreateSessionDto) {
     example: 2,
     required: true,
   })
-  teamsPerGame: number;
+  teamsPerGame?: number;
 
   @IsNumber()
   @IsOptional()
@@ -75,5 +75,5 @@ export class UpdateSessionDto extends PartialType(CreateSessionDto) {
     example: 3,
     required: true,
   })
-  minPlayersPerTeam: number;
+  minPlayersPerTeam?: number;
 }
