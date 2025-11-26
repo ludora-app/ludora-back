@@ -56,7 +56,8 @@ export class FieldsController {
   @ApiCreatedResponse({ type: ResponseTypeDto<FieldResponseDto> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  @ApiConflictResponse({ type: ConflictResponseDto }) // ! Handle case where the field already exists By location and sport
+  @ApiConflictResponse({ type: ConflictResponseDto })
+  @ApiOperation({ summary: 'Create a public field' })
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createFieldDto: Omit<CreatePublicFieldDto, 'images'>,
@@ -85,6 +86,7 @@ export class FieldsController {
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all verified fields' })
   async findAllVerified(
     @Query() filter: FieldFilterDto,
   ): Promise<PaginationResponseTypeDto<FieldResponseDto>> {
@@ -102,6 +104,7 @@ export class FieldsController {
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all fields by partner uid' })
   async findAllByPartnerUid(@Req() request: Request, @Query() filter: FieldFilterDto) {
     const partnerUid = request['user'].organisationUid;
     const data = await this.fieldsService.findAllByPartnerUid(partnerUid, filter);
@@ -118,6 +121,7 @@ export class FieldsController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get a field by uid' })
   async findOne(@Param('uid') uid: string) {
     const field = await this.fieldsService.findOne(uid);
 
