@@ -1,8 +1,8 @@
 import { InvitationStatus } from '@prisma/client';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
-import { ResponseType, ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
@@ -58,7 +58,7 @@ export class SessionInvitationsController {
   async create(
     @Req() request: Request,
     @Body() createSessionInvitationDto: CreateSessionInvitationDto,
-  ): Promise<ResponseType<SessionInvitationResponse>> {
+  ): Promise<ResponseTypeDto<SessionInvitationResponse>> {
     const senderUid = request['user'].uid;
 
     const invitation = await this.sessionInvitationsService.create(
@@ -127,7 +127,7 @@ export class SessionInvitationsController {
   async findOne(
     @Param('sessionUid') sessionUid: string,
     @Param('receiverUid') receiverUid: string,
-  ): Promise<ResponseType<SessionInvitationResponse>> {
+  ): Promise<ResponseTypeDto<SessionInvitationResponse>> {
     const invitation = await this.sessionInvitationsService.findOne(sessionUid, receiverUid);
 
     if (!invitation) {

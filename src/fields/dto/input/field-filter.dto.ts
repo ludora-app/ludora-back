@@ -1,9 +1,28 @@
+import { GameModes } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { SessionScope, Sport } from 'src/shared/constants/constants';
-import { IsDate, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { Sport } from 'src/shared/constants/constants';
+import { IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
-export class SessionFilterDto {
+export class FieldFilterDto {
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    description: 'The name of the field',
+    example: 'Field 1',
+    required: false,
+  })
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    description: 'The address of the field',
+    example: '123 Main St, Anytown, USA',
+    required: false,
+  })
+  address?: string;
+
   @IsOptional()
   @Transform(({ value }) => {
     // ? If it's already an array, return it as is
@@ -22,16 +41,21 @@ export class SessionFilterDto {
   sports?: Sport[];
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @ApiProperty({
-    description: 'Limit of sessions to return',
-    example: 10,
-    required: false,
-    type: Number,
+  @Transform(({ value }) => {
+    // ? If it's already an array, return it as is
+    if (Array.isArray(value)) return value;
+    // ? If it's a string, put it in an array
+    return [value];
   })
-  limit?: number;
+  @IsEnum(GameModes, { each: true })
+  @ApiProperty({
+    description: 'The game mode of the field',
+    enum: GameModes,
+    example: [GameModes.THREE_V_THREE, GameModes.FIVE_V_FIVE],
+    isArray: true,
+    required: false,
+  })
+  gameModes?: GameModes[];
 
   @IsOptional()
   @IsString()
@@ -44,26 +68,16 @@ export class SessionFilterDto {
   cursor?: string;
 
   @IsOptional()
-  @Transform(({ value }) => new Date(value))
-  @IsDate()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   @ApiProperty({
-    description: 'Minimum start date',
-    example: '2022-01-01T00:00:00.000Z',
+    description: 'Limit of fields to return',
+    example: 10,
     required: false,
-    type: Date,
+    type: Number,
   })
-  minStart?: Date;
-
-  @IsOptional()
-  @Transform(({ value }) => new Date(value))
-  @IsDate()
-  @ApiProperty({
-    description: 'Maximum start date',
-    example: '2022-01-01T00:00:00.000Z',
-    required: false,
-    type: Date,
-  })
-  maxStart?: Date;
+  limit?: number;
 
   @IsOptional()
   @Type(() => Number)
@@ -92,28 +106,10 @@ export class SessionFilterDto {
   @IsNumber()
   @Min(0)
   @ApiProperty({
-    description: 'Maximum distance of the session search (in km)',
+    description: 'Maximum distance of the field search (in km)',
     example: '10',
     required: false,
     type: Number,
   })
   maxDistance?: number;
-
-  @IsOptional()
-  @IsEnum(SessionScope)
-  @ApiProperty({
-    description: `Filter sessions by whether they are past or upcoming, used to filter my sessions`,
-    enum: SessionScope,
-    example: 'UPCOMING',
-    required: false,
-  })
-  scope?: string;
-
-  // @IsOptional()
-  // @IsString()
-  // @ApiProperty({
-  //   description: `Curseur pour la pagination`,
-  //   required: false,
-  // })
-  // nextCursor?: string;
 }
