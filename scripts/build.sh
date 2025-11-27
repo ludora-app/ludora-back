@@ -24,11 +24,16 @@ echo " Generating Prisma client..."
 pnpm prisma generate
 
 # Verify Prisma client was generated
-# With pnpm, the client is generated in a different location
-PRISMA_CLIENT_PATH=$(find node_modules -name ".prisma" -type d 2>/dev/null | head -1)
-if [ -z "$PRISMA_CLIENT_PATH" ] || [ ! -d "$PRISMA_CLIENT_PATH/client" ]; then
+# Check custom output location first, then default
+if [ -d "generated/prisma" ]; then
+    PRISMA_CLIENT_PATH="generated/prisma"
+else
+    PRISMA_CLIENT_PATH=$(find node_modules -name ".prisma" -type d 2>/dev/null | head -1)
+fi
+
+if [ -z "$PRISMA_CLIENT_PATH" ]; then
     echo " Error: Prisma client was not generated properly"
-    echo "Searched for .prisma directory in node_modules"
+    echo "Searched for generated/prisma and .prisma directory in node_modules"
     exit 1
 fi
 echo "Prisma client found at: $PRISMA_CLIENT_PATH"
