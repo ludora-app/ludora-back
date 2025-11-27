@@ -5,6 +5,7 @@ module.exports = {
   coverageDirectory: './coverage',
   moduleFileExtensions: ['js', 'json', 'ts'],
   moduleNameMapper: {
+    '^generated/(.*)$': '<rootDir>/generated/$1',
     '^src/(.*)$': '<rootDir>/src/$1',
   },
   rootDir: '.',
