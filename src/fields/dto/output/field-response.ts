@@ -1,5 +1,5 @@
-import { GameModes } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
+import { GameModes } from 'generated/prisma/enums';
 import { Sport } from 'src/shared/constants/constants';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 

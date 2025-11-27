@@ -1,5 +1,5 @@
-import { GameModes } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
+import { GameModes } from 'generated/prisma/enums';
 
 import { UpdateFieldDto } from './update-field.dto';
 

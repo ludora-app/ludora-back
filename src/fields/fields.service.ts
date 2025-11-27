@@ -1,5 +1,5 @@
-import { Prisma } from '@prisma/client';
 import { PinoLogger } from 'nestjs-pino';
+import { Prisma } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PartnersService } from 'src/partners/partners.service';
 import { StorageService } from 'src/shared/storage/storage.service';

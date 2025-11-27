@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { InvitationStatus } from 'generated/prisma/client';
+import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 export class SessionInvitationResponse {
   @ApiProperty({
