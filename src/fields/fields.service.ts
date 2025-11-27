@@ -4,6 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { PartnersService } from 'src/partners/partners.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { Sport, StorageFolderName } from 'src/shared/constants/constants';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import {
   BadRequestException,
@@ -84,9 +85,7 @@ export class FieldsService {
    * `uid` of the last item in the `items` array if there are more results available.
    * 3. `totalCount`: The total number
    */
-  async findAllVerified(
-    filter: FieldFilterDto,
-  ): Promise<{ items: FieldResponseDto[]; nextCursor: string | null; totalCount: number }> {
+  async findAllVerified(filter: FieldFilterDto): Promise<PaginatedDataDto<FieldResponseDto>> {
     const {
       address,
       cursor,
@@ -181,7 +180,7 @@ export class FieldsService {
   async findAllByPartnerUid(
     partnerUid: string,
     filter: FieldFilterDto,
-  ): Promise<{ items: FieldResponseDto[]; nextCursor: string | null; totalCount: number }> {
+  ): Promise<PaginatedDataDto<FieldResponseDto>> {
     const {
       address,
       cursor,

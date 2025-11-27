@@ -4,6 +4,9 @@ import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+
+import { UserSportPreferenceResponse } from './dto/output/user-sport-preference.response';
 
 @Injectable()
 export class UserSportPreferencesService {
@@ -38,7 +41,7 @@ export class UserSportPreferencesService {
     return newSportPreference;
   }
 
-  async findAllByUserUid(userUid: string): Promise<UserSports[]> {
+  async findAllByUserUid(userUid: string): Promise<PaginatedDataDto<UserSportPreferenceResponse>> {
     const existingUser = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
     if (!existingUser) {
       this.logger.error(`User not found: ${userUid}`);
@@ -47,7 +50,7 @@ export class UserSportPreferencesService {
     const sportPreferences = await this.prisma.userSports.findMany({
       where: { userUid },
     });
-    return sportPreferences;
+    return { items: sportPreferences, nextCursor: null, totalCount: sportPreferences.length };
   }
 
   async findOne(uid: string): Promise<UserSports> {

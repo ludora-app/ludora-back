@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 import { ApiProperty } from '@nestjs/swagger';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import { PaginationResponseDto } from 'src/shared/dto/responses/pagination-response-type';
+import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 import { FutureRequirementsDto, RequirementsDto } from './stripe-responses.dto';
 
@@ -40,7 +40,7 @@ export class BankAccountListResponseDataDto {
   requirements: Stripe.BankAccount.Requirements;
 }
 
-export const BankAccountListResponseDto = PaginationResponseDto(BankAccountListResponseDataDto);
+export const BankAccountListResponseDto = toPaginationResponseType(BankAccountListResponseDataDto);
 
 export class BankAccountResponseDto extends ResponseTypeDto<BankAccountListResponseDataDto> {
   @ApiProperty({ type: BankAccountListResponseDataDto })

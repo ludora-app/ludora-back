@@ -6,6 +6,7 @@ import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { SessionPlayersService } from 'src/session-players/session-players.service';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
 import { DateUtils } from './../shared/utils/date.utils';
 import { CreateSessionDto } from './dto/input/create-session.dto';
@@ -128,11 +129,7 @@ export class SessionsService {
     return newSession;
   }
 
-  async findAll(filter: SessionFilterDto): Promise<{
-    items: Sessions[];
-    nextCursor: string | null;
-    totalCount: number;
-  }> {
+  async findAll(filter: SessionFilterDto): Promise<PaginatedDataDto<Sessions>> {
     const {
       cursor,
       latitude,

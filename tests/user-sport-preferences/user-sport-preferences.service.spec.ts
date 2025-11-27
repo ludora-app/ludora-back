@@ -183,7 +183,11 @@ describe('UserSportPreferencesService', () => {
 
       const result = await service.findAllByUserUid(userUid);
 
-      expect(result).toEqual(mockPreferences);
+      expect(result).toEqual({
+        items: mockPreferences,
+        nextCursor: null,
+        totalCount: mockPreferences.length,
+      });
       expect(usersService.findOne).toHaveBeenCalledWith(userUid, expect.any(Object));
       expect(prismaService.userSports.findMany).toHaveBeenCalledWith({
         where: { userUid },
@@ -196,7 +200,11 @@ describe('UserSportPreferencesService', () => {
 
       const result = await service.findAllByUserUid(userUid);
 
-      expect(result).toEqual([]);
+      expect(result).toEqual({
+        items: [],
+        nextCursor: null,
+        totalCount: 0,
+      });
       expect(prismaService.userSports.findMany).toHaveBeenCalledWith({
         where: { userUid },
       });

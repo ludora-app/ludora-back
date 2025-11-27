@@ -2,6 +2,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma, SessionTeams, TeamLabel } from '@prisma/client';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { SessionTeamWithPlayers, SessionUtils } from 'src/sessions/utils/session-utils';
 
 @Injectable()
@@ -42,9 +43,7 @@ export class SessionTeamsService {
     return db.sessionTeams.findMany({ where: { sessionUid } });
   }
 
-  async findTeamsBySessionUid(
-    sessionUid: string,
-  ): Promise<{ items: SessionTeams[]; nextCursor: string | null; totalCount: number }> {
+  async findTeamsBySessionUid(sessionUid: string): Promise<PaginatedDataDto<SessionTeams>> {
     const teams = (await this.prisma.sessionTeams.findMany({
       include: {
         sessionPlayers: {

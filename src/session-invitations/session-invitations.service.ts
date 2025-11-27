@@ -5,6 +5,7 @@ import { USERSELECT } from 'src/shared/constants/select-user';
 import { SessionsService } from 'src/sessions/sessions.service';
 import { InvitationStatus, SessionInvitations } from '@prisma/client';
 import { SessionPlayersService } from 'src/session-players/session-players.service';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { CreateSessionPlayerDto } from 'src/session-players/dto/input/create-session-player.dto';
 import {
   BadRequestException,
@@ -143,7 +144,7 @@ export class SessionInvitationsService {
   async findAllByReceiverId(
     receiverUid: string,
     filter: SessionInvitationFilterDto,
-  ): Promise<{ items: SessionInvitations[]; nextCursor: string | null; totalCount: number }> {
+  ): Promise<PaginatedDataDto<SessionInvitations>> {
     const existingUser = await this.usersService.findOne(receiverUid, USERSELECT.findOne);
 
     if (!existingUser) {
@@ -215,7 +216,7 @@ export class SessionInvitationsService {
   async findAllBySessionId(
     sessionUid: string,
     filter: SessionInvitationFilterDto,
-  ): Promise<{ items: SessionInvitations[]; nextCursor: string | null; totalCount: number }> {
+  ): Promise<PaginatedDataDto<SessionInvitations>> {
     const existingSession = await this.sessionsService.findOne(sessionUid);
 
     if (!existingSession) {

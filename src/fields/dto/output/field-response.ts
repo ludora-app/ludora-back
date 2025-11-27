@@ -1,7 +1,7 @@
 import { GameModes } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { Sport } from 'src/shared/constants/constants';
-import { PaginationResponseDto } from 'src/shared/dto/responses/pagination-response-type';
+import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 export class FieldResponseDto {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
@@ -58,4 +58,4 @@ export class FieldImageResponseDto {
   readonly updatedAt?: Date;
 }
 
-export const PaginatedFieldResponse = PaginationResponseDto(FieldResponseDto);
+export const PaginatedFieldResponse = toPaginationResponseType(FieldResponseDto);

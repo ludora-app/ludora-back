@@ -1,6 +1,6 @@
 import { TeamLabel } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
-import { PaginationResponseDto } from 'src/shared/dto/responses/pagination-response-type';
+import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 /**
  * @description session player object created by mixing the Session_players and Users table
@@ -54,4 +54,4 @@ export class SessionTeamResponse {
   readonly Session_players?: FlattenedSessionPlayer[];
 }
 
-export const PaginatedSessionTeamResponse = PaginationResponseDto(SessionTeamResponse);
+export const PaginatedSessionTeamResponse = toPaginationResponseType(SessionTeamResponse);

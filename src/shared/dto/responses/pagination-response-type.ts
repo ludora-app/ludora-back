@@ -1,16 +1,27 @@
 import { Type } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 
+/**
+ * This interface is used to define the response type for pagination responses in the controllers
+ */
 export interface PaginationResponseTypeDto<T = unknown> {
   message?: string;
-  data: {
-    items: T[];
-    nextCursor: string | null;
-    totalCount: number;
-  };
+  data: PaginatedDataDto<T>;
 }
 
-export function PaginationDataDto<T>(itemType: Type<T>) {
+/**
+ * This interface is used to define the data type for pagination responses in the services
+ */
+export interface PaginatedDataDto<T = unknown> {
+  items: T[];
+  totalCount?: number | undefined;
+  nextCursor?: string | null | undefined;
+}
+
+/**
+ * This function is used to define the data type for pagination responses in the swagger documentation
+ */
+export function toPaginatedDataDto<T>(itemType: Type<T>) {
   class PaginationDataDtoClass {
     @ApiProperty({ isArray: true, readOnly: true, type: itemType })
     readonly items: T[];
@@ -29,8 +40,11 @@ export function PaginationDataDto<T>(itemType: Type<T>) {
   return PaginationDataDtoClass;
 }
 
-export function PaginationResponseDto<T>(itemType: Type<T>) {
-  const PaginationData = PaginationDataDto(itemType);
+/**
+ * This function is used to define the response type for pagination responses in the swagger documentation
+ */
+export function toPaginationResponseType<T>(itemType: Type<T>) {
+  const PaginationData = toPaginatedDataDto(itemType);
 
   class PaginationResponseDtoClass {
     @ApiProperty({ readOnly: true, required: false })
