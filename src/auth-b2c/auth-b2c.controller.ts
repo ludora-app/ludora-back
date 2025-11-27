@@ -5,19 +5,6 @@ import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Req,
-  Request,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
-import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
@@ -28,6 +15,22 @@ import {
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  InternalServerErrorException,
+  NotFoundException,
+  Post,
+  Req,
+  Request,
+  Res,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import {
   CreateImageDto,
   LoginB2CDto,
@@ -289,13 +292,20 @@ export class AuthB2CController {
   // ** GOOGLE AUTHENTICATION *
   // **************************/
 
-  // @Public() // ? décorateur @Public() pour ignorer le middleware d'authentification
-  // // @UseGuards(GoogleAuthGuard)
-  // @Post('google/login')
-  // @ApiOperation({
-  //   summary: "Permet à l'utilisateur de se connecter avec Google",
-  // })
-  // async googleLogin(@Body() googleUser: CreateGoogleUserDto): Promise<any> {
-  //   return this.authService.validateGoogleUser(googleUser);
-  // }
+  @Public() // ? décorateur @Public() pour ignorer le middleware d'authentification
+  @Get('google/callback')
+  async googleCallback(@Req() req, @Res() res): Promise<any> {
+    try {
+      if (req?.user || req?.user.id) {
+        throw new NotFoundException('User not found in request');
+      }
+
+      const response = await this.authService.googleLogin(req.user.id);
+      // !! changer l'addresse de redirection pour le front
+      return res.redirect(`http://localhost:3000?token=${response.accessToken}`);
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException(error.message);
+    }
+  }
 }

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Sport } from 'src/shared/constants/constants';
-import { PaginationResponseDto } from 'src/shared/dto/responses/pagination-response-type';
+import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 /**
  * @description standard response for a Session resource
@@ -63,4 +63,4 @@ export class SessionResponse {
 /**
  * @description standard response for a paginated session, used to type swagger return
  */
-export const PaginatedSessionResponse = PaginationResponseDto(SessionResponse);
+export const PaginatedSessionResponse = toPaginationResponseType(SessionResponse);
