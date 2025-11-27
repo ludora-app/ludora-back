@@ -1,0 +1,38 @@
+// ratings.prisma
+
+model UserRatings {
+  evaluatorUid String   @map("evaluator_uid")
+  evaluatedUid String   @map("evaluated_uid")
+  note1        Int      @map("note_1")
+  note2        Int      @map("note_2")
+  note3        Int      @map("note_3")
+  note4        Int      @map("note_4")
+  note5        Int      @map("note_5")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  evaluator Users @relation(fields: [evaluatorUid], references: [uid], name: "EvaluatorRelation")
+  evaluated Users @relation(fields: [evaluatedUid], references: [uid], name: "EvaluatedRelation")
+
+  @@id([evaluatorUid, evaluatedUid])
+  @@unique([evaluatorUid, evaluatedUid])
+  @@index([evaluatedUid])
+  @@map("User_ratings")
+  @@schema("ratings")
+}
+
+model UserGlobalRatings {
+  userUid   String   @map("user_uid")
+  sportName String   @map("sport_name")
+  rating    Float
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user  Users  @relation(fields: [userUid], references: [uid])
+  sport Sports @relation(fields: [sportName], references: [name])
+
+  @@unique([userUid, sportName])
+  @@map("User_global_ratings")
+  @@schema("ratings")
+}
+

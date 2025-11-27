@@ -1,0 +1,14 @@
+// base.prisma
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../../generated/prisma"
+  binaryTargets   = ["native", "debian-openssl-3.0.x"]
+  previewFeatures = ["prismaSchemaFolder"]
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["auth", "ratings", "infrastructure", "sessions", "social", "shared", "user_preferences"]
+}
+

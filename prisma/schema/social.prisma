@@ -1,0 +1,112 @@
+// social.prisma
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+
+  @@map("MessageStatus")
+  @@schema("social")
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+
+  @@map("Message_type")
+  @@schema("social")
+}
+
+enum ConversationType {
+  PRIVATE
+  GROUP
+  EVENT
+
+  @@map("ConversationType")
+  @@schema("social")
+}
+
+model Conversations {
+  uid                 String                @id @default(cuid())
+  eventUid            String?               @map("event_uid")
+  name                String?
+  type                ConversationType
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+  // todo: image_url
+  messages            Messages[]
+  conversationMembers ConversationMembers[]
+
+  conversationOptions ConversationOptions[]
+
+  @@schema("social")
+}
+
+model Messages {
+  uid             String        @id @default(cuid())
+  conversationUid String        @map("conversation_uid")
+  senderUid       String        @map("sender_uid")
+  content         String
+  status          MessageStatus @default(SENT)
+  type            MessageType
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  sender       Users         @relation(fields: [senderUid], references: [uid])
+  conversation Conversations @relation(fields: [conversationUid], references: [uid])
+
+  @@index([conversationUid])
+  @@index([createdAt])
+  @@schema("social")
+}
+
+model ConversationOptions {
+  conversationUid String
+  userUid         String
+  isAdmin         Boolean  @default(false) @map("is_admin")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  archived        Boolean  @default(false)
+  muted           Boolean  @default(false)
+  deleted         Boolean  @default(false)
+
+  user         Users         @relation(fields: [userUid], references: [uid])
+  conversation Conversations @relation(fields: [conversationUid], references: [uid])
+
+  @@unique([conversationUid, userUid])
+  @@index([conversationUid])
+  @@index([userUid])
+  @@map("Conversation_options")
+  @@schema("social")
+}
+
+model ConversationMembers {
+  conversationUid String
+  userUid         String
+  isAdmin         Boolean @default(false) @map("is_admin")
+
+  conversation Conversations @relation(fields: [conversationUid], references: [uid])
+  user         Users         @relation(fields: [userUid], references: [uid])
+
+  @@id([conversationUid, userUid])
+  @@index([userUid])
+  @@map("Conversation_members")
+  @@schema("social")
+}
+
+model Friends {
+  userUid1  String
+  userUid2  String
+  status    InvitationStatus @map("status")
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+  user1     Users            @relation("friend1", fields: [userUid1], references: [uid])
+  user2     Users            @relation("friend2", fields: [userUid2], references: [uid])
+
+  @@id([userUid1, userUid2])
+  @@unique([userUid1, userUid2])
+  @@schema("social")
+}
+

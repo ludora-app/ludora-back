@@ -11,8 +11,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     super({
       adapter,
       log: ['query', 'error', 'warn'],
-      // Ajoutez ceci seulement si vous utilisez Prisma Accelerate
-      // accelerateUrl: process.env.PRISMA_ACCELERATE_URL,
     });
   }
 

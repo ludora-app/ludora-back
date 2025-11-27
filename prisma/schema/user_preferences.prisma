@@ -1,0 +1,55 @@
+// user_preferences.prisma
+
+enum UserHourPreferenceType {
+  RECURRENT
+  ONE_TIME
+
+  @@map("User_hour_preference_type")
+  @@schema("user_preferences")
+}
+
+enum TimePeriod {
+  MORNING
+  AFTERNOON
+  EVENING
+
+  @@map("Time_period")
+  @@schema("user_preferences")
+}
+
+model UserSports {
+  uid       String   @id @default(cuid())
+  userUid   String   @map("user_uid")
+  sport     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user          Users  @relation(fields: [userUid], references: [uid])
+  sportRelation Sports @relation(fields: [sport], references: [name])
+
+  @@unique([userUid, sport])
+  @@index([userUid])
+  @@index([sport])
+  @@map("User_sports")
+  @@schema("user_preferences")
+}
+
+model UserHourPreferences {
+  uid        String                 @id @default(cuid())
+  type       UserHourPreferenceType
+  userUid    String                 @map("user_uid")
+  dayOfWeek  Int                    @map("day_of_week")
+  timePeriod TimePeriod             @map("time_period")
+  date       DateTime?              @map("date")
+  createdAt  DateTime               @default(now()) @map("created_at")
+  updatedAt  DateTime               @updatedAt @map("updated_at")
+
+  user Users @relation(fields: [userUid], references: [uid])
+
+  @@index([userUid])
+  @@index([timePeriod])
+  @@index([dayOfWeek])
+  @@map("User_hour_preferences")
+  @@schema("user_preferences")
+}
+

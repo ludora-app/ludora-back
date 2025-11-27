@@ -1,0 +1,125 @@
+// sessions.prisma
+
+enum TeamLabel {
+  A
+  B
+
+  @@map("TeamLabel")
+  @@schema("sessions")
+}
+
+enum GameModes {
+  TWO_V_TWO
+  THREE_V_THREE
+  FOUR_V_FOUR
+  FIVE_V_FIVE
+  SIX_V_SIX
+  SEVEN_V_SEVEN
+  EIGHT_V_EIGHT
+  TEN_V_TEN
+  ELEVEN_V_ELEVEN
+
+  @@map("GameModes")
+  @@schema("sessions")
+}
+
+model Sessions {
+  uid               String    @id @default(cuid())
+  fieldUid          String    @map("field_uid")
+  title             String?
+  startDate         DateTime  @map("start_date")
+  endDate           DateTime  @map("end_date")
+  sport             String
+  gameMode          GameModes @map("game_mode")
+  // visibility        Visibility
+  maxPlayersPerTeam Int       @map("max_players_per_team")
+  teamsPerGame      Int       @map("teams_per_game")
+  minPlayersPerTeam Int       @map("min_players_per_team")
+  description       String?
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  sessionInvitations SessionInvitations[]
+
+  sessionImages SessionImages[]
+
+  sessionTeams SessionTeams[]
+
+  sessionPlayers SessionPlayers[]
+  field          Fields           @relation(fields: [fieldUid], references: [uid])
+
+  @@index([fieldUid])
+  @@index([startDate, endDate])
+  @@index([sport])
+  @@index([createdAt])
+  @@schema("sessions")
+}
+
+model SessionInvitations {
+  sessionUid  String           @map("session_uid")
+  senderUid   String           @map("sender_uid")
+  receiverUid String           @map("receiver_uid")
+  status      InvitationStatus @default(PENDING)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  session  Sessions @relation(fields: [sessionUid], references: [uid])
+  sender   Users    @relation(fields: [senderUid], references: [uid], name: "senderRelation")
+  receiver Users    @relation(fields: [receiverUid], references: [uid], name: "receiverRelation")
+
+  @@unique([sessionUid, senderUid, receiverUid])
+  @@index([sessionUid])
+  @@index([receiverUid])
+  @@map("Session_invitations")
+  @@schema("sessions")
+}
+
+model SessionImages {
+  uid        String   @id @default(cuid())
+  sessionUid String   @map("session_uid")
+  url        String
+  order      Int
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  session Sessions @relation(fields: [sessionUid], references: [uid])
+
+  @@map("Session_images")
+  @@schema("sessions")
+}
+
+model SessionTeams {
+  uid        String    @id @default(cuid())
+  sessionUid String    @map("session_uid")
+  teamLabel  TeamLabel @map("team_label")
+  teamName   String    @map("team_name")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  session Sessions @relation(fields: [sessionUid], references: [uid])
+
+  sessionPlayers SessionPlayers[]
+
+  @@unique([sessionUid, teamLabel])
+  @@map("Session_teams")
+  @@schema("sessions")
+}
+
+model SessionPlayers {
+  sessionUid String   @map("session_uid")
+  teamUid    String   @map("team_uid")
+  userUid    String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  session Sessions     @relation(fields: [sessionUid], references: [uid])
+  team    SessionTeams @relation(fields: [teamUid], references: [uid])
+  user    Users        @relation(fields: [userUid], references: [uid])
+
+  @@unique([sessionUid, teamUid, userUid])
+  @@index([sessionUid])
+  @@index([userUid])
+  @@map("Session_players")
+  @@schema("sessions")
+}
+

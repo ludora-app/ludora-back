@@ -17,7 +17,6 @@ services:
       - ./prisma:/usr/src/app/prisma
       - ./tests:/usr/src/app/tests
       - ./generated:/usr/src/app/generated
-      # Exclude node_modules for performance
       - /usr/src/app/node_modules
     environment:
       - NODE_ENV=development
