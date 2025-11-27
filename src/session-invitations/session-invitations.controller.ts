@@ -1,4 +1,4 @@
-import { InvitationStatus } from '@prisma/client';
+import { InvitationStatus } from 'generated/prisma/client';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';

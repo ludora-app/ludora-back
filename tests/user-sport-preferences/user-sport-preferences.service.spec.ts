@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { UserSports } from '@prisma/client';
+import { UserSports } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { UserSportPreferencesService } from 'src/user-sport-preferences/user-sport-preferences.service';
 import { UsersService } from 'src/users/users.service';

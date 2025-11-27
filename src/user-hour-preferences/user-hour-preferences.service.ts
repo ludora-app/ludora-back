@@ -3,9 +3,9 @@ import { UsersService } from 'src/users/users.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
-import { UserHourPreferences, UserHourPreferenceType } from '@prisma/client';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+import { UserHourPreferences, UserHourPreferenceType } from 'generated/prisma/client';
 
 import { CheckHourPreferenceDto } from './dto/input/check-hour-preference.dto';
 import { CreateUserHourPreferenceDto } from './dto/input/create-user-hour-preference.dto';

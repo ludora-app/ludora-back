@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TimePeriod, UserHourPreferenceType } from '@prisma/client';
+import { TimePeriod, UserHourPreferenceType } from 'generated/prisma/client';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 /**

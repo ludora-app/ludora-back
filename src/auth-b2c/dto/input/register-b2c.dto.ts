@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Sex, UserType } from '@prisma/client';
+import { Sex, UserType } from 'generated/prisma/client';
 import { IsStrongPassword } from 'src/users/password.validator';
 import {
   IsDateString,

@@ -1,4 +1,4 @@
-import { Sessions } from '@prisma/client';
+import { Sessions } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { StorageFolderName, Sport } from 'src/shared/constants/constants';

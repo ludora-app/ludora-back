@@ -1,0 +1,111 @@
+// infrastructure.prisma
+
+model Partners {
+  uid                 String                @id @default(cuid())
+  name                String                @unique
+  imageUrl            String?               @map("image_url")
+  address             String
+  latitude            Float
+  longitude           Float
+  phone               String
+  email               String                @unique
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+  //todo: add stripe account uid
+  fields              Fields[]
+  partnerSports       PartnerSports[]
+  partnerOpeningHours PartnerOpeningHours[]
+  UserTokens          UserTokens[]
+  RefreshTokens       RefreshTokens[]
+
+  @@schema("infrastructure")
+}
+
+model PartnerOpeningHours {
+  uid        String   @id @default(cuid())
+  partnerUid String   @map("partner_uid")
+  dayOfWeek  Int      @map("day_of_week")
+  openTime   String   @map("open_time")
+  closeTime  String   @map("close_time")
+  isClosed   Boolean  @default(false) @map("is_closed")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  partner Partners @relation(fields: [partnerUid], references: [uid], onDelete: Cascade)
+
+  @@unique([partnerUid, dayOfWeek])
+  @@index([partnerUid])
+  @@map("Partner_opening_hours")
+  @@schema("infrastructure")
+}
+
+model PartnerSports {
+  partnerUid String   @map("partner_uid")
+  sport      String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  partner       Partners @relation(fields: [partnerUid], references: [uid])
+  sportRelation Sports   @relation(fields: [sport], references: [name])
+
+  @@unique([partnerUid, sport])
+  @@index([partnerUid])
+  @@index([sport])
+  @@map("Partner_sports")
+  @@schema("infrastructure")
+}
+
+model Sports {
+  uid       String   @id @default(cuid())
+  name      String   @unique
+  imageUrl  String?  @map("image_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  fields Fields[]
+
+  userGlobalRatings UserGlobalRatings[]
+  partnerSports     PartnerSports[]
+  userSports        UserSports[]
+
+  @@schema("infrastructure")
+}
+
+model Fields {
+  uid        String     @id @default(cuid())
+  sport      String
+  partnerUid String?    @map("partner_uid")
+  name       String?
+  address    String
+  latitude   Float
+  longitude  Float
+  entryFee   Float?     @map("entry_fee")
+  gameMode   GameModes? @map("game_mode")
+  isVerified Boolean    @default(false) @map("is_verified")
+
+  fieldImages   FieldImages[]
+  partner       Partners?     @relation(fields: [partnerUid], references: [uid])
+  sportRelation Sports        @relation(fields: [sport], references: [name])
+  sessions      Sessions[]
+
+  @@index([partnerUid])
+  @@index([longitude, latitude])
+  @@index([sport])
+  @@schema("infrastructure")
+}
+
+model FieldImages {
+  uid       String   @id @default(cuid())
+  fieldUid  String   @map("field_uid")
+  url       String
+  order     Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  field Fields @relation(fields: [fieldUid], references: [uid])
+
+  @@index([fieldUid])
+  @@map("Field_images")
+  @@schema("infrastructure")
+}
+

@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { InvitationStatus } from '@prisma/client';
+import { InvitationStatus } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SessionsService } from 'src/sessions/sessions.service';
 import { USERSELECT } from 'src/shared/constants/select-user';

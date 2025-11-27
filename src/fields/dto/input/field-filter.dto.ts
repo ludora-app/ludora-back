@@ -1,5 +1,5 @@
-import { GameModes } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
+import { GameModes } from 'generated/prisma/enums';
 import { Transform, Type } from 'class-transformer';
 import { Sport } from 'src/shared/constants/constants';
 import { IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';

@@ -1,4 +1,4 @@
-import { TimePeriod } from '@prisma/client';
+import { TimePeriod } from 'generated/prisma/client';
 
 /**
  * @description

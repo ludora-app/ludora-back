@@ -1,0 +1,12 @@
+// shared.prisma
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELED
+
+  @@map("InvitationStatus")
+  @@schema("shared")
+}
+

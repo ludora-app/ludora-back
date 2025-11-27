@@ -1,7 +1,7 @@
 import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
-import { UserType } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
+import { UserType } from 'generated/prisma/client';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';

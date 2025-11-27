@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Sex, UserType } from '@prisma/client';
+import { Sex, UserType } from 'generated/prisma/client';
 import { AuthB2CController } from 'src/auth-b2c/auth-b2c.controller';
 import { AuthB2CService } from 'src/auth-b2c/auth-b2c.service';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';

@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { SessionTeams, TeamLabel } from '@prisma/client';
+import { SessionTeams, TeamLabel } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';

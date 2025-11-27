@@ -1,0 +1,126 @@
+// auth.prisma
+
+enum Provider {
+  FACEBOOK
+  GOOGLE
+  LUDORA
+
+  @@schema("auth")
+}
+
+enum Sex {
+  MALE
+  FEMALE
+  OTHER
+
+  @@schema("auth")
+}
+
+enum UserType {
+  USER
+  ADMIN
+  PARTNER
+
+  @@map("UserType")
+  @@schema("auth")
+}
+
+model Users {
+  uid             String    @id @default(cuid())
+  email           String    @unique
+  password        String?
+  firstname       String?
+  lastname        String?
+  birthdate       DateTime?
+  sex             Sex?      @map("sex")
+  phone           String?
+  imageUrl        String?   @map("image_url")
+  bio             String?
+  provider        Provider  @default(LUDORA)
+  isConnected     Boolean   @default(true) @map("is_connected")
+  stripeAccountId String?   @unique @map("stripe_account_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  emailVerified   Boolean   @default(false) @map("email_verified")
+  type            UserType  @default(USER)
+
+  messages            Messages[]
+  // Event               Events[]
+  conversationMembers ConversationMembers[]
+  // Get_notification    Get_notifications[]
+
+  friendsSent     Friends[] @relation("friend1")
+  friendsReceived Friends[] @relation("friend2")
+
+  conversationOptions ConversationOptions[]
+
+  Sent_invitations     SessionInvitations[] @relation(name: "senderRelation")
+  Received_invitations SessionInvitations[] @relation(name: "receiverRelation")
+
+  sessionPlayers SessionPlayers[]
+
+  evaluatorRating UserRatings[] @relation(name: "EvaluatorRelation")
+
+  evaluatedRating UserRatings[] @relation(name: "EvaluatedRelation")
+
+  userGlobalRatings   UserGlobalRatings[]
+  emailVerifications  EmailVerification[]
+  userTokens          UserTokens[]
+  refreshTokens       RefreshTokens[]
+  userSports          UserSports[]
+  userHourPreferences UserHourPreferences[]
+
+  @@index([createdAt])
+  @@index([isConnected])
+  @@schema("auth")
+}
+
+model EmailVerification {
+  uid       String   @id @default(cuid())
+  userUid   String   @map("user_uid")
+  code      String
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user Users @relation(fields: [userUid], references: [uid], onDelete: Cascade)
+
+  @@index([userUid])
+  @@map("Email_verification")
+  @@schema("auth")
+}
+
+model UserTokens {
+  uid             String   @id @default(cuid())
+  userUid         String   @map("user_uid")
+  deviceUid       String?  @map("device_uid")
+  organisationUid String?  @map("organisation_uid")
+  token           String
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user    Users     @relation(fields: [userUid], references: [uid])
+  partner Partners? @relation(fields: [organisationUid], references: [uid], onDelete: SetNull)
+
+  @@index([userUid])
+  @@map("User_tokens")
+  @@schema("auth")
+}
+
+model RefreshTokens {
+  uid             String   @id @default(cuid())
+  userUid         String   @map("user_uid")
+  deviceUid       String?  @map("device_uid")
+  organisationUid String?  @map("organisation_uid")
+  token           String   @unique
+  expiresAt       DateTime @map("expires_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user    Users     @relation(fields: [userUid], references: [uid], onDelete: Cascade)
+  partner Partners? @relation(fields: [organisationUid], references: [uid], onDelete: SetNull)
+
+  @@index([userUid])
+  @@map("Refresh_tokens")
+  @@schema("auth")
+}
+

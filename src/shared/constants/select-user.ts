@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from 'generated/prisma/client';
 /**
  * This object contains the common select objects for the users service
  * @example
