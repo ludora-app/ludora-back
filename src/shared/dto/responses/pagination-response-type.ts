@@ -6,7 +6,7 @@ import { ApiProperty } from '@nestjs/swagger';
  */
 export interface PaginationResponseTypeDto<T = unknown> {
   message?: string;
-  data: PaginatedDataDto<T[]>;
+  data: PaginatedDataDto<T>;
 }
 
 /**
