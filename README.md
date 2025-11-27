@@ -131,3 +131,10 @@ When running via Docker Compose (`pnpm docker:dev`), the following services are 
 ## License
 
 UNLICENSED
+
+## Author
+
+**Gana Fall**
+
+- Website: [gana-f4ll.fr](https://ganaf4ll.github.io/portfolio/)
+- GitHub: [@ganaf4ll](https://github.com/GanaF4ll)
