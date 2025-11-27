@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   BadRequestException,
   Injectable,
@@ -16,6 +17,7 @@ import { ConfirmPaymentIntentDto } from './dto/input/confirm-payment.dto';
 import { PaymentIntentTestDto } from './dto/input/payment-intent-test.dto';
 import { CreateStripeAccountDto } from './dto/input/create-stripe-account.dto';
 import { BankDetailsDto, UpdateBankDetailsDto } from './dto/input/bank-details.dto';
+import { BankAccountListResponseDataDto } from './dto/output/bankAccount-list-response.dto';
 
 @Injectable()
 export class PaymentService {
@@ -261,11 +263,9 @@ export class PaymentService {
     }
   }
 
-  async getBankAccountsList(userUid: string): Promise<{
-    items: any[];
-    nextCursor: string | null;
-    totalCount: number;
-  }> {
+  async getBankAccountsList(
+    userUid: string,
+  ): Promise<PaginatedDataDto<BankAccountListResponseDataDto>> {
     try {
       const user = await this.usersService.findOne(userUid, USERSELECT.stripeAccountId);
 

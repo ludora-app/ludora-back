@@ -5,6 +5,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { StorageFolderName } from 'src/shared/constants/constants';
 import { StorageService } from 'src/shared/storage/storage.service';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   BadRequestException,
   ConflictException,
@@ -13,7 +14,13 @@ import {
 } from '@nestjs/common';
 
 import { USERSELECT } from '../shared/constants/select-user';
-import { CreateUserDto, UpdatePasswordDto, UpdateUserDto, UserFilterDto } from './dto';
+import {
+  CreateUserDto,
+  FindAllUsersResponseDataDto,
+  UpdatePasswordDto,
+  UpdateUserDto,
+  UserFilterDto,
+} from './dto';
 
 @Injectable()
 export class UsersService {
@@ -72,11 +79,7 @@ export class UsersService {
     return newUser;
   }
 
-  async findAll(filters: UserFilterDto): Promise<{
-    items: any[];
-    nextCursor: string | null;
-    totalCount: number;
-  }> {
+  async findAll(filters: UserFilterDto): Promise<PaginatedDataDto<FindAllUsersResponseDataDto>> {
     const { cursor, limit, name } = filters;
 
     const query = {

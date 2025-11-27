@@ -5,6 +5,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { UserHourPreferences, UserHourPreferenceType } from '@prisma/client';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
 import { CheckHourPreferenceDto } from './dto/input/check-hour-preference.dto';
 import { CreateUserHourPreferenceDto } from './dto/input/create-user-hour-preference.dto';
@@ -75,9 +76,7 @@ export class UserHourPreferencesService {
     return newHourPreference;
   }
 
-  async findAllByUserUid(
-    userUid: string,
-  ): Promise<{ items: UserHourPreferences[]; nextCursor: string | null; totalCount: number }> {
+  async findAllByUserUid(userUid: string): Promise<PaginatedDataDto<UserHourPreferences>> {
     const existingUser = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
     if (!existingUser) {
       this.logger.error(`User not found: ${userUid}`);

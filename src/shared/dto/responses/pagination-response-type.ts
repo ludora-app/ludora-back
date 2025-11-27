@@ -14,8 +14,8 @@ export interface PaginationResponseTypeDto<T = unknown> {
  */
 export interface PaginatedDataDto<T = unknown> {
   items: T[];
-  totalCount: number;
-  nextCursor: string | null;
+  totalCount?: number | undefined;
+  nextCursor?: string | null | undefined;
 }
 
 /**
