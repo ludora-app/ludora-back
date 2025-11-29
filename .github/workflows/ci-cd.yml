@@ -221,91 +221,96 @@ jobs:
           ssh-keyscan -H $REMOTE_HOST >> ~/.ssh/known_hosts
 
           # Debug: Vérifier la clé SSH
-          echo "🔍 Debugging SSH setup..."
+          echo "Debugging SSH setup..."
           echo "SSH key file exists: $(test -f ~/.ssh/id_rsa && echo 'YES' || echo 'NO')"
           echo "SSH key permissions: $(ls -la ~/.ssh/id_rsa 2>/dev/null || echo 'File not found')"
           echo "SSH key first line: $(head -1 ~/.ssh/id_rsa 2>/dev/null || echo 'Cannot read file')"
           echo "SSH key last line: $(tail -1 ~/.ssh/id_rsa 2>/dev/null || echo 'Cannot read file')"
 
           # Test connexion SSH
-          echo "🔗 Testing SSH connection..."
+          echo "Testing SSH connection..."
           ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} "echo 'SSH connection successful'" || echo "SSH connection failed"
 
-      - name: Deploy to Server
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.REMOTE_HOST }}
-          username: ${{ secrets.REMOTE_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            echo "🚀 Deploying to ${{ github.ref == 'refs/heads/main' && 'PRODUCTION' || 'DEVELOPMENT' }} environment..."
-            cd ${{ secrets.REMOTE_PATH }}
-            git checkout ${{ github.ref_name }}
-            git pull
+          - name: Deploy to Server
+          uses: appleboy/ssh-action@v1.0.0
+          with:
+            host: ${{ secrets.REMOTE_HOST }}
+            username: ${{ secrets.REMOTE_USER }}
+            key: ${{ secrets.SSH_PRIVATE_KEY }}
+            script: |
+              echo "Deploying to ${{ github.ref == 'refs/heads/main' && 'PRODUCTION' || 'DEVELOPMENT' }} environment..."
+              cd ${{ secrets.REMOTE_PATH }}
+              git checkout ${{ github.ref_name }}
+              git pull
 
-            # Set environment file
-            export ENV_FILE=".env.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}"
-            export COMPOSE_FILE="compose.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}.yml"
+              # Set environment file
+              export ENV_FILE=".env.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}"
+              export COMPOSE_FILE="compose.${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}.yml"
 
-            echo "📦 Using compose file: $COMPOSE_FILE"
-            echo "🔐 Using env file: $ENV_FILE"
+              echo "Using compose file: $COMPOSE_FILE"
+              echo "Using env file: $ENV_FILE"
 
-            # Check if traefik network exists, create if not
-            if ! docker network ls | grep -q traefik; then
-              echo "🌐 Creating traefik network..."
-              docker network create traefik
-            else
-              echo "✅ Traefik network already exists"
-            fi
+              # Check if traefik network exists, create if not
+              if ! docker network ls | grep -q traefik; then
+                echo "Creating traefik network..."
+                docker network create traefik
+              else
+                echo "Traefik network already exists"
+              fi
 
-            # Stop containers
-            docker compose -f $COMPOSE_FILE down
+              # Stop containers
+              docker compose -f $COMPOSE_FILE down --remove-orphans
 
-            # Start containers with build
-            docker compose -f $COMPOSE_FILE --env-file $ENV_FILE up --build -d
+              # Cleaning unused Docker images
+              docker image prune -af --filter "until=24h"
 
-            # Wait for containers to be healthy
-            echo "⏳ Waiting for containers to be ready..."
-            sleep 40
+              # Start containers with build
+              docker compose -f $COMPOSE_FILE --env-file $ENV_FILE up --build -d
 
-            echo "⏳ Waiting for healthcheck to pass..."
-            sleep 20
+              # Cleaning dangling images
+              docker image prune -f
 
-            # Check container status
-            echo "📊 Container status:"
-            docker ps --filter "name=ludora"
+              # Wait for containers to be healthy
+              echo "Waiting for containers to be ready..."
+              sleep 40
 
-            # Check API logs
-            echo "📝 API logs (last 20 lines):"
-            docker logs ludora-api --tail 20
+              echo "Waiting for healthcheck to pass..."
+              sleep 20
 
-            # Restart Traefik to detect new containers
-            echo "🔄 Restarting Traefik to detect containers..."
-            cd ~/code/traefik && docker compose restart
+              # Check container status
+              echo "Container status:"
+              docker ps --filter "name=ludora"
 
-            # Wait a bit for Traefik to restart
-            sleep 5
+              # Check API logs
+              echo "API logs (last 20 lines):"
+              docker logs ludora-api --tail 20
 
-            # Verify Traefik detected the containers
-            echo "🔍 Checking if Traefik detected ludora-api..."
-            docker logs traefik-reverse-proxy-1 --tail 50 | grep -i ludora || echo "⚠️  Ludora not found in Traefik logs"
+              # Restart Traefik to detect new containers
+              echo "Restarting Traefik to detect containers..."
+              cd ~/code/traefik && docker compose restart
 
-            echo "✅ Deployment completed!"
+              # Wait a bit for Traefik to restart
+              sleep 5
 
-      - name: Deployment Status
-        env:
-          ENVIRONMENT: ${{ vars.ENV }}
-          DEPLOY_URL: ${{ github.ref == 'refs/heads/main' && vars.PROD_URL || vars.DEV_URL }}
-        run: |
-          echo "✅ Deployment to $ENVIRONMENT completed successfully!"
-          echo "🌐 Environment: $ENVIRONMENT"
-          echo "🔗 URL: $DEPLOY_URL"
+              # Verify Traefik detected the containers
+              echo "Checking if Traefik detected ludora-api..."
+              docker logs traefik-reverse-proxy-1 --tail 50 | grep -i ludora || echo "Ludora not found in Traefik logs"
 
-      - name: Create Release Tag
-        if: success() && github.ref == 'refs/heads/main'
-        run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "actions@github.com"
-          TAG_NAME="release-$(date +'%Y%m%d-%H%M%S')"
-          git tag -a $TAG_NAME -m "Production release $TAG_NAME"
-          git push origin $TAG_NAME
+              echo "Deployment completed!"
+              - name: Deployment Status
+              env:
+                ENVIRONMENT: ${{ vars.ENV }}
+                DEPLOY_URL: ${{ github.ref == 'refs/heads/main' && vars.PROD_URL || vars.DEV_URL }}
+              run: |
+                echo "Deployment to $ENVIRONMENT completed successfully!"
+                echo "Environment: $ENVIRONMENT"
+                echo "URL: $DEPLOY_URL"
+
+            - name: Create Release Tag
+              if: success() && github.ref == 'refs/heads/main'
+              run: |
+                git config user.name "GitHub Actions Bot"
+                git config user.email "actions@github.com"
+                TAG_NAME="release-$(date +'%Y%m%d-%H%M%S')"
+                git tag -a $TAG_NAME -m "Production release $TAG_NAME"
+                git push origin $TAG_NAME
