@@ -43,7 +43,7 @@ services:
       # Add basic auth middleware for Swagger
       - 'traefik.http.middlewares.swagger-basicauth.basicauth.users=${BASIC_AUTH_USERNAME}:${BASIC_AUTH_PASSWORD_HASH}'
       # Router for Swagger with basic auth (higher priority)
-      - 'traefik.http.routers.ludora-api-swagger.rule=Host(`ludora-api.gana-f4ll.fr`) && PathPrefix(`/swagger`)'
+      - 'traefik.http.routers.ludora-api-swagger.rule=Host(`ludora-api-dev.gana-f4ll.fr`) && PathPrefix(`/swagger`)'
       - 'traefik.http.routers.ludora-api-swagger.entrypoints=websecure'
       - 'traefik.http.routers.ludora-api-swagger.tls=true'
       - 'traefik.http.routers.ludora-api-swagger.tls.certresolver=myresolver'
@@ -51,7 +51,7 @@ services:
       - 'traefik.http.routers.ludora-api-swagger.service=ludora-api'
       - 'traefik.http.routers.ludora-api-swagger.priority=10'
       # Main router for API (lower priority)
-      - 'traefik.http.routers.ludora-api.rule=Host(`ludora-api.gana-f4ll.fr`)'
+      - 'traefik.http.routers.ludora-api.rule=Host(`ludora-api-dev.gana-f4ll.fr`)'
       - 'traefik.http.routers.ludora-api.entrypoints=websecure'
       - 'traefik.http.routers.ludora-api.tls=true'
       - 'traefik.http.routers.ludora-api.tls.certresolver=myresolver'
