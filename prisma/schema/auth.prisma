@@ -123,4 +123,3 @@ model RefreshTokens {
   @@map("Refresh_tokens")
   @@schema("auth")
 }
-

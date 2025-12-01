@@ -109,4 +109,3 @@ model Friends {
   @@unique([userUid1, userUid2])
   @@schema("social")
 }
-

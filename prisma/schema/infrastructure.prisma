@@ -108,4 +108,3 @@ model FieldImages {
   @@map("Field_images")
   @@schema("infrastructure")
 }
-

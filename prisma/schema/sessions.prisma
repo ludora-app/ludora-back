@@ -122,4 +122,3 @@ model SessionPlayers {
   @@map("Session_players")
   @@schema("sessions")
 }
-

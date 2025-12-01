@@ -4,6 +4,7 @@ import { UpdatePasswordDto, UpdateUserDto, UserFilterDto } from 'src/users/dto';
 import { UsersController } from 'src/users/users.controller';
 import { UsersService } from 'src/users/users.service';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { ForgottenPasswordDto } from 'src/users/dto/input/forgotten-password.dto';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -17,6 +18,8 @@ describe('UsersController', () => {
     remove: jest.fn(),
     update: jest.fn(),
     updatePassword: jest.fn(),
+    updatePasswordRequest: jest.fn(),
+    changeForgottenPassword: jest.fn(),
   };
 
   const mockUser = {
@@ -191,6 +194,70 @@ describe('UsersController', () => {
         message: 'User 1 has been deleted',
       });
       expect(service.remove).toHaveBeenCalledWith('1');
+    });
+  });
+
+  describe('passwordResetRequest', () => {
+    it('should request password reset successfully', async () => {
+      const mockRequest = {
+        user: { uid: '1' },
+      };
+      mockUsersService.updatePasswordRequest.mockResolvedValue(undefined);
+
+      const result = await controller.passwordResetRequest(mockRequest as any);
+
+      expect(result).toBeUndefined();
+      expect(service.updatePasswordRequest).toHaveBeenCalledWith('1');
+    });
+
+    it('should handle errors from service', async () => {
+      const mockRequest = {
+        user: { uid: '1' },
+      };
+      mockUsersService.updatePasswordRequest.mockRejectedValue(
+        new Error('Password reset request failed'),
+      );
+
+      await expect(controller.passwordResetRequest(mockRequest as any)).rejects.toThrow(
+        'Password reset request failed',
+      );
+      expect(service.updatePasswordRequest).toHaveBeenCalledWith('1');
+    });
+  });
+
+  describe('passwordReset', () => {
+    it('should reset password successfully', async () => {
+      const mockRequest = {
+        user: { uid: '1' },
+      };
+      const forgottenPasswordDto: ForgottenPasswordDto = {
+        newPassword: 'newPassword123',
+        verificationCode: '123456',
+      };
+      mockUsersService.changeForgottenPassword.mockResolvedValue(undefined);
+
+      const result = await controller.passwordReset(forgottenPasswordDto, mockRequest as any);
+
+      expect(result).toBeUndefined();
+      expect(service.changeForgottenPassword).toHaveBeenCalledWith('1', forgottenPasswordDto);
+    });
+
+    it('should handle errors from service', async () => {
+      const mockRequest = {
+        user: { uid: '1' },
+      };
+      const forgottenPasswordDto: ForgottenPasswordDto = {
+        newPassword: 'newPassword123',
+        verificationCode: '123456',
+      };
+      mockUsersService.changeForgottenPassword.mockRejectedValue(
+        new Error('Invalid verification code'),
+      );
+
+      await expect(
+        controller.passwordReset(forgottenPasswordDto, mockRequest as any),
+      ).rejects.toThrow('Invalid verification code');
+      expect(service.changeForgottenPassword).toHaveBeenCalledWith('1', forgottenPasswordDto);
     });
   });
 });

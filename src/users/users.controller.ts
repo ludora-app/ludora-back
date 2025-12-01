@@ -32,6 +32,7 @@ import {
 
 import { UsersService } from './users.service';
 import { USERSELECT } from '../shared/constants/select-user';
+import { ForgottenPasswordDto } from './dto/input/forgotten-password.dto';
 import {
   FindAllUsersResponseDataDto,
   FindAllUsersResponseDto,
@@ -74,6 +75,16 @@ export class UsersController {
       data,
       message: 'Users fetched successfully',
     };
+  }
+
+  @Get('/password-reset-request')
+  @ApiOperation({
+    summary: 'request password reset',
+  })
+  async passwordResetRequest(@Req() request: Request) {
+    const uid = request['user'].uid;
+    console.log('uid', uid);
+    return this.usersService.updatePasswordRequest(uid);
   }
 
   @Get(':uid')
@@ -254,5 +265,32 @@ export class UsersController {
   remove(@Req() request: Request) {
     const uid = request['user'].uid;
     return this.usersService.remove(uid);
+  }
+
+  @Patch('/password-reset')
+  @ApiOperation({
+    summary: 'reset password',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error resetting password',
+    type: BadRequestResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'Verification code not found',
+    type: NotFoundResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundResponseDto,
+  })
+  @ApiNoContentResponse({ description: 'Password reset successfully' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async passwordReset(
+    @Body() forgottenPasswordDto: ForgottenPasswordDto,
+    @Req() request: Request,
+  ): Promise<void> {
+    const uid = request['user'].uid;
+    await this.usersService.changeForgottenPassword(uid, forgottenPasswordDto);
+    return;
   }
 }
