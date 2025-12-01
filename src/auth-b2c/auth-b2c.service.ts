@@ -1,5 +1,6 @@
 import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
+import { PinoLogger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
 import { UserType } from 'generated/prisma/client';
 import { UsersService } from 'src/users/users.service';
@@ -21,6 +22,8 @@ import {
   VerifyMailDto,
 } from 'src/auth-b2c/dto';
 
+import { CreateGoogleUserDto } from './dto/input/create-google-user.dto';
+
 @Injectable()
 export class AuthB2CService {
   constructor(
@@ -29,7 +32,10 @@ export class AuthB2CService {
     private readonly userService: UsersService,
     private readonly emailsService: EmailsService,
     private readonly configService: ConfigService,
-  ) {}
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(AuthB2CService.name);
+  }
   private readonly NODE_ENV = this.configService.getOrThrow('NODE_ENV');
   private readonly TOKEN_EXPIRATION_TIME = this.NODE_ENV === 'production' ? '15m' : '1d';
 
@@ -94,6 +100,78 @@ export class AuthB2CService {
     await this.sendVerificationEmail(result.newUser.uid, result.newUser.email);
 
     return { accessToken: result.accessToken, refreshToken: result.refreshToken };
+  }
+
+  async createOrConnectGoogleUser(
+    createGoogleUserDto: CreateGoogleUserDto,
+  ): Promise<{ accessToken: string; refreshToken: string; message: string }> {
+    const { email, firstname, imageUrl, lastname, provider } = createGoogleUserDto;
+
+    try {
+      const existingUser = await this.userService.findOneByEmail(email);
+
+      // if the user exists, connect the Google account to the user
+      if (existingUser) {
+        const payload = { uid: existingUser.uid };
+        const accessToken = this.jwt.sign(payload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
+        const refreshToken = this.jwt.sign(payload, { expiresIn: '7d' });
+
+        await this.prismaService.userTokens.create({
+          data: {
+            token: accessToken,
+            userUid: existingUser.uid,
+          },
+        });
+
+        await this.prismaService.refreshTokens.create({
+          data: {
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+            token: refreshToken,
+            userUid: existingUser.uid,
+          },
+        });
+        this.logger.debug(`User ${existingUser.uid} connected to Google account`);
+        const message = 'User already exists, successfully connected to Google account';
+
+        return { accessToken, message, refreshToken };
+      }
+
+      const newUser = await this.prismaService.users.create({
+        data: {
+          email,
+          firstname,
+          imageUrl,
+          lastname,
+          provider,
+        },
+      });
+
+      const payload = { uid: newUser.uid };
+      const accessToken = this.jwt.sign(payload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
+      const refreshToken = this.jwt.sign(payload, { expiresIn: '7d' });
+
+      await this.prismaService.userTokens.create({
+        data: {
+          token: accessToken,
+          userUid: newUser.uid,
+        },
+      });
+
+      await this.prismaService.refreshTokens.create({
+        data: {
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+          token: refreshToken,
+          userUid: newUser.uid,
+        },
+      });
+
+      this.logger.debug(`User ${newUser.uid} created and connected to Google account`);
+      const message = 'New user created and connected to Google account';
+
+      return { accessToken, message, refreshToken };
+    } catch (error) {
+      throw new BadRequestException(`Error creating or connecting Google user: ${error.message}`);
+    }
   }
 
   async login(loginB2CDto: LoginB2CDto): Promise<{ accessToken: string; refreshToken: string }> {
