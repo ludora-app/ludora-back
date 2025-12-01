@@ -1,4 +1,5 @@
 import { Throttle } from '@nestjs/throttler';
+import { Provider } from 'generated/prisma/enums';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SuccessTypeDto } from 'src/shared/dto/responses/success-type';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
@@ -49,6 +50,8 @@ import { AuthB2CGuard } from './guards/auth-b2c.guard';
 import { Public } from '../shared/decorators/public.decorator';
 import { Protected } from '../shared/decorators/protected.decorator';
 import { VerifyEmailCodeDto } from './dto/input/verify-email-code.dto';
+import { CreateGoogleUserDto } from './dto/input/create-google-user.dto';
+import { CreateOrConnectGoogleResponseDto } from './dto/output/create-or-connect-google.response';
 
 @Controller('auth-b2c')
 @UseGuards(AuthB2CGuard)
@@ -96,6 +99,31 @@ export class AuthB2CController {
     return {
       data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
       message: 'User created successfully',
+    };
+  }
+
+  @Public()
+  @Post('/google-login')
+  @ApiOperation({
+    summary: 'Creates or connects a user with a Google account',
+  })
+  @ApiCreatedResponse({
+    description: 'User created or connected successfully',
+    type: CreateOrConnectGoogleResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Error during Google user creation or connection',
+    type: BadRequestResponseDto,
+  })
+  async createOrConnectGoogleUser(
+    @Body() createGoogleUserDto: CreateGoogleUserDto,
+  ): Promise<CreateOrConnectGoogleResponseDto> {
+    const provider = Provider.GOOGLE;
+    createGoogleUserDto.provider = provider;
+    const data = await this.authService.createOrConnectGoogleUser(createGoogleUserDto);
+    return {
+      data: { accessToken: data.accessToken, refreshToken: data.refreshToken },
+      message: data.message,
     };
   }
 

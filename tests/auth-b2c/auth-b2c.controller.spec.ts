@@ -1,9 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Sex, UserType } from 'generated/prisma/client';
+import { Provider, Sex, UserType } from 'generated/prisma/client';
 import { AuthB2CController } from 'src/auth-b2c/auth-b2c.controller';
 import { AuthB2CService } from 'src/auth-b2c/auth-b2c.service';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { VerifyEmailCodeDto } from 'src/auth-b2c/dto/input/verify-email-code.dto';
+import { CreateGoogleUserDto } from 'src/auth-b2c/dto/input/create-google-user.dto';
 
 describe('AuthB2CController', () => {
   let controller: AuthB2CController;
@@ -19,6 +20,7 @@ describe('AuthB2CController', () => {
     logout: jest.fn(),
     logoutAllDevices: jest.fn(),
     generateAccessTokenFromCode: jest.fn(),
+    createOrConnectGoogleUser: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -278,6 +280,91 @@ describe('AuthB2CController', () => {
         'Invalid or expired verification code',
       );
       expect(mockAuthB2CService.generateAccessTokenFromCode).toHaveBeenCalledWith('invalid-code');
+    });
+  });
+
+  describe('createOrConnectGoogleUser', () => {
+    it('should create or connect a Google user successfully', async () => {
+      const createGoogleUserDto: CreateGoogleUserDto = {
+        email: 'google@test.com',
+        firstname: 'John',
+        imageUrl: 'https://example.com/photo.jpg',
+        lastname: 'Doe',
+        provider: Provider.GOOGLE,
+      };
+
+      const mockServiceResponse = {
+        accessToken: 'mock_access_token',
+        message: 'User already exists, successfully connected to Google account',
+        refreshToken: 'mock_refresh_token',
+      };
+
+      mockAuthB2CService.createOrConnectGoogleUser.mockResolvedValue(mockServiceResponse);
+
+      const result = await controller.createOrConnectGoogleUser(createGoogleUserDto);
+
+      expect(result).toEqual({
+        data: {
+          accessToken: 'mock_access_token',
+          refreshToken: 'mock_refresh_token',
+        },
+        message: 'User already exists, successfully connected to Google account',
+      });
+      expect(mockAuthB2CService.createOrConnectGoogleUser).toHaveBeenCalledWith({
+        ...createGoogleUserDto,
+        provider: Provider.GOOGLE,
+      });
+    });
+
+    it('should create a new Google user successfully', async () => {
+      const createGoogleUserDto: CreateGoogleUserDto = {
+        email: 'newgoogle@test.com',
+        firstname: 'Jane',
+        imageUrl: 'https://example.com/photo.jpg',
+        lastname: 'Smith',
+        provider: Provider.GOOGLE,
+      };
+
+      const mockServiceResponse = {
+        accessToken: 'mock_access_token',
+        message: 'New user created and connected to Google account',
+        refreshToken: 'mock_refresh_token',
+      };
+
+      mockAuthB2CService.createOrConnectGoogleUser.mockResolvedValue(mockServiceResponse);
+
+      const result = await controller.createOrConnectGoogleUser(createGoogleUserDto);
+
+      expect(result).toEqual({
+        data: {
+          accessToken: 'mock_access_token',
+          refreshToken: 'mock_refresh_token',
+        },
+        message: 'New user created and connected to Google account',
+      });
+      expect(mockAuthB2CService.createOrConnectGoogleUser).toHaveBeenCalledWith({
+        ...createGoogleUserDto,
+        provider: Provider.GOOGLE,
+      });
+    });
+
+    it('should handle errors from service when creating or connecting Google user', async () => {
+      const createGoogleUserDto: CreateGoogleUserDto = {
+        email: 'error@test.com',
+        firstname: 'Error',
+        imageUrl: 'https://example.com/photo.jpg',
+        lastname: 'User',
+        provider: Provider.GOOGLE,
+      };
+
+      mockAuthB2CService.createOrConnectGoogleUser.mockRejectedValue(
+        new Error('Error creating or connecting Google user'),
+      );
+
+      await expect(controller.createOrConnectGoogleUser(createGoogleUserDto)).rejects.toThrow(
+        'Error creating or connecting Google user',
+      );
+      expect(mockAuthB2CService.createOrConnectGoogleUser).toHaveBeenCalled();
     });
   });
 });

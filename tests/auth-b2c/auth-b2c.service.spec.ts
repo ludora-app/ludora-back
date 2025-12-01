@@ -2,13 +2,15 @@ import { BadRequestException, NotFoundException, UnauthorizedException } from '@
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Sex, UserType } from 'generated/prisma/client';
+import { Provider, Sex, UserType } from 'generated/prisma/client';
 import * as argon2 from 'argon2';
+import { PinoLogger } from 'nestjs-pino';
 import { AuthB2CService } from 'src/auth-b2c/auth-b2c.service';
 import { RefreshTokenDto } from 'src/auth-b2c/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { UsersService } from 'src/users/users.service';
+import { CreateGoogleUserDto } from 'src/auth-b2c/dto/input/create-google-user.dto';
 
 describe('AuthB2CService', () => {
   let service: AuthB2CService;
@@ -43,6 +45,7 @@ describe('AuthB2CService', () => {
     }),
     users: {
       findUnique: jest.fn(),
+      create: jest.fn(),
       update: jest.fn().mockResolvedValue({ uid: '1', emailVerified: true }),
     },
     userTokens: {
@@ -88,6 +91,14 @@ describe('AuthB2CService', () => {
     getOrThrow: jest.fn().mockReturnValue('test-secret'),
   };
 
+  const mockPinoLogger = {
+    setContext: jest.fn(),
+    debug: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -111,6 +122,10 @@ describe('AuthB2CService', () => {
         {
           provide: ConfigService,
           useValue: mockConfigService,
+        },
+        {
+          provide: PinoLogger,
+          useValue: mockPinoLogger,
         },
       ],
     }).compile();
@@ -461,6 +476,130 @@ describe('AuthB2CService', () => {
       );
       await expect(service.generateAccessTokenFromCode(mockCode)).rejects.toThrow('User not found');
       expect(mockPrismaService.userTokens.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('createOrConnectGoogleUser', () => {
+    it('should connect existing user with Google account', async () => {
+      const createGoogleUserDto: CreateGoogleUserDto = {
+        email: 'existing@test.com',
+        firstname: 'John',
+        imageUrl: 'https://example.com/photo.jpg',
+        lastname: 'Doe',
+        provider: Provider.GOOGLE,
+      };
+
+      const existingUser = {
+        uid: 'existing-user-1',
+        email: 'existing@test.com',
+        firstname: 'John',
+        lastname: 'Doe',
+      };
+
+      mockUsersService.findOneByEmail.mockResolvedValue(existingUser);
+      mockPrismaService.userTokens.create.mockResolvedValue({
+        uid: 'token-1',
+        token: 'mock_token',
+        userUid: existingUser.uid,
+      });
+      mockPrismaService.refreshTokens.create.mockResolvedValue({
+        uid: 'refresh-token-1',
+        token: 'mock_refresh_token',
+        userUid: existingUser.uid,
+      });
+
+      const result = await service.createOrConnectGoogleUser(createGoogleUserDto);
+
+      expect(result).toEqual({
+        accessToken: 'mock_token',
+        message: 'User already exists, successfully connected to Google account',
+        refreshToken: 'mock_token',
+      });
+      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith('existing@test.com');
+      expect(mockPrismaService.userTokens.create).toHaveBeenCalledWith({
+        data: {
+          token: 'mock_token',
+          userUid: existingUser.uid,
+        },
+      });
+      expect(mockPrismaService.refreshTokens.create).toHaveBeenCalledWith({
+        data: {
+          expiresAt: expect.any(Date),
+          token: 'mock_token',
+          userUid: existingUser.uid,
+        },
+      });
+    });
+
+    it('should create new user with Google account', async () => {
+      const createGoogleUserDto: CreateGoogleUserDto = {
+        email: 'new@test.com',
+        firstname: 'Jane',
+        imageUrl: 'https://example.com/photo.jpg',
+        lastname: 'Smith',
+        provider: Provider.GOOGLE,
+      };
+
+      const newUser = {
+        uid: 'new-user-1',
+        email: 'new@test.com',
+        firstname: 'Jane',
+        imageUrl: 'https://example.com/photo.jpg',
+        lastname: 'Smith',
+        provider: Provider.GOOGLE,
+      };
+
+      mockUsersService.findOneByEmail.mockResolvedValue(null);
+      mockPrismaService.users.create.mockResolvedValue(newUser);
+      mockPrismaService.userTokens.create.mockResolvedValue({
+        uid: 'token-1',
+        token: 'mock_token',
+        userUid: newUser.uid,
+      });
+      mockPrismaService.refreshTokens.create.mockResolvedValue({
+        uid: 'refresh-token-1',
+        token: 'mock_refresh_token',
+        userUid: newUser.uid,
+      });
+
+      const result = await service.createOrConnectGoogleUser(createGoogleUserDto);
+
+      expect(result).toEqual({
+        accessToken: 'mock_token',
+        message: 'New user created and connected to Google account',
+        refreshToken: 'mock_token',
+      });
+      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith('new@test.com');
+      expect(mockPrismaService.users.create).toHaveBeenCalledWith({
+        data: {
+          email: createGoogleUserDto.email,
+          firstname: createGoogleUserDto.firstname,
+          imageUrl: createGoogleUserDto.imageUrl,
+          lastname: createGoogleUserDto.lastname,
+          provider: createGoogleUserDto.provider,
+        },
+      });
+      expect(mockPrismaService.userTokens.create).toHaveBeenCalled();
+      expect(mockPrismaService.refreshTokens.create).toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException on error', async () => {
+      const createGoogleUserDto: CreateGoogleUserDto = {
+        email: 'error@test.com',
+        firstname: 'Error',
+        imageUrl: 'https://example.com/photo.jpg',
+        lastname: 'User',
+        provider: Provider.GOOGLE,
+      };
+
+      mockUsersService.findOneByEmail.mockRejectedValue(new Error('Database error'));
+
+      await expect(service.createOrConnectGoogleUser(createGoogleUserDto)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.createOrConnectGoogleUser(createGoogleUserDto)).rejects.toThrow(
+        'Error creating or connecting Google user: Database error',
+      );
     });
   });
 });
