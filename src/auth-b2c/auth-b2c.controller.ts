@@ -6,7 +6,6 @@ import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-respons
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import {
   ApiBadRequestResponse,
-  ApiBearerAuth,
   ApiBody,
   ApiConflictResponse,
   ApiConsumes,
@@ -48,11 +47,11 @@ import {
 import { AuthB2CService } from './auth-b2c.service';
 import { AuthB2CGuard } from './guards/auth-b2c.guard';
 import { Public } from '../shared/decorators/public.decorator';
+import { Protected } from '../shared/decorators/protected.decorator';
 import { VerifyEmailCodeDto } from './dto/input/verify-email-code.dto';
 
 @Controller('auth-b2c')
 @UseGuards(AuthB2CGuard)
-@ApiBearerAuth('JWT-auth')
 export class AuthB2CController {
   constructor(private readonly authService: AuthB2CService) {}
 
@@ -144,6 +143,7 @@ export class AuthB2CController {
     };
   }
 
+  @Protected()
   @Get('verify')
   @ApiOperation({
     summary: 'Verify the validity of the token & the user account',
@@ -168,6 +168,7 @@ export class AuthB2CController {
     return { data: { isValid: isValid }, message: 'token is valid' };
   }
 
+  @Protected()
   @Post('verify-email-code')
   @ApiOperation({
     summary: 'Verify the email code',
@@ -196,6 +197,7 @@ export class AuthB2CController {
     };
   }
 
+  @Protected()
   @Post('resend-verification-code')
   @ApiOperation({
     summary: 'Resend the verification code',
@@ -244,6 +246,7 @@ export class AuthB2CController {
     };
   }
 
+  @Protected()
   @Post('logout')
   @ApiOperation({
     summary: 'Logout user from current device',
@@ -266,6 +269,7 @@ export class AuthB2CController {
     };
   }
 
+  @Protected()
   @Post('logout-all-devices')
   @ApiOperation({
     summary: 'Logout user from all devices',
@@ -307,5 +311,33 @@ export class AuthB2CController {
       if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException(error.message);
     }
+  }
+
+  @Public()
+  @Post('generate-access-token-from-code')
+  @ApiOperation({
+    summary: 'Generate an access token from a verification code',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error during access token generation',
+    type: BadRequestResponseDto,
+  })
+  @ApiOkResponse({
+    description: 'Access token generated successfully',
+    schema: {
+      properties: {
+        accessToken: { type: 'string' },
+      },
+      type: 'object',
+    },
+  })
+  @HttpCode(HttpStatus.OK)
+  async generateAccessTokenFromCode(
+    @Body() generateAccessTokenFromCodeDto: { code: string },
+  ): Promise<{ accessToken: string }> {
+    const accessToken = await this.authService.generateAccessTokenFromCode(
+      generateAccessTokenFromCodeDto.code,
+    );
+    return { accessToken: accessToken };
   }
 }

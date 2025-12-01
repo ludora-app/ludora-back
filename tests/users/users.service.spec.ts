@@ -1,15 +1,23 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Sex } from 'generated/prisma/client';
+import { Sex, Provider } from 'generated/prisma/client';
 import * as argon2 from 'argon2';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { UsersService } from 'src/users/users.service';
+import { PinoLogger } from 'nestjs-pino';
+import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
 
 jest.mock('argon2', () => ({
   hash: jest.fn().mockResolvedValue('hashedPassword'),
   verify: jest.fn().mockResolvedValue(true),
+}));
+
+jest.mock('src/shared/utils/verification-code.utils', () => ({
+  VerificationCodeUtil: {
+    generateVerificationCode: jest.fn().mockReturnValue('123456'),
+  },
 }));
 
 describe('UsersService', () => {
@@ -27,6 +35,8 @@ describe('UsersService', () => {
     emailVerification: {
       deleteMany: jest.fn(),
       create: jest.fn(),
+      findFirst: jest.fn(),
+      delete: jest.fn(),
     },
     $transaction: jest.fn((callback) => callback(mockPrismaService)),
   };
@@ -38,6 +48,17 @@ describe('UsersService', () => {
 
   const mockEmailsService = {
     sendEmail: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockLogger = {
+    info: jest.fn(),
+    debug: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    fatal: jest.fn(),
+    trace: jest.fn(),
+    child: jest.fn(),
+    setContext: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -55,6 +76,10 @@ describe('UsersService', () => {
         {
           provide: EmailsService,
           useValue: mockEmailsService,
+        },
+        {
+          provide: PinoLogger,
+          useValue: mockLogger,
         },
       ],
     }).compile();
@@ -363,6 +388,122 @@ describe('UsersService', () => {
       });
 
       mockRandom.mockRestore();
+    });
+  });
+
+  describe('sendCodeForPasswordReset', () => {
+    it('should send password reset code successfully', async () => {
+      const mockUser = {
+        uid: '1',
+        firstname: 'John',
+        email: 'test@test.com',
+      };
+
+      await service.sendCodeForPasswordReset(mockUser as any);
+
+      expect(mockPrismaService.$transaction).toHaveBeenCalled();
+      expect(mockPrismaService.emailVerification.deleteMany).toHaveBeenCalledWith({
+        where: { userUid: '1' },
+      });
+      expect(mockPrismaService.emailVerification.create).toHaveBeenCalledWith({
+        data: {
+          code: '123456',
+          expiresAt: expect.any(Date),
+          userUid: '1',
+        },
+      });
+      expect(mockEmailsService.sendEmail).toHaveBeenCalledWith({
+        data: { code: '123456', name: 'John' },
+        recipients: ['test@test.com'],
+        template: 'passwordResetRequest',
+      });
+    });
+  });
+
+  describe('sendCodeForPasswordResetRequest', () => {
+    it('should initiate password reset request successfully', async () => {
+      const mockUser = {
+        uid: '1',
+        firstname: 'John',
+        email: 'test@test.com',
+        provider: Provider.LUDORA,
+      };
+
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
+
+      await service.sendCodeForPasswordResetRequest('test@test.com');
+
+      expect(mockPrismaService.users.findUnique).toHaveBeenCalledWith({
+        where: { email: 'test@test.com' },
+      });
+      expect(mockEmailsService.sendEmail).toHaveBeenCalledWith({
+        data: { code: '123456', name: 'John' },
+        recipients: ['test@test.com'],
+        template: 'passwordResetRequest',
+      });
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
+
+      await expect(service.sendCodeForPasswordResetRequest('test@test.com')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw BadRequestException if user is GOOGLE provider', async () => {
+      const mockUser = {
+        uid: '1',
+        firstname: 'John',
+        email: 'test@test.com',
+        provider: 'GOOGLE',
+      };
+
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
+
+      await expect(service.sendCodeForPasswordResetRequest('test@test.com')).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockEmailsService.sendEmail).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('resetForgottenPassword', () => {
+    it('should reset forgotten password successfully', async () => {
+      const mockUser = {
+        uid: '1',
+        firstname: 'John',
+        email: 'test@test.com',
+      };
+
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
+      mockPrismaService.users.update.mockResolvedValueOnce({
+        ...mockUser,
+        password: 'hashedPassword',
+      });
+
+      await service.resetForgottenPassword('newPassword123', '1');
+
+      expect(mockPrismaService.users.findUnique).toHaveBeenCalled();
+      expect(argon2.hash).toHaveBeenCalledWith('newPassword123');
+      expect(mockPrismaService.users.update).toHaveBeenCalledWith({
+        data: { password: 'hashedPassword' },
+        where: { uid: '1' },
+      });
+      expect(mockEmailsService.sendEmail).toHaveBeenCalledWith({
+        data: { name: 'John' },
+        recipients: ['test@test.com'],
+        template: 'passwordReset',
+      });
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
+
+      await expect(service.resetForgottenPassword('newPassword123', '1')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockPrismaService.users.update).not.toHaveBeenCalled();
     });
   });
 });

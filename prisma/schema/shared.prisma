@@ -9,4 +9,3 @@ enum InvitationStatus {
   @@map("InvitationStatus")
   @@schema("shared")
 }
-

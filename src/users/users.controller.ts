@@ -16,6 +16,7 @@ import {
   NotFoundException,
   Param,
   Patch,
+  Post,
   Query,
   Req,
   UseGuards,
@@ -32,6 +33,8 @@ import {
 
 import { UsersService } from './users.service';
 import { USERSELECT } from '../shared/constants/select-user';
+import { ForgottenPasswordDto } from './dto/input/forgotten-password.dto';
+import { PasswordResetRequestDto } from './dto/input/password-reset-request.dto';
 import {
   FindAllUsersResponseDataDto,
   FindAllUsersResponseDto,
@@ -162,7 +165,7 @@ export class UsersController {
 
   @Patch('/update')
   @ApiOperation({
-    summary: 'update user requires to be connected',
+    summary: 'update user requires to be connected, does not update the password',
   })
   @ApiBadRequestResponse({
     description: 'Error updating user',
@@ -254,5 +257,51 @@ export class UsersController {
   remove(@Req() request: Request) {
     const uid = request['user'].uid;
     return this.usersService.remove(uid);
+  }
+
+  @Public()
+  @Post('/password-reset-request')
+  @ApiNoContentResponse({ description: 'Password reset request sent successfully' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary:
+      'This method is used to initiate the password reset process, sends a verification code to the user email',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error initiating password reset',
+    type: BadRequestResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundResponseDto,
+  })
+  async passwordResetRequest(@Body() dto: PasswordResetRequestDto): Promise<void> {
+    await this.usersService.sendCodeForPasswordResetRequest(dto.email);
+    return;
+  }
+
+  @Patch('/password-reset')
+  @ApiOperation({
+    summary: 'This method is used to reset the password of a user when he forgot his password',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error resetting password',
+    type: BadRequestResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'Verification code not found',
+    type: NotFoundResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundResponseDto,
+  })
+  @ApiNoContentResponse({ description: 'Password reset successfully' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async passwordReset(@Body() dto: ForgottenPasswordDto, @Req() request: Request): Promise<void> {
+    console.log('request', request['user']);
+    const userUid = request['user'].uid;
+    await this.usersService.resetForgottenPassword(dto.newPassword, userUid);
+    return;
   }
 }

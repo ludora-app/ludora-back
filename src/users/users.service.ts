@@ -1,4 +1,5 @@
 import * as argon2 from 'argon2';
+import { PinoLogger } from 'nestjs-pino';
 import { Users } from 'generated/prisma/client';
 import { CreateImageDto } from 'src/auth-b2c/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -6,6 +7,7 @@ import { Prisma, Provider } from 'generated/prisma/browser';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { StorageFolderName } from 'src/shared/constants/constants';
 import { StorageService } from 'src/shared/storage/storage.service';
+import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   BadRequestException,
@@ -29,7 +31,10 @@ export class UsersService {
     private readonly prismaService: PrismaService,
     private readonly emailsService: EmailsService,
     private readonly storageService: StorageService,
-  ) {}
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(UsersService.name);
+  }
 
   async create(
     createUserDto: CreateUserDto,
@@ -211,6 +216,12 @@ export class UsersService {
     return;
   }
 
+  /**
+   * @description This method is used to update the password of a user
+   * @param uid
+   * @param updatePasswordDto
+   * @returns
+   */
   async updatePassword(uid: string, updatePasswordDto: UpdatePasswordDto): Promise<void> {
     const { newPassword, oldPassword } = updatePasswordDto;
     const existingUser = await this.prismaService.users.findUnique({
@@ -328,5 +339,74 @@ export class UsersService {
         isConnected: true,
       },
     });
+  }
+
+  /**   * @param user - The user
+   * @description This method is used to send a verification code for password reset to the user
+   */
+  async sendCodeForPasswordReset(user: Users): Promise<void> {
+    const verificationCode = VerificationCodeUtil.generateVerificationCode();
+    this.logger.debug('verificationCode', verificationCode);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    await this.prismaService.$transaction(async (tx) => {
+      // Delete old verification codes
+      await tx.emailVerification.deleteMany({
+        where: { userUid: user.uid },
+      });
+
+      // Create the new code
+      await tx.emailVerification.create({
+        data: {
+          code: verificationCode,
+          expiresAt,
+          userUid: user.uid,
+        },
+      });
+    });
+
+    await this.emailsService.sendEmail({
+      data: { code: verificationCode, name: user.firstname },
+      recipients: [user.email],
+      template: 'passwordResetRequest',
+    });
+  }
+  /**
+   *
+   * @param email - The email of the user
+   * @description This method is used to send a verification code for password reset to the user email
+   */
+  async sendCodeForPasswordResetRequest(email: string): Promise<void> {
+    const user = await this.findOneByEmail(email);
+
+    if (!user) throw new NotFoundException('User not found');
+
+    if (user.provider === 'GOOGLE') {
+      throw new BadRequestException('Google users cannot request a password reset');
+    }
+
+    await this.sendCodeForPasswordReset(user);
+  }
+
+  async resetForgottenPassword(newPassword: string, userUid: string): Promise<void> {
+    const existingUser = await this.findOne(userUid, USERSELECT.findMe);
+
+    if (!existingUser) throw new NotFoundException('User not found');
+
+    const hashedPassword = await argon2.hash(newPassword);
+
+    await this.prismaService.users.update({
+      data: { password: hashedPassword },
+      where: { uid: userUid },
+    });
+
+    await this.emailsService.sendEmail({
+      data: { name: existingUser.firstname },
+      recipients: [existingUser.email],
+      template: 'passwordReset',
+    });
+
+    this.logger.info(`User ${existingUser.email} password has been updated successfully`);
+    return;
   }
 }

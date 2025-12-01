@@ -52,4 +52,3 @@ model UserHourPreferences {
   @@map("User_hour_preferences")
   @@schema("user_preferences")
 }
-

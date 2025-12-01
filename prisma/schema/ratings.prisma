@@ -35,4 +35,3 @@ model UserGlobalRatings {
   @@map("User_global_ratings")
   @@schema("ratings")
 }
-

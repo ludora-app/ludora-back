@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { UserType } from 'generated/prisma/client';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { USERSELECT } from 'src/shared/constants/select-user';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
 import {
@@ -506,5 +507,40 @@ export class AuthB2CService {
    */
   async logoutAllDevices(userUid: string): Promise<void> {
     await this.logout(userUid);
+  }
+
+  /**
+   * @description This method is used to generate an access token from a verification code in the password reset workflow
+   * @param code - The code to generate the access token from
+   * @returns
+   */
+  async generateAccessTokenFromCode(code: string): Promise<string> {
+    const today = new Date();
+    const existingVerificationCode = await this.prismaService.emailVerification.findFirst({
+      where: { code, expiresAt: { gt: today } },
+    });
+
+    if (!existingVerificationCode)
+      throw new NotFoundException('Invalid or expired verification code');
+
+    const user = await this.userService.findOne(
+      existingVerificationCode.userUid,
+      USERSELECT.checkIfUserExists,
+    );
+
+    if (!user) throw new NotFoundException('User not found');
+
+    const payload = { uid: user.uid };
+    // this
+    const accessToken = this.jwt.sign(payload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
+
+    await this.prismaService.userTokens.create({
+      data: {
+        token: accessToken,
+        userUid: user.uid,
+      },
+    });
+
+    return accessToken;
   }
 }
