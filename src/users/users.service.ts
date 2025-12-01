@@ -17,7 +17,6 @@ import {
 } from '@nestjs/common';
 
 import { USERSELECT } from '../shared/constants/select-user';
-import { ForgottenPasswordDto } from './dto/input/forgotten-password.dto';
 import {
   CreateUserDto,
   FindAllUsersResponseDataDto,
@@ -217,6 +216,12 @@ export class UsersService {
     return;
   }
 
+  /**
+   * @description This method is used to update the password of a user
+   * @param uid
+   * @param updatePasswordDto
+   * @returns
+   */
   async updatePassword(uid: string, updatePasswordDto: UpdatePasswordDto): Promise<void> {
     const { newPassword, oldPassword } = updatePasswordDto;
     const existingUser = await this.prismaService.users.findUnique({
@@ -336,17 +341,10 @@ export class UsersService {
     });
   }
 
-  /**   * @param userUid - The uid of the user
-   * @param _email - The email of the user
+  /**   * @param user - The user
    * @description This method is used to send a verification code for password reset to the user
    */
-  async sendCodeForPasswordReset(userUid: string, _email: string): Promise<void> {
-    const user = await this.prismaService.users.findUnique({
-      where: { uid: userUid },
-    });
-
-    if (!user) throw new NotFoundException('User not found');
-
+  async sendCodeForPasswordReset(user: Users): Promise<void> {
     const verificationCode = VerificationCodeUtil.generateVerificationCode();
     this.logger.debug('verificationCode', verificationCode);
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
@@ -354,7 +352,7 @@ export class UsersService {
     await this.prismaService.$transaction(async (tx) => {
       // Delete old verification codes
       await tx.emailVerification.deleteMany({
-        where: { userUid },
+        where: { userUid: user.uid },
       });
 
       // Create the new code
@@ -362,7 +360,7 @@ export class UsersService {
         data: {
           code: verificationCode,
           expiresAt,
-          userUid,
+          userUid: user.uid,
         },
       });
     });
@@ -373,9 +371,13 @@ export class UsersService {
       template: 'passwordResetRequest',
     });
   }
-
-  async updatePasswordRequest(userUid: string): Promise<void> {
-    const user = await this.findOne(userUid, USERSELECT.findMe);
+  /**
+   *
+   * @param email - The email of the user
+   * @description This method is used to send a verification code for password reset to the user email
+   */
+  async sendCodeForPasswordResetRequest(email: string): Promise<void> {
+    const user = await this.findOneByEmail(email);
 
     if (!user) throw new NotFoundException('User not found');
 
@@ -383,25 +385,13 @@ export class UsersService {
       throw new BadRequestException('Google users cannot request a password reset');
     }
 
-    await this.sendCodeForPasswordReset(user.uid, user.email);
+    await this.sendCodeForPasswordReset(user);
   }
 
-  async changeForgottenPassword(userUid: string, dto: ForgottenPasswordDto): Promise<void> {
-    const { newPassword, verificationCode } = dto;
-
-    const existingUser = await this.prismaService.users.findUnique({
-      where: { uid: userUid },
-    });
+  async resetForgottenPassword(newPassword: string, userUid: string): Promise<void> {
+    const existingUser = await this.findOne(userUid, USERSELECT.findMe);
 
     if (!existingUser) throw new NotFoundException('User not found');
-
-    const existingVerificationCode = await this.prismaService.emailVerification.findFirst({
-      where: { code: verificationCode, userUid },
-    });
-
-    if (!existingVerificationCode || existingVerificationCode.expiresAt < new Date()) {
-      throw new NotFoundException('Invalid or expired verification code');
-    }
 
     const hashedPassword = await argon2.hash(newPassword);
 
@@ -410,17 +400,13 @@ export class UsersService {
       where: { uid: userUid },
     });
 
-    await this.prismaService.emailVerification.delete({
-      where: { uid: existingVerificationCode.uid },
-    });
-
     await this.emailsService.sendEmail({
       data: { name: existingUser.firstname },
       recipients: [existingUser.email],
       template: 'passwordReset',
     });
 
-    this.logger.info(`User ${existingUser.uid} password has been updated successfully`);
+    this.logger.info(`User ${existingUser.email} password has been updated successfully`);
     return;
   }
 }

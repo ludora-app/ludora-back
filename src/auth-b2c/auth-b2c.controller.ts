@@ -308,4 +308,32 @@ export class AuthB2CController {
       throw new InternalServerErrorException(error.message);
     }
   }
+
+  @Public()
+  @Post('generate-access-token-from-code')
+  @ApiOperation({
+    summary: 'Generate an access token from a verification code',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error during access token generation',
+    type: BadRequestResponseDto,
+  })
+  @ApiOkResponse({
+    description: 'Access token generated successfully',
+    schema: {
+      properties: {
+        accessToken: { type: 'string' },
+      },
+      type: 'object',
+    },
+  })
+  @HttpCode(HttpStatus.OK)
+  async generateAccessTokenFromCode(
+    @Body() generateAccessTokenFromCodeDto: { code: string },
+  ): Promise<{ accessToken: string }> {
+    const accessToken = await this.authService.generateAccessTokenFromCode(
+      generateAccessTokenFromCodeDto.code,
+    );
+    return { accessToken: accessToken };
+  }
 }

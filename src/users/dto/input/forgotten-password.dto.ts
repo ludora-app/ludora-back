@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, Length, Validate } from 'class-validator';
+import { IsString, Validate } from 'class-validator';
 import { IsStrongPassword } from 'src/users/password.validator';
 
 export class ForgottenPasswordDto {
@@ -12,14 +12,4 @@ export class ForgottenPasswordDto {
     type: String,
   })
   newPassword: string;
-
-  @IsString()
-  @Length(6, 6)
-  @ApiProperty({
-    description: 'Verification code of the user',
-    example: '123456',
-    required: true,
-    type: String,
-  })
-  verificationCode: string;
 }

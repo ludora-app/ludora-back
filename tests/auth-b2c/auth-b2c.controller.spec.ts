@@ -18,6 +18,7 @@ describe('AuthB2CController', () => {
     refreshToken: jest.fn(),
     logout: jest.fn(),
     logoutAllDevices: jest.fn(),
+    generateAccessTokenFromCode: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -248,6 +249,35 @@ describe('AuthB2CController', () => {
         message: 'Logged out from all devices successfully',
       });
       expect(mockAuthB2CService.logoutAllDevices).toHaveBeenCalledWith('1');
+    });
+  });
+
+  describe('generateAccessTokenFromCode', () => {
+    it('should generate access token from valid code', async () => {
+      const dto = { code: '123456' };
+      const mockAccessToken = 'mock_generated_access_token';
+
+      mockAuthB2CService.generateAccessTokenFromCode.mockResolvedValue(mockAccessToken);
+
+      const result = await controller.generateAccessTokenFromCode(dto);
+
+      expect(result).toEqual({
+        accessToken: mockAccessToken,
+      });
+      expect(mockAuthB2CService.generateAccessTokenFromCode).toHaveBeenCalledWith('123456');
+    });
+
+    it('should handle errors from service when generating access token', async () => {
+      const dto = { code: 'invalid-code' };
+
+      mockAuthB2CService.generateAccessTokenFromCode.mockRejectedValue(
+        new Error('Invalid or expired verification code'),
+      );
+
+      await expect(controller.generateAccessTokenFromCode(dto)).rejects.toThrow(
+        'Invalid or expired verification code',
+      );
+      expect(mockAuthB2CService.generateAccessTokenFromCode).toHaveBeenCalledWith('invalid-code');
     });
   });
 });
