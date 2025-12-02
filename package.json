@@ -31,7 +31,7 @@
     "migrate:dev": "doppler run -- pnpm exec prisma migrate dev",
     "migrate:reset": "doppler run -- pnpm exec prisma migrate reset",
     "db-push": "doppler run -- pnpm exec prisma db push",
-    "studio": "doppler run -- pnpm exec prisma studio",
+    "studio": "doppler run -- pnpm exec prisma studio --browser none",
     "prepare": "husky",
     "prisma-gen": "rm -rf node_modules && pnpm install && pnpm prisma generate"
   },

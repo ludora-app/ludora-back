@@ -10,7 +10,7 @@ services:
     restart: 'no' # Don't restart in dev for easier debugging
     ports:
       - '2424:2424' # API port
-      - '5555:5555' # Prisma Studio port
+      - '51212:51212' # Prisma Studio port
       - '9229:9229' # Node.js debugging port
     volumes:
       - ./src:/usr/src/app/src
