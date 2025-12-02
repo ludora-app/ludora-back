@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import {
   CreateImageDto,
-  LoginB2CDto,
+  LoginDto,
   RefreshTokenDto,
   RegisterB2CDto,
   VerifyMailDto,
@@ -174,9 +174,9 @@ export class AuthB2CService {
     }
   }
 
-  async login(loginB2CDto: LoginB2CDto): Promise<{ accessToken: string; refreshToken: string }> {
+  async login(loginDto: LoginDto): Promise<{ accessToken: string; refreshToken: string }> {
     try {
-      const { deviceUid, email, password } = loginB2CDto;
+      const { deviceUid, email, password } = loginDto;
       const formattedEmail = email.toLowerCase();
 
       const user = await this.userService.findOneByEmail(formattedEmail);

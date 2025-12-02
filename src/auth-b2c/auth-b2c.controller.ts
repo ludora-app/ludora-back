@@ -33,7 +33,7 @@ import {
 } from '@nestjs/common';
 import {
   CreateImageDto,
-  LoginB2CDto,
+  LoginDto,
   LoginResponseDto,
   LogoutResponseDto,
   RefreshTokenDto,
@@ -115,6 +115,7 @@ export class AuthB2CController {
     description: 'Error during Google user creation or connection',
     type: BadRequestResponseDto,
   })
+  @ApiBody({ type: CreateGoogleUserDto })
   async createOrConnectGoogleUser(
     @Body() createGoogleUserDto: CreateGoogleUserDto,
   ): Promise<CreateOrConnectGoogleResponseDto> {
@@ -141,7 +142,7 @@ export class AuthB2CController {
   @ApiBadRequestResponse({
     type: BadRequestResponseDto,
   })
-  async login(@Body() loginDto: LoginB2CDto): Promise<LoginResponseDto> {
+  async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
     const tokens = await this.authService.login(loginDto);
     return {
       data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },

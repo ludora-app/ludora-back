@@ -21,32 +21,30 @@ export class RegisterB2BDto {
   @ApiProperty({
     description: 'The firstname of the user',
     example: 'John',
-    readOnly: true,
     type: String,
   })
   userFirstname: string;
+
   @IsAlpha('fr-FR')
   @IsNotEmpty()
   @ApiProperty({
     description: 'The lastname of the user',
     example: 'Doe',
-    readOnly: true,
     type: String,
   })
   userLastname: string;
   @IsEmail()
   @ApiProperty({
-    description: 'The email of the user',
+    description: 'Email shared by the user and the partner',
     example: 'test@gmail.com',
     type: String,
   })
-  userEmail: string;
+  email: string;
   @IsPhoneNumber('FR')
   @IsOptional()
   @ApiProperty({
     description: 'The phone number of the user',
     example: '+33612345678',
-    readOnly: true,
     required: false,
     type: String,
   })
@@ -58,7 +56,6 @@ export class RegisterB2BDto {
   @ApiProperty({
     description: 'The password of the user',
     example: 'Test!1234',
-    readOnly: true,
     type: String,
   })
   userPassword: string;
@@ -94,14 +91,6 @@ export class RegisterB2BDto {
     type: String,
   })
   partnerPhone?: string;
-  @IsEmail()
-  @IsOptional()
-  @ApiProperty({
-    description: 'The email of the partner',
-    example: 'partner@example.com',
-    type: String,
-  })
-  partnerEmail?: string;
 }
 
 export class RegisterB2BWithFileDto extends RegisterB2BDto {
