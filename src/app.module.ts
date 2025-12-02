@@ -22,6 +22,7 @@ import { UserHourPreferencesModule } from './user-hour-preferences/user-hour-pre
 import { UserSportPreferencesModule } from './user-sport-preferences/user-sport-preferences.module';
 
 const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV === 'development';
+
 @Module({
   controllers: [AppController],
   imports: [
@@ -66,21 +67,17 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
             statusCode: res.statusCode,
           }),
         },
-        ...(isDevelopment
-          ? {
-              transport: {
-                options: {
-                  colorize: true,
-                  customColors: 'info:green,warn:bgYellow,error:bgRed,debug:bgMagenta',
-                  ignore: 'pid,hostname,context',
-                  levelFirst: true,
-                  messageFormat: `[{context}] {msg}`,
-                  translateTime: 'HH:MM:ss Z',
-                },
-                target: 'pino-pretty',
-              },
-            }
-          : {}), // In production, no "pretty" transport to keep the JSON raw
+        transport: {
+          options: {
+            colorize: isDevelopment,
+            customColors: 'info:green,warn:bgYellow,error:bgRed,debug:bgMagenta',
+            ignore: 'hostname,req,res,responseTime',
+            levelFirst: false,
+            messageFormat: '{pid}  - {time} {levelLabel} [{context}] {msg}',
+            translateTime: 'dd/mm/yyyy, h:MM:ss TT',
+          },
+          target: 'pino-pretty',
+        },
       },
     }),
     SharedModule,
@@ -99,7 +96,6 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
     UserSportPreferencesModule,
     FieldsModule,
   ],
-
   providers: [AppService],
 })
 export class AppModule {}
