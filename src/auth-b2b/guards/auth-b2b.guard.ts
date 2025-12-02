@@ -79,7 +79,7 @@ export class AuthB2BGuard implements CanActivate {
       return true;
     } catch (error) {
       // error log
-      console.error('🔒 Auth Guard Error:', {
+      console.error('Auth B2B Guard Error:', {
         message: error.message,
         timestamp: new Date().toISOString(),
       });

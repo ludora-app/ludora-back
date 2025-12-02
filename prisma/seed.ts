@@ -1,4 +1,4 @@
-import { GameModes, PrismaClient, Sex, TeamLabel } from '../generated/prisma/client';
+import { GameModes, PrismaClient, Sex, TeamLabel, UserType } from '../generated/prisma/client';
 import * as argon2 from 'argon2';
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -148,6 +148,7 @@ async function seed() {
       longitude: 2.3789354,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[0].uid,
@@ -157,6 +158,7 @@ async function seed() {
       longitude: 2.3789354,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[0].uid,
@@ -166,6 +168,7 @@ async function seed() {
       longitude: 2.3789354,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[0].uid,
@@ -175,6 +178,7 @@ async function seed() {
       longitude: 2.3789354,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[0].uid,
@@ -184,6 +188,7 @@ async function seed() {
       longitude: 2.3789354,
       gameMode: 'THREE_V_THREE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[0].uid,
@@ -212,6 +217,7 @@ async function seed() {
       longitude: 2.5667,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[1].uid,
@@ -221,6 +227,7 @@ async function seed() {
       longitude: 2.5667,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[1].uid,
@@ -230,6 +237,7 @@ async function seed() {
       longitude: 2.5667,
       gameMode: 'THREE_V_THREE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[1].uid,
@@ -239,6 +247,7 @@ async function seed() {
       longitude: 2.5667,
       gameMode: 'THREE_V_THREE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[1].uid,
@@ -248,6 +257,7 @@ async function seed() {
       longitude: 2.5667,
       gameMode: 'THREE_V_THREE',
       entryFee: 0,
+      isVerified: true,
     },
     // ? STADIUM THIAS ORLY
     {
@@ -258,6 +268,7 @@ async function seed() {
       longitude: 2.4033,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[2].uid,
@@ -267,6 +278,7 @@ async function seed() {
       longitude: 2.4033,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[2].uid,
@@ -276,6 +288,17 @@ async function seed() {
       longitude: 2.4033,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
+    },
+    {
+      partnerUid: createdPartners[2].uid,
+      sport: createdSports[4].name,
+      address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
+      latitude: 48.7555,
+      longitude: 2.4033,
+      gameMode: 'FIVE_V_FIVE',
+      entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[2].uid,
@@ -294,6 +317,7 @@ async function seed() {
       longitude: 2.4033,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[2].uid,
@@ -303,6 +327,7 @@ async function seed() {
       longitude: 2.4033,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[2].uid,
@@ -312,15 +337,7 @@ async function seed() {
       longitude: 2.4033,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
-    },
-    {
-      partnerUid: createdPartners[2].uid,
-      sport: createdSports[4].name,
-      address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.7555,
-      longitude: 2.4033,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
+      isVerified: true,
     },
     // here
     {
@@ -331,6 +348,7 @@ async function seed() {
       longitude: 2.4033,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[2].uid,
@@ -340,6 +358,7 @@ async function seed() {
       longitude: 2.4033,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[2].uid,
@@ -349,6 +368,7 @@ async function seed() {
       longitude: 2.4033,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[3].uid,
@@ -358,6 +378,7 @@ async function seed() {
       longitude: 2.236,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[3].uid,
@@ -367,6 +388,7 @@ async function seed() {
       longitude: 2.236,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[3].uid,
@@ -376,6 +398,7 @@ async function seed() {
       longitude: 2.236,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[3].uid,
@@ -385,6 +408,7 @@ async function seed() {
       longitude: 2.236,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[3].uid,
@@ -394,6 +418,7 @@ async function seed() {
       longitude: 2.236,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[3].uid,
@@ -403,6 +428,7 @@ async function seed() {
       longitude: 2.236,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[3].uid,
@@ -412,6 +438,7 @@ async function seed() {
       longitude: 2.236,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
   ];
 
@@ -912,6 +939,60 @@ async function seed() {
     });
     createdUsers.push({ uid: createdUser.uid });
     console.log(`Created user: ${user.email}`);
+  }
+
+  const partnerUsers = [
+    {
+      email: partners[0].email,
+      password: await hashPassword('Hoopsfactory398!'),
+      firstname: 'Hoopsfactory',
+      lastname: 'Hoopsfactory',
+      birthdate: new Date('1998-01-31T00:00:00Z'),
+      sex: Sex.MALE,
+      bio: 'Hoopsfactory',
+      type: UserType.PARTNER,
+    },
+    {
+      email: partners[1].email,
+      password: await hashPassword('Theoneball398!'),
+      firstname: 'Theoneball',
+      lastname: 'Theoneball',
+      birthdate: new Date('1998-01-31T00:00:00Z'),
+      sex: Sex.MALE,
+      bio: 'Theoneball',
+      type: UserType.PARTNER,
+    },
+    {
+      email: partners[2].email,
+      password: await hashPassword('Stadiumthiais398!'),
+      firstname: 'Stadiumthiais',
+      lastname: 'Stadiumthiais',
+      birthdate: new Date('1998-01-31T00:00:00Z'),
+      sex: Sex.MALE,
+      bio: 'Stadiumthiais',
+      type: UserType.PARTNER,
+    },
+    {
+      email: partners[3].email,
+      password: await hashPassword('Foresthill398!'),
+      firstname: 'Foresthill',
+      lastname: 'Foresthill',
+      birthdate: new Date('1998-01-31T00:00:00Z'),
+      sex: Sex.MALE,
+      bio: 'Foresthill',
+      type: UserType.PARTNER,
+    },
+  ];
+
+  const createdPartnerUsers: { uid: string }[] = [];
+  for (const partnerUser of partnerUsers) {
+    const createdPartnerUser = await prisma.users.upsert({
+      where: { email: partnerUser.email },
+      update: {},
+      create: partnerUser,
+    });
+    createdPartnerUsers.push({ uid: createdPartnerUser.uid });
+    console.log(`Created partner user: ${partnerUser.email}`);
   }
 
   const teams = [

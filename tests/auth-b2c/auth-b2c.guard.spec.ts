@@ -271,7 +271,7 @@ describe('AuthB2CGuard', () => {
       await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        '🔒 Auth Guard Error:',
+        'Auth B2C Guard Error:',
         expect.objectContaining({
           message: 'Token expired',
           timestamp: expect.any(String),

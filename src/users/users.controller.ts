@@ -299,7 +299,6 @@ export class UsersController {
   @ApiNoContentResponse({ description: 'Password reset successfully' })
   @HttpCode(HttpStatus.NO_CONTENT)
   async passwordReset(@Body() dto: ForgottenPasswordDto, @Req() request: Request): Promise<void> {
-    console.log('request', request['user']);
     const userUid = request['user'].uid;
     await this.usersService.resetForgottenPassword(dto.newPassword, userUid);
     return;

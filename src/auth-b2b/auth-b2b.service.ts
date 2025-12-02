@@ -140,6 +140,25 @@ export class AuthB2BService {
     const accessToken = this.jwt.sign(payload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
     const refreshToken = this.jwt.sign(payload, { expiresIn: '7d' });
 
+    await this.prisma.$transaction(async (tx) => {
+      await tx.userTokens.create({
+        data: {
+          organisationUid: partner.uid,
+          token: accessToken,
+          userUid: user.uid,
+        },
+      });
+    });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.refreshTokens.create({
+        data: {
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          organisationUid: partner.uid,
+          token: refreshToken,
+          userUid: user.uid,
+        },
+      });
+    });
     return { accessToken, refreshToken };
   }
 }
