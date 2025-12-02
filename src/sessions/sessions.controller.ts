@@ -1,5 +1,6 @@
 import { Sessions } from 'generated/prisma/client';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
@@ -21,7 +22,6 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
-  ApiBearerAuth,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -38,11 +38,11 @@ import { PaginatedSessionResponse, SessionResponse } from './dto/output/session.
 
 @Controller('sessions')
 @UseGuards(AuthB2CGuard)
-@ApiBearerAuth('JWT-auth')
 export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}
 
   @Post()
+  @Protected()
   @ApiOperation({ summary: 'Create a new session' })
   @ApiCreatedResponse({ type: ResponseTypeDto<Sessions> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -57,6 +57,7 @@ export class SessionsController {
   }
 
   @Get('/list/collection')
+  @Protected()
   @ApiOperation({ summary: 'Get all sessions' })
   @ApiOkResponse({ type: PaginatedSessionResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -74,6 +75,7 @@ export class SessionsController {
   }
 
   @Get(':uid')
+  @Protected()
   @ApiOperation({ summary: 'Get a session by uid' })
   @ApiOkResponse({ type: ResponseTypeDto<Sessions> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -93,6 +95,7 @@ export class SessionsController {
   }
 
   @Patch(':uid')
+  @Protected()
   @ApiOperation({ summary: 'Update a session by uid' })
   @ApiNoContentResponse({ description: 'Session updated successfully' })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -109,6 +112,7 @@ export class SessionsController {
   }
 
   @Delete(':uid')
+  @Protected()
   async remove(@Param('uid') uid: string) {
     return this.sessionsService.remove(uid);
   }

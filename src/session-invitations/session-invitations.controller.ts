@@ -1,5 +1,6 @@
 import { InvitationStatus } from 'generated/prisma/client';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
@@ -23,7 +24,6 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
-  ApiBearerAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiNoContentResponse,
@@ -44,11 +44,12 @@ import {
 
 @Controller('session-invitations')
 @UseGuards(AuthB2CGuard)
-@ApiBearerAuth('JWT-auth')
 export class SessionInvitationsController {
   constructor(private readonly sessionInvitationsService: SessionInvitationsService) {}
 
   @Post()
+  @Protected()
+  @UseGuards(AuthB2CGuard)
   @ApiOperation({ summary: 'Create a new session invitation' })
   @ApiCreatedResponse({ type: ResponseTypeDto<SessionInvitationResponse> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -77,6 +78,7 @@ export class SessionInvitationsController {
   }
 
   @Get('list-by-user/collection/:userUid')
+  @Protected()
   @ApiOperation({ summary: 'Get all session invitations by user ID' })
   @ApiOkResponse({ type: PaginatedSessionInvitationResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -98,6 +100,7 @@ export class SessionInvitationsController {
   }
 
   @Get('list-by-session/collection/:sessionUid')
+  @Protected()
   @ApiOperation({ summary: 'Get all session invitations by session ID' })
   @ApiOkResponse({ type: PaginatedSessionInvitationResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -119,6 +122,7 @@ export class SessionInvitationsController {
   }
 
   @Get(':sessionUid/:receiverUid')
+  @Protected()
   @ApiOperation({ summary: 'Get a session invitation by session ID and receiver ID' })
   @ApiOkResponse({ type: ResponseTypeDto<SessionInvitationResponse> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -141,6 +145,7 @@ export class SessionInvitationsController {
   }
 
   @Patch(':sessionUid')
+  @Protected()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Update a session invitation by session UID' })
   @ApiNoContentResponse({ description: 'Session invitation updated successfully' })

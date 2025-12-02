@@ -1,3 +1,5 @@
+import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
@@ -13,6 +15,7 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -32,16 +35,18 @@ import {
 } from './dto/output/user-hour-preference-response';
 
 @Controller('user-hour-preferences')
+@UseGuards(AuthB2CGuard)
 export class UserHourPreferencesController {
   constructor(private readonly userHourPreferencesService: UserHourPreferencesService) {}
 
+  @Post()
+  @Protected()
   @ApiOperation({ summary: 'Create a new user hour preference' })
   @ApiCreatedResponse({ type: ResponseTypeDto<UserHourPreferenceResponse> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.CREATED)
-  @Post()
   async create(
     @Req() request: Request,
     @Body() createUserHourPreferenceDto: CreateUserHourPreferenceDto,
@@ -54,6 +59,7 @@ export class UserHourPreferencesController {
   }
 
   @Get('list-by-user/:userUid')
+  @Protected()
   @ApiOperation({ summary: 'Get all user hour preferences by user ID' })
   @ApiOkResponse({ type: PaginatedUserHourPreferenceResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -69,12 +75,13 @@ export class UserHourPreferencesController {
     };
   }
 
+  @Delete(':uid')
+  @Protected()
   @ApiOperation({ summary: 'Delete a user hour preference by uid' })
   @ApiNoContentResponse({ description: 'User hour preference deleted successfully' })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Delete(':uid')
   async remove(@Param('uid') uid: string, @Req() request: Request): Promise<void> {
     const userUid = request['user'].uid;
     await this.userHourPreferencesService.remove(uid, userUid);

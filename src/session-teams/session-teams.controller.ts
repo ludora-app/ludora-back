@@ -1,5 +1,6 @@
 import { SessionsService } from 'src/sessions/sessions.service';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
@@ -16,7 +17,6 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
-  ApiBearerAuth,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -31,7 +31,6 @@ import {
 
 @Controller('session-teams')
 @UseGuards(AuthB2CGuard)
-@ApiBearerAuth('JWT-auth')
 export class SessionTeamsController {
   constructor(
     @Inject(forwardRef(() => SessionsService)) private readonly sessionsService: SessionsService,
@@ -39,6 +38,7 @@ export class SessionTeamsController {
   ) {}
 
   @Get('list-by-session/collection/:sessionUid')
+  @Protected()
   @ApiOperation({ summary: 'Get all teams linked to a session by session uid' })
   @ApiOkResponse({ type: PaginatedSessionTeamResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -66,6 +66,7 @@ export class SessionTeamsController {
   }
 
   @Get('/teams/:uid')
+  @Protected()
   @ApiOperation({ summary: 'Get a team by its uid' })
   @ApiOkResponse({ type: ResponseTypeDto<SessionTeamResponse> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })

@@ -1,6 +1,7 @@
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { AuthB2BGuard } from 'src/auth-b2b/guards/auth-b2b.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
@@ -25,7 +26,6 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
-  ApiBearerAuth,
   ApiConflictResponse,
   ApiConsumes,
   ApiCreatedResponse,
@@ -45,12 +45,12 @@ import { FieldResponseDto, PaginatedFieldResponse } from './dto/output/field-res
 
 // ? Guards at endpoint level for the whole controller because some routes will be accessible by both B2C and B2B users.
 @Controller('fields')
-@ApiBearerAuth('JWT-auth')
 export class FieldsController {
   constructor(private readonly fieldsService: FieldsService) {}
 
   @Post()
   @UseGuards(AuthB2CGuard)
+  @Protected()
   @UseInterceptors(FilesInterceptor('images', 5))
   @ApiConsumes('multipart/form-data')
   @ApiCreatedResponse({ type: ResponseTypeDto<FieldResponseDto> })
@@ -82,6 +82,7 @@ export class FieldsController {
 
   @Get('list-verified/collection')
   @UseGuards(AuthB2CGuard)
+  @Protected()
   @ApiOkResponse({ type: PaginatedFieldResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
@@ -100,6 +101,7 @@ export class FieldsController {
 
   @Get('list-by-partner/collection')
   @UseGuards(AuthB2BGuard)
+  @Protected()
   @ApiOkResponse({ type: PaginatedFieldResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
@@ -116,6 +118,7 @@ export class FieldsController {
 
   @Get(':uid')
   @UseGuards(AuthB2CGuard)
+  @Protected()
   @ApiOkResponse({ type: ResponseTypeDto<FieldResponseDto> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
@@ -137,6 +140,7 @@ export class FieldsController {
 
   @Patch('update-public/:uid')
   @UseGuards(AuthB2CGuard)
+  @Protected()
   @ApiNoContentResponse({ description: 'Field updated successfully' })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
@@ -149,6 +153,7 @@ export class FieldsController {
 
   @Patch('update-private/:uid')
   @UseGuards(AuthB2BGuard)
+  @Protected()
   @ApiNoContentResponse({ description: 'Field updated successfully' })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })

@@ -1,3 +1,5 @@
+import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
@@ -11,6 +13,7 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -27,10 +30,12 @@ import { CreateUserSportPreferenceDto } from './dto/input/create-user-sport-pref
 import { PaginatedUserSportPreferenceResponse } from './dto/output/user-sport-preference.response';
 
 @Controller('user-sport-preferences')
+@UseGuards(AuthB2CGuard)
 export class UserSportPreferencesController {
   constructor(private readonly userSportPreferencesService: UserSportPreferencesService) {}
 
   @Post()
+  @Protected()
   @ApiOperation({ summary: 'Create a user sport preference' })
   @ApiCreatedResponse({ description: 'User sport preference created successfully' })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -46,6 +51,7 @@ export class UserSportPreferencesController {
   }
 
   @Get('list-by-user/:userUid')
+  @Protected()
   @ApiOperation({ summary: 'Get all user sport preferences by user ID' })
   @ApiOkResponse({ type: PaginatedUserSportPreferenceResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -57,6 +63,7 @@ export class UserSportPreferencesController {
   }
 
   @Delete(':uid')
+  @Protected()
   @ApiOperation({ summary: 'Delete a user sport preference by uid' })
   @ApiNoContentResponse({ description: 'User sport preference deleted successfully' })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })

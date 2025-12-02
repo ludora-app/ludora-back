@@ -1,6 +1,7 @@
 import { Users } from 'generated/prisma/client';
 import { Public } from 'src/shared/decorators/public.decorator';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
@@ -52,6 +53,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('/list/collection')
+  @Protected()
   @ApiOperation({
     summary: 'Récupère tous les utilisateurs',
   })
@@ -80,6 +82,7 @@ export class UsersController {
   }
 
   @Get(':uid')
+  @Protected()
   @ApiOperation({
     summary: 'get user by uid requires to be connected',
   })
@@ -107,6 +110,7 @@ export class UsersController {
   }
 
   @Get('/')
+  @Protected()
   @ApiOperation({
     summary: 'get user by token requires to be connected',
   })
@@ -139,6 +143,7 @@ export class UsersController {
   }
 
   @Get('/email/:email')
+  @Protected()
   @ApiOperation({
     summary: 'get user by email',
   })
@@ -164,6 +169,7 @@ export class UsersController {
   }
 
   @Patch('/update')
+  @Protected()
   @ApiOperation({
     summary: 'update user requires to be connected, does not update the password',
   })
@@ -188,6 +194,7 @@ export class UsersController {
   }
 
   @Patch('/update-password')
+  @Protected()
   @ApiOperation({
     summary: 'update password requires to be connected',
   })
@@ -214,6 +221,7 @@ export class UsersController {
   }
 
   @Patch('/deactivate')
+  @Protected()
   @ApiOperation({
     summary: 'deactivate user requires to be connected',
   })
@@ -237,6 +245,7 @@ export class UsersController {
   }
 
   @Delete('/delete')
+  @Protected()
   @ApiOperation({
     summary: 'delete user requires to be connected',
   })
@@ -260,6 +269,7 @@ export class UsersController {
   }
 
   @Public()
+  @Protected()
   @Post('/password-reset-request')
   @ApiNoContentResponse({ description: 'Password reset request sent successfully' })
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -281,6 +291,7 @@ export class UsersController {
   }
 
   @Patch('/password-reset')
+  @Protected()
   @ApiOperation({
     summary: 'This method is used to reset the password of a user when he forgot his password',
   })

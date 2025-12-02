@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
@@ -20,7 +21,6 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
-  ApiBearerAuth,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOkResponse,
@@ -42,13 +42,13 @@ import {
   BankAccountListResponseDto,
 } from './dto/output/bankAccount-list-response.dto';
 
-@UseGuards(AuthB2CGuard)
 @Controller('payment')
-@ApiBearerAuth('JWT-auth')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
   @Get('connect')
+  @Protected()
+  @UseGuards(AuthB2CGuard)
   @ApiOperation({
     summary: 'Récupère le compte Stripe connecté.',
   })
@@ -75,6 +75,8 @@ export class PaymentController {
   }
 
   @Post('connect')
+  @Protected()
+  @UseGuards(AuthB2CGuard)
   @ApiOperation({
     summary: 'Create a Stripe connect account.',
   })
@@ -99,6 +101,8 @@ export class PaymentController {
   }
 
   @Post('payment-intent')
+  @Protected()
+  @UseGuards(AuthB2CGuard)
   @ApiOperation({
     summary: 'Create a payment intent with Stripe',
   })
@@ -118,6 +122,8 @@ export class PaymentController {
   }
 
   @Post('payment-intent/confirm')
+  @Protected()
+  @UseGuards(AuthB2CGuard)
   @ApiOperation({
     summary: 'Confirm a payment intent (for mobile wallets)',
   })
@@ -139,6 +145,8 @@ export class PaymentController {
   // add bank account to connect account
 
   @Post('bank-accounts')
+  @Protected()
+  @UseGuards(AuthB2CGuard)
   @ApiOperation({
     summary: 'add bank account to connect account',
   })
@@ -163,6 +171,8 @@ export class PaymentController {
   }
 
   @Get('list-bank-accounts')
+  @Protected()
+  @UseGuards(AuthB2CGuard)
   @ApiOperation({
     summary: 'Get all bank accounts',
   })
@@ -187,6 +197,8 @@ export class PaymentController {
   }
 
   @Get('bank-accounts/:bankAccountId')
+  @Protected()
+  @UseGuards(AuthB2CGuard)
   @ApiOperation({
     summary: 'Get a bank account',
   })
@@ -217,6 +229,8 @@ export class PaymentController {
   }
 
   @Put('bank-accounts/:bankAccountId')
+  @Protected()
+  @UseGuards(AuthB2CGuard)
   @ApiBadRequestResponse({
     description: 'Error updating bank account',
     type: BadRequestResponseDto,
@@ -242,6 +256,8 @@ export class PaymentController {
   }
 
   @Delete('bank-accounts/:bankAccountId')
+  @Protected()
+  @UseGuards(AuthB2CGuard)
   @ApiOperation({
     summary: 'Delete a bank account',
   })
@@ -269,6 +285,8 @@ export class PaymentController {
 
   @UseGuards(DevOnlyGuard)
   @Post('payment-intent/test')
+  @UseGuards(DevOnlyGuard)
+  @Protected()
   @ApiOperation({
     summary: 'Create a payment intent with a test card (for development only)',
   })
@@ -295,7 +313,9 @@ export class PaymentController {
     };
   }
 
+  @Post('payment-method/test')
   @UseGuards(DevOnlyGuard)
+  @Protected()
   @Post('payment-method/test')
   @ApiOperation({
     summary: 'Create a test payment method (for development only)',

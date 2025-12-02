@@ -16,7 +16,6 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
-  ApiBearerAuth,
   ApiBody,
   ApiConflictResponse,
   ApiConsumes,
@@ -32,7 +31,6 @@ import { RegisterB2BWithFileDto } from './dto/input/register-b2b.dto';
 
 @Controller('auth-b2b')
 @UseGuards(AuthB2BGuard)
-@ApiBearerAuth('JWT-auth')
 export class AuthB2BController {
   constructor(private readonly authService: AuthB2BService) {}
 

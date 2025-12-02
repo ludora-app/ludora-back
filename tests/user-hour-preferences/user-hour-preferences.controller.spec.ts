@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TimePeriod, UserHourPreferenceType } from 'generated/prisma/client';
+import { AuthB2CGuard } from '../../src/auth-b2c/guards/auth-b2c.guard';
 import { UserHourPreferencesController } from '../../src/user-hour-preferences/user-hour-preferences.controller';
 import { UserHourPreferencesService } from '../../src/user-hour-preferences/user-hour-preferences.service';
 import { CreateUserHourPreferenceDto } from '../../src/user-hour-preferences/dto/input/create-user-hour-preference.dto';
@@ -15,6 +16,10 @@ describe('UserHourPreferencesController', () => {
     remove: jest.fn(),
   };
 
+  const mockAuthGuard = {
+    canActivate: jest.fn(() => true),
+  };
+
   const mockCurrentDate = new Date('2023-01-01T12:00:00Z');
   const mockFutureDate = new Date('2023-01-10T14:00:00Z');
 
@@ -24,7 +29,10 @@ describe('UserHourPreferencesController', () => {
       providers: [
         { provide: UserHourPreferencesService, useValue: mockUserHourPreferencesService },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthB2CGuard)
+      .useValue(mockAuthGuard)
+      .compile();
 
     controller = module.get<UserHourPreferencesController>(UserHourPreferencesController);
     service = module.get<UserHourPreferencesService>(UserHourPreferencesService);
