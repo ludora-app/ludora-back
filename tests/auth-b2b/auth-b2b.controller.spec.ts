@@ -8,6 +8,7 @@ describe('AuthB2BController', () => {
 
   const mockAuthB2BService = {
     register: jest.fn(),
+    login: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -38,14 +39,13 @@ describe('AuthB2BController', () => {
   describe('register', () => {
     it('should register a new partner and user without file', async () => {
       const registerDto = {
-        userEmail: 'partner@test.com',
+        email: 'partner@test.com',
         userFirstname: 'John',
         userLastname: 'Doe',
         userPassword: 'Password123!',
         userPhone: '+33612345678',
         partnerName: 'Test Partner',
         partnerAddress: '123 Main St',
-        partnerEmail: 'contact@partner.com',
         partnerPhone: '+33612345679',
       };
 
@@ -65,14 +65,13 @@ describe('AuthB2BController', () => {
 
     it('should register a new partner and user with file', async () => {
       const registerDto = {
-        userEmail: 'partner@test.com',
+        email: 'partner@test.com',
         userFirstname: 'John',
         userLastname: 'Doe',
         userPassword: 'Password123!',
         userPhone: '+33612345678',
         partnerName: 'Test Partner',
         partnerAddress: '123 Main St',
-        partnerEmail: 'contact@partner.com',
         partnerPhone: '+33612345679',
       };
 
@@ -100,6 +99,49 @@ describe('AuthB2BController', () => {
           name: expect.stringContaining('partner-logo.jpg'),
         }),
       );
+    });
+  });
+
+  describe('login', () => {
+    it('should login a partner successfully', async () => {
+      const loginDto = {
+        email: 'partner@test.com',
+        password: 'Password123!',
+      };
+
+      mockAuthB2BService.login.mockResolvedValue({
+        accessToken: 'mock_access_token',
+        refreshToken: 'mock_refresh_token',
+      });
+
+      const result = await controller.login(loginDto);
+
+      expect(result).toEqual({
+        data: { accessToken: 'mock_access_token', refreshToken: 'mock_refresh_token' },
+        message: 'PARTNER user logged in successfully',
+      });
+      expect(mockAuthB2BService.login).toHaveBeenCalledWith(loginDto);
+    });
+
+    it('should login a partner with deviceUid', async () => {
+      const loginDto = {
+        email: 'partner@test.com',
+        password: 'Password123!',
+        deviceUid: 'device-123',
+      };
+
+      mockAuthB2BService.login.mockResolvedValue({
+        accessToken: 'mock_access_token',
+        refreshToken: 'mock_refresh_token',
+      });
+
+      const result = await controller.login(loginDto);
+
+      expect(result).toEqual({
+        data: { accessToken: 'mock_access_token', refreshToken: 'mock_refresh_token' },
+        message: 'PARTNER user logged in successfully',
+      });
+      expect(mockAuthB2BService.login).toHaveBeenCalledWith(loginDto);
     });
   });
 });

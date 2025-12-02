@@ -1,8 +1,9 @@
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Public } from 'src/shared/decorators/public.decorator';
-import { CreateImageDto, RegisterResponseDto } from 'src/auth-b2c/dto';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
+import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { CreateImageDto, LoginDto, LoginResponseDto, RegisterResponseDto } from 'src/auth-b2c/dto';
 import {
   Body,
   Controller,
@@ -20,6 +21,7 @@ import {
   ApiConflictResponse,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
@@ -79,6 +81,31 @@ export class AuthB2BController {
     return {
       data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
       message: 'Partner and user created successfully',
+    };
+  }
+
+  @Post('login')
+  @Public()
+  @ApiOperation({ summary: 'Login a partner and user account' })
+  @ApiBadRequestResponse({
+    description: 'Error during login',
+    type: BadRequestResponseDto,
+  })
+  @ApiOkResponse({
+    description: 'Partner and user logged in successfully',
+    type: LoginResponseDto,
+  })
+  @ApiBody({ type: LoginDto })
+  @HttpCode(HttpStatus.OK)
+  @ApiNotFoundResponse({
+    description: 'User or partner not found',
+    type: NotFoundResponseDto,
+  })
+  async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
+    const tokens = await this.authService.login(loginDto);
+    return {
+      data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
+      message: 'PARTNER user logged in successfully',
     };
   }
 }
