@@ -260,7 +260,7 @@ jobs:
             fi
 
             # Stop containers
-            docker compose -f $COMPOSE_FILE down --remove-orphans
+            docker compose -f $COMPOSE_FILE down --remove-orphans --volumes
 
             # Cleaning unused Docker images
             docker image prune -af --filter "until=24h"

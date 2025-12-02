@@ -81,7 +81,7 @@ model Fields {
   longitude  Float
   entryFee   Float?     @map("entry_fee")
   gameMode   GameModes? @map("game_mode")
-  isVerified Boolean    @default(false) @map("is_verified")
+  isVerified Boolean    @map("is_verified")
 
   fieldImages   FieldImages[]
   partner       Partners?     @relation(fields: [partnerUid], references: [uid])

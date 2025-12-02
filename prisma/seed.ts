@@ -198,6 +198,7 @@ async function seed() {
       longitude: 2.3789354,
       gameMode: 'THREE_V_THREE',
       entryFee: 0,
+      isVerified: true,
     },
     // ? THE ONE BALL
     {
@@ -208,6 +209,7 @@ async function seed() {
       longitude: 2.5667,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[1].uid,
@@ -308,6 +310,7 @@ async function seed() {
       longitude: 2.4033,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
+      isVerified: true,
     },
     {
       partnerUid: createdPartners[2].uid,
@@ -453,6 +456,7 @@ async function seed() {
         longitude: field.longitude,
         gameMode: field.gameMode as GameModes,
         entryFee: field.entryFee,
+        isVerified: field.isVerified,
       },
     });
     console.log(`Field ${createdField.uid} has been created`);

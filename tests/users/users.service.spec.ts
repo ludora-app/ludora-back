@@ -141,8 +141,8 @@ describe('UsersService', () => {
   describe('findAll', () => {
     it('should return a list of users', async () => {
       const mockUsers = [
-        { uid: '1', firstname: 'John', lastname: 'Doe', email: 'john@example.com', imageUrl: '' },
-        { uid: '2', firstname: 'Jane', lastname: 'Doe', email: 'jane@example.com', imageUrl: '' },
+        { uid: '1', firstname: 'John', lastname: 'Doe', email: 'john@example.com' },
+        { uid: '2', firstname: 'Jane', lastname: 'Doe', email: 'jane@example.com' },
       ];
 
       mockPrismaService.users.findMany.mockResolvedValueOnce(mockUsers);

@@ -128,10 +128,20 @@ export class UsersService {
       nextCursor = nextItem.uid;
     }
 
+    const usersWithImageUrl = await Promise.all(
+      users.map(async (user) => {
+        const imageUrl = await this.storageService.getSignedUrl(
+          StorageFolderName.USERS,
+          user.imageUrl,
+        );
+        return { ...user, imageUrl };
+      }),
+    );
+
     const totalCount = await this.prismaService.users.count();
 
     return {
-      items: users,
+      items: usersWithImageUrl,
       nextCursor,
       totalCount,
     };
@@ -147,13 +157,10 @@ export class UsersService {
       return null;
     }
 
-    let imageUrl = '';
-    // await this.imageService.getProfilePic(existingUser.uid);
-    // if (!imageUrl) {
-    //   imageUrl = '';
-    // }
-    const user = { ...existingUser, imageUrl };
-    return user;
+    const imageUrl = existingUser.imageUrl
+      ? await this.storageService.getSignedUrl(StorageFolderName.USERS, existingUser.imageUrl)
+      : '';
+    return { ...existingUser, imageUrl };
   }
 
   /**
@@ -163,9 +170,15 @@ export class UsersService {
    * @returns The user
    */
   async findOneByEmail(email: string): Promise<Users> {
-    return await this.prismaService.users.findUnique({
+    const user = await this.prismaService.users.findUnique({
       where: { email },
     });
+
+    if (!user) return null;
+    const imageUrl = user.imageUrl
+      ? await this.storageService.getSignedUrl(StorageFolderName.USERS, user.imageUrl)
+      : '';
+    return { ...user, imageUrl };
   }
 
   async findOneByStripeAccountId(stripeAccountId: string): Promise<{ stripeAccountId: string }> {

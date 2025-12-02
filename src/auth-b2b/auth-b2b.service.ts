@@ -9,8 +9,13 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateImageDto, LoginDto } from 'src/auth-b2c/dto';
 import { PartnersService } from 'src/partners/partners.service';
 import { CreatePartnerDto } from 'src/partners/dto/create-partner.dto';
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { RegisterB2BDto } from './dto/input/register-b2b.dto';
 
@@ -129,7 +134,7 @@ export class AuthB2BService {
 
     const isPasswordValid = await argon2.verify(user.password, password);
     if (!isPasswordValid) {
-      throw new NotFoundException('User not found');
+      throw new BadRequestException('Invalid credentials');
     }
 
     const payload = {

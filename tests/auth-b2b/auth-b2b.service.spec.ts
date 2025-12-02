@@ -2,7 +2,7 @@ import * as argon2 from 'argon2';
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { UserType } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { AuthB2BService } from '../../src/auth-b2b/auth-b2b.service';
@@ -256,13 +256,13 @@ describe('AuthB2BService', () => {
       expect(mockPartnersService.findOneByEmail).toHaveBeenCalledWith('partner@test.com');
     });
 
-    it('should throw NotFoundException when password is invalid', async () => {
+    it('should throw BadRequestException when password is invalid', async () => {
       mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
       mockPartnersService.findOneByEmail.mockResolvedValue(mockPartner);
       jest.spyOn(argon2, 'verify').mockResolvedValue(false);
 
       await expect(service.login(loginDto)).rejects.toThrow(
-        new NotFoundException('User not found'),
+        new BadRequestException('Invalid credentials'),
       );
       expect(argon2.verify).toHaveBeenCalledWith(mockUser.password, loginDto.password);
       expect(mockJwtService.sign).not.toHaveBeenCalled();

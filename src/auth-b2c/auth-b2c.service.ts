@@ -186,7 +186,7 @@ export class AuthB2CService {
 
       const isPasswordValid = await argon2.verify(user.password, password);
       if (!isPasswordValid) {
-        throw new NotFoundException('User not found');
+        throw new BadRequestException('Invalid credentials');
       }
 
       const payload = { uid: user.uid, ...(deviceUid && { deviceUid }) };

@@ -31,6 +31,18 @@ export class FieldsService {
     this.logger.setContext(FieldsService.name);
   }
 
+  /**
+   * @description Default value for the isVerified field of a public field because it must be verified by the admin
+   * @type {boolean}
+   */
+  private readonly DEFAULT_PUBLIC_FIELD_IS_VERIFIED_VALUE = false;
+
+  /**
+   * @description Default value for the isVerified field of a partner field because it is verified by the partner
+   * @type {boolean}
+   */
+  private readonly DEFAULT_PARTNER_FIELD_IS_VERIFIED_VALUE = true;
+
   async create(createPublicFieldDto: CreatePublicFieldDto): Promise<FieldResponseDto> {
     const { address, images, sport } = createPublicFieldDto;
 
@@ -42,6 +54,7 @@ export class FieldsService {
       const newField = await tx.fields.create({
         data: {
           address,
+          isVerified: this.DEFAULT_PUBLIC_FIELD_IS_VERIFIED_VALUE,
           latitude: coordinates.lat,
           longitude: coordinates.lng,
           sport,
@@ -169,9 +182,24 @@ export class FieldsService {
       const nextItem = fields.pop();
       nextCursor = nextItem!.uid;
     }
+    const fieldsWithImageUrl = await Promise.all(
+      fields.map(async (field) => {
+        const imageUrl =
+          field.fieldImages.length > 0
+            ? await this.storageService.getSignedUrl(
+                StorageFolderName.FIELDS,
+                field.fieldImages[0].url,
+              )
+            : '';
+        return {
+          ...field,
+          fieldImages: field.fieldImages.map((image) => ({ ...image, url: imageUrl })),
+        };
+      }),
+    );
 
     return {
-      items: fields,
+      items: fieldsWithImageUrl,
       nextCursor,
       totalCount: fields.length,
     };
@@ -271,15 +299,31 @@ export class FieldsService {
       nextCursor = nextItem!.uid;
     }
 
+    const fieldsWithImageUrl = await Promise.all(
+      fields.map(async (field) => {
+        const imageUrl =
+          field.fieldImages.length > 0
+            ? await this.storageService.getSignedUrl(
+                StorageFolderName.FIELDS,
+                field.fieldImages[0].url,
+              )
+            : '';
+        return {
+          ...field,
+          fieldImages: field.fieldImages.map((image) => ({ ...image, url: imageUrl })),
+        };
+      }),
+    );
+
     return {
-      items: fields,
+      items: fieldsWithImageUrl,
       nextCursor,
       totalCount: fields.length,
     };
   }
 
   async findOne(uid: string): Promise<FieldResponseDto> {
-    return this.prisma.fields.findUnique({
+    const field = await this.prisma.fields.findUnique({
       include: {
         fieldImages: {
           select: {
@@ -291,6 +335,17 @@ export class FieldsService {
       },
       where: { uid },
     });
+
+    if (!field) return null;
+
+    const imageUrl =
+      field.fieldImages.length > 0
+        ? await this.storageService.getSignedUrl(StorageFolderName.FIELDS, field.fieldImages[0].url)
+        : '';
+    return {
+      ...field,
+      fieldImages: field.fieldImages.map((image) => ({ ...image, url: imageUrl })),
+    };
   }
 
   /**
