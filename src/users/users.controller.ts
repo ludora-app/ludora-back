@@ -51,7 +51,7 @@ import {
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get('/list')
+  @Get('/list/collection')
   @ApiOperation({
     summary: 'Récupère tous les utilisateurs',
   })

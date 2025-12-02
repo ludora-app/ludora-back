@@ -76,7 +76,7 @@ export class SessionInvitationsController {
     };
   }
 
-  @Get('list-by-user/:userUid')
+  @Get('list-by-user/collection/:userUid')
   @ApiOperation({ summary: 'Get all session invitations by user ID' })
   @ApiOkResponse({ type: PaginatedSessionInvitationResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -97,7 +97,7 @@ export class SessionInvitationsController {
     };
   }
 
-  @Get('list-by-session/:sessionUid')
+  @Get('list-by-session/collection/:sessionUid')
   @ApiOperation({ summary: 'Get all session invitations by session ID' })
   @ApiOkResponse({ type: PaginatedSessionInvitationResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })

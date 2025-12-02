@@ -56,7 +56,7 @@ export class SessionsController {
     return { data: newSession, message: 'Session created successfully' };
   }
 
-  @Get('/list')
+  @Get('/list/collection')
   @ApiOperation({ summary: 'Get all sessions' })
   @ApiOkResponse({ type: PaginatedSessionResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })

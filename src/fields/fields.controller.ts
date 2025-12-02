@@ -80,7 +80,7 @@ export class FieldsController {
     };
   }
 
-  @Get('list-verified')
+  @Get('list-verified/collection')
   @UseGuards(AuthB2CGuard)
   @ApiOkResponse({ type: PaginatedFieldResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -98,7 +98,7 @@ export class FieldsController {
     };
   }
 
-  @Get('list-by-partner')
+  @Get('list-by-partner/collection')
   @UseGuards(AuthB2BGuard)
   @ApiOkResponse({ type: PaginatedFieldResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
