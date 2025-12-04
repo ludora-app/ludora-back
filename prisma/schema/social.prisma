@@ -22,7 +22,7 @@ enum MessageType {
 enum ConversationType {
   PRIVATE
   GROUP
-  EVENT
+  SESSION
 
   @@map("ConversationType")
   @@schema("social")
@@ -30,7 +30,7 @@ enum ConversationType {
 
 model Conversations {
   uid                 String                @id @default(cuid())
-  eventUid            String?               @map("event_uid")
+  sessionUid          String?               @map("session_uid")
   name                String?
   type                ConversationType
   createdAt           DateTime              @default(now()) @map("created_at")
