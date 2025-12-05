@@ -1,8 +1,9 @@
-import { Sessions } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
+import { ConversationType, Sessions } from 'generated/prisma/client';
 import { StorageFolderName, Sport } from 'src/shared/constants/constants';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';
+import { ConversationsService } from 'src/conversations/conversations.service';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { SessionPlayersService } from 'src/session-players/session-players.service';
@@ -20,6 +21,7 @@ export class SessionsService {
     private readonly sessionTeamsService: SessionTeamsService,
     private readonly sessionPlayersService: SessionPlayersService,
     private readonly storageService: StorageService,
+    private readonly conversationsService: ConversationsService,
   ) {}
 
   async create(createSessionDto: CreateSessionDto): Promise<Sessions> {
@@ -124,6 +126,13 @@ export class SessionsService {
         );
       }
       return createdSession;
+    });
+
+    await this.conversationsService.createSessionConversation({
+      name: newSession.title,
+      sessionUid: newSession.uid,
+      type: ConversationType.SESSION,
+      userUids: [createSessionDto.userUid],
     });
 
     return newSession;

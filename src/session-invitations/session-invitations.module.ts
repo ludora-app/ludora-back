@@ -5,7 +5,9 @@ import { SharedModule } from 'src/shared/shared.module';
 import { SessionsModule } from 'src/sessions/sessions.module';
 import { SessionsService } from 'src/sessions/sessions.service';
 import { SessionTeamsModule } from 'src/session-teams/session-teams.module';
+import { ConversationsModule } from 'src/conversations/conversations.module';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';
+import { ConversationsService } from 'src/conversations/conversations.service';
 import { SessionPlayersModule } from 'src/session-players/session-players.module';
 import { SessionPlayersService } from 'src/session-players/session-players.service';
 
@@ -14,13 +16,21 @@ import { SessionInvitationsController } from './session-invitations.controller';
 
 @Module({
   controllers: [SessionInvitationsController],
-  imports: [SessionsModule, UsersModule, SharedModule, SessionTeamsModule, SessionPlayersModule],
+  imports: [
+    SessionsModule,
+    UsersModule,
+    SharedModule,
+    SessionTeamsModule,
+    SessionPlayersModule,
+    ConversationsModule,
+  ],
   providers: [
     SessionInvitationsService,
     SessionsService,
     UsersService,
     SessionPlayersService,
     SessionTeamsService,
+    ConversationsService,
   ],
 })
 export class SessionInvitationsModule {}
