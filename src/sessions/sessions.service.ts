@@ -125,14 +125,17 @@ export class SessionsService {
           tx,
         );
       }
+      // create conversation inside transaction to ensure data consistency
+      await this.conversationsService.createSessionConversation(
+        {
+          name: createdSession.title,
+          sessionUid: createdSession.uid,
+          type: ConversationType.SESSION,
+          userUids: [createSessionDto.userUid],
+        },
+        tx,
+      );
       return createdSession;
-    });
-
-    await this.conversationsService.createSessionConversation({
-      name: newSession.title,
-      sessionUid: newSession.uid,
-      type: ConversationType.SESSION,
-      userUids: [createSessionDto.userUid],
     });
 
     return newSession;

@@ -129,7 +129,7 @@ export class WebsocketsService {
           sender: {
             connect: { uid: sender_uid },
           },
-          status: 'SENT',
+          status: MessageStatus.SENT,
           type,
         },
       });

@@ -1,4 +1,5 @@
 import { PinoLogger } from 'nestjs-pino';
+import { Prisma } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 
@@ -16,18 +17,22 @@ export class ConversationsService {
 
   /**
    * @description Method called when creating a session, the conversation is created automatically.
-   * @param createConversationDto
+   * @param createConversationDto - The DTO containing conversation data
+   * @param tx - Optional Prisma transaction client for atomic operations
    * @returns void
    */
   async createSessionConversation(
     createConversationDto: CreateSessionConversationDto,
+    tx?: Prisma.TransactionClient,
   ): Promise<void> {
     // no need to check if the session exists, it will be checked in the sessions service
     if (!createConversationDto.sessionUid) {
       throw new BadRequestException('Session uid is required');
     }
 
-    const newConversation = await this.prisma.conversations.create({
+    const prismaClient = tx ?? this.prisma;
+
+    const newConversation = await prismaClient.conversations.create({
       data: {
         name: createConversationDto.name,
         sessionUid: createConversationDto.sessionUid,
@@ -37,7 +42,7 @@ export class ConversationsService {
 
     this.logger.debug(`Conversation ${newConversation.uid} created`);
 
-    await this.prisma.conversationMembers.createMany({
+    await prismaClient.conversationMembers.createMany({
       data: createConversationDto.userUids.map((userUid) => ({
         conversationUid: newConversation.uid,
         userUid: userUid,
