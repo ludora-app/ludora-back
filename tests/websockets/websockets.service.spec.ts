@@ -220,19 +220,13 @@ describe('WebsocketsService', () => {
         const mockMessage = {
           uid: 'message-123',
           content: 'Hello',
-          status: 'SENT',
+          globalStatus: MessageStatus.SENT,
         };
 
         mockPrismaService.messages.create.mockResolvedValue(mockMessage);
         mockPrismaService.conversations.update.mockResolvedValue({});
 
-        await service.createMessage(
-          'sender-123',
-          'receiver-456',
-          'Hello',
-          'conversation-789',
-          MessageType.TEXT,
-        );
+        await service.createMessage('sender-123', 'Hello', 'conversation-789', MessageType.TEXT);
 
         expect(mockPrismaService.messages.create).toHaveBeenCalledWith({
           data: {
@@ -240,10 +234,10 @@ describe('WebsocketsService', () => {
             conversation: {
               connect: { uid: 'conversation-789' },
             },
+            globalStatus: MessageStatus.SENT,
             sender: {
               connect: { uid: 'sender-123' },
             },
-            status: 'SENT',
             type: MessageType.TEXT,
           },
         });
@@ -260,7 +254,6 @@ describe('WebsocketsService', () => {
 
         await service.createMessage(
           'sender-123',
-          'receiver-456',
           'image.jpg',
           'conversation-789',
           MessageType.IMAGE,
@@ -282,7 +275,6 @@ describe('WebsocketsService', () => {
 
         await service.createMessage(
           'sender-123',
-          'receiver-456',
           'Test message',
           'conversation-789',
           MessageType.TEXT,
@@ -308,7 +300,7 @@ describe('WebsocketsService', () => {
         const mockMessage: Partial<Messages> = {
           uid: 'message-123',
           content: 'Group message',
-          status: MessageStatus.SENT,
+          globalStatus: MessageStatus.SENT,
           type: MessageType.TEXT,
         };
 
@@ -332,10 +324,10 @@ describe('WebsocketsService', () => {
             conversation: {
               connect: { uid: 'group-123' },
             },
+            globalStatus: MessageStatus.SENT,
             sender: {
               connect: { uid: 'sender-123' },
             },
-            status: MessageStatus.SENT,
             type: MessageType.TEXT,
           },
         });

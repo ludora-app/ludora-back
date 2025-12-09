@@ -11,6 +11,7 @@ import { SessionsService } from '../../src/sessions/sessions.service';
 import { SessionPlayersService } from '../../src/session-players/session-players.service';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 import { StorageService } from 'src/shared/storage/storage.service';
+import { ConversationsService } from 'src/conversations/conversations.service';
 
 jest.mock('src/shared/utils/date.utils', () => ({
   DateUtils: {
@@ -85,6 +86,12 @@ describe('SessionsService', () => {
           provide: StorageService,
           useValue: mockStorageService,
         },
+        {
+          provide: ConversationsService,
+          useValue: {
+            createSessionConversation: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -156,7 +163,15 @@ describe('SessionsService', () => {
       (prismaService.sessions.create as jest.Mock).mockResolvedValue(mockCreatedSession);
       // mock transaction to use same session mocks
       (prismaService.$transaction as jest.Mock).mockImplementation(async (cb: any) => {
-        const tx = { sessions: prismaService.sessions } as any;
+        const tx = {
+          conversations: {
+            create: jest.fn().mockResolvedValue({ uid: 'conv-123' }),
+          },
+          conversationMembers: {
+            createMany: jest.fn().mockResolvedValue({ count: 1 }),
+          },
+          sessions: prismaService.sessions,
+        } as any;
         return cb(tx);
       });
       // teams created in tx and returned including team A
@@ -206,7 +221,15 @@ describe('SessionsService', () => {
         title: `Session de FOOTBALL le 2023-01-01`,
       });
       (prismaService.$transaction as jest.Mock).mockImplementation(async (cb: any) => {
-        const tx = { sessions: prismaService.sessions } as any;
+        const tx = {
+          conversations: {
+            create: jest.fn().mockResolvedValue({ uid: 'conv-123' }),
+          },
+          conversationMembers: {
+            createMany: jest.fn().mockResolvedValue({ count: 1 }),
+          },
+          sessions: prismaService.sessions,
+        } as any;
         return cb(tx);
       });
       const teamsService = (service as any)['sessionTeamsService'] as SessionTeamsService;
