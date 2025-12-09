@@ -170,6 +170,14 @@ export class ConversationsService {
 
   async findOne(conversationUid: string, userUid: string): Promise<Conversations> {
     const existingConversation = await this.prisma.conversations.findUnique({
+      include: {
+        messages: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 10,
+        },
+      },
       where: {
         uid: conversationUid,
       },
@@ -183,9 +191,7 @@ export class ConversationsService {
     });
 
     if (!isMember) {
-      throw new ForbiddenException(
-        `User ${userUid} is not a member of conversation ${conversationUid}`,
-      );
+      throw new ForbiddenException(`User with uid ${userUid} is not a member of this conversation`);
     }
 
     return existingConversation;

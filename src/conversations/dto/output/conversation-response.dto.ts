@@ -35,7 +35,7 @@ export class ConversationResponse {
   sessionUid?: string | null;
 
   @ApiProperty({
-    description: 'Conversation type',
+    description: 'Conversation type: PRIVATE, GROUP, SESSION',
     example: ConversationType.PRIVATE,
     readOnly: true,
   })

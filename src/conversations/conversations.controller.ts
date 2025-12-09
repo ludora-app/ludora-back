@@ -1,14 +1,10 @@
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
+import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { ForbiddenResponseDto } from 'src/shared/dto/errors/forbidden-response.dto';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
-import {
-  ApiBadRequestResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
 import {
   Controller,
   Get,
@@ -19,7 +15,16 @@ import {
   HttpStatus,
   Post,
   UseGuards,
+  NotFoundException,
 } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
 import { ConversationsService } from './conversations.service';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
@@ -57,9 +62,26 @@ export class ConversationsController {
   }
 
   @Get(':uid')
-  findOne(@Param('uid') uid: string, @Req() request: Request) {
+  @Protected()
+  @ApiOperation({ summary: 'Get a conversation by uid' })
+  @ApiOkResponse({ type: ConversationResponse })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiForbiddenResponse({ type: ForbiddenResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @HttpCode(HttpStatus.OK)
+  async findOne(@Param('uid') uid: string, @Req() request: Request) {
     const userUid = request['user'].uid;
-    return this.conversationsService.findOne(uid, userUid);
+    const conversation = await this.conversationsService.findOne(uid, userUid);
+
+    if (!conversation) {
+      throw new NotFoundException(`Conversation with uid ${uid} not found`);
+    }
+
+    return {
+      data: conversation,
+      message: 'Conversation fetched successfully',
+    };
   }
 
   // @Patch(':id')
