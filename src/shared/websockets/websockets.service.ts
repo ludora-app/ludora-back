@@ -114,7 +114,6 @@ export class WebsocketsService {
    */
   async createMessage(
     sender_uid: string,
-    _: string,
     content: string,
     conversation_uid: string,
     type: MessageType,
@@ -126,10 +125,10 @@ export class WebsocketsService {
           conversation: {
             connect: { uid: conversation_uid },
           },
+          globalStatus: MessageStatus.SENT,
           sender: {
             connect: { uid: sender_uid },
           },
-          status: MessageStatus.SENT,
           type,
         },
       });
@@ -161,10 +160,10 @@ export class WebsocketsService {
         conversation: {
           connect: { uid: group_uid },
         },
+        globalStatus: MessageStatus.SENT,
         sender: {
           connect: { uid: sender_uid },
         },
-        status: MessageStatus.SENT,
         type,
       },
     });

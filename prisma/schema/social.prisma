@@ -29,17 +29,18 @@ enum ConversationType {
 }
 
 model Conversations {
-  uid                 String                @id @default(cuid())
-  sessionUid          String?               @map("session_uid")
-  name                String?
-  type                ConversationType
+  uid        String           @id @default(cuid())
+  sessionUid String?          @map("session_uid")
+  name       String?
+  type       ConversationType
+
+  lastMessageAt DateTime @default(now()) @map("last_message_at")
+
   createdAt           DateTime              @default(now()) @map("created_at")
   updatedAt           DateTime              @updatedAt @map("updated_at")
   // todo: image_url
   messages            Messages[]
   conversationMembers ConversationMembers[]
-
-  conversationOptions ConversationOptions[]
 
   @@schema("social")
 }
@@ -49,36 +50,33 @@ model Messages {
   conversationUid String        @map("conversation_uid")
   senderUid       String        @map("sender_uid")
   content         String
-  status          MessageStatus @default(SENT)
+  // status          MessageStatus @default(SENT)
+  globalStatus    MessageStatus @default(SENT) @map("global_status")
   type            MessageType
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
-  sender       Users         @relation(fields: [senderUid], references: [uid])
-  conversation Conversations @relation(fields: [conversationUid], references: [uid])
+  sender          Users             @relation(fields: [senderUid], references: [uid])
+  conversation    Conversations     @relation(fields: [conversationUid], references: [uid])
+  messageReceipts MessageReceipts[]
 
-  @@index([conversationUid])
-  @@index([createdAt])
+  @@index([conversationUid, createdAt(sort: Desc)])
   @@schema("social")
 }
 
-model ConversationOptions {
-  conversationUid String
-  userUid         String
-  isAdmin         Boolean  @default(false) @map("is_admin")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-  archived        Boolean  @default(false)
-  muted           Boolean  @default(false)
-  deleted         Boolean  @default(false)
+model MessageReceipts {
+  messageUid String @map("message_uid")
+  userUid    String @map("user_uid")
 
-  user         Users         @relation(fields: [userUid], references: [uid])
-  conversation Conversations @relation(fields: [conversationUid], references: [uid])
+  status    MessageStatus @default(DELIVERED)
+  updatedAt DateTime      @updatedAt @map("updated_at")
 
-  @@unique([conversationUid, userUid])
-  @@index([conversationUid])
-  @@index([userUid])
-  @@map("Conversation_options")
+  message Messages @relation(fields: [messageUid], references: [uid], onDelete: Cascade)
+  user    Users    @relation(fields: [userUid], references: [uid], onDelete: Cascade)
+
+  @@id([messageUid, userUid])
+  @@index([messageUid])
+  @@map("Message_receipts")
   @@schema("social")
 }
 
@@ -90,8 +88,17 @@ model ConversationMembers {
   conversation Conversations @relation(fields: [conversationUid], references: [uid])
   user         Users         @relation(fields: [userUid], references: [uid])
 
+  isArchived Boolean @default(false) @map("is_archived")
+  isMuted    Boolean @default(false) @map("is_muted")
+
+  isVisible            Boolean  @default(true) @map("is_visible")
+  displayMessagesAfter DateTime @default(now()) @map("display_messages_after")
+
+  joinedAt   DateTime  @default(now()) @map("joined_at")
+  lastReadAt DateTime? @map("last_read_at")
+
   @@id([conversationUid, userUid])
-  @@index([userUid])
+  @@index([userUid, isVisible, isArchived])
   @@map("Conversation_members")
   @@schema("social")
 }
@@ -107,5 +114,7 @@ model Friends {
 
   @@id([userUid1, userUid2])
   @@unique([userUid1, userUid2])
+  @@index([userUid1])
+  @@index([userUid2])
   @@schema("social")
 }

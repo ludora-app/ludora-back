@@ -108,12 +108,4 @@ export class SessionFilterDto {
     required: false,
   })
   scope?: string;
-
-  // @IsOptional()
-  // @IsString()
-  // @ApiProperty({
-  //   description: `Curseur pour la pagination`,
-  //   required: false,
-  // })
-  // nextCursor?: string;
 }

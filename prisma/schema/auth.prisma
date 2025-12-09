@@ -52,8 +52,6 @@ model Users {
   friendsSent     Friends[] @relation("friend1")
   friendsReceived Friends[] @relation("friend2")
 
-  conversationOptions ConversationOptions[]
-
   Sent_invitations     SessionInvitations[] @relation(name: "senderRelation")
   Received_invitations SessionInvitations[] @relation(name: "receiverRelation")
 
@@ -69,6 +67,7 @@ model Users {
   refreshTokens       RefreshTokens[]
   userSports          UserSports[]
   userHourPreferences UserHourPreferences[]
+  messageReceipts     MessageReceipts[]
 
   @@index([createdAt])
   @@index([isConnected])

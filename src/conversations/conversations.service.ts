@@ -1,10 +1,13 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Prisma } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Conversations, ConversationType } from 'generated/prisma/browser';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
-import { UpdateConversationDto } from './dto/input/update-conversation.dto';
+import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
 import { CreateSessionConversationDto } from './dto/input/create-session-conversation.dto';
+import { CreatePrivateConversationDto } from './dto/input/create-private-conversation.dto';
 
 @Injectable()
 export class ConversationsService {
@@ -56,19 +59,193 @@ export class ConversationsService {
     );
   }
 
-  findAll() {
-    return `This action returns all conversations`;
+  /**
+   * @description Method called when a friend invitation is accepted, the conversation is created automatically.
+   * @param createPrivateConversationDto - The DTO containing conversation data
+   * @param tx - Optional Prisma transaction client for atomic operations
+   * @returns void
+   */
+  async createPrivateConversation(
+    createPrivateConversationDto: CreatePrivateConversationDto,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    const prismaClient = tx ?? this.prisma;
+
+    const newConversation = await prismaClient.conversations.create({
+      data: {
+        type: createPrivateConversationDto.type,
+      },
+    });
+    this.logger.debug(`Conversation ${newConversation.uid} created`);
+
+    await prismaClient.conversationMembers.createMany({
+      data: createPrivateConversationDto.userUids.map((userUid) => ({
+        conversationUid: newConversation.uid,
+        userUid: userUid,
+      })),
+    });
+    this.logger.debug(`Conversation members created`);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} conversation`;
+  async findAllByUserUid(
+    filters: ConversationFilterDto,
+    userUid: string,
+  ): Promise<PaginatedDataDto<Conversations>> {
+    const { cursor, limit, name, type } = filters;
+
+    const query: {
+      include: {
+        messages: {
+          orderBy: {
+            createdAt: 'desc';
+          };
+          take: 1;
+        };
+      };
+      take: number;
+      skip?: number;
+      cursor?: {
+        uid: string;
+      };
+      where: {
+        conversationMembers: {
+          some: {
+            userUid: string;
+          };
+        };
+        type?: ConversationType;
+        name?: {
+          contains: string;
+          mode: 'insensitive';
+        };
+      };
+    } = {
+      include: {
+        messages: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+        },
+      },
+      take: limit ? limit + 1 : 10,
+      where: {
+        conversationMembers: {
+          some: {
+            userUid: userUid,
+          },
+        },
+      },
+    };
+
+    if (cursor) {
+      query.cursor = {
+        uid: cursor,
+      };
+      query.skip = 1;
+    }
+
+    if (type) {
+      query.where.type = type;
+    }
+
+    if (name) {
+      query.where.name = { contains: name, mode: 'insensitive' };
+    }
+
+    const conversations = await this.prisma.conversations.findMany(query);
+
+    const actualLimit = limit || 10;
+    let nextCursor: string | null = null;
+    if (conversations.length > actualLimit) {
+      const nextItem = conversations.pop();
+      nextCursor = nextItem!.uid;
+    }
+    return {
+      items: conversations,
+      nextCursor,
+      totalCount: conversations.length,
+    };
   }
 
-  update(id: number, updateConversationDto: UpdateConversationDto) {
-    return `This action updates a #${id} conversation`;
+  async findOne(conversationUid: string, userUid: string): Promise<Conversations> {
+    const existingConversation = await this.prisma.conversations.findUnique({
+      where: {
+        uid: conversationUid,
+      },
+    });
+
+    const isMember = await this.prisma.conversationMembers.findFirst({
+      where: {
+        conversationUid: conversationUid,
+        userUid: userUid,
+      },
+    });
+
+    if (!isMember) {
+      throw new ForbiddenException(
+        `User ${userUid} is not a member of conversation ${conversationUid}`,
+      );
+    }
+
+    return existingConversation;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} conversation`;
+  async createMockConversation(userUid: string): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const privateConversations = await Promise.all([
+        tx.conversations.create({ data: { type: ConversationType.PRIVATE } }),
+        tx.conversations.create({ data: { type: ConversationType.PRIVATE } }),
+        tx.conversations.create({ data: { type: ConversationType.PRIVATE } }),
+        tx.conversations.create({ data: { type: ConversationType.PRIVATE } }),
+        tx.conversations.create({ data: { type: ConversationType.PRIVATE } }),
+      ]);
+
+      await tx.conversationMembers.createMany({
+        data: privateConversations.map((conv) => ({
+          conversationUid: conv.uid,
+          userUid: userUid,
+        })),
+      });
+
+      this.logger.debug(`Private conversations created`);
+
+      const groupConversations = await Promise.all([
+        tx.conversations.create({ data: { name: 'Group 1', type: ConversationType.GROUP } }),
+        tx.conversations.create({ data: { name: 'Group 2', type: ConversationType.GROUP } }),
+        tx.conversations.create({ data: { name: 'Group 3', type: ConversationType.GROUP } }),
+        tx.conversations.create({ data: { name: 'Group 4', type: ConversationType.GROUP } }),
+        tx.conversations.create({ data: { name: 'Group 5', type: ConversationType.GROUP } }),
+      ]);
+
+      // Add user as member of all group conversations
+      await tx.conversationMembers.createMany({
+        data: groupConversations.map((conv) => ({
+          conversationUid: conv.uid,
+          userUid: userUid,
+        })),
+      });
+
+      this.logger.debug(`Group conversations created`);
+
+      const sessionConversations = await Promise.all([
+        tx.conversations.create({ data: { name: 'Session 1', type: ConversationType.SESSION } }),
+        tx.conversations.create({ data: { name: 'Session 2', type: ConversationType.SESSION } }),
+        tx.conversations.create({ data: { name: 'Session 3', type: ConversationType.SESSION } }),
+        tx.conversations.create({ data: { name: 'Session 4', type: ConversationType.SESSION } }),
+        tx.conversations.create({ data: { name: 'Session 5', type: ConversationType.SESSION } }),
+      ]);
+
+      await tx.conversationMembers.createMany({
+        data: sessionConversations.map((conv) => ({
+          conversationUid: conv.uid,
+          userUid: userUid,
+        })),
+      });
+
+      this.logger.info(
+        `Created ${privateConversations.length + groupConversations.length + sessionConversations.length} mock conversations for user ${userUid}`,
+      );
+    });
   }
 }
