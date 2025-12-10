@@ -29,7 +29,8 @@ model Sessions {
   title             String?
   startDate         DateTime  @map("start_date")
   endDate           DateTime  @map("end_date")
-  sport             String
+  sport             String    @map("sport")
+  sportRelation     Sports    @relation(fields: [sport], references: [name])
   gameMode          GameModes @map("game_mode")
   // visibility        Visibility
   maxPlayersPerTeam Int       @map("max_players_per_team")

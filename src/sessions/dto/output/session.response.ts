@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { GameModes } from 'generated/prisma/enums';
 import { Sport } from 'src/shared/constants/constants';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
@@ -37,10 +38,11 @@ export class SessionResponse {
 
   @ApiProperty({
     description: 'Sport played during the session',
-    example: 'FOOTBALL',
+    enum: Sport,
+    example: Sport.FOOTBALL,
     readOnly: true,
   })
-  sport: Sport | string;
+  sport: Sport;
 
   @ApiProperty({
     description: 'Session start date',
@@ -58,6 +60,13 @@ export class SessionResponse {
     readOnly: true,
   })
   updatedAt: Date;
+
+  @ApiProperty({
+    description: 'Session game mode',
+    example: 'THREE_VS_THREE',
+    readOnly: true,
+  })
+  gameMode: GameModes;
 }
 
 /**

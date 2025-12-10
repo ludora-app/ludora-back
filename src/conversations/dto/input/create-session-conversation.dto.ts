@@ -16,7 +16,8 @@ export class CreateSessionConversationDto {
   @IsNotEmpty()
   @ApiProperty({
     description: 'The type of the conversation',
-    example: ConversationType.GROUP,
+    enum: ConversationType,
+    example: ConversationType.SESSION,
     required: true,
   })
   readonly type: ConversationType = ConversationType.SESSION;

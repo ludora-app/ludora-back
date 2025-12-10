@@ -31,6 +31,7 @@ import {
 } from '@nestjs/swagger';
 
 import { SessionsService } from './sessions.service';
+import { SessionMapper } from './mappers/session.mapper';
 import { CreateSessionDto } from './dto/input/create-session.dto';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
@@ -53,7 +54,10 @@ export class SessionsController {
   ): Promise<ResponseTypeDto<SessionResponse>> {
     const newSession = await this.sessionsService.create(createSessionDto);
 
-    return { data: newSession, message: 'Session created successfully' };
+    return {
+      data: SessionMapper.toSessionResponse(newSession),
+      message: 'Session created successfully',
+    };
   }
 
   @Get('/list/collection')
@@ -69,7 +73,11 @@ export class SessionsController {
     const sessions = await this.sessionsService.findAll(filter);
 
     return {
-      data: sessions,
+      data: {
+        items: SessionMapper.toSessionResponses(sessions.items),
+        nextCursor: sessions.nextCursor,
+        totalCount: sessions.totalCount,
+      },
       message: 'Sessions fetched successfully',
     };
   }
@@ -89,7 +97,7 @@ export class SessionsController {
     }
 
     return {
-      data: session,
+      data: SessionMapper.toSessionResponse(session),
       message: 'Session fetched successfully',
     };
   }

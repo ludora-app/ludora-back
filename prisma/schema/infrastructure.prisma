@@ -67,13 +67,14 @@ model Sports {
   userGlobalRatings UserGlobalRatings[]
   partnerSports     PartnerSports[]
   userSports        UserSports[]
+  sessions          Sessions[]
 
   @@schema("infrastructure")
 }
 
 model Fields {
   uid        String     @id @default(cuid())
-  sport      String
+  sport      String     @map("sport")
   partnerUid String?    @map("partner_uid")
   name       String?
   address    String

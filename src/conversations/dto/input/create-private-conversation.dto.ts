@@ -7,6 +7,7 @@ export class CreatePrivateConversationDto {
   @IsNotEmpty()
   @ApiProperty({
     description: 'The type of the conversation',
+    enum: ConversationType,
     example: ConversationType.PRIVATE,
     required: true,
   })

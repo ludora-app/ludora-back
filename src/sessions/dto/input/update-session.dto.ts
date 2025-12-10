@@ -27,7 +27,8 @@ export class UpdateSessionDto extends PartialType(CreateSessionDto) {
   @IsOptional()
   @ApiProperty({
     description: 'The game mode of the session',
-    example: 'THREE_VS_THREE',
+    enum: GameModes,
+    example: GameModes.THREE_V_THREE,
     required: true,
   })
   gameMode?: GameModes;
