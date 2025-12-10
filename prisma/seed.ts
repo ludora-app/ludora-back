@@ -651,99 +651,6 @@ async function seed() {
   }
   console.log('Opening hours populated');
 
-  const sessions = [
-    {
-      fieldUid: createdFields[21].uid,
-      startDate: new Date('2025-01-01T10:00:00'),
-      endDate: new Date('2025-01-01T11:00:00'),
-      sport: createdSports[0].name,
-      gameMode: GameModes.FIVE_V_FIVE,
-    },
-    {
-      fieldUid: createdFields[1].uid,
-      startDate: new Date('2025-01-02T11:00:00'),
-      endDate: new Date('2025-01-02T13:00:00'),
-      sport: createdSports[1].name,
-      gameMode: GameModes.THREE_V_THREE,
-    },
-    {
-      fieldUid: createdFields[2].uid,
-      startDate: new Date('2025-01-03T14:00:00'),
-      endDate: new Date('2025-01-03T15:00:00'),
-      sport: createdSports[2].name,
-      gameMode: GameModes.TWO_V_TWO,
-    },
-    {
-      fieldUid: createdFields[3].uid,
-      startDate: new Date('2025-01-04T15:00:00'),
-      endDate: new Date('2025-01-04T17:00:00'),
-      sport: createdSports[3].name,
-      gameMode: GameModes.FOUR_V_FOUR,
-    },
-    {
-      fieldUid: createdFields[4].uid,
-      startDate: new Date('2025-01-05T16:00:00'),
-      endDate: new Date('2025-01-05T18:00:00'),
-      sport: createdSports[4].name,
-      gameMode: GameModes.FOUR_V_FOUR,
-    },
-    {
-      fieldUid: createdFields[5].uid,
-      startDate: new Date('2025-01-06T10:00:00'),
-      endDate: new Date('2025-01-06T12:00:00'),
-      sport: createdSports[5].name,
-      gameMode: GameModes.TWO_V_TWO,
-    },
-    {
-      fieldUid: createdFields[6].uid,
-      startDate: new Date('2025-01-07T13:00:00'),
-      endDate: new Date('2025-01-07T14:00:00'),
-      sport: createdSports[6].name,
-      gameMode: GameModes.TWO_V_TWO,
-    },
-    {
-      fieldUid: createdFields[0].uid,
-      startDate: new Date('2025-12-01T11:00:00'),
-      endDate: new Date('2025-12-01T12:00:00'),
-      sport: createdSports[0].name,
-      gameMode: GameModes.ELEVEN_V_ELEVEN,
-    },
-    {
-      fieldUid: createdFields[1].uid,
-      startDate: new Date('2025-12-02T14:00:00'),
-      endDate: new Date('2025-12-02T15:00:00'),
-      sport: createdSports[1].name,
-      gameMode: GameModes.FIVE_V_FIVE,
-    },
-    {
-      fieldUid: createdFields[2].uid,
-      startDate: new Date('2025-12-03T17:00:00'),
-      endDate: new Date('2025-12-03T18:00:00'),
-      sport: createdSports[2].name,
-      gameMode: GameModes.TWO_V_TWO,
-    },
-  ];
-
-  const createdSessions = [];
-  for (const session of sessions) {
-    const createdSession = await prisma.sessions.create({
-      data: {
-        fieldUid: session.fieldUid,
-        sport: session.sport,
-        gameMode: session.gameMode,
-        startDate: session.startDate,
-        endDate: session.endDate,
-        title: `Session ${createdSessions.length + 1}`,
-        maxPlayersPerTeam: 5,
-        minPlayersPerTeam: 3,
-        teamsPerGame: 2,
-        description: 'Test session',
-      },
-    });
-    createdSessions.push(createdSession);
-  }
-  console.log('Sessions populated');
-
   const users = [
     {
       email: 'seto.kaiba@hotmail.fr',
@@ -944,6 +851,100 @@ async function seed() {
     createdUsers.push({ uid: createdUser.uid });
     console.log(`Created user: ${user.email}`);
   }
+
+  const sessions = [
+    {
+      fieldUid: createdFields[21].uid,
+      startDate: new Date('2025-01-01T10:00:00'),
+      endDate: new Date('2025-01-01T11:00:00'),
+      sport: createdSports[0].name,
+      gameMode: GameModes.FIVE_V_FIVE,
+    },
+    {
+      fieldUid: createdFields[1].uid,
+      startDate: new Date('2025-01-02T11:00:00'),
+      endDate: new Date('2025-01-02T13:00:00'),
+      sport: createdSports[1].name,
+      gameMode: GameModes.THREE_V_THREE,
+    },
+    {
+      fieldUid: createdFields[2].uid,
+      startDate: new Date('2025-01-03T14:00:00'),
+      endDate: new Date('2025-01-03T15:00:00'),
+      sport: createdSports[2].name,
+      gameMode: GameModes.TWO_V_TWO,
+    },
+    {
+      fieldUid: createdFields[3].uid,
+      startDate: new Date('2025-01-04T15:00:00'),
+      endDate: new Date('2025-01-04T17:00:00'),
+      sport: createdSports[3].name,
+      gameMode: GameModes.FOUR_V_FOUR,
+    },
+    {
+      fieldUid: createdFields[4].uid,
+      startDate: new Date('2025-01-05T16:00:00'),
+      endDate: new Date('2025-01-05T18:00:00'),
+      sport: createdSports[4].name,
+      gameMode: GameModes.FOUR_V_FOUR,
+    },
+    {
+      fieldUid: createdFields[5].uid,
+      startDate: new Date('2025-01-06T10:00:00'),
+      endDate: new Date('2025-01-06T12:00:00'),
+      sport: createdSports[5].name,
+      gameMode: GameModes.TWO_V_TWO,
+    },
+    {
+      fieldUid: createdFields[6].uid,
+      startDate: new Date('2025-01-07T13:00:00'),
+      endDate: new Date('2025-01-07T14:00:00'),
+      sport: createdSports[6].name,
+      gameMode: GameModes.TWO_V_TWO,
+    },
+    {
+      fieldUid: createdFields[0].uid,
+      startDate: new Date('2025-12-01T11:00:00'),
+      endDate: new Date('2025-12-01T12:00:00'),
+      sport: createdSports[0].name,
+      gameMode: GameModes.ELEVEN_V_ELEVEN,
+    },
+    {
+      fieldUid: createdFields[1].uid,
+      startDate: new Date('2025-12-02T14:00:00'),
+      endDate: new Date('2025-12-02T15:00:00'),
+      sport: createdSports[1].name,
+      gameMode: GameModes.FIVE_V_FIVE,
+    },
+    {
+      fieldUid: createdFields[2].uid,
+      startDate: new Date('2025-12-03T17:00:00'),
+      endDate: new Date('2025-12-03T18:00:00'),
+      sport: createdSports[2].name,
+      gameMode: GameModes.TWO_V_TWO,
+    },
+  ];
+
+  const createdSessions = [];
+  for (const session of sessions) {
+    const createdSession = await prisma.sessions.create({
+      data: {
+        creatorUid: createdUsers[0].uid,
+        fieldUid: session.fieldUid,
+        sport: session.sport,
+        gameMode: session.gameMode,
+        startDate: session.startDate,
+        endDate: session.endDate,
+        title: `Session ${createdSessions.length + 1}`,
+        maxPlayersPerTeam: 5,
+        minPlayersPerTeam: 3,
+        teamsPerGame: 2,
+        description: 'Test session',
+      },
+    });
+    createdSessions.push(createdSession);
+  }
+  console.log('Sessions populated');
 
   const partnerUsers = [
     {

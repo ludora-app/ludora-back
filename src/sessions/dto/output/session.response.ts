@@ -67,6 +67,13 @@ export class SessionResponse {
     readOnly: true,
   })
   gameMode: GameModes;
+
+  @ApiProperty({
+    description: 'Session creator',
+    example: 'cmajhjkjf000bq77q4b5ugn8b',
+    readOnly: true,
+  })
+  creatorUid: string;
 }
 
 /**

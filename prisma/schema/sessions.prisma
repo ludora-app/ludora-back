@@ -33,6 +33,7 @@ model Sessions {
   sportRelation     Sports    @relation(fields: [sport], references: [name])
   gameMode          GameModes @map("game_mode")
   // visibility        Visibility
+  creatorUid        String    @map("creator_uid")
   maxPlayersPerTeam Int       @map("max_players_per_team")
   teamsPerGame      Int       @map("teams_per_game")
   minPlayersPerTeam Int       @map("min_players_per_team")
@@ -47,7 +48,9 @@ model Sessions {
   sessionTeams SessionTeams[]
 
   sessionPlayers SessionPlayers[]
-  field          Fields           @relation(fields: [fieldUid], references: [uid])
+
+  creator Users  @relation(fields: [creatorUid], references: [uid])
+  field   Fields @relation(fields: [fieldUid], references: [uid])
 
   @@index([fieldUid])
   @@index([startDate, endDate])

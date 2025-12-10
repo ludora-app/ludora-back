@@ -96,6 +96,7 @@ export class SessionsService {
     const newSession = await this.prisma.$transaction(async (tx) => {
       const createdSession = await tx.sessions.create({
         data: {
+          creatorUid: createSessionDto.userUid,
           description: createSessionDto.description,
           endDate: endDate,
           fieldUid: field.uid,
@@ -216,6 +217,7 @@ export class SessionsService {
       ...query,
       select: {
         createdAt: true,
+        creatorUid: true,
         description: true,
         endDate: true,
         fieldUid: true,
