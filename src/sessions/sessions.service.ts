@@ -5,14 +5,16 @@ import { StorageFolderName, Sport } from 'src/shared/constants/constants';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 import { ConversationsService } from 'src/conversations/conversations.service';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { SessionPlayersService } from 'src/session-players/session-players.service';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
 import { DateUtils } from './../shared/utils/date.utils';
+import { SessionMapper } from './mappers/session.mapper';
 import { CreateSessionDto } from './dto/input/create-session.dto';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
+import { SessionCollectionItem } from './dto/output/session-collection.response';
 
 @Injectable()
 export class SessionsService {
@@ -142,7 +144,7 @@ export class SessionsService {
     return newSession;
   }
 
-  async findAll(filter: SessionFilterDto): Promise<PaginatedDataDto<Sessions>> {
+  async findAll(filter: SessionFilterDto): Promise<PaginatedDataDto<SessionCollectionItem>> {
     const {
       cursor,
       latitude,
@@ -216,20 +218,26 @@ export class SessionsService {
     const sessions = await this.prisma.sessions.findMany({
       ...query,
       select: {
-        createdAt: true,
         creatorUid: true,
-        description: true,
         endDate: true,
-        fieldUid: true,
+        field: {
+          select: {
+            fieldImages: {
+              select: {
+                url: true,
+              },
+              take: 1,
+            },
+            latitude: true,
+            longitude: true,
+            shortAddress: true,
+          },
+        },
         gameMode: true,
         maxPlayersPerTeam: true,
-        minPlayersPerTeam: true,
         sport: true,
         startDate: true,
-        teamsPerGame: true,
-        title: true,
         uid: true,
-        updatedAt: true,
       },
     });
 
@@ -240,7 +248,7 @@ export class SessionsService {
     }
 
     return {
-      items: sessions,
+      items: SessionMapper.toSessionCollectionItems(sessions),
       nextCursor,
       totalCount: sessions.length,
     };
@@ -307,7 +315,10 @@ export class SessionsService {
       where: { uid: session.uid },
     });
 
-    return updatedSession;
+    return {
+      ...updatedSession,
+      sport: updatedSession.sport as Sport,
+    };
   }
 
   remove(uid: string) {

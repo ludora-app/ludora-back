@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { GameModes } from 'generated/prisma/enums';
 import { Sport } from 'src/shared/constants/constants';
-import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 /**
  * @description standard response for a Session resource
@@ -12,10 +11,10 @@ export class SessionResponse {
     example: '2025-05-10T22:30:32.525Z',
     readOnly: true,
   })
-  createdAt: Date;
+  createdAt?: Date;
 
   @ApiProperty({ description: 'Session description', example: 'Test session', readOnly: true })
-  description: string;
+  description?: string;
 
   @ApiProperty({
     description: 'Session end date',
@@ -31,10 +30,10 @@ export class SessionResponse {
   maxPlayersPerTeam: number;
 
   @ApiProperty({ description: 'Number of teams per game', example: 2, readOnly: true })
-  teamsPerGame: number;
+  teamsPerGame?: number;
 
   @ApiProperty({ description: 'Minimum number of players per team', example: 3, readOnly: true })
-  minPlayersPerTeam: number;
+  minPlayersPerTeam?: number;
 
   @ApiProperty({
     description: 'Sport played during the session',
@@ -52,14 +51,14 @@ export class SessionResponse {
   startDate: Date;
 
   @ApiProperty({ description: 'Session title', example: 'Session 1', readOnly: true })
-  title: string;
+  title?: string;
 
   @ApiProperty({
     description: 'Session update date',
     example: '2025-05-10T22:30:32.525Z',
     readOnly: true,
   })
-  updatedAt: Date;
+  updatedAt?: Date;
 
   @ApiProperty({
     description: 'Session game mode',
@@ -75,8 +74,3 @@ export class SessionResponse {
   })
   creatorUid: string;
 }
-
-/**
- * @description standard response for a paginated session, used to type swagger return
- */
-export const PaginatedSessionResponse = toPaginationResponseType(SessionResponse);

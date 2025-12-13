@@ -32,10 +32,14 @@ import {
 
 import { SessionsService } from './sessions.service';
 import { SessionMapper } from './mappers/session.mapper';
+import { SessionResponse } from './dto/output/session.response';
 import { CreateSessionDto } from './dto/input/create-session.dto';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
-import { PaginatedSessionResponse, SessionResponse } from './dto/output/session.response';
+import {
+  PaginatedSessionCollectionResponse,
+  SessionCollectionItem,
+} from './dto/output/session-collection.response';
 
 @Controller('sessions')
 @UseGuards(AuthB2CGuard)
@@ -63,18 +67,18 @@ export class SessionsController {
   @Get('/list/collection')
   @Protected()
   @ApiOperation({ summary: 'Get all sessions' })
-  @ApiOkResponse({ type: PaginatedSessionResponse })
+  @ApiOkResponse({ type: PaginatedSessionCollectionResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findAll(
     @Query() filter: SessionFilterDto,
-  ): Promise<PaginationResponseTypeDto<SessionResponse>> {
+  ): Promise<PaginationResponseTypeDto<SessionCollectionItem>> {
     const sessions = await this.sessionsService.findAll(filter);
 
     return {
       data: {
-        items: SessionMapper.toSessionResponses(sessions.items),
+        items: sessions.items,
         nextCursor: sessions.nextCursor,
         totalCount: sessions.totalCount,
       },
