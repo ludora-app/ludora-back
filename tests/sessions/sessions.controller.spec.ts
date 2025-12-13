@@ -3,7 +3,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GameModes } from 'generated/prisma/client';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';
-import { CreateSessionDto } from 'src/sessions/dto/input/create-session.dto';
+import {
+  CreateSessionDto,
+  CreateSessionWithUserDto,
+} from 'src/sessions/dto/input/create-session.dto';
 import { SessionFilterDto } from 'src/sessions/dto/input/session-filter.dto';
 import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
 import { SessionsController } from 'src/sessions/sessions.controller';
@@ -73,6 +76,16 @@ describe('SessionsController', () => {
       teamsPerGame: 2,
       title: 'Test Session Title',
       gameMode: GameModes.FIVE_V_FIVE,
+    };
+
+    const mockRequest = {
+      user: {
+        uid: 'user-uid-1',
+      },
+    } as any;
+
+    const createSessionWithUserDto: CreateSessionWithUserDto = {
+      ...createSessionDto,
       userUid: 'user-uid-1',
     };
 
@@ -92,21 +105,27 @@ describe('SessionsController', () => {
 
       mockSessionsService.create.mockResolvedValue(createdSession);
 
-      const result = await controller.create(createSessionDto);
+      const result = await controller.create(createSessionDto, mockRequest);
 
       expect(result).toEqual({
-        data: createdSession,
+        data: expect.objectContaining({
+          uid: 'session-uid-1',
+          title: 'Test Session Title',
+          sport: Sport.FOOTBALL,
+        }),
         message: 'Session created successfully',
       });
-      expect(service.create).toHaveBeenCalledWith(createSessionDto);
+      expect(service.create).toHaveBeenCalledWith(createSessionWithUserDto);
     });
 
     it('should propagate errors from service', async () => {
       const errorMessage = 'Field not found';
       mockSessionsService.create.mockRejectedValue(new BadRequestException(errorMessage));
 
-      await expect(controller.create(createSessionDto)).rejects.toThrow(BadRequestException);
-      expect(service.create).toHaveBeenCalledWith(createSessionDto);
+      await expect(controller.create(createSessionDto, mockRequest)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(service.create).toHaveBeenCalledWith(createSessionWithUserDto);
     });
   });
 

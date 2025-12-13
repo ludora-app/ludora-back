@@ -11,9 +11,9 @@ import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-t
 
 import { DateUtils } from './../shared/utils/date.utils';
 import { SessionMapper } from './mappers/session.mapper';
-import { CreateSessionDto } from './dto/input/create-session.dto';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
+import { CreateSessionWithUserDto } from './dto/input/create-session.dto';
 import { SessionCollectionItem } from './dto/output/session-collection.response';
 
 @Injectable()
@@ -26,8 +26,8 @@ export class SessionsService {
     private readonly conversationsService: ConversationsService,
   ) {}
 
-  async create(createSessionDto: CreateSessionDto): Promise<Sessions> {
-    const { endDate, fieldUid, startDate } = createSessionDto;
+  async create(createSessionDto: CreateSessionWithUserDto): Promise<Sessions> {
+    const { endDate, fieldUid, startDate, userUid } = createSessionDto;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -98,7 +98,7 @@ export class SessionsService {
     const newSession = await this.prisma.$transaction(async (tx) => {
       const createdSession = await tx.sessions.create({
         data: {
-          creatorUid: createSessionDto.userUid,
+          creatorUid: userUid,
           description: createSessionDto.description,
           endDate: endDate,
           fieldUid: field.uid,
@@ -235,6 +235,16 @@ export class SessionsService {
         },
         gameMode: true,
         maxPlayersPerTeam: true,
+        sessionTeams: {
+          select: {
+            _count: {
+              select: {
+                sessionPlayers: true,
+              },
+            },
+            teamName: true,
+          },
+        },
         sport: true,
         startDate: true,
         uid: true,

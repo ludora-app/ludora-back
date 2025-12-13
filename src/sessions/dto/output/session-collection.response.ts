@@ -3,6 +3,11 @@ import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-re
 
 import { SessionResponse } from './session.response';
 
+export interface SessionTeam {
+  teamName: string;
+  numberOfPlayers: number;
+}
+
 export class SessionCollectionItem extends PartialType(SessionResponse) {
   @ApiProperty({
     description: 'Session field image',
@@ -31,6 +36,13 @@ export class SessionCollectionItem extends PartialType(SessionResponse) {
     readOnly: true,
   })
   fieldLongitude?: number;
+
+  @ApiProperty({
+    description: 'Session teams',
+    example: [{ _count: { sessionPlayers: 2 }, teamName: 'Team A' }],
+    readOnly: true,
+  })
+  sessionTeams?: SessionTeam[];
 }
 
 /**

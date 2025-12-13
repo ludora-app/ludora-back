@@ -18,6 +18,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -55,11 +56,13 @@ export class SessionsController {
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createSessionDto: CreateSessionDto,
+    @Req() request: Request,
   ): Promise<ResponseTypeDto<SessionResponse>> {
-    const newSession = await this.sessionsService.create(createSessionDto);
+    const userUid = request['user'].uid;
+    const newSession = await this.sessionsService.create({ ...createSessionDto, userUid });
 
     return {
-      data: SessionMapper.toSessionResponse(newSession),
+      data: SessionMapper.toDto(newSession),
       message: 'Session created successfully',
     };
   }
@@ -101,7 +104,7 @@ export class SessionsController {
     }
 
     return {
-      data: SessionMapper.toSessionResponse(session),
+      data: SessionMapper.toDto(session),
       message: 'Session fetched successfully',
     };
   }

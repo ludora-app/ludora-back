@@ -30,15 +30,6 @@ export class CreateSessionDto {
   })
   fieldUid: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty({
-    description: 'The uid of the creator',
-    example: 'cmajhjkjf000bq77q4b5ugn8b',
-    required: true,
-  })
-  userUid: string;
-
   @IsEnum(GameModes)
   @IsNotEmpty()
   @ApiProperty({
@@ -93,4 +84,15 @@ export class CreateSessionDto {
     required: true,
   })
   minPlayersPerTeam: number;
+}
+
+export class CreateSessionWithUserDto extends CreateSessionDto {
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: 'The uid of the user',
+    example: 'cmajhjkjf000bq77q4b5ugn8b',
+    required: true,
+  })
+  userUid: string;
 }

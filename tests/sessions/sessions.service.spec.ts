@@ -4,7 +4,7 @@ import { GameModes } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Sport } from 'src/shared/constants/constants';
 import { DateUtils } from 'src/shared/utils/date.utils';
-import { CreateSessionDto } from '../../src/sessions/dto/input/create-session.dto';
+import { CreateSessionWithUserDto } from '../../src/sessions/dto/input/create-session.dto';
 import { SessionFilterDto } from '../../src/sessions/dto/input/session-filter.dto';
 import { UpdateSessionDto } from '../../src/sessions/dto/input/update-session.dto';
 import { SessionsService } from '../../src/sessions/sessions.service';
@@ -109,7 +109,7 @@ describe('SessionsService', () => {
   });
 
   describe('create', () => {
-    const createSessionDto: CreateSessionDto = {
+    const createSessionDto: CreateSessionWithUserDto = {
       endDate: mockFutureEndDate.toISOString(),
       fieldUid: 'field-uid-1',
       startDate: mockFutureDate.toISOString(),
@@ -355,29 +355,61 @@ describe('SessionsService', () => {
     const mockSessions = [
       {
         uid: 'session-uid-1',
-        description: 'Session 1',
+        creatorUid: 'user-uid-1',
         endDate: new Date('2023-01-10T16:00:00Z'),
         startDate: new Date('2023-01-10T14:00:00Z'),
         sport: Sport.FOOTBALL,
-        title: 'Session 1 Title',
+        gameMode: 'FIVE_V_FIVE',
         maxPlayersPerTeam: 5,
-        minPlayersPerTeam: 3,
-        teamsPerGame: 2,
-        createdAt: new Date('2023-01-01T12:00:00Z'),
-        updatedAt: new Date('2023-01-01T12:00:00Z'),
+        field: {
+          fieldImages: [{ url: 'https://example.com/field1.jpg' }],
+          latitude: 48.8566,
+          longitude: 2.3522,
+          shortAddress: '123 Main St, Paris',
+        },
+        sessionTeams: [
+          {
+            teamName: 'Team A',
+            _count: {
+              sessionPlayers: 3,
+            },
+          },
+          {
+            teamName: 'Team B',
+            _count: {
+              sessionPlayers: 2,
+            },
+          },
+        ],
       },
       {
         uid: 'session-uid-2',
-        description: 'Session 2',
+        creatorUid: 'user-uid-2',
         endDate: new Date('2023-01-11T16:00:00Z'),
         startDate: new Date('2023-01-11T14:00:00Z'),
         sport: 'BASKETBALL',
-        title: 'Session 2 Title',
+        gameMode: 'FIVE_V_FIVE',
         maxPlayersPerTeam: 5,
-        minPlayersPerTeam: 3,
-        teamsPerGame: 2,
-        createdAt: new Date('2023-01-01T12:00:00Z'),
-        updatedAt: new Date('2023-01-01T12:00:00Z'),
+        field: {
+          fieldImages: [],
+          latitude: 48.8567,
+          longitude: 2.3523,
+          shortAddress: '456 Rue de Test, Paris',
+        },
+        sessionTeams: [
+          {
+            teamName: 'Team A',
+            _count: {
+              sessionPlayers: 4,
+            },
+          },
+          {
+            teamName: 'Team B',
+            _count: {
+              sessionPlayers: 5,
+            },
+          },
+        ],
       },
     ];
 
@@ -392,8 +424,24 @@ describe('SessionsService', () => {
       // Assert
       expect(result).toEqual({
         items: expect.arrayContaining([
-          expect.objectContaining({ uid: 'session-uid-1' }),
-          expect.objectContaining({ uid: 'session-uid-2' }),
+          expect.objectContaining({
+            uid: 'session-uid-1',
+            fieldImage: 'https://example.com/field1.jpg',
+            fieldLatitude: 48.8566,
+            fieldLongitude: 2.3522,
+            fieldShortAddress: '123 Main St, Paris',
+            sessionTeams: expect.arrayContaining([
+              expect.objectContaining({ teamName: 'Team A', numberOfPlayers: 3 }),
+              expect.objectContaining({ teamName: 'Team B', numberOfPlayers: 2 }),
+            ]),
+          }),
+          expect.objectContaining({
+            uid: 'session-uid-2',
+            fieldImage: '',
+            fieldLatitude: 48.8567,
+            fieldLongitude: 2.3523,
+            fieldShortAddress: '456 Rue de Test, Paris',
+          }),
         ]),
         nextCursor: null,
         totalCount: 2,
