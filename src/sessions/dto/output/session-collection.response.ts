@@ -3,8 +3,17 @@ import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-re
 
 import { SessionResponse } from './session.response';
 
-export interface SessionTeam {
+export class TeamFromSessionCollectionItem {
+  @ApiProperty({
+    description: 'Team name',
+    example: 'Team A',
+  })
   teamName: string;
+
+  @ApiProperty({
+    description: 'Number of players in the team',
+    example: 3,
+  })
   numberOfPlayers: number;
 }
 
@@ -39,10 +48,11 @@ export class SessionCollectionItem extends PartialType(SessionResponse) {
 
   @ApiProperty({
     description: 'Session teams',
-    example: [{ _count: { sessionPlayers: 2 }, teamName: 'Team A' }],
+    example: [{ numberOfPlayers: 2, teamName: 'Team A' }],
     readOnly: true,
+    type: [TeamFromSessionCollectionItem],
   })
-  sessionTeams?: SessionTeam[];
+  sessionTeams?: TeamFromSessionCollectionItem[];
 }
 
 /**
