@@ -8,9 +8,16 @@ import { MetricsController } from '../metrics/metrics.controller';
 import { WebsocketsService } from './websockets/websockets.service';
 import { WebsocketsGateway } from './websockets/websockets.gateway';
 import { GeolocalisationService } from './geolocalisation/geolocalisation.service';
+import { GeolocalisationController } from './geolocalisation/geolocalisation.controller';
 
 @Module({
-  controllers: [EmailsController, StorageController, MetricsController, MetricsController],
+  controllers: [
+    EmailsController,
+    StorageController,
+    MetricsController,
+    MetricsController,
+    GeolocalisationController,
+  ],
   exports: [
     EmailsService,
     StorageService,

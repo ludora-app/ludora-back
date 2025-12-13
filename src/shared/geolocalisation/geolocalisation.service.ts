@@ -1,34 +1,31 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { Client, AddressType } from '@googlemaps/google-maps-services-js';
 
-export interface Coordinates {
-  lat: number;
-  lng: number;
-}
-
-export interface AddressResult {
-  place_id?: string;
-  coordinates: Coordinates;
-  formatted_address: string;
-}
+import { AddressComponentsTypes } from './dto/input/address-components-types';
+import {
+  AddressResult,
+  Coordinates,
+  GeolocalisationDetailsResponse,
+  ShortAddressLocation,
+} from './dto/output/geolocalisation-details.response';
 
 @Injectable()
 export class GeolocalisationService {
   private readonly client = new Client({});
 
   /**
-   * Récupère les coordonnées GPS à partir d'une adresse
-   * @param address - L'adresse à géocoder
-   * @returns Les coordonnées GPS (latitude et longitude)
+   * Retrieves GPS coordinates from an address
+   * @param address - The address to geocode
+   * @returns GPS coordinates (latitude and longitude)
    */
   async getLatitudeAndLongitude(address: string): Promise<Coordinates> {
     if (!address || address.trim().length === 0) {
-      throw new BadRequestException("L'adresse ne peut pas être vide");
+      throw new BadRequestException('Address cannot be empty');
     }
 
     if (!process.env.GOOGLE_MAPS_API_KEY) {
       throw new BadRequestException(
-        "La clé API Google Maps n'est pas configurée. Veuillez définir GOOGLE_MAPS_API_KEY dans vos variables d'environnement.",
+        'Google Maps API key is not configured. Please set GOOGLE_MAPS_API_KEY in your environment variables.',
       );
     }
 
@@ -41,7 +38,7 @@ export class GeolocalisationService {
       });
 
       if (!response.data.results || response.data.results.length === 0) {
-        throw new BadRequestException('Aucun résultat trouvé pour cette adresse');
+        throw new BadRequestException('No results found for this address');
       }
 
       const location = response.data.results[0].geometry.location;
@@ -53,24 +50,24 @@ export class GeolocalisationService {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException('Erreur lors de la récupération des coordonnées');
+      throw new BadRequestException('Error retrieving coordinates');
     }
   }
 
   /**
-   * Récupère l'adresse à partir de coordonnées GPS
+   * Retrieves an address from GPS coordinates
    * @param lat - Latitude
    * @param lng - Longitude
-   * @returns L'adresse formatée correspondant aux coordonnées
+   * @returns The formatted address corresponding to the coordinates
    */
   async getAddressFromCoordinates(lat: number, lng: number): Promise<AddressResult> {
     if (!this.isValidCoordinate(lat, lng)) {
-      throw new BadRequestException('Coordonnées GPS invalides');
+      throw new BadRequestException('Invalid GPS coordinates');
     }
 
     if (!process.env.GOOGLE_MAPS_API_KEY) {
       throw new BadRequestException(
-        "La clé API Google Maps n'est pas configurée. Veuillez définir GOOGLE_MAPS_API_KEY dans vos variables d'environnement.",
+        'Google Maps API key is not configured. Please set GOOGLE_MAPS_API_KEY in your environment variables.',
       );
     }
 
@@ -83,7 +80,7 @@ export class GeolocalisationService {
       });
 
       if (!response.data.results || response.data.results.length === 0) {
-        throw new BadRequestException('Aucune adresse trouvée pour ces coordonnées');
+        throw new BadRequestException('No address found for these coordinates');
       }
 
       const result = response.data.results[0];
@@ -96,24 +93,27 @@ export class GeolocalisationService {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException("Erreur lors de la récupération de l'adresse");
+      throw new BadRequestException('Error retrieving address');
     }
   }
 
   /**
-   * Récupère des informations détaillées sur une adresse à partir de coordonnées
+   * Retrieves detailed address information from coordinates
    * @param lat - Latitude
    * @param lng - Longitude
-   * @returns Informations détaillées sur l'adresse
+   * @returns Detailed address information
    */
-  async getDetailedAddressFromCoordinates(lat: number, lng: number): Promise<any> {
+  async getDetailedAddressFromCoordinates(
+    lat: number,
+    lng: number,
+  ): Promise<GeolocalisationDetailsResponse> {
     if (!this.isValidCoordinate(lat, lng)) {
-      throw new BadRequestException('Coordonnées GPS invalides');
+      throw new BadRequestException('Invalid GPS coordinates');
     }
 
     if (!process.env.GOOGLE_MAPS_API_KEY) {
       throw new BadRequestException(
-        "La clé API Google Maps n'est pas configurée. Veuillez définir GOOGLE_MAPS_API_KEY dans vos variables d'environnement.",
+        'Google Maps API key is not configured. Please set GOOGLE_MAPS_API_KEY in your environment variables.',
       );
     }
 
@@ -133,23 +133,68 @@ export class GeolocalisationService {
       });
 
       if (!response.data.results || response.data.results.length === 0) {
-        throw new BadRequestException('Aucune adresse trouvée pour ces coordonnées');
+        throw new BadRequestException('No address found for these coordinates');
       }
 
-      return response.data.results[0];
+      const result = response.data.results[0];
+
+      return {
+        address_components: result.address_components,
+        formatted_address: result.formatted_address,
+        geometry: {
+          bounds: result.geometry.bounds || result.geometry.viewport,
+          location: result.geometry.location,
+          location_type: result.geometry.location_type,
+          viewport: result.geometry.viewport,
+        },
+        navigation_points: [],
+        place_id: result.place_id,
+        types: result.types,
+      };
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException('Erreur lors de la récupération des informations détaillées');
+      throw new BadRequestException('Error retrieving detailed information');
     }
   }
 
+  async getCoordinatesAndShortAddressFromAddress(address: string): Promise<ShortAddressLocation> {
+    // ? fetch the coordinates from the address
+    const coordinates = await this.getLatitudeAndLongitude(address);
+    // ? fetch the details used to form the short address from the coordinates
+    const details = await this.getDetailedAddressFromCoordinates(coordinates.lat, coordinates.lng);
+
+    //? ensures that addresses from google maps API are used
+    if (address !== details.formatted_address) {
+      throw new BadRequestException('The address is not the same as the formatted address');
+    }
+
+    const streetNumber = details.address_components.find((component) =>
+      component.types.includes(AddressComponentsTypes.STREET_NUMBER),
+    )?.long_name;
+
+    const route = details.address_components.find((component) =>
+      component.types.includes(AddressComponentsTypes.ROUTE),
+    )?.long_name;
+
+    const locality = details.address_components.find((component) =>
+      component.types.includes(AddressComponentsTypes.LOCALITY),
+    )?.long_name;
+
+    const shortAddress = `${streetNumber} ${route}, ${locality}`;
+    return {
+      lat: coordinates.lat,
+      lng: coordinates.lng,
+      shortAddress: shortAddress,
+    };
+  }
+
   /**
-   * Valide les coordonnées GPS
+   * Validates GPS coordinates
    * @param lat - Latitude
    * @param lng - Longitude
-   * @returns true si les coordonnées sont valides
+   * @returns true if the coordinates are valid
    */
   private isValidCoordinate(lat: number, lng: number): boolean {
     return (

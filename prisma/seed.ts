@@ -48,24 +48,24 @@ async function seed() {
     {
       name: 'The One Ball',
       address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
-      latitude: 48.8499,
-      longitude: 2.5667,
+      latitude: 48.83436030000001,
+      longitude: 2.5689833,
       phone: '01 85 78 44 44',
       email: 'contact@theoneball.fr',
     },
     {
       name: 'Stadium Thias Orly',
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.7555,
-      longitude: 2.4033,
+      latitude: 48.75098440000001,
+      longitude: 2.3718412,
       phone: '01 46 87 64 24',
       email: 'stadium.thiais@gmail.com',
     },
     {
       name: 'Forrest Hill la Défense',
       address: '19 avenue de la Liberté, 92000 Nanterre',
-      latitude: 48.892,
-      longitude: 2.236,
+      latitude: 48.88837789999999,
+      longitude: 2.2083152,
       phone: '01 47 24 67 67',
       email: 'contact@forest-hill.com',
     },
@@ -205,8 +205,8 @@ async function seed() {
       partnerUid: createdPartners[1].uid,
       sport: createdSports[1].name,
       address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
-      latitude: 48.8499,
-      longitude: 2.5667,
+      latitude: 48.83436030000001,
+      longitude: 2.5689833,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -215,8 +215,8 @@ async function seed() {
       partnerUid: createdPartners[1].uid,
       sport: createdSports[1].name,
       address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
-      latitude: 48.8499,
-      longitude: 2.5667,
+      latitude: 48.83436030000001,
+      longitude: 2.5689833,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -225,8 +225,8 @@ async function seed() {
       partnerUid: createdPartners[1].uid,
       sport: createdSports[1].name,
       address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
-      latitude: 48.8499,
-      longitude: 2.5667,
+      latitude: 48.83436030000001,
+      longitude: 2.5689833,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -235,8 +235,8 @@ async function seed() {
       partnerUid: createdPartners[1].uid,
       sport: createdSports[1].name,
       address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
-      latitude: 48.8499,
-      longitude: 2.5667,
+      latitude: 48.83436030000001,
+      longitude: 2.5689833,
       gameMode: 'THREE_V_THREE',
       entryFee: 0,
       isVerified: true,
@@ -245,8 +245,8 @@ async function seed() {
       partnerUid: createdPartners[1].uid,
       sport: createdSports[1].name,
       address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
-      latitude: 48.8499,
-      longitude: 2.5667,
+      latitude: 48.83436030000001,
+      longitude: 2.5689833,
       gameMode: 'THREE_V_THREE',
       entryFee: 0,
       isVerified: true,
@@ -255,8 +255,8 @@ async function seed() {
       partnerUid: createdPartners[1].uid,
       sport: createdSports[1].name,
       address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
-      latitude: 48.8499,
-      longitude: 2.5667,
+      latitude: 48.83436030000001,
+      longitude: 2.5689833,
       gameMode: 'THREE_V_THREE',
       entryFee: 0,
       isVerified: true,
@@ -266,8 +266,8 @@ async function seed() {
       partnerUid: createdPartners[2].uid,
       sport: createdSports[1].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.7555,
-      longitude: 2.4033,
+      latitude: 48.75098440000001,
+      longitude: 2.3718412,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -276,8 +276,8 @@ async function seed() {
       partnerUid: createdPartners[2].uid,
       sport: createdSports[1].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.7555,
-      longitude: 2.4033,
+      latitude: 48.75098440000001,
+      longitude: 2.3718412,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -286,8 +286,8 @@ async function seed() {
       partnerUid: createdPartners[2].uid,
       sport: createdSports[1].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.7555,
-      longitude: 2.4033,
+      latitude: 48.75098440000001,
+      longitude: 2.3718412,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -296,8 +296,8 @@ async function seed() {
       partnerUid: createdPartners[2].uid,
       sport: createdSports[4].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.7555,
-      longitude: 2.4033,
+      latitude: 48.75098440000001,
+      longitude: 2.3718412,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -306,8 +306,8 @@ async function seed() {
       partnerUid: createdPartners[2].uid,
       sport: createdSports[4].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.7555,
-      longitude: 2.4033,
+      latitude: 48.75098440000001,
+      longitude: 2.3718412,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -316,8 +316,8 @@ async function seed() {
       partnerUid: createdPartners[2].uid,
       sport: createdSports[4].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.7555,
-      longitude: 2.4033,
+      latitude: 48.75098440000001,
+      longitude: 2.3718412,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -326,8 +326,8 @@ async function seed() {
       partnerUid: createdPartners[2].uid,
       sport: createdSports[4].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.7555,
-      longitude: 2.4033,
+      latitude: 48.75098440000001,
+      longitude: 2.3718412,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -336,8 +336,8 @@ async function seed() {
       partnerUid: createdPartners[2].uid,
       sport: createdSports[4].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.7555,
-      longitude: 2.4033,
+      latitude: 48.75098440000001,
+      longitude: 2.3718412,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -347,8 +347,8 @@ async function seed() {
       partnerUid: createdPartners[2].uid,
       sport: createdSports[0].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.7555,
-      longitude: 2.4033,
+      latitude: 48.75098440000001,
+      longitude: 2.3718412,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -357,8 +357,8 @@ async function seed() {
       partnerUid: createdPartners[2].uid,
       sport: createdSports[0].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.7555,
-      longitude: 2.4033,
+      latitude: 48.75098440000001,
+      longitude: 2.3718412,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -367,8 +367,8 @@ async function seed() {
       partnerUid: createdPartners[2].uid,
       sport: createdSports[0].name,
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.7555,
-      longitude: 2.4033,
+      latitude: 48.75098440000001,
+      longitude: 2.3718412,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -377,8 +377,8 @@ async function seed() {
       partnerUid: createdPartners[3].uid,
       sport: createdSports[4].name,
       address: '19 avenue de la Liberté, 92000 Nanterre',
-      latitude: 48.892,
-      longitude: 2.236,
+      latitude: 48.88837789999999,
+      longitude: 2.2083152,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -387,8 +387,8 @@ async function seed() {
       partnerUid: createdPartners[3].uid,
       sport: createdSports[4].name,
       address: '19 avenue de la Liberté, 92000 Nanterre',
-      latitude: 48.892,
-      longitude: 2.236,
+      latitude: 48.88837789999999,
+      longitude: 2.2083152,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -397,8 +397,8 @@ async function seed() {
       partnerUid: createdPartners[3].uid,
       sport: createdSports[4].name,
       address: '19 avenue de la Liberté, 92000 Nanterre',
-      latitude: 48.892,
-      longitude: 2.236,
+      latitude: 48.88837789999999,
+      longitude: 2.2083152,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -407,8 +407,8 @@ async function seed() {
       partnerUid: createdPartners[3].uid,
       sport: createdSports[2].name,
       address: '19 avenue de la Liberté, 92000 Nanterre',
-      latitude: 48.892,
-      longitude: 2.236,
+      latitude: 48.88837789999999,
+      longitude: 2.2083152,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -417,8 +417,8 @@ async function seed() {
       partnerUid: createdPartners[3].uid,
       sport: createdSports[2].name,
       address: '19 avenue de la Liberté, 92000 Nanterre',
-      latitude: 48.892,
-      longitude: 2.236,
+      latitude: 48.88837789999999,
+      longitude: 2.2083152,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -427,8 +427,8 @@ async function seed() {
       partnerUid: createdPartners[3].uid,
       sport: createdSports[5].name,
       address: '19 avenue de la Liberté, 92000 Nanterre',
-      latitude: 48.892,
-      longitude: 2.236,
+      latitude: 48.88837789999999,
+      longitude: 2.2083152,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -437,8 +437,8 @@ async function seed() {
       partnerUid: createdPartners[3].uid,
       sport: createdSports[5].name,
       address: '19 avenue de la Liberté, 92000 Nanterre',
-      latitude: 48.892,
-      longitude: 2.236,
+      latitude: 48.88837789999999,
+      longitude: 2.2083152,
       gameMode: 'FIVE_V_FIVE',
       entryFee: 0,
       isVerified: true,
@@ -852,99 +852,92 @@ async function seed() {
     console.log(`Created user: ${user.email}`);
   }
 
-  const sessions = [
-    {
-      fieldUid: createdFields[21].uid,
-      startDate: new Date('2025-01-01T10:00:00'),
-      endDate: new Date('2025-01-01T11:00:00'),
-      sport: createdSports[0].name,
-      gameMode: GameModes.FIVE_V_FIVE,
-    },
-    {
-      fieldUid: createdFields[1].uid,
-      startDate: new Date('2025-01-02T11:00:00'),
-      endDate: new Date('2025-01-02T13:00:00'),
-      sport: createdSports[1].name,
-      gameMode: GameModes.THREE_V_THREE,
-    },
-    {
-      fieldUid: createdFields[2].uid,
-      startDate: new Date('2025-01-03T14:00:00'),
-      endDate: new Date('2025-01-03T15:00:00'),
-      sport: createdSports[2].name,
-      gameMode: GameModes.TWO_V_TWO,
-    },
-    {
-      fieldUid: createdFields[3].uid,
-      startDate: new Date('2025-01-04T15:00:00'),
-      endDate: new Date('2025-01-04T17:00:00'),
-      sport: createdSports[3].name,
-      gameMode: GameModes.FOUR_V_FOUR,
-    },
-    {
-      fieldUid: createdFields[4].uid,
-      startDate: new Date('2025-01-05T16:00:00'),
-      endDate: new Date('2025-01-05T18:00:00'),
-      sport: createdSports[4].name,
-      gameMode: GameModes.FOUR_V_FOUR,
-    },
-    {
-      fieldUid: createdFields[5].uid,
-      startDate: new Date('2025-01-06T10:00:00'),
-      endDate: new Date('2025-01-06T12:00:00'),
-      sport: createdSports[5].name,
-      gameMode: GameModes.TWO_V_TWO,
-    },
-    {
-      fieldUid: createdFields[6].uid,
-      startDate: new Date('2025-01-07T13:00:00'),
-      endDate: new Date('2025-01-07T14:00:00'),
-      sport: createdSports[6].name,
-      gameMode: GameModes.TWO_V_TWO,
-    },
-    {
-      fieldUid: createdFields[0].uid,
-      startDate: new Date('2025-12-01T11:00:00'),
-      endDate: new Date('2025-12-01T12:00:00'),
-      sport: createdSports[0].name,
-      gameMode: GameModes.ELEVEN_V_ELEVEN,
-    },
-    {
-      fieldUid: createdFields[1].uid,
-      startDate: new Date('2025-12-02T14:00:00'),
-      endDate: new Date('2025-12-02T15:00:00'),
-      sport: createdSports[1].name,
-      gameMode: GameModes.FIVE_V_FIVE,
-    },
-    {
-      fieldUid: createdFields[2].uid,
-      startDate: new Date('2025-12-03T17:00:00'),
-      endDate: new Date('2025-12-03T18:00:00'),
-      sport: createdSports[2].name,
-      gameMode: GameModes.TWO_V_TWO,
-    },
+  // Generate 150 sessions: 30 past + 120 upcoming
+  const allGameModes = [
+    GameModes.TWO_V_TWO,
+    GameModes.THREE_V_THREE,
+    GameModes.FOUR_V_FOUR,
+    GameModes.FIVE_V_FIVE,
+    GameModes.SIX_V_SIX,
+    GameModes.SEVEN_V_SEVEN,
+    GameModes.EIGHT_V_EIGHT,
+    GameModes.TEN_V_TEN,
+    GameModes.ELEVEN_V_ELEVEN,
   ];
 
+  const today = new Date();
   const createdSessions = [];
-  for (const session of sessions) {
+
+  // Generate 30 past sessions
+  console.log('Creating 30 past sessions...');
+  for (let i = 0; i < 30; i++) {
+    const daysAgo = Math.floor(Math.random() * 30) + 1; // 1-30 days ago
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - daysAgo);
+    startDate.setHours(10 + Math.floor(Math.random() * 10), 0, 0, 0); // 10h-20h
+
+    const endDate = new Date(startDate);
+    endDate.setHours(startDate.getHours() + 1 + Math.floor(Math.random() * 2)); // +1 to +3 hours
+
+    const createdAt = new Date(startDate);
+    createdAt.setDate(startDate.getDate() - Math.floor(Math.random() * 7) - 1); // created 1-7 days before
+
+    const field = createdFields[i % createdFields.length];
+    const creator = createdUsers[i % createdUsers.length];
+    const gameMode = allGameModes[i % allGameModes.length];
+
     const createdSession = await prisma.sessions.create({
       data: {
-        creatorUid: createdUsers[0].uid,
-        fieldUid: session.fieldUid,
-        sport: session.sport,
-        gameMode: session.gameMode,
-        startDate: session.startDate,
-        endDate: session.endDate,
-        title: `Session ${createdSessions.length + 1}`,
+        creatorUid: creator.uid,
+        fieldUid: field.uid,
+        sport: field.sport,
+        gameMode: gameMode,
+        startDate: startDate,
+        endDate: endDate,
+        title: `Session passée ${i + 1}`,
         maxPlayersPerTeam: 5,
         minPlayersPerTeam: 3,
         teamsPerGame: 2,
-        description: 'Test session',
+        description: `Session de ${field.sport} terminée`,
+        createdAt: createdAt,
       },
     });
     createdSessions.push(createdSession);
   }
-  console.log('Sessions populated');
+
+  // Generate 120 upcoming sessions
+  console.log('Creating 120 upcoming sessions...');
+  for (let i = 0; i < 120; i++) {
+    const daysAhead = Math.floor(Math.random() * 90) + 1; // 1-90 days ahead
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() + daysAhead);
+    startDate.setHours(10 + Math.floor(Math.random() * 10), 0, 0, 0); // 10h-20h
+
+    const endDate = new Date(startDate);
+    endDate.setHours(startDate.getHours() + 1 + Math.floor(Math.random() * 2)); // +1 to +3 hours
+
+    const field = createdFields[i % createdFields.length];
+    const creator = createdUsers[i % createdUsers.length];
+    const gameMode = allGameModes[i % allGameModes.length];
+
+    const createdSession = await prisma.sessions.create({
+      data: {
+        creatorUid: creator.uid,
+        fieldUid: field.uid,
+        sport: field.sport,
+        gameMode: gameMode,
+        startDate: startDate,
+        endDate: endDate,
+        title: `Session à venir ${i + 1}`,
+        maxPlayersPerTeam: 5,
+        minPlayersPerTeam: 3,
+        teamsPerGame: 2,
+        description: `Session de ${field.sport} prévue`,
+      },
+    });
+    createdSessions.push(createdSession);
+  }
+  console.log(`${createdSessions.length} sessions created (30 past + 120 upcoming)`);
 
   const partnerUsers = [
     {
@@ -1000,194 +993,96 @@ async function seed() {
     console.log(`Created partner user: ${partnerUser.email}`);
   }
 
-  const teams = [
-    {
-      sessionUid: createdSessions[0].uid,
-      teamLabel: TeamLabel.A,
-      teamName: 'Team A',
-    },
-    {
-      sessionUid: createdSessions[0].uid,
-      teamLabel: TeamLabel.B,
-      teamName: 'Team B',
-    },
-    {
-      sessionUid: createdSessions[1].uid,
-      teamLabel: TeamLabel.A,
-      teamName: 'Team A',
-    },
-    {
-      sessionUid: createdSessions[1].uid,
-      teamLabel: TeamLabel.B,
-      teamName: 'Team B',
-    },
-    {
-      sessionUid: createdSessions[2].uid,
-      teamLabel: TeamLabel.A,
-      teamName: 'Team A',
-    },
-    {
-      sessionUid: createdSessions[2].uid,
-      teamLabel: TeamLabel.B,
-      teamName: 'Team B',
-    },
-    {
-      sessionUid: createdSessions[3].uid,
-      teamLabel: TeamLabel.A,
-      teamName: 'Team A',
-    },
-    {
-      sessionUid: createdSessions[3].uid,
-      teamLabel: TeamLabel.B,
-      teamName: 'Team B',
-    },
-    {
-      sessionUid: createdSessions[4].uid,
-      teamLabel: TeamLabel.A,
-      teamName: 'Team A',
-    },
-    {
-      sessionUid: createdSessions[4].uid,
-      teamLabel: TeamLabel.B,
-      teamName: 'Team B',
-    },
-    {
-      sessionUid: createdSessions[5].uid,
-      teamLabel: TeamLabel.A,
-      teamName: 'Team A',
-    },
-    {
-      sessionUid: createdSessions[5].uid,
-      teamLabel: TeamLabel.B,
-      teamName: 'Team B',
-    },
-    {
-      sessionUid: createdSessions[6].uid,
-      teamLabel: TeamLabel.A,
-      teamName: 'Team A',
-    },
-    {
-      sessionUid: createdSessions[6].uid,
-      teamLabel: TeamLabel.B,
-      teamName: 'Team B',
-    },
-    {
-      sessionUid: createdSessions[7].uid,
-      teamLabel: TeamLabel.A,
-      teamName: 'Team A',
-    },
-    {
-      sessionUid: createdSessions[7].uid,
-      teamLabel: TeamLabel.B,
-      teamName: 'Team B',
-    },
-    {
-      sessionUid: createdSessions[8].uid,
-      teamLabel: TeamLabel.A,
-      teamName: 'Team A',
-    },
-    {
-      sessionUid: createdSessions[8].uid,
-      teamLabel: TeamLabel.B,
-      teamName: 'Team B',
-    },
-    {
-      sessionUid: createdSessions[9].uid,
-      teamLabel: TeamLabel.A,
-      teamName: 'Team A',
-    },
-    {
-      sessionUid: createdSessions[9].uid,
-      teamLabel: TeamLabel.B,
-      teamName: 'Team B',
-    },
-  ];
+  // 2 teams for each session (Team A and Team B)
+  console.log('Creating teams for all sessions...');
+  const createdTeams: { uid: string; sessionUid: string; teamLabel: TeamLabel }[] = [];
+  for (let i = 0; i < createdSessions.length; i++) {
+    const session = createdSessions[i];
 
-  const createdTeams: { uid: string }[] = [];
-  for (const team of teams) {
-    const createdTeam = await prisma.sessionTeams.upsert({
+    // Team A
+    const teamA = await prisma.sessionTeams.upsert({
       where: {
         sessionUid_teamLabel: {
-          sessionUid: team.sessionUid,
-          teamLabel: team.teamLabel,
+          sessionUid: session.uid,
+          teamLabel: TeamLabel.A,
         },
       },
       update: {},
-      create: team,
+      create: {
+        sessionUid: session.uid,
+        teamLabel: TeamLabel.A,
+        teamName: 'Team A',
+      },
     });
-    createdTeams.push({ uid: createdTeam.uid });
-    console.log(`Created team: ${team.teamName}`);
-  }
+    createdTeams.push({ uid: teamA.uid, sessionUid: session.uid, teamLabel: TeamLabel.A });
 
-  const players = [
-    {
-      sessionUid: createdSessions[0].uid,
-      teamUid: createdTeams[0].uid,
-      userUid: createdUsers[0].uid,
-    },
-    {
-      sessionUid: createdSessions[0].uid,
-      teamUid: createdTeams[0].uid,
-      userUid: createdUsers[1].uid,
-    },
-    {
-      sessionUid: createdSessions[0].uid,
-      teamUid: createdTeams[0].uid,
-      userUid: createdUsers[2].uid,
-    },
-    {
-      sessionUid: createdSessions[0].uid,
-      teamUid: createdTeams[0].uid,
-      userUid: createdUsers[3].uid,
-    },
-    {
-      sessionUid: createdSessions[0].uid,
-      teamUid: createdTeams[0].uid,
-      userUid: createdUsers[4].uid,
-    },
-    {
-      sessionUid: createdSessions[0].uid,
-      teamUid: createdTeams[0].uid,
-      userUid: createdUsers[5].uid,
-    },
-    {
-      sessionUid: createdSessions[1].uid,
-      teamUid: createdTeams[1].uid,
-      userUid: createdUsers[6].uid,
-    },
-    {
-      sessionUid: createdSessions[1].uid,
-      teamUid: createdTeams[1].uid,
-      userUid: createdUsers[7].uid,
-    },
-    {
-      sessionUid: createdSessions[1].uid,
-      teamUid: createdTeams[1].uid,
-      userUid: createdUsers[8].uid,
-    },
-  ];
-
-  const createdPlayers: { sessionUid: string; teamUid: string; userUid: string }[] = [];
-  for (const player of players) {
-    const createdPlayer = await prisma.sessionPlayers.upsert({
+    // Team B
+    const teamB = await prisma.sessionTeams.upsert({
       where: {
-        sessionUid_teamUid_userUid: {
-          sessionUid: player.sessionUid,
-          teamUid: player.teamUid,
-          userUid: player.userUid,
+        sessionUid_teamLabel: {
+          sessionUid: session.uid,
+          teamLabel: TeamLabel.B,
         },
       },
       update: {},
-      create: player,
+      create: {
+        sessionUid: session.uid,
+        teamLabel: TeamLabel.B,
+        teamName: 'Team B',
+      },
     });
-    createdPlayers.push({
-      sessionUid: createdPlayer.sessionUid,
-      teamUid: createdPlayer.teamUid,
-      userUid: createdPlayer.userUid,
-    });
+    createdTeams.push({ uid: teamB.uid, sessionUid: session.uid, teamLabel: TeamLabel.B });
+
+    if ((i + 1) % 30 === 0) {
+      console.log(`Created teams for ${i + 1}/${createdSessions.length} sessions`);
+    }
+  }
+  console.log(`${createdTeams.length} teams created `);
+
+  // Add some players to random teams (optional, just for demo purposes)
+  console.log('Adding sample players to some teams...');
+  const createdPlayers: { sessionUid: string; teamUid: string; userUid: string }[] = [];
+
+  // Add a few players to the first 20 sessions
+  for (let i = 0; i < 20; i++) {
+    const session = createdSessions[i];
+    // Get teams for this session
+    const sessionTeams = createdTeams.filter((t) => t.sessionUid === session.uid);
+
+    // Add 2-3 random users to each team
+    for (const team of sessionTeams) {
+      const numPlayers = 2 + Math.floor(Math.random() * 2); // 2-3 players
+      for (let j = 0; j < numPlayers; j++) {
+        const user = createdUsers[(i * 2 + j) % createdUsers.length];
+        try {
+          const createdPlayer = await prisma.sessionPlayers.upsert({
+            where: {
+              sessionUid_teamUid_userUid: {
+                sessionUid: session.uid,
+                teamUid: team.uid,
+                userUid: user.uid,
+              },
+            },
+            update: {},
+            create: {
+              sessionUid: session.uid,
+              teamUid: team.uid,
+              userUid: user.uid,
+            },
+          });
+          createdPlayers.push({
+            sessionUid: createdPlayer.sessionUid,
+            teamUid: createdPlayer.teamUid,
+            userUid: createdPlayer.userUid,
+          });
+        } catch (e) {
+          // Skip if duplicate
+        }
+      }
+    }
   }
 
-  console.log('Players populated');
+  console.log(`${createdPlayers.length} players added to sessions`);
 }
 
 seed()
