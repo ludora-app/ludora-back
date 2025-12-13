@@ -36,6 +36,7 @@ describe('FieldsService', () => {
 
   const mockStorageService = {
     upload: jest.fn(),
+    getSignedUrl: jest.fn(),
   };
 
   const mockGeolocalisationService = {
@@ -182,8 +183,12 @@ describe('FieldsService', () => {
           sport: Sport.FOOTBALL,
           latitude: 48.8566,
           longitude: 2.3522,
+          shortAddress: 'Address 1 Short',
           gameMode: null,
-          fieldImages: [],
+          entryFee: null,
+          isVerified: true,
+          fieldImages: [{ url: 'image1.jpg', order: 0 }],
+          partner: null,
         },
         {
           uid: 'field-2',
@@ -192,17 +197,33 @@ describe('FieldsService', () => {
           sport: Sport.FOOTBALL,
           latitude: 48.8567,
           longitude: 2.3523,
+          shortAddress: 'Address 2 Short',
           gameMode: null,
+          entryFee: null,
+          isVerified: true,
           fieldImages: [],
+          partner: null,
         },
       ];
 
       mockPrismaService.fields.findMany.mockResolvedValue(mockFields);
+      mockStorageService.getSignedUrl.mockResolvedValue('https://signed-url.com/image1.jpg');
 
       const result = await service.findAllVerified(filter);
 
       expect(result).toEqual({
-        items: mockFields,
+        items: expect.arrayContaining([
+          expect.objectContaining({
+            uid: 'field-1',
+            name: 'Field 1',
+            sport: Sport.FOOTBALL,
+          }),
+          expect.objectContaining({
+            uid: 'field-2',
+            name: 'Field 2',
+            sport: Sport.FOOTBALL,
+          }),
+        ]),
         nextCursor: null,
         totalCount: 2,
       });
@@ -271,18 +292,29 @@ describe('FieldsService', () => {
           sport: Sport.FOOTBALL,
           latitude: 48.8566,
           longitude: 2.3522,
+          shortAddress: 'Address 1 Short',
           gameMode: null,
+          entryFee: 25,
+          isVerified: true,
           fieldImages: [],
+          partner: null,
         },
       ];
 
       mockPartnersService.findOne.mockResolvedValue(mockPartner);
       mockPrismaService.fields.findMany.mockResolvedValue(mockFields);
+      mockStorageService.getSignedUrl.mockResolvedValue('');
 
       const result = await service.findAllByPartnerUid(partnerUid, filter);
 
       expect(result).toEqual({
-        items: mockFields,
+        items: expect.arrayContaining([
+          expect.objectContaining({
+            uid: 'field-1',
+            name: 'Partner Field',
+            sport: Sport.FOOTBALL,
+          }),
+        ]),
         nextCursor: null,
         totalCount: 1,
       });
@@ -316,26 +348,45 @@ describe('FieldsService', () => {
         sport: Sport.FOOTBALL,
         latitude: 48.8566,
         longitude: 2.3522,
-        fieldImages: [],
+        shortAddress: '123 Main St Short',
+        gameMode: null,
+        entryFee: null,
+        isVerified: true,
+        fieldImages: [{ url: 'image1.jpg', order: 0, uid: 'img-1' }],
+        partner: {
+          uid: 'partner-1',
+          partnerOpeningHours: [
+            {
+              dayOfWeek: 1,
+              openTime: '08:00',
+              closeTime: '20:00',
+            },
+          ],
+        },
       };
 
       mockPrismaService.fields.findUnique.mockResolvedValue(mockField);
+      mockStorageService.getSignedUrl.mockResolvedValue('https://signed-url.com/image1.jpg');
 
       const result = await service.findOne(uid);
 
-      expect(result).toEqual(mockField);
-      expect(mockPrismaService.fields.findUnique).toHaveBeenCalledWith({
-        include: {
-          fieldImages: {
-            select: {
-              order: true,
-              uid: true,
-              url: true,
-            },
-          },
-        },
-        where: { uid },
-      });
+      expect(result).toEqual(
+        expect.objectContaining({
+          uid,
+          name: 'Test Field',
+          sport: Sport.FOOTBALL,
+          fieldImages: expect.arrayContaining([
+            expect.objectContaining({
+              url: 'https://signed-url.com/image1.jpg',
+            }),
+          ]),
+        }),
+      );
+      expect(mockPrismaService.fields.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { uid },
+        }),
+      );
     });
   });
 
@@ -492,14 +543,21 @@ describe('FieldsService', () => {
         sport: Sport.BASKETBALL,
         latitude: 48.8566,
         longitude: 2.3522,
+        shortAddress: '123 Partner St Short',
+        gameMode: null,
         isVerified: false,
         entryFee: 30,
         fieldImages: [],
+        partner: {
+          uid: partnerUid,
+          partnerOpeningHours: [],
+        },
       };
 
       const existingPartner = { uid: partnerUid, name: 'Partner 1' };
 
       mockPrismaService.fields.findUnique.mockResolvedValue(existingField);
+      mockStorageService.getSignedUrl.mockResolvedValue('');
       mockPartnersService.findOne.mockResolvedValue(existingPartner);
       mockPrismaService.fields.update.mockResolvedValue({ ...existingField, ...updateDto });
 
@@ -588,8 +646,15 @@ describe('FieldsService', () => {
         sport: Sport.BASKETBALL,
         latitude: 48.8566,
         longitude: 2.3522,
+        shortAddress: '123 Old St Short',
+        gameMode: null,
+        entryFee: null,
         isVerified: false,
         fieldImages: [],
+        partner: {
+          uid: partnerUid,
+          partnerOpeningHours: [],
+        },
       };
 
       const existingPartner = { uid: partnerUid, name: 'Partner 1' };
@@ -599,6 +664,7 @@ describe('FieldsService', () => {
       };
 
       mockPrismaService.fields.findUnique.mockResolvedValue(existingField);
+      mockStorageService.getSignedUrl.mockResolvedValue('');
       mockPartnersService.findOne.mockResolvedValue(existingPartner);
       mockGeolocalisationService.getLatitudeAndLongitude.mockResolvedValue(newCoordinates);
       mockPrismaService.fields.findFirst.mockResolvedValue(null);

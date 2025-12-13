@@ -39,6 +39,12 @@ export class FieldResponseDto {
 
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
   readonly partnerUid?: string;
+
+  @ApiProperty({
+    example: [{ closeTime: '12:00', dayOfWeek: 1, openTime: '10:00' }],
+    readOnly: true,
+  })
+  readonly openingHours?: OpeningHours[];
 }
 
 export class FieldImageResponseDto {
@@ -59,6 +65,20 @@ export class FieldImageResponseDto {
 
   @ApiProperty({ example: '2025-01-01T00:00:00.000Z', readOnly: true })
   readonly updatedAt?: Date;
+}
+
+/**
+ * @description Opening hours for a field retrieved from the partner
+ */
+class OpeningHours {
+  @ApiProperty({ example: 1, readOnly: true })
+  readonly dayOfWeek: number;
+
+  @ApiProperty({ example: '10:00', readOnly: true })
+  readonly openTime: string;
+
+  @ApiProperty({ example: '12:00', readOnly: true })
+  readonly closeTime: string;
 }
 
 export const PaginatedFieldResponse = toPaginationResponseType(FieldResponseDto);

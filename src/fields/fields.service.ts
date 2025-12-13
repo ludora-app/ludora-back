@@ -13,6 +13,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import { FieldMapper } from './mapper/field.mapper';
 import { FieldFilterDto } from './dto/input/field-filter.dto';
 import { UpdateFieldDto } from './dto/input/update-field.dto';
 import { FieldResponseDto } from './dto/output/field-response';
@@ -166,14 +167,26 @@ export class FieldsService {
         fieldImages: {
           select: {
             order: true,
-            uid: true,
             url: true,
           },
+          take: 1,
         },
         gameMode: true,
         latitude: true,
         longitude: true,
         name: true,
+        partner: {
+          select: {
+            partnerOpeningHours: {
+              select: {
+                closeTime: true,
+                dayOfWeek: true,
+                openTime: true,
+              },
+            },
+            uid: true,
+          },
+        },
         shortAddress: true,
         sport: true,
         uid: true,
@@ -202,7 +215,7 @@ export class FieldsService {
     );
 
     return {
-      items: fieldsWithImageUrl,
+      items: FieldMapper.toCollectionDto(fieldsWithImageUrl),
       nextCursor,
       totalCount: fields.length,
     };
@@ -280,12 +293,14 @@ export class FieldsService {
       ...query,
       select: {
         address: true,
+        entryFee: true,
         fieldImages: {
           select: {
             order: true,
             uid: true,
             url: true,
           },
+          take: 1,
         },
         gameMode: true,
         latitude: true,
@@ -320,7 +335,7 @@ export class FieldsService {
     );
 
     return {
-      items: fieldsWithImageUrl,
+      items: FieldMapper.toCollectionDto(fieldsWithImageUrl),
       nextCursor,
       totalCount: fields.length,
     };
@@ -336,6 +351,18 @@ export class FieldsService {
             url: true,
           },
         },
+        partner: {
+          select: {
+            partnerOpeningHours: {
+              select: {
+                closeTime: true,
+                dayOfWeek: true,
+                openTime: true,
+              },
+            },
+            uid: true,
+          },
+        },
       },
       where: { uid },
     });
@@ -347,7 +374,7 @@ export class FieldsService {
         ? await this.storageService.getSignedUrl(StorageFolderName.FIELDS, field.fieldImages[0].url)
         : '';
     return {
-      ...field,
+      ...FieldMapper.toDto(field),
       fieldImages: field.fieldImages.map((image) => ({ ...image, url: imageUrl })),
     };
   }
