@@ -39,6 +39,7 @@ describe('FieldsService', () => {
   };
 
   const mockGeolocalisationService = {
+    getCoordinatesAndShortAddressFromAddress: jest.fn(),
     getLatitudeAndLongitude: jest.fn(),
   };
 
@@ -90,13 +91,14 @@ describe('FieldsService', () => {
         ],
       };
 
-      const coordinates = { lat: 48.8566, lng: 2.3522 };
+      const coordinates = { lat: 48.8566, lng: 2.3522, shortAddress: '123 Main St' };
       const newField = {
         uid: 'field-uid-1',
         address: createDto.address,
         sport: createDto.sport,
         latitude: coordinates.lat,
         longitude: coordinates.lng,
+        shortAddress: coordinates.shortAddress,
         partnerUid: null,
         name: null,
         entryFee: null,
@@ -109,7 +111,9 @@ describe('FieldsService', () => {
         { uid: 'img-2', url: 'https://storage/image2.jpg', order: 1 },
       ];
 
-      mockGeolocalisationService.getLatitudeAndLongitude.mockResolvedValue(coordinates);
+      mockGeolocalisationService.getCoordinatesAndShortAddressFromAddress.mockResolvedValue(
+        coordinates,
+      );
       mockPrismaService.fields.findFirst.mockResolvedValue(null);
       mockPrismaService.$transaction.mockImplementation(async (callback) => {
         return callback({
@@ -129,9 +133,9 @@ describe('FieldsService', () => {
       const result = await service.create(createDto);
 
       expect(result).toEqual({ ...newField, fieldImages: expect.any(Array) });
-      expect(mockGeolocalisationService.getLatitudeAndLongitude).toHaveBeenCalledWith(
-        createDto.address,
-      );
+      expect(
+        mockGeolocalisationService.getCoordinatesAndShortAddressFromAddress,
+      ).toHaveBeenCalledWith(createDto.address);
       expect(mockPrismaService.fields.findFirst).toHaveBeenCalledWith({
         where: {
           address: createDto.address,
@@ -150,10 +154,12 @@ describe('FieldsService', () => {
         images: [],
       };
 
-      const coordinates = { lat: 48.8566, lng: 2.3522 };
+      const coordinates = { lat: 48.8566, lng: 2.3522, shortAddress: '123 Main St' };
       const existingField = { uid: 'existing-uid' };
 
-      mockGeolocalisationService.getLatitudeAndLongitude.mockResolvedValue(coordinates);
+      mockGeolocalisationService.getCoordinatesAndShortAddressFromAddress.mockResolvedValue(
+        coordinates,
+      );
       mockPrismaService.fields.findFirst.mockResolvedValue(existingField);
 
       await expect(service.create(createDto)).rejects.toThrow(ConflictException);
@@ -587,7 +593,10 @@ describe('FieldsService', () => {
       };
 
       const existingPartner = { uid: partnerUid, name: 'Partner 1' };
-      const newCoordinates = { lat: 48.87, lng: 2.37 };
+      const newCoordinates = {
+        lat: 48.87,
+        lng: 2.37,
+      };
 
       mockPrismaService.fields.findUnique.mockResolvedValue(existingField);
       mockPartnersService.findOne.mockResolvedValue(existingPartner);

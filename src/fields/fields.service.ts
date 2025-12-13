@@ -46,7 +46,8 @@ export class FieldsService {
   async create(createPublicFieldDto: CreatePublicFieldDto): Promise<FieldResponseDto> {
     const { address, images, sport } = createPublicFieldDto;
 
-    const coordinates = await this.geolocalisationService.getLatitudeAndLongitude(address);
+    const coordinates =
+      await this.geolocalisationService.getCoordinatesAndShortAddressFromAddress(address);
 
     await this.verifyFieldLocation(coordinates.lat, coordinates.lng, address, sport);
 
@@ -57,6 +58,7 @@ export class FieldsService {
           isVerified: this.DEFAULT_PUBLIC_FIELD_IS_VERIFIED_VALUE,
           latitude: coordinates.lat,
           longitude: coordinates.lng,
+          shortAddress: coordinates.shortAddress,
           sport,
         },
       });
@@ -172,6 +174,7 @@ export class FieldsService {
         latitude: true,
         longitude: true,
         name: true,
+        shortAddress: true,
         sport: true,
         uid: true,
       },
@@ -288,6 +291,7 @@ export class FieldsService {
         latitude: true,
         longitude: true,
         name: true,
+        shortAddress: true,
         sport: true,
         uid: true,
       },

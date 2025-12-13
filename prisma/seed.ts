@@ -452,6 +452,7 @@ async function seed() {
         partner: { connect: { uid: field.partnerUid } },
         sportRelation: { connect: { name: field.sport } },
         address: field.address,
+        shortAddress: field.address,
         latitude: field.latitude,
         longitude: field.longitude,
         gameMode: field.gameMode as GameModes,

@@ -10,8 +10,11 @@ export class FieldResponseDto {
   @ApiProperty({ example: 'Field 1', readOnly: true })
   readonly name: string;
 
-  @ApiProperty({ example: '123 Main St, Anytown, USA', readOnly: true })
+  @ApiProperty({ example: '38 Rue du Ballon, 93160 Noisy-le-Grand, France', readOnly: true })
   readonly address: string;
+
+  @ApiProperty({ example: '38 Rue du Ballon, Noisy-le-Grand', readOnly: true })
+  readonly shortAddress: string;
 
   @ApiProperty({ example: 48.8588443, readOnly: true })
   readonly latitude: number;
