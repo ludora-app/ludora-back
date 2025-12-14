@@ -1,3 +1,4 @@
+import { Prisma } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, Sessions } from 'generated/prisma/client';
@@ -15,7 +16,10 @@ import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
 import { RawSession, SessionMapper } from './mappers/session.mapper';
 import { CreateSessionWithUserDto } from './dto/input/create-session.dto';
+import { SESSION_SUGGESTION_CONFIG, SessionUtils } from './utils/session-utils';
 import { SessionCollectionItem } from './dto/output/session-collection.response';
+import { findAllSessionsSuggestionsDto } from './dto/input/session-suggestion-filter.dto';
+import { SessionCollectionSuggestionItem } from './dto/output/session-collection-suggestion.response';
 
 @Injectable()
 export class SessionsService {
@@ -316,6 +320,279 @@ export class SessionsService {
       items,
       nextCursor,
       totalCount: items.length,
+    };
+  }
+
+  /**
+   * Find all sessions suggestions with filtering and scoring
+   * This method filters sessions based on sports, date range, and location,
+   * then scores them based on user preferences and proximity
+   *
+   * @param params - Filtering and pagination parameters
+   * @returns Paginated list of session suggestions with scores
+   */
+  async findAllSessionsSuggestions({
+    cursor,
+    endDate,
+    filterSports = [],
+    limit = 10,
+    maxDistance = SESSION_SUGGESTION_CONFIG.THRESHOLDS.MAX_DISTANCE_METERS,
+    startDate,
+    urgent = false,
+    userLat,
+    userLon,
+    userSportPreferences = [],
+    userTimePreferences = [],
+  }: findAllSessionsSuggestionsDto): Promise<PaginatedDataDto<SessionCollectionSuggestionItem>> {
+    // ---------------------------------------------------------
+    // 0. INITIALIZATION CONFIG
+    // ---------------------------------------------------------
+    const { SCORES, THRESHOLDS } = SESSION_SUGGESTION_CONFIG;
+    const currentOffset = cursor ? parseInt(cursor, 10) : 0;
+    const take = limit + 1;
+
+    // ---------------------------------------------------------
+    // 1. SPORTS HANDLING (CORE LOGIC)
+    // ---------------------------------------------------------
+
+    const isFiltering = filterSports.length > 0;
+
+    // Which sports should we score?
+    // If filtering, we score the filters. Otherwise, we score the user's profile.
+    const sportsToScore = isFiltering ? filterSports : userSportPreferences.map((s) => s.sport);
+
+    const hasSportsToScore = sportsToScore.length > 0;
+
+    // A. SCORING (+1000 pts) - Match user's sport preferences or filter sports
+    const sportScoreSql = hasSportsToScore
+      ? Prisma.sql`CASE WHEN s.sport::text IN (${Prisma.join(sportsToScore)}) THEN ${SCORES.SPORT_MATCH} ELSE 0 END`
+      : Prisma.sql`0`;
+
+    // B. STRICT FILTERING (Only if active filter) - Apply sports filter if provided
+    let sportWhereSql = Prisma.empty;
+    if (isFiltering) {
+      sportWhereSql = Prisma.sql`AND s.sport::text IN (${Prisma.join(filterSports)})`;
+    }
+
+    // ---------------------------------------------------------
+    // 2. DATE HANDLING (Bulletproof JS)
+    // ---------------------------------------------------------
+    const now = new Date();
+    const startDateObj = startDate ? new Date(startDate) : null;
+    let endDateObj = null;
+
+    // Midnight Correction: Push end of day to 23:59:59
+    if (endDate) {
+      endDateObj = new Date(endDate);
+      endDateObj.setHours(23, 59, 59, 999);
+    }
+
+    let discoveryLimit: Date | null = null;
+    if (startDateObj) {
+      discoveryLimit = new Date(startDateObj);
+      discoveryLimit.setDate(discoveryLimit.getDate() + 2);
+    }
+
+    // ---------------------------------------------------------
+    // 3. SAFETY BARRIER
+    // ---------------------------------------------------------
+    const hasLocation = userLat != null && userLon != null;
+    const hasTimePrefs = userTimePreferences.length > 0;
+    const hasDate = !!startDateObj;
+    // We consider we have criteria if we have sports (profile or filter)
+    const hasSportsCriteria = hasSportsToScore;
+
+    if (!hasLocation && !hasSportsCriteria && !hasTimePrefs && !urgent && !hasDate) {
+      return { items: [], nextCursor: null, totalCount: 0 };
+    }
+
+    // ---------------------------------------------------------
+    // 4. REMAINING SQL CONSTRUCTION
+    // ---------------------------------------------------------
+
+    // C. DISTANCE
+    let distanceScoreSql = Prisma.sql`0`;
+    let distanceValueSql = Prisma.sql`NULL`; // <--- NEW: Raw value by default
+    let distanceWhereSql = Prisma.empty;
+    if (hasLocation) {
+      // 1. Define the formula once
+      distanceValueSql = Prisma.sql`
+        public.ST_DistanceSphere(
+          public.ST_MakePoint(f.longitude::float, f.latitude::float), 
+          public.ST_MakePoint(${userLon}::float, ${userLat}::float)
+        )
+      `;
+
+      // 2. Reuse the variable in the Score (Cleaner!)
+      distanceScoreSql = Prisma.sql`
+        (CASE 
+            WHEN (${distanceValueSql}) < ${maxDistance}
+            THEN ${SCORES.DISTANCE_MAX_POINTS} * (1 - ((${distanceValueSql}) / ${maxDistance}))
+            ELSE 0 
+        END)
+      `;
+
+      // 3. Reuse the variable in the Where
+      distanceWhereSql = Prisma.sql`
+        AND (${distanceValueSql}) < ${maxDistance}
+      `;
+    }
+
+    // D. TIME PREFS
+    let timeScoreSql = Prisma.sql`0`;
+    if (hasTimePrefs) {
+      const timeConditions = userTimePreferences.map((pref) => {
+        const { max, min } = SessionUtils.getHoursForPeriod(pref.timePeriod);
+        const hourCondition = Prisma.sql`EXTRACT(HOUR FROM s.start_date) >= ${min} AND EXTRACT(HOUR FROM s.start_date) < ${max}`;
+        if (pref.type === 'RECURRENT')
+          return Prisma.sql`(EXTRACT(DOW FROM s.start_date) = ${pref.dayOfWeek} AND ${hourCondition})`;
+        else return Prisma.sql`(DATE(s.start_date) = DATE(${pref.date}) AND ${hourCondition})`;
+      });
+      if (timeConditions.length > 0) {
+        timeScoreSql = Prisma.sql`CASE WHEN ${Prisma.join(timeConditions, ' OR ')} THEN ${SCORES.TIME_PREFERENCE} ELSE 0 END`;
+      }
+    }
+
+    // E. DATE LOGIC
+    let dateWhereSql = Prisma.empty;
+    let dateScoreSql = Prisma.sql`0`;
+
+    if (startDateObj && endDateObj) {
+      // STRICT RANGE
+      dateWhereSql = Prisma.sql`AND s.start_date >= ${startDateObj} AND s.start_date <= ${endDateObj}`;
+      dateScoreSql = Prisma.sql`${SCORES.DATE_RANGE_MATCH}`;
+    } else if (startDateObj && discoveryLimit) {
+      // DISCOVERY
+      dateWhereSql = Prisma.sql`AND s.start_date >= ${startDateObj}`;
+      dateScoreSql = Prisma.sql`
+            CASE 
+              WHEN DATE(s.start_date) = DATE(${startDateObj}) THEN ${SCORES.DATE_TARGET_EXACT}
+              WHEN s.start_date >= ${startDateObj} AND s.start_date <= ${discoveryLimit} THEN ${SCORES.DATE_TARGET_ADJACENT}
+              ELSE 0 
+            END
+        `;
+    } else {
+      // DEFAULT
+      dateWhereSql = Prisma.sql`AND s.start_date > NOW()`;
+      if (urgent) {
+        const urgentHighLimit = new Date(now.getTime() + THRESHOLDS.URGENCY_HIGH_MS);
+        const urgentMediumLimit = new Date(now.getTime() + THRESHOLDS.URGENCY_MEDIUM_MS);
+        dateScoreSql = Prisma.sql`
+                CASE 
+                  WHEN s.start_date BETWEEN ${now} AND ${urgentHighLimit} THEN ${SCORES.URGENCY_HIGH}
+                  WHEN s.start_date BETWEEN ${now} AND ${urgentMediumLimit} THEN ${SCORES.URGENCY_MEDIUM}
+                  ELSE 0 
+                END
+             `;
+      } else {
+        const defaultLimit = new Date(now.getTime() + THRESHOLDS.DEFAULT_WINDOW_MS);
+        dateScoreSql = Prisma.sql`CASE WHEN s.start_date < ${defaultLimit} THEN ${SCORES.URGENCY_DEFAULT} ELSE 0 END`;
+      }
+    }
+
+    // ---------------------------------------------------------
+    // 5. EXECUTION
+    // ---------------------------------------------------------
+
+    const rankedSessions = await this.prisma.$queryRaw<
+      {
+        uid: string;
+        score: number;
+        start_date: Date;
+        total_count: bigint;
+        distance_val: number | null;
+      }[]
+    >`
+      SELECT 
+        ranked_sessions.*,
+        count(*) OVER() as total_count 
+      FROM (
+        SELECT 
+          s.uid,
+          s.start_date,
+          (${distanceValueSql}) as distance_val,
+          (
+            (${sportScoreSql}) +
+            (${distanceScoreSql}) +
+            (${timeScoreSql}) +
+            (${dateScoreSql})
+          ) as score
+        
+        FROM sessions."Sessions" s
+        JOIN infrastructure."Fields" f ON s.field_uid = f.uid 
+        
+        WHERE 
+          1=1 
+          ${distanceWhereSql}
+          ${dateWhereSql}
+          ${sportWhereSql} -- HERE: Strict filter only if filterSports is filled
+      ) as ranked_sessions
+      
+      WHERE 1=1
+      
+      ORDER BY 
+        ranked_sessions.score DESC,
+        ranked_sessions.start_date ASC
+      
+      LIMIT ${take} 
+      OFFSET ${currentOffset};
+    `;
+
+    // ---------------------------------------------------------
+    // 6. HYDRATION & RETURN (Standard Code)
+    // ---------------------------------------------------------
+
+    if (!rankedSessions || rankedSessions.length === 0) {
+      return { items: [], nextCursor: null, totalCount: 0 };
+    }
+
+    const totalCount = Number(rankedSessions[0].total_count);
+    let nextCursor: string | null = null;
+    let itemsToFetch = rankedSessions;
+
+    if (rankedSessions.length > limit) {
+      itemsToFetch.pop();
+      nextCursor = (currentOffset + limit).toString();
+    }
+
+    const sessionUids = itemsToFetch.map((r) => r.uid);
+    const sessions = await this.prisma.sessions.findMany({
+      select: {
+        creatorUid: true,
+        endDate: true,
+        field: {
+          select: {
+            fieldImages: { select: { url: true }, take: 1 },
+            latitude: true,
+            longitude: true,
+            shortAddress: true,
+          },
+        },
+        gameMode: true,
+        maxPlayersPerTeam: true,
+        sessionTeams: { select: { _count: { select: { sessionPlayers: true } }, teamName: true } },
+        sport: true,
+        startDate: true,
+        uid: true,
+      },
+      where: { uid: { in: sessionUids } },
+    });
+
+    const rawDataMap = new Map(
+      itemsToFetch.map((item, index) => [item.uid, { distance: item.distance_val, index }]),
+    );
+    const sortedSessions = sessions.sort((a, b) => {
+      const indexA = rawDataMap.get(a.uid)?.index ?? 999;
+      const indexB = rawDataMap.get(b.uid)?.index ?? 999;
+      return indexA - indexB;
+    });
+
+    const items = SessionMapper.toSessionCollectionSuggestionItems(sortedSessions, rawDataMap);
+
+    return {
+      items,
+      nextCursor,
+      totalCount,
     };
   }
 

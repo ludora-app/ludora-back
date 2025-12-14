@@ -8,6 +8,7 @@ import { UserSportPreferencesController } from './user-sport-preferences.control
 
 @Module({
   controllers: [UserSportPreferencesController],
+  exports: [UserSportPreferencesService],
   imports: [UsersModule, SharedModule],
   providers: [UserSportPreferencesService, UsersService],
 })
