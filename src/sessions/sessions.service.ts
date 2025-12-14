@@ -1,18 +1,18 @@
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, Sessions } from 'generated/prisma/client';
-import { StorageFolderName, Sport } from 'src/shared/constants/constants';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 import { ConversationsService } from 'src/conversations/conversations.service';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
 import { SessionPlayersService } from 'src/session-players/session-players.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+import { StorageFolderName, Sport, SessionScope } from 'src/shared/constants/constants';
 
 import { DateUtils } from './../shared/utils/date.utils';
-import { SessionMapper } from './mappers/session.mapper';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
+import { RawSession, SessionMapper } from './mappers/session.mapper';
 import { CreateSessionWithUserDto } from './dto/input/create-session.dto';
 import { SessionCollectionItem } from './dto/output/session-collection.response';
 
@@ -144,6 +144,18 @@ export class SessionsService {
     return newSession;
   }
 
+  /**
+   * Find sessions with geographic filtering using PostGIS
+   *
+   * This method uses raw SQL queries to leverage PostGIS functions for efficient
+   * geographic distance calculations. The query uses ST_DWithin for filtering
+   * and ST_Distance for calculating exact distances.
+   *
+   * @param filter - Session filter parameters including geographic coordinates
+   * @returns Paginated list of sessions with field information
+   *
+   * @see {@link POSTGIS_IMPLEMENTATION.md} for detailed documentation
+   */
   async findAll(filter: SessionFilterDto): Promise<PaginatedDataDto<SessionCollectionItem>> {
     const {
       cursor,
@@ -157,110 +169,140 @@ export class SessionsService {
       sports,
     } = filter;
 
-    const query: {
-      take: number;
-      skip?: number;
-      cursor?: {
-        uid: string;
-      };
-      where: {
-        startDate?: Record<string, Date>;
-        sport?: { in: string[] } | string;
-        distance?: {
-          from: { latitude: number; longitude: number };
-          to: { latitude: number; longitude: number };
-        };
-      };
-    } = {
-      take: limit + 1,
-      where: {},
-    };
+    // Build WHERE conditions
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    let paramIndex = 1;
 
-    if (cursor) {
-      query.cursor = {
-        uid: cursor,
-      };
-      query.skip = 1;
-    }
+    // Store user coordinates indices for SELECT clause
+    let userLongitudeParamIndex: number | null = null;
+    let userLatitudeParamIndex: number | null = null;
 
+    // Date filters
     const now = new Date();
-
-    if (scope === 'PAST') {
-      query.where.startDate = { lt: now };
-    } else if (scope === 'UPCOMING') {
-      query.where.startDate = { gte: now };
+    if (scope === SessionScope.PAST) {
+      conditions.push(`s.start_date < $${paramIndex}`);
+      params.push(now);
+      paramIndex++;
+    } else if (scope === SessionScope.UPCOMING || !scope) {
+      conditions.push(`s.start_date >= $${paramIndex}`);
+      params.push(now);
+      paramIndex++;
     }
 
     if (minStart) {
-      query.where.startDate = {
-        ...(query.where.startDate || {}),
-        gte: minStart,
-      };
+      conditions.push(`s.start_date >= $${paramIndex}`);
+      params.push(minStart);
+      paramIndex++;
     }
+
     if (maxStart) {
-      query.where.startDate = {
-        ...(query.where.startDate || {}),
-        lte: maxStart,
-      };
+      conditions.push(`s.start_date <= $${paramIndex}`);
+      params.push(maxStart);
+      paramIndex++;
     }
 
+    // Sport filter
     if (sports?.length) {
-      query.where.sport = { in: sports };
+      conditions.push(`s.sport = ANY($${paramIndex})`);
+      params.push(sports);
+      paramIndex++;
     }
 
-    if (latitude && longitude && maxDistance) {
-      query.where.distance = {
-        from: { latitude, longitude },
-        to: { latitude, longitude },
-      };
+    // Distance filter with PostGIS
+    if (latitude !== undefined && longitude !== undefined && maxDistance !== undefined) {
+      // ST_DWithin uses meters, so convert km to meters
+      const maxDistanceMeters = maxDistance * 1000;
+      userLongitudeParamIndex = paramIndex;
+      userLatitudeParamIndex = paramIndex + 1;
+      conditions.push(
+        `ST_DWithin(
+          ST_MakePoint(f.longitude, f.latitude)::geography,
+          ST_MakePoint($${paramIndex}, $${paramIndex + 1})::geography,
+          $${paramIndex + 2}
+        )`,
+      );
+      params.push(longitude, latitude, maxDistanceMeters);
+      paramIndex += 3;
     }
 
-    const sessions = await this.prisma.sessions.findMany({
-      ...query,
-      select: {
-        creatorUid: true,
-        endDate: true,
-        field: {
-          select: {
-            fieldImages: {
-              select: {
-                url: true,
-              },
-              take: 1,
-            },
-            latitude: true,
-            longitude: true,
-            shortAddress: true,
-          },
-        },
-        gameMode: true,
-        maxPlayersPerTeam: true,
-        sessionTeams: {
-          select: {
-            _count: {
-              select: {
-                sessionPlayers: true,
-              },
-            },
-            teamName: true,
-          },
-        },
-        sport: true,
-        startDate: true,
-        uid: true,
-      },
-    });
+    // Cursor-based pagination
+    if (cursor) {
+      conditions.push(`s.uid > $${paramIndex}`);
+      params.push(cursor);
+      paramIndex++;
+    }
 
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // Build distance calculation for SELECT if coordinates provided
+    const distanceSelect =
+      userLongitudeParamIndex !== null && userLatitudeParamIndex !== null
+        ? `, ST_Distance(
+            ST_MakePoint(f.longitude, f.latitude)::geography, 
+            ST_MakePoint($${userLongitudeParamIndex}, $${userLatitudeParamIndex})::geography
+          ) as distance`
+        : '';
+
+    const query = `
+      SELECT 
+        s.uid,
+        s.creator_uid as "creatorUid",
+        s.start_date as "startDate",
+        s.end_date as "endDate",
+        s.sport,
+        s.game_mode as "gameMode",
+        s.max_players_per_team as "maxPlayersPerTeam",
+        f.short_address as "fieldShortAddress",
+        f.latitude as "fieldLatitude",
+        f.longitude as "fieldLongitude",
+        (
+          SELECT json_agg(
+            json_build_object(
+              'teamName', st.team_name,
+              'numberOfPlayers', (
+                SELECT COUNT(*)::int 
+                FROM sessions."Session_players" sp 
+                WHERE sp.team_uid = st.uid
+              )
+            )
+          )
+          FROM sessions."Session_teams" st
+          WHERE st.session_uid = s.uid
+        ) as "sessionTeams",
+        (
+          SELECT fi.url
+          FROM infrastructure."Field_images" fi
+          WHERE fi.field_uid = f.uid
+          ORDER BY fi."order" ASC
+          LIMIT 1
+        ) as "fieldImage"
+        ${distanceSelect}
+      FROM sessions."Sessions" s
+      INNER JOIN infrastructure."Fields" f ON s.field_uid = f.uid
+      ${whereClause}
+      ORDER BY s.start_date ASC
+      LIMIT $${paramIndex}
+    `;
+
+    params.push(limit + 1);
+
+    // Execute raw query
+    const sessions = await this.prisma.$queryRawUnsafe<Array<RawSession>>(query, ...params);
+
+    // Handle pagination
     let nextCursor: string | null = null;
     if (sessions.length > limit) {
       const nextItem = sessions.pop();
       nextCursor = nextItem!.uid;
     }
 
+    const items = SessionMapper.fromRawToSessionResponses(sessions);
+
     return {
-      items: SessionMapper.toSessionCollectionItems(sessions),
+      items,
       nextCursor,
-      totalCount: sessions.length,
+      totalCount: items.length,
     };
   }
 

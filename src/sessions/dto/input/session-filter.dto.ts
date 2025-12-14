@@ -104,8 +104,8 @@ export class SessionFilterDto {
   @ApiProperty({
     description: `Filter sessions by whether they are past or upcoming, used to filter my sessions`,
     enum: SessionScope,
-    example: 'UPCOMING',
+    example: SessionScope.UPCOMING,
     required: false,
   })
-  scope?: string;
+  scope?: SessionScope;
 }

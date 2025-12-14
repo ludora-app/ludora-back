@@ -1,30 +1,23 @@
-import { Sessions } from 'generated/prisma/client';
-import { GameModes } from 'generated/prisma/enums';
 import { Sport } from 'src/shared/constants/constants';
+import { GameModes, Sessions } from 'generated/prisma/client';
 
 import { SessionResponse } from '../dto/output/session.response';
 import { SessionCollectionItem } from '../dto/output/session-collection.response';
 
-interface RawSession {
+export interface RawSession {
   uid: string;
   endDate: Date;
   sport: string;
   startDate: Date;
   gameMode: string;
+  distance?: number;
   creatorUid: string;
+  fieldLatitude: number;
+  fieldLongitude: number;
   maxPlayersPerTeam: number;
-  sessionTeams: {
-    teamName: string;
-    _count: {
-      sessionPlayers: number;
-    };
-  }[];
-  field: {
-    fieldImages: { url: string }[];
-    latitude: number;
-    longitude: number;
-    shortAddress: string;
-  };
+  fieldShortAddress: string;
+  fieldImage: string | null;
+  sessionTeams: Array<{ teamName: string; numberOfPlayers: number }> | null;
 }
 
 /**
@@ -45,34 +38,32 @@ export class SessionMapper {
   }
 
   /**
-   * @description Maps a session with nested field data to a flattened SessionCollectionItem
-   * @param session Session object with nested field containing fieldImages, latitude, longitude, shortAddress
-   * @returns SessionCollectionItem with flattened field properties
+   *
+   * @param session - Raw session data from the database
+   * @returns Session collection item
    */
-  static toCollectionDto(session: RawSession): SessionCollectionItem {
-    const { field, sessionTeams, ...sessionData } = session;
-
+  static fromRawToCollectionItem(session: RawSession): SessionCollectionItem {
     return {
-      ...sessionData,
-      fieldImage: field.fieldImages.length > 0 ? field.fieldImages[0].url : '',
-      fieldLatitude: field.latitude,
-      fieldLongitude: field.longitude,
-      fieldShortAddress: field.shortAddress,
+      creatorUid: session.creatorUid,
+      endDate: session.endDate,
+      fieldImage: session.fieldImage || undefined,
+      fieldLatitude: session.fieldLatitude,
+      fieldLongitude: session.fieldLongitude,
+      fieldShortAddress: session.fieldShortAddress,
       gameMode: session.gameMode as GameModes,
-      sessionTeams: sessionTeams.map((team) => ({
-        numberOfPlayers: team._count.sessionPlayers,
-        teamName: team.teamName,
-      })),
+      maxPlayersPerTeam: session.maxPlayersPerTeam,
+      sessionTeams: session.sessionTeams || [],
       sport: session.sport as Sport,
+      startDate: session.startDate,
+      uid: session.uid,
     };
   }
 
   /**
-   * @description Maps an array of sessions with nested field data to SessionCollectionItem array
-   * @param sessions Array of session objects with nested field data
-   * @returns Array of SessionCollectionItem with flattened field properties
+   * @param sessions - Raw session data from the database
+   * @returns Session collection items
    */
-  static toSessionCollectionItems(sessions: RawSession[]): SessionCollectionItem[] {
-    return sessions.map(SessionMapper.toCollectionDto);
+  static fromRawToSessionResponses(sessions: RawSession[]): SessionCollectionItem[] {
+    return sessions.map(SessionMapper.fromRawToCollectionItem);
   }
 }
