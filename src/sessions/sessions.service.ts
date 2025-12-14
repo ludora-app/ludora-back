@@ -8,6 +8,7 @@ import { SessionPlayersService } from 'src/session-players/session-players.servi
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { StorageFolderName, Sport, SessionScope } from 'src/shared/constants/constants';
+import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 
 import { DateUtils } from './../shared/utils/date.utils';
 import { SessionFilterDto } from './dto/input/session-filter.dto';
@@ -298,6 +299,18 @@ export class SessionsService {
     }
 
     const items = SessionMapper.fromRawToSessionResponses(sessions);
+
+    // Calculate distance between user and session field
+    items.forEach((item) => {
+      if (latitude !== undefined && longitude !== undefined) {
+        item.distance = GeolocalisationService.calculateDistanceBetweenCoordinates(
+          latitude,
+          longitude,
+          item.fieldLatitude,
+          item.fieldLongitude,
+        );
+      }
+    });
 
     return {
       items,

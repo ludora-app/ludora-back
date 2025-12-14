@@ -53,6 +53,13 @@ export class SessionCollectionItem extends PartialType(SessionResponse) {
     type: [TeamFromSessionCollectionItem],
   })
   sessionTeams?: TeamFromSessionCollectionItem[];
+
+  @ApiProperty({
+    description: 'Distance between the user and the session field in kilometers',
+    example: 10.5,
+    readOnly: true,
+  })
+  distance?: number;
 }
 
 /**

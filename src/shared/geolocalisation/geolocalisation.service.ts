@@ -208,4 +208,37 @@ export class GeolocalisationService {
       lng <= 180
     );
   }
+
+  /**
+   * The function calculates the distance between two sets of coordinates on the Earth's surface using
+   * the Haversine formula.
+   * @param {number} lat1 - Latitude of the first point in degrees
+   * @param {number} lng1 - The `lng1` parameter represents the longitude of the first coordinate point.
+   * Longitude is a geographic coordinate that specifies the east-west position of a point on the Earth's
+   * surface. It is measured in degrees ranging from -180 degrees (West) to +180 degrees (East).
+   * @param {number} lat2 - The `lat2` parameter in the `getDistanceBetweenCoordinates` method represents
+   * the latitude of the second point (in degrees) for which you want to calculate the distance from the
+   * first point specified by `lat1` and `lng1`.
+   * @param {number} lng2 - Longitude of the second coordinate.
+   * @returns The `getDistanceBetweenCoordinates` method calculates the distance between two sets of
+   * coordinates using the Haversine formula and returns the distance in kilometers.
+   */
+  static calculateDistanceBetweenCoordinates(
+    lat1: number,
+    lng1: number,
+    lat2: number,
+    lng2: number,
+  ): number {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLng = (lng2 - lng1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) *
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c * 100) / 100;
+  }
 }
