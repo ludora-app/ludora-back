@@ -75,7 +75,7 @@ export class UserHourPreferencesController {
     };
   }
 
-  @Get('/')
+  @Get('/my-list')
   @Protected()
   @ApiOperation({ summary: 'Get the hour preferences of the connected user' })
   @ApiOkResponse({ type: PaginatedUserHourPreferenceResponse })
