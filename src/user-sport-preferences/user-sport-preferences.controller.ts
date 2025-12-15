@@ -42,12 +42,19 @@ export class UserSportPreferencesController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.CREATED)
-  create(
+  async create(
     @Body() createUserSportPreferenceDto: CreateUserSportPreferenceDto,
     @Req() request: Request,
   ) {
     const userUid = request['user'].uid;
-    return this.userSportPreferencesService.create(createUserSportPreferenceDto.sport, userUid);
+    const data = await this.userSportPreferencesService.create(
+      createUserSportPreferenceDto.sport,
+      userUid,
+    );
+    return {
+      data,
+      message: 'User sport preference created successfully',
+    };
   }
 
   @Get('list-by-user/:userUid')
@@ -58,8 +65,37 @@ export class UserSportPreferencesController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.OK)
-  findAllByUserUid(@Param('userUid') userUid: string) {
-    return this.userSportPreferencesService.findAllByUserUid(userUid);
+  async findAllByUserUid(@Param('userUid') userUid: string) {
+    const data = await this.userSportPreferencesService.findAllByUserUid(userUid);
+    return {
+      data,
+      message: 'User sport preferences fetched successfully',
+    };
+  }
+
+  @Get('my-list')
+  @Protected()
+  @ApiOperation({ summary: 'Get the sport preferences of the connected user' })
+  @ApiOkResponse({ type: PaginatedUserSportPreferenceResponse })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @HttpCode(HttpStatus.OK)
+  async findMySportPreferences(@Req() request: Request) {
+    const userUid = request['user'].uid;
+    const data = await this.userSportPreferencesService.findAllByUserUid(userUid);
+
+    if (data.items.length === 0) {
+      return {
+        data: null,
+        message: 'User does not have any sport preferences yet',
+      };
+    }
+
+    return {
+      data,
+      message: 'User sport preferences fetched successfully',
+    };
   }
 
   @Delete(':uid')

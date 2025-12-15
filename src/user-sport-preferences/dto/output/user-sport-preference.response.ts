@@ -16,9 +16,6 @@ export class UserSportPreferenceResponse {
 
   @ApiProperty({ description: 'The creation date of the user sport preference' })
   createdAt: Date;
-
-  @ApiProperty({ description: 'The update date of the user sport preference' })
-  updatedAt: Date;
 }
 
 /**
