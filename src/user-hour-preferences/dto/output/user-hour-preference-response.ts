@@ -37,13 +37,6 @@ export class UserHourPreferenceResponse {
   readonly userUid: string;
 
   @ApiProperty({
-    description: 'Session update date',
-    example: '2025-05-10T22:30:32.525Z',
-    readOnly: true,
-  })
-  updatedAt: Date;
-
-  @ApiProperty({
     description: 'Applicable date for a ONE_TIME preference, null for a RECURRENT preference',
     example: '2025-05-10T22:30:32.525Z',
     nullable: true,
