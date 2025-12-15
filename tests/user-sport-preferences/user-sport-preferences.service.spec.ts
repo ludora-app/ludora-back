@@ -72,7 +72,6 @@ describe('UserSportPreferencesService', () => {
         sport,
         userUid,
         createdAt: mockCurrentDate,
-        updatedAt: mockCurrentDate,
       };
 
       (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
@@ -108,7 +107,6 @@ describe('UserSportPreferencesService', () => {
         sport,
         userUid,
         createdAt: mockCurrentDate,
-        updatedAt: mockCurrentDate,
       };
 
       (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
@@ -132,7 +130,6 @@ describe('UserSportPreferencesService', () => {
           sport: sportType,
           userUid,
           createdAt: mockCurrentDate,
-          updatedAt: mockCurrentDate,
         };
 
         (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
@@ -160,21 +157,18 @@ describe('UserSportPreferencesService', () => {
           sport: Sport.BASKETBALL,
           userUid,
           createdAt: mockCurrentDate,
-          updatedAt: mockCurrentDate,
         },
         {
           uid: 'sport-pref-uid-2',
           sport: Sport.FOOTBALL,
           userUid,
           createdAt: mockCurrentDate,
-          updatedAt: mockCurrentDate,
         },
         {
           uid: 'sport-pref-uid-3',
           sport: Sport.TENNIS,
           userUid,
           createdAt: mockCurrentDate,
-          updatedAt: mockCurrentDate,
         },
       ];
 
@@ -230,7 +224,6 @@ describe('UserSportPreferencesService', () => {
         sport: Sport.BASKETBALL,
         userUid: 'user-uid-1',
         createdAt: mockCurrentDate,
-        updatedAt: mockCurrentDate,
       };
 
       (prismaService.userSports.findUnique as jest.Mock).mockResolvedValue(mockPreference);
@@ -264,7 +257,6 @@ describe('UserSportPreferencesService', () => {
       sport: Sport.BASKETBALL,
       userUid,
       createdAt: mockCurrentDate,
-      updatedAt: mockCurrentDate,
     };
 
     it('should delete a sport preference successfully', async () => {
@@ -308,7 +300,6 @@ describe('UserSportPreferencesService', () => {
         sport: Sport.FOOTBALL,
         userUid: 'user-uid-2',
         createdAt: mockCurrentDate,
-        updatedAt: mockCurrentDate,
       };
 
       (prismaService.userSports.findUnique as jest.Mock).mockResolvedValue(anotherPreference);
