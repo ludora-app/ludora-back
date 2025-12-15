@@ -75,6 +75,32 @@ export class UserHourPreferencesController {
     };
   }
 
+  @Get('/')
+  @Protected()
+  @ApiOperation({ summary: 'Get the hour preferences of the connected user' })
+  @ApiOkResponse({ type: PaginatedUserHourPreferenceResponse })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.OK)
+  async findMyHourPreferences(
+    @Req() request: Request,
+  ): Promise<PaginationResponseTypeDto<UserHourPreferenceResponse>> {
+    const uid = request['user'].uid;
+    const data = await this.userHourPreferencesService.findAllByUserUid(uid);
+
+    if (data.items.length === 0) {
+      return {
+        data: null,
+        message: 'User does not have any hour preferences yet',
+      };
+    }
+
+    return {
+      data,
+      message: 'User hour preferences fetched successfully',
+    };
+  }
+
   @Delete(':uid')
   @Protected()
   @ApiOperation({ summary: 'Delete a user hour preference by uid' })
