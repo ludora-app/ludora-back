@@ -61,14 +61,16 @@ describe('UserSportPreferencesController', () => {
         sport: Sport.BASKETBALL,
         userUid: 'user-uid-1',
         createdAt: mockCurrentDate,
-        updatedAt: mockCurrentDate,
       };
 
       mockUserSportPreferencesService.create.mockResolvedValue(mockCreatedPreference);
 
       const result = await controller.create(createDto, mockRequest);
 
-      expect(result).toEqual(mockCreatedPreference);
+      expect(result).toEqual({
+        data: mockCreatedPreference,
+        message: 'User sport preference created successfully',
+      });
       expect(service.create).toHaveBeenCalledWith(Sport.BASKETBALL, 'user-uid-1');
     });
 
@@ -83,14 +85,16 @@ describe('UserSportPreferencesController', () => {
           sport,
           userUid: 'user-uid-1',
           createdAt: mockCurrentDate,
-          updatedAt: mockCurrentDate,
         };
 
         mockUserSportPreferencesService.create.mockResolvedValue(mockCreatedPreference);
 
         const result = await controller.create(createDto, mockRequest);
 
-        expect(result).toEqual(mockCreatedPreference);
+        expect(result).toEqual({
+          data: mockCreatedPreference,
+          message: 'User sport preference created successfully',
+        });
         expect(service.create).toHaveBeenCalledWith(sport, 'user-uid-1');
 
         jest.clearAllMocks();
@@ -137,7 +141,6 @@ describe('UserSportPreferencesController', () => {
         sport: Sport.FOOTBALL,
         userUid: 'different-user-uid',
         createdAt: mockCurrentDate,
-        updatedAt: mockCurrentDate,
       };
 
       mockUserSportPreferencesService.create.mockResolvedValue(mockCreatedPreference);
@@ -158,38 +161,53 @@ describe('UserSportPreferencesController', () => {
           sport: Sport.BASKETBALL,
           userUid,
           createdAt: mockCurrentDate,
-          updatedAt: mockCurrentDate,
         },
         {
           uid: 'sport-pref-uid-2',
           sport: Sport.FOOTBALL,
           userUid,
           createdAt: mockCurrentDate,
-          updatedAt: mockCurrentDate,
         },
         {
           uid: 'sport-pref-uid-3',
           sport: Sport.TENNIS,
           userUid,
           createdAt: mockCurrentDate,
-          updatedAt: mockCurrentDate,
         },
       ];
 
-      mockUserSportPreferencesService.findAllByUserUid.mockResolvedValue(mockPreferences);
+      const paginatedResponse = {
+        items: mockPreferences,
+        nextCursor: null,
+        totalCount: mockPreferences.length,
+      };
+
+      mockUserSportPreferencesService.findAllByUserUid.mockResolvedValue(paginatedResponse);
 
       const result = await controller.findAllByUserUid(userUid);
 
-      expect(result).toEqual(mockPreferences);
+      expect(result).toEqual({
+        data: paginatedResponse,
+        message: 'User sport preferences fetched successfully',
+      });
       expect(service.findAllByUserUid).toHaveBeenCalledWith(userUid);
     });
 
     it('should return empty array when user has no sport preferences', async () => {
-      mockUserSportPreferencesService.findAllByUserUid.mockResolvedValue([]);
+      const emptyPaginatedResponse = {
+        items: [],
+        nextCursor: null,
+        totalCount: 0,
+      };
+
+      mockUserSportPreferencesService.findAllByUserUid.mockResolvedValue(emptyPaginatedResponse);
 
       const result = await controller.findAllByUserUid(userUid);
 
-      expect(result).toEqual([]);
+      expect(result).toEqual({
+        data: emptyPaginatedResponse,
+        message: 'User sport preferences fetched successfully',
+      });
       expect(service.findAllByUserUid).toHaveBeenCalledWith(userUid);
     });
 
@@ -214,15 +232,23 @@ describe('UserSportPreferencesController', () => {
             sport: Sport.BASKETBALL,
             userUid: uid,
             createdAt: mockCurrentDate,
-            updatedAt: mockCurrentDate,
           },
         ];
 
-        mockUserSportPreferencesService.findAllByUserUid.mockResolvedValue(mockPreferences);
+        const paginatedResponse = {
+          items: mockPreferences,
+          nextCursor: null,
+          totalCount: mockPreferences.length,
+        };
+
+        mockUserSportPreferencesService.findAllByUserUid.mockResolvedValue(paginatedResponse);
 
         const result = await controller.findAllByUserUid(uid);
 
-        expect(result).toEqual(mockPreferences);
+        expect(result).toEqual({
+          data: paginatedResponse,
+          message: 'User sport preferences fetched successfully',
+        });
         expect(service.findAllByUserUid).toHaveBeenCalledWith(uid);
 
         jest.clearAllMocks();
