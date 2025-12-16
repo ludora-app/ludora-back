@@ -14,9 +14,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { SessionInvitationFilterDto } from './dto/input/session-invitation-filter.dto';
-import { CreateSessionInvitationDto } from './dto/input/create-session-invitation.dto';
-import { UpdateSessionInvitationDto } from './dto/input/update-session-invitation.dto';
+import { CreateSessionInvitationDto } from '../dto/input/create-session-invitation.dto';
+import { SessionInvitationFilterDto } from '../dto/input/session-invitation-filter.dto';
+import { UpdateSessionInvitationDto } from '../dto/input/update-session-invitation.dto';
+
 @Injectable()
 export class SessionInvitationsService {
   constructor(

@@ -8,10 +8,7 @@ import { SessionsModule } from 'src/sessions/sessions.module';
 import { SessionsService } from 'src/sessions/services/sessions.service';
 import { ConversationsModule } from 'src/conversations/conversations.module';
 import { ConversationsService } from 'src/conversations/conversations.service';
-import { SessionInvitationsModule } from 'src/session-invitations/session-invitations.module';
-import { SessionInvitationsService } from 'src/session-invitations/session-invitations.service';
-import { UserHourPreferencesModule } from 'src/user-hour-preferences/user-hour-preferences.module';
-import { UserSportPreferencesModule } from 'src/user-sport-preferences/user-sport-preferences.module';
+import { SessionInvitationsService } from 'src/sessions/services/session-invitations.service';
 import {
   makeGaugeProvider,
   makeHistogramProvider,
@@ -33,10 +30,7 @@ import { HttpMetricsInterceptor } from './http-metrics.interceptor';
     SharedModule,
     SessionsModule,
 
-    SessionInvitationsModule,
     ConversationsModule,
-    UserHourPreferencesModule,
-    UserSportPreferencesModule,
   ],
   providers: [
     MetricsService,

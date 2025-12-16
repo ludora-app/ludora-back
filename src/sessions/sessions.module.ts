@@ -10,11 +10,18 @@ import { SessionsController } from './controllers/sessions.controller';
 import { SessionTeamsService } from './services/session-teams.service';
 import { SessionPlayersService } from './services/session-players.service';
 import { SessionTeamsController } from './controllers/session-teams.controller';
+import { SessionInvitationsService } from './services/session-invitations.service';
 import { SessionPlayersController } from './controllers/session-players.controller';
+import { SessionInvitationsController } from './controllers/session-invitations.controller';
 
 @Module({
-  controllers: [SessionsController, SessionPlayersController, SessionTeamsController],
-  exports: [SessionsService, SessionPlayersService, SessionTeamsService],
+  controllers: [
+    SessionsController,
+    SessionInvitationsController,
+    SessionPlayersController,
+    SessionTeamsController,
+  ],
+  exports: [SessionsService, SessionPlayersService, SessionTeamsService, SessionInvitationsService],
   imports: [ConversationsModule, UsersModule, SharedModule],
   providers: [
     SessionsService,
@@ -22,6 +29,7 @@ import { SessionPlayersController } from './controllers/session-players.controll
     StorageService,
     ConversationsService,
     SessionTeamsService,
+    SessionInvitationsService,
   ],
 })
 export class SessionsModule {}
