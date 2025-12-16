@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { GameModes } from 'generated/prisma/client';
+import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 /**
@@ -88,15 +88,7 @@ export class CreateSessionDto {
     required: true,
   })
   minPlayersPerTeam: number;
-}
 
-/**
- * @description DTO for creating a session
- * used from the inside of the API, includes the user uid retrieved from the request (token payload)
- * @extends CreateSessionDto
- * @property userUid The uid of the user
- */
-export class CreateSessionWithUserDto extends CreateSessionDto {
   @IsString()
   @IsNotEmpty()
   @ApiProperty({
@@ -106,3 +98,5 @@ export class CreateSessionWithUserDto extends CreateSessionDto {
   })
   userUid: string;
 }
+
+export class CreateSessionFromRequestDto extends OmitType(CreateSessionDto, ['userUid']) {}

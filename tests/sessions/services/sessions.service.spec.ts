@@ -149,7 +149,7 @@ describe('SessionsService', () => {
   });
 
   describe('create', () => {
-    const createSessionDto: CreateSessionWithUserDto = {
+    const createSessionDto: CreateSessionDto = {
       endDate: mockFutureEndDate.toISOString(),
       fieldUid: 'field-uid-1',
       startDate: mockFutureDate.toISOString(),

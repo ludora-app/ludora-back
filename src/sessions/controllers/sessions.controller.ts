@@ -34,9 +34,9 @@ import {
 import { SessionMapper } from '../mappers/session.mapper';
 import { SessionsService } from '../services/sessions.service';
 import { SessionResponse } from '../dto/output/session.response';
-import { CreateSessionDto } from '../dto/input/create-session.dto';
 import { UpdateSessionDto } from '../dto/input/update-session.dto';
 import { FindAllSessionsDto } from '../dto/input/session-filter.dto';
+import { CreateSessionFromRequestDto } from '../dto/input/create-session.dto';
 import {
   PaginatedSessionCollectionResponse,
   SessionCollectionItem,
@@ -55,7 +55,7 @@ export class SessionsController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.CREATED)
   async create(
-    @Body() createSessionDto: CreateSessionDto,
+    @Body() createSessionDto: CreateSessionFromRequestDto,
     @Req() request: Request,
   ): Promise<ResponseTypeDto<SessionResponse>> {
     const userUid = request['user'].uid;

@@ -18,8 +18,8 @@ import { SessionMapper } from '../mappers/session.mapper';
 import { SessionTeamsService } from './session-teams.service';
 import { UpdateSessionDto } from '../dto/input/update-session.dto';
 import { SESSION_SUGGESTION_CONFIG } from '../constants/constants';
+import { CreateSessionDto } from '../dto/input/create-session.dto';
 import { FindAllSessionsDto } from '../dto/input/session-filter.dto';
-import { CreateSessionWithUserDto } from '../dto/input/create-session.dto';
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
 import { SessionCollectionItem } from '../dto/output/session-collection.response';
 
@@ -27,6 +27,7 @@ import { SessionCollectionItem } from '../dto/output/session-collection.response
  * This service is responsible for the creation, retrieval, and management of sessions.
  * In order to avoid circular dependencies, it is also the orchestrator for other session-related services.
  */
+
 @Injectable()
 export class SessionsService {
   constructor(
@@ -42,7 +43,7 @@ export class SessionsService {
     this.logger.setContext(SessionsService.name);
   }
 
-  async create(createSessionDto: CreateSessionWithUserDto): Promise<Sessions> {
+  async create(createSessionDto: CreateSessionDto): Promise<Sessions> {
     const { endDate, fieldUid, startDate, userUid } = createSessionDto;
 
     const start = new Date(startDate);

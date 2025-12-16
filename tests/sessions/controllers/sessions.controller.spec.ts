@@ -5,7 +5,7 @@ import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
 import {
   CreateSessionDto,
-  CreateSessionWithUserDto,
+  CreateSessionFromRequestDto,
 } from 'src/sessions/dto/input/create-session.dto';
 import { FindAllSessionsDto } from 'src/sessions/dto/input/session-filter.dto';
 import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
@@ -66,7 +66,7 @@ describe('SessionsController', () => {
   });
 
   describe('create', () => {
-    const createSessionDto: CreateSessionDto = {
+    const createSessionDto: CreateSessionFromRequestDto = {
       endDate: '2023-02-15T16:00:00Z',
       fieldUid: 'field-uid-1',
       startDate: '2023-02-15T14:00:00Z',
@@ -84,7 +84,7 @@ describe('SessionsController', () => {
       },
     } as any;
 
-    const createSessionWithUserDto: CreateSessionWithUserDto = {
+    const createSessionWithUserDto: CreateSessionDto = {
       ...createSessionDto,
       userUid: 'user-uid-1',
     };
