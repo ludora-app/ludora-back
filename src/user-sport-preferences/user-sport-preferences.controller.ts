@@ -1,5 +1,6 @@
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
@@ -26,8 +27,11 @@ import {
 } from '@nestjs/swagger';
 
 import { UserSportPreferencesService } from './user-sport-preferences.service';
-import { CreateUserSportPreferenceDto } from './dto/input/create-user-sport-preference.dto';
-import { PaginatedUserSportPreferenceResponse } from './dto/output/user-sport-preference.response';
+import { CreateUserSportPreferenceDtoFromRequest } from './dto/input/create-user-sport-preference.dto';
+import {
+  PaginatedUserSportPreferenceResponse,
+  UserSportPreferenceResponse,
+} from './dto/output/user-sport-preference.response';
 
 @Controller('user-sport-preferences')
 @UseGuards(AuthB2CGuard)
@@ -37,20 +41,20 @@ export class UserSportPreferencesController {
   @Post()
   @Protected()
   @ApiOperation({ summary: 'Create a user sport preference' })
-  @ApiCreatedResponse({ description: 'User sport preference created successfully' })
+  @ApiCreatedResponse({ type: ResponseTypeDto<UserSportPreferenceResponse> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.CREATED)
   async create(
-    @Body() createUserSportPreferenceDto: CreateUserSportPreferenceDto,
+    @Body() dto: CreateUserSportPreferenceDtoFromRequest,
     @Req() request: Request,
-  ) {
+  ): Promise<ResponseTypeDto<UserSportPreferenceResponse>> {
     const userUid = request['user'].uid;
-    const data = await this.userSportPreferencesService.create(
-      createUserSportPreferenceDto.sport,
+    const data = await this.userSportPreferencesService.create({
+      ...dto,
       userUid,
-    );
+    });
     return {
       data,
       message: 'User sport preference created successfully',

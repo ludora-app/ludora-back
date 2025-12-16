@@ -21,6 +21,7 @@ model UserSports {
   uid       String   @id @default(cuid())
   userUid   String   @map("user_uid")
   sport     String
+  level     Int      @map("level")
   createdAt DateTime @default(now()) @map("created_at")
 
   user          Users  @relation(fields: [userUid], references: [uid])
