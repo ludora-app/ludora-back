@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
+import { ApiProperty, OmitType } from '@nestjs/swagger';
 
 export class CreateSessionPlayerDto {
   @IsString()
@@ -26,3 +26,5 @@ export class CreateSessionPlayerDto {
   })
   sessionUid: string;
 }
+
+export class JoinSessionDto extends OmitType(CreateSessionPlayerDto, ['userUid']) {}
