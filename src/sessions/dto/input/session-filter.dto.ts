@@ -114,6 +114,6 @@ export class SessionFilterDto {
   urgent?: boolean;
 }
 
-export class findAllSessionsDto extends SessionFilterDto {
+export class FindAllSessionsDto extends SessionFilterDto {
   userUid: string;
 }

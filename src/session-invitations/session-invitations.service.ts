@@ -2,11 +2,11 @@ import { PinoLogger } from 'nestjs-pino';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
-import { SessionsService } from 'src/sessions/sessions.service';
+import { SessionsService } from 'src/sessions/services/sessions.service';
 import { InvitationStatus, SessionInvitations } from 'generated/prisma/client';
-import { SessionPlayersService } from 'src/session-players/session-players.service';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
-import { CreateSessionPlayerDto } from 'src/session-players/dto/input/create-session-player.dto';
+import { SessionPlayersService } from 'src/sessions/services/session-players.service';
+import { CreateSessionPlayerDto } from 'src/sessions/dto/input/create-session-player.dto';
 import {
   BadRequestException,
   ConflictException,

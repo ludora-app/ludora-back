@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
-import { SessionsService } from 'src/sessions/sessions.service';
+import { SessionsService } from 'src/sessions/services/sessions.service';
 import { SessionInvitationsService } from 'src/session-invitations/session-invitations.service';
 
 @Injectable()

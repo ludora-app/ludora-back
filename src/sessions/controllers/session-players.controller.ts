@@ -7,8 +7,8 @@ import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-respons
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { ApiBadRequestResponse, ApiOperation, ApiUnauthorizedResponse } from '@nestjs/swagger';
 
-import { SessionPlayersService } from './session-players.service';
-import { JoinSessionDto } from './dto/input/create-session-player.dto';
+import { JoinSessionDto } from '../dto/input/create-session-player.dto';
+import { SessionPlayersService } from '../services/session-players.service';
 
 @Controller('session-players')
 @UseGuards(AuthB2CGuard)

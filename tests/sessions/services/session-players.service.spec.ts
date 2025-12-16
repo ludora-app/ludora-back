@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SessionPlayersService } from 'src/session-players/session-players.service';
-import { SessionsService } from 'src/sessions/sessions.service';
-import { SessionTeamsService } from 'src/session-teams/session-teams.service';
+import { SessionPlayersService } from 'src/sessions/services/session-players.service';
+import { SessionsService } from 'src/sessions/services/sessions.service';
+import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 describe('SessionPlayersService', () => {

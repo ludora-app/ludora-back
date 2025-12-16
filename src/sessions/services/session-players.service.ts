@@ -1,8 +1,7 @@
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SessionsService } from 'src/sessions/sessions.service';
 import { Prisma, SessionPlayers } from 'generated/prisma/client';
-import { SessionTeamsService } from 'src/session-teams/session-teams.service';
+import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
 import {
   BadRequestException,
   forwardRef,
@@ -11,7 +10,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { CreateSessionPlayerDto } from './dto/input/create-session-player.dto';
+import { SessionsService } from './sessions.service';
+import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
 
 @Injectable()
 export class SessionPlayersService {

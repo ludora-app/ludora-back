@@ -15,9 +15,7 @@ import { AuthB2CModule } from './auth-b2c/auth-b2c.module';
 import { AuthB2BModule } from './auth-b2b/auth-b2b.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { PartnersModule } from './partners/partners.module';
-import { SessionTeamsModule } from './session-teams/session-teams.module';
 import { ConversationsModule } from './conversations/conversations.module';
-import { SessionPlayersModule } from './session-players/session-players.module';
 import { SessionInvitationsModule } from './session-invitations/session-invitations.module';
 import { UserHourPreferencesModule } from './user-hour-preferences/user-hour-preferences.module';
 import { UserSportPreferencesModule } from './user-sport-preferences/user-sport-preferences.module';
@@ -87,8 +85,6 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
     UsersModule,
     SessionsModule,
     SessionInvitationsModule,
-    SessionTeamsModule,
-    SessionPlayersModule,
     AuthB2BModule,
     PartnersModule,
     PaymentModule,

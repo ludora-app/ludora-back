@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
-import { SessionPlayersController } from 'src/session-players/session-players.controller';
-import { SessionPlayersService } from 'src/session-players/session-players.service';
-import { JoinSessionDto } from 'src/session-players/dto/input/create-session-player.dto';
+import { SessionPlayersService } from 'src/sessions/services/session-players.service';
+import { JoinSessionDto } from 'src/sessions/dto/input/create-session-player.dto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { SessionPlayersController } from 'src/sessions/controllers/session-players.controller';
 
 describe('SessionPlayersController', () => {
   let controller: SessionPlayersController;

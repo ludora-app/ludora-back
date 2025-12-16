@@ -1,4 +1,3 @@
-import { SessionsService } from 'src/sessions/sessions.service';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
@@ -23,11 +22,12 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { SessionTeamsService } from './session-teams.service';
+import { SessionsService } from '../services/sessions.service';
+import { SessionTeamsService } from '../services/session-teams.service';
 import {
   PaginatedSessionTeamResponse,
   SessionTeamResponse,
-} from './dto/output/session-team.response';
+} from '../dto/output/session-team.response';
 
 @Controller('session-teams')
 @UseGuards(AuthB2CGuard)

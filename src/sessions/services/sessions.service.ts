@@ -1,24 +1,25 @@
 import { Prisma } from 'generated/prisma/client';
+import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, Sessions } from 'generated/prisma/client';
 import { StorageFolderName, Sport } from 'src/shared/constants/constants';
-import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 import { ConversationsService } from 'src/conversations/conversations.service';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
-import { SessionPlayersService } from 'src/session-players/session-players.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+import { SessionPlayersService } from 'src/sessions/services/session-players.service';
 import { UserHourPreferencesService } from 'src/user-hour-preferences/user-hour-preferences.service';
 import { UserSportPreferencesService } from 'src/user-sport-preferences/user-sport-preferences.service';
 
-import { DateUtils } from './../shared/utils/date.utils';
-import { SessionMapper } from './mappers/session.mapper';
-import { UpdateSessionDto } from './dto/input/update-session.dto';
-import { SESSION_SUGGESTION_CONFIG } from './constants/constants';
-import { findAllSessionsDto } from './dto/input/session-filter.dto';
-import { CreateSessionWithUserDto } from './dto/input/create-session.dto';
-import { SessionCollectionItem } from './dto/output/session-collection.response';
+import { SessionMapper } from '../mappers/session.mapper';
+import { SessionTeamsService } from './session-teams.service';
+import { UpdateSessionDto } from '../dto/input/update-session.dto';
+import { SESSION_SUGGESTION_CONFIG } from '../constants/constants';
+import { findAllSessionsDto } from '../dto/input/session-filter.dto';
+import { CreateSessionWithUserDto } from '../dto/input/create-session.dto';
+import { SessionCollectionItem } from '../dto/output/session-collection.response';
+
 @Injectable()
 export class SessionsService {
   constructor(

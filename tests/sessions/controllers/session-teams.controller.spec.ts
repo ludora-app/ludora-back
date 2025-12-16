@@ -1,9 +1,9 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
-import { SessionTeamsController } from 'src/session-teams/session-teams.controller';
-import { SessionTeamsService } from 'src/session-teams/session-teams.service';
-import { SessionsService } from 'src/sessions/sessions.service';
+import { SessionTeamsController } from 'src/sessions/controllers/session-teams.controller';
+import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
+import { SessionsService } from 'src/sessions/services/sessions.service';
 
 describe('SessionTeamsController', () => {
   let controller: SessionTeamsController;
