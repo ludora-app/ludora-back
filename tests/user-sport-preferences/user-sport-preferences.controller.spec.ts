@@ -5,7 +5,7 @@ import { AuthB2CGuard } from '../../src/auth-b2c/guards/auth-b2c.guard';
 import { UserSportPreferencesController } from '../../src/user-sport-preferences/user-sport-preferences.controller';
 import { UserSportPreferencesService } from '../../src/user-sport-preferences/user-sport-preferences.service';
 import { CreateUserSportPreferenceDto } from '../../src/user-sport-preferences/dto/input/create-user-sport-preference.dto';
-import { Sport } from '../../src/shared/constants/constants';
+import { Sport, UserSportLevel } from '../../src/shared/constants/constants';
 
 describe('UserSportPreferencesController', () => {
   let controller: UserSportPreferencesController;
@@ -54,6 +54,8 @@ describe('UserSportPreferencesController', () => {
     it('should create a sport preference successfully', async () => {
       const createDto: CreateUserSportPreferenceDto = {
         sport: Sport.BASKETBALL,
+        level: UserSportLevel.BEGINNER,
+        userUid: 'user-uid-1',
       };
 
       const mockCreatedPreference: UserSports = {
@@ -61,6 +63,7 @@ describe('UserSportPreferencesController', () => {
         sport: Sport.BASKETBALL,
         userUid: 'user-uid-1',
         createdAt: mockCurrentDate,
+        level: UserSportLevel.BEGINNER,
       };
 
       mockUserSportPreferencesService.create.mockResolvedValue(mockCreatedPreference);
@@ -71,20 +74,29 @@ describe('UserSportPreferencesController', () => {
         data: mockCreatedPreference,
         message: 'User sport preference created successfully',
       });
-      expect(service.create).toHaveBeenCalledWith(Sport.BASKETBALL, 'user-uid-1');
+      expect(service.create).toHaveBeenCalledWith({
+        sport: Sport.BASKETBALL,
+        level: UserSportLevel.BEGINNER,
+        userUid: 'user-uid-1',
+      });
     });
 
     it('should create sport preferences for different sports', async () => {
       const sports = [Sport.BASKETBALL, Sport.FOOTBALL, Sport.TENNIS, Sport.VOLLEYBALL];
 
       for (const sport of sports) {
-        const createDto: CreateUserSportPreferenceDto = { sport };
+        const createDto: CreateUserSportPreferenceDto = {
+          sport,
+          level: UserSportLevel.BEGINNER,
+          userUid: 'user-uid-1',
+        };
 
         const mockCreatedPreference: UserSports = {
           uid: `sport-pref-uid-${sport}`,
           sport,
           userUid: 'user-uid-1',
           createdAt: mockCurrentDate,
+          level: UserSportLevel.BEGINNER,
         };
 
         mockUserSportPreferencesService.create.mockResolvedValue(mockCreatedPreference);
@@ -95,7 +107,11 @@ describe('UserSportPreferencesController', () => {
           data: mockCreatedPreference,
           message: 'User sport preference created successfully',
         });
-        expect(service.create).toHaveBeenCalledWith(sport, 'user-uid-1');
+        expect(service.create).toHaveBeenCalledWith({
+          sport,
+          level: UserSportLevel.BEGINNER,
+          userUid: 'user-uid-1',
+        });
 
         jest.clearAllMocks();
       }
@@ -104,6 +120,8 @@ describe('UserSportPreferencesController', () => {
     it('should propagate NotFoundException when user does not exist', async () => {
       const createDto: CreateUserSportPreferenceDto = {
         sport: Sport.BASKETBALL,
+        level: UserSportLevel.BEGINNER,
+        userUid: 'user-uid-1',
       };
 
       mockUserSportPreferencesService.create.mockRejectedValue(
@@ -111,12 +129,18 @@ describe('UserSportPreferencesController', () => {
       );
 
       await expect(controller.create(createDto, mockRequest)).rejects.toThrow(NotFoundException);
-      expect(service.create).toHaveBeenCalledWith(Sport.BASKETBALL, 'user-uid-1');
+      expect(service.create).toHaveBeenCalledWith({
+        sport: Sport.BASKETBALL,
+        level: UserSportLevel.BEGINNER,
+        userUid: 'user-uid-1',
+      });
     });
 
     it('should propagate BadRequestException when sport preference already exists', async () => {
       const createDto: CreateUserSportPreferenceDto = {
         sport: Sport.BASKETBALL,
+        level: UserSportLevel.BEGINNER,
+        userUid: 'user-uid-1',
       };
 
       mockUserSportPreferencesService.create.mockRejectedValue(
@@ -124,12 +148,18 @@ describe('UserSportPreferencesController', () => {
       );
 
       await expect(controller.create(createDto, mockRequest)).rejects.toThrow(BadRequestException);
-      expect(service.create).toHaveBeenCalledWith(Sport.BASKETBALL, 'user-uid-1');
+      expect(service.create).toHaveBeenCalledWith({
+        sport: Sport.BASKETBALL,
+        level: UserSportLevel.BEGINNER,
+        userUid: 'user-uid-1',
+      });
     });
 
     it('should extract userUid from request object', async () => {
       const createDto: CreateUserSportPreferenceDto = {
         sport: Sport.FOOTBALL,
+        level: UserSportLevel.INTERMEDIATE,
+        userUid: 'different-user-uid',
       };
 
       const differentMockRequest = {
@@ -141,13 +171,18 @@ describe('UserSportPreferencesController', () => {
         sport: Sport.FOOTBALL,
         userUid: 'different-user-uid',
         createdAt: mockCurrentDate,
+        level: UserSportLevel.INTERMEDIATE,
       };
 
       mockUserSportPreferencesService.create.mockResolvedValue(mockCreatedPreference);
 
       await controller.create(createDto, differentMockRequest);
 
-      expect(service.create).toHaveBeenCalledWith(Sport.FOOTBALL, 'different-user-uid');
+      expect(service.create).toHaveBeenCalledWith({
+        sport: Sport.FOOTBALL,
+        level: UserSportLevel.INTERMEDIATE,
+        userUid: 'different-user-uid',
+      });
     });
   });
 
@@ -161,18 +196,21 @@ describe('UserSportPreferencesController', () => {
           sport: Sport.BASKETBALL,
           userUid,
           createdAt: mockCurrentDate,
+          level: UserSportLevel.BEGINNER,
         },
         {
           uid: 'sport-pref-uid-2',
           sport: Sport.FOOTBALL,
           userUid,
           createdAt: mockCurrentDate,
+          level: UserSportLevel.INTERMEDIATE,
         },
         {
           uid: 'sport-pref-uid-3',
           sport: Sport.TENNIS,
           userUid,
           createdAt: mockCurrentDate,
+          level: UserSportLevel.ADVANCED,
         },
       ];
 
@@ -232,6 +270,7 @@ describe('UserSportPreferencesController', () => {
             sport: Sport.BASKETBALL,
             userUid: uid,
             createdAt: mockCurrentDate,
+            level: UserSportLevel.BEGINNER,
           },
         ];
 
