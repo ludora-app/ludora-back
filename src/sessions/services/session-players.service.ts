@@ -1,16 +1,8 @@
 import { PinoLogger } from 'nestjs-pino';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma, SessionPlayers } from 'generated/prisma/client';
-import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
-import {
-  BadRequestException,
-  forwardRef,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
 
-import { SessionsService } from './sessions.service';
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
 
 @Injectable()
@@ -18,10 +10,6 @@ export class SessionPlayersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
-    @Inject(forwardRef(() => SessionsService))
-    private readonly sessionsService: SessionsService,
-    @Inject(forwardRef(() => SessionTeamsService))
-    private readonly sessionTeamsService: SessionTeamsService,
   ) {
     this.logger.setContext(SessionPlayersService.name);
   }
@@ -46,57 +34,6 @@ export class SessionPlayersService {
       `Player ${createSessionPlayerDto.userUid} added to session ${createSessionPlayerDto.sessionUid}`,
     );
     return newPlayer;
-  }
-
-  /**
-   * This method is used to add a player to a session when a user joins a session.
-   * @param createSessionPlayerDto
-   */
-  async joinSession(createSessionPlayerDto: CreateSessionPlayerDto): Promise<SessionPlayers> {
-    const existingSession = await this.sessionsService.findOne(createSessionPlayerDto.sessionUid);
-
-    if (!existingSession) {
-      this.logger.error(`Session ${createSessionPlayerDto.sessionUid} not found`);
-      throw new NotFoundException(`Session ${createSessionPlayerDto.sessionUid} not found`);
-    }
-    const existingTeam = await this.sessionTeamsService.findOneByUid(
-      createSessionPlayerDto.teamUid,
-    );
-
-    if (!existingTeam) {
-      this.logger.error(`Team ${createSessionPlayerDto.teamUid} not found`);
-      throw new NotFoundException(`Team ${createSessionPlayerDto.teamUid} not found`);
-    }
-
-    if (existingSession.uid !== existingTeam.sessionUid) {
-      this.logger.error(
-        `Session ${createSessionPlayerDto.sessionUid} and team ${createSessionPlayerDto.teamUid} do not match`,
-      );
-      throw new BadRequestException(
-        `Session ${createSessionPlayerDto.sessionUid} and team ${createSessionPlayerDto.teamUid} do not match`,
-      );
-    }
-
-    if (existingTeam._count.sessionPlayers >= existingSession.maxPlayersPerTeam) {
-      this.logger.error(`Team ${createSessionPlayerDto.teamUid} is full`);
-      throw new BadRequestException(`Team ${createSessionPlayerDto.teamUid} is full`);
-    }
-
-    const existingPlayer = await this.findOne(
-      createSessionPlayerDto.sessionUid,
-      createSessionPlayerDto.userUid,
-    );
-
-    if (existingPlayer) {
-      this.logger.error(
-        `Player ${createSessionPlayerDto.userUid} already in session ${createSessionPlayerDto.sessionUid}`,
-      );
-      throw new BadRequestException(
-        `Player ${createSessionPlayerDto.userUid} already in session ${createSessionPlayerDto.sessionUid}`,
-      );
-    }
-
-    return this.addPlayerToSession(createSessionPlayerDto);
   }
 
   /**

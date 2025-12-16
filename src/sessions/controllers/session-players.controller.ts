@@ -7,13 +7,13 @@ import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-respons
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { ApiBadRequestResponse, ApiOperation, ApiUnauthorizedResponse } from '@nestjs/swagger';
 
+import { SessionsService } from '../services/sessions.service';
 import { JoinSessionDto } from '../dto/input/create-session-player.dto';
-import { SessionPlayersService } from '../services/session-players.service';
 
 @Controller('session-players')
 @UseGuards(AuthB2CGuard)
 export class SessionPlayersController {
-  constructor(private readonly sessionPlayersService: SessionPlayersService) {}
+  constructor(private readonly sessionsService: SessionsService) {}
 
   @Post('join')
   @Protected()
@@ -26,7 +26,7 @@ export class SessionPlayersController {
     @Body() joinSessionDto: JoinSessionDto,
   ): Promise<ResponseTypeDto<SessionPlayers>> {
     const userUid = request['user'].uid;
-    const newPlayer = await this.sessionPlayersService.joinSession({ ...joinSessionDto, userUid });
+    const newPlayer = await this.sessionsService.joinSession({ ...joinSessionDto, userUid });
     return {
       data: newPlayer,
       message: 'Player joined session successfully',

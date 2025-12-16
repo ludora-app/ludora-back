@@ -1,9 +1,11 @@
+import { PinoLogger } from 'nestjs-pino';
 import { Prisma } from 'generated/prisma/client';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, Sessions } from 'generated/prisma/client';
-import { StorageFolderName, Sport } from 'src/shared/constants/constants';
+import { SessionPlayers, SessionTeams } from 'generated/prisma/browser';
+import { Sport, StorageFolderName } from 'src/shared/constants/constants';
 import { ConversationsService } from 'src/conversations/conversations.service';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
@@ -16,21 +18,29 @@ import { SessionMapper } from '../mappers/session.mapper';
 import { SessionTeamsService } from './session-teams.service';
 import { UpdateSessionDto } from '../dto/input/update-session.dto';
 import { SESSION_SUGGESTION_CONFIG } from '../constants/constants';
-import { findAllSessionsDto } from '../dto/input/session-filter.dto';
+import { FindAllSessionsDto } from '../dto/input/session-filter.dto';
 import { CreateSessionWithUserDto } from '../dto/input/create-session.dto';
+import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
 import { SessionCollectionItem } from '../dto/output/session-collection.response';
 
+/**
+ * This service is responsible for the creation, retrieval, and management of sessions.
+ * In order to avoid circular dependencies, it is also the orchestrator for other session-related services.
+ */
 @Injectable()
 export class SessionsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly sessionTeamsService: SessionTeamsService,
-    private readonly sessionPlayersService: SessionPlayersService,
+    private readonly teamsService: SessionTeamsService,
+    private readonly playersService: SessionPlayersService,
     private readonly storageService: StorageService,
     private readonly conversationsService: ConversationsService,
     private readonly userHourPreferencesService: UserHourPreferencesService,
     private readonly userSportPreferencesService: UserSportPreferencesService,
-  ) {}
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(SessionsService.name);
+  }
 
   async create(createSessionDto: CreateSessionWithUserDto): Promise<Sessions> {
     const { endDate, fieldUid, startDate, userUid } = createSessionDto;
@@ -118,14 +128,11 @@ export class SessionsService {
         },
       });
       // create default teams in transaction and fetch them back
-      const defaultTeams = await this.sessionTeamsService.createDefaultTeams(
-        createdSession.uid,
-        tx,
-      );
+      const defaultTeams = await this.teamsService.createDefaultTeams(createdSession.uid, tx);
       // pick team A for the creator
       const teamA = defaultTeams.find((t) => t.teamLabel === 'A');
       if (teamA && createSessionDto.userUid) {
-        await this.sessionPlayersService.addPlayerToSession(
+        await this.playersService.addPlayerToSession(
           {
             sessionUid: createdSession.uid,
             teamUid: teamA.uid,
@@ -169,7 +176,7 @@ export class SessionsService {
     userLat,
     userLon,
     userUid,
-  }: findAllSessionsDto): Promise<PaginatedDataDto<SessionCollectionItem>> {
+  }: FindAllSessionsDto): Promise<PaginatedDataDto<SessionCollectionItem>> {
     const userSportPreferencesResponse =
       await this.userSportPreferencesService.findAllByUserUid(userUid);
     const userSportPreferences = userSportPreferencesResponse.items || [];
@@ -552,5 +559,73 @@ export class SessionsService {
         },
       },
     });
+  }
+
+  // ============================================================================
+  //                                 SESSION TEAMS
+  // ============================================================================
+
+  async findTeamsBySessionUid(sessionUid: string): Promise<PaginatedDataDto<SessionTeams>> {
+    const existingSession = await this.findOne(sessionUid);
+
+    if (!existingSession) {
+      this.logger.error(`Session ${sessionUid} not found`);
+      throw new NotFoundException(`Session ${sessionUid} not found`);
+    }
+
+    return await this.teamsService.findTeamsBySessionUid(sessionUid);
+  }
+
+  // ============================================================================
+  //                                 SESSION PLAYERS
+  // ============================================================================
+
+  /**
+   * This method is used to add a player to a session when a user joins a session.
+   * @param createSessionPlayerDto
+   */
+  async joinSession(createSessionPlayerDto: CreateSessionPlayerDto): Promise<SessionPlayers> {
+    const existingSession = await this.findOne(createSessionPlayerDto.sessionUid);
+
+    if (!existingSession) {
+      this.logger.error(`Session ${createSessionPlayerDto.sessionUid} not found`);
+      throw new NotFoundException(`Session ${createSessionPlayerDto.sessionUid} not found`);
+    }
+    const existingTeam = await this.teamsService.findOneByUid(createSessionPlayerDto.teamUid);
+
+    if (!existingTeam) {
+      this.logger.error(`Team ${createSessionPlayerDto.teamUid} not found`);
+      throw new NotFoundException(`Team ${createSessionPlayerDto.teamUid} not found`);
+    }
+
+    if (existingSession.uid !== existingTeam.sessionUid) {
+      this.logger.error(
+        `Session ${createSessionPlayerDto.sessionUid} and team ${createSessionPlayerDto.teamUid} do not match`,
+      );
+      throw new BadRequestException(
+        `Session ${createSessionPlayerDto.sessionUid} and team ${createSessionPlayerDto.teamUid} do not match`,
+      );
+    }
+
+    if (existingTeam._count.sessionPlayers >= existingSession.maxPlayersPerTeam) {
+      this.logger.error(`Team ${createSessionPlayerDto.teamUid} is full`);
+      throw new BadRequestException(`Team ${createSessionPlayerDto.teamUid} is full`);
+    }
+
+    const existingPlayer = await this.playersService.findOne(
+      createSessionPlayerDto.sessionUid,
+      createSessionPlayerDto.userUid,
+    );
+
+    if (existingPlayer) {
+      this.logger.error(
+        `Player ${createSessionPlayerDto.userUid} already in session ${createSessionPlayerDto.sessionUid}`,
+      );
+      throw new BadRequestException(
+        `Player ${createSessionPlayerDto.userUid} already in session ${createSessionPlayerDto.sessionUid}`,
+      );
+    }
+
+    return this.playersService.addPlayerToSession(createSessionPlayerDto);
   }
 }
