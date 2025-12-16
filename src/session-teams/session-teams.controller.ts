@@ -37,7 +37,7 @@ export class SessionTeamsController {
     private readonly teamsService: SessionTeamsService,
   ) {}
 
-  @Get('list-by-session/collection/:sessionUid')
+  @Get('list-by-session/:sessionUid')
   @Protected()
   @ApiOperation({ summary: 'Get all teams linked to a session by session uid' })
   @ApiOkResponse({ type: PaginatedSessionTeamResponse })

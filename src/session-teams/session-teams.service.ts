@@ -80,8 +80,15 @@ export class SessionTeamsService {
     };
   }
 
-  async findOneByUid(uid: string): Promise<SessionTeams> {
+  async findOneByUid(uid: string): Promise<SessionTeams & { _count: { sessionPlayers: number } }> {
     return this.prisma.sessionTeams.findUnique({
+      include: {
+        _count: {
+          select: {
+            sessionPlayers: true,
+          },
+        },
+      },
       where: {
         uid: uid,
       },
