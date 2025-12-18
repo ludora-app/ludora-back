@@ -52,6 +52,7 @@ import { Protected } from '../shared/decorators/protected.decorator';
 import { VerifyEmailCodeDto } from './dto/input/verify-email-code.dto';
 import { CreateGoogleUserDto } from './dto/input/create-google-user.dto';
 import { CreateOrConnectGoogleResponseDto } from './dto/output/create-or-connect-google.response';
+import { GenerateAccessTokenFromCodeDto } from './dto/output/generate-access-token-from-code.dto';
 
 @Controller('auth-b2c')
 @UseGuards(AuthB2CGuard)
@@ -362,7 +363,7 @@ export class AuthB2CController {
   })
   @HttpCode(HttpStatus.OK)
   async generateAccessTokenFromCode(
-    @Body() generateAccessTokenFromCodeDto: { code: string },
+    @Body() generateAccessTokenFromCodeDto: GenerateAccessTokenFromCodeDto,
   ): Promise<{ accessToken: string }> {
     const accessToken = await this.authService.generateAccessTokenFromCode(
       generateAccessTokenFromCodeDto.code,
