@@ -277,14 +277,6 @@ export class UsersController {
     summary:
       'This method is used to initiate the password reset process, sends a verification code to the user email',
   })
-  @ApiBadRequestResponse({
-    description: 'Error initiating password reset',
-    type: BadRequestResponseDto,
-  })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-    type: NotFoundResponseDto,
-  })
   async passwordResetRequest(@Body() dto: PasswordResetRequestDto): Promise<void> {
     await this.usersService.sendCodeForPasswordResetRequest(dto.email);
     return;

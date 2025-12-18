@@ -443,15 +443,16 @@ describe('UsersService', () => {
       });
     });
 
-    it('should throw NotFoundException if user not found', async () => {
+    it('should return silently and log error if user not found', async () => {
       mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
 
-      await expect(service.sendCodeForPasswordResetRequest('test@test.com')).rejects.toThrow(
-        NotFoundException,
-      );
+      await service.sendCodeForPasswordResetRequest('test@test.com');
+
+      expect(mockLogger.error).toHaveBeenCalledWith('User not found for email: test@test.com');
+      expect(mockEmailsService.sendEmail).not.toHaveBeenCalled();
     });
 
-    it('should throw BadRequestException if user is GOOGLE provider', async () => {
+    it('should return silently and log error if user is GOOGLE provider', async () => {
       const mockUser = {
         uid: '1',
         firstname: 'John',
@@ -461,8 +462,10 @@ describe('UsersService', () => {
 
       mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
 
-      await expect(service.sendCodeForPasswordResetRequest('test@test.com')).rejects.toThrow(
-        BadRequestException,
+      await service.sendCodeForPasswordResetRequest('test@test.com');
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'User is a Google user, cannot send password reset code',
       );
       expect(mockEmailsService.sendEmail).not.toHaveBeenCalled();
     });

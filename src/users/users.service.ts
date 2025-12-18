@@ -392,10 +392,14 @@ export class UsersService {
   async sendCodeForPasswordResetRequest(email: string): Promise<void> {
     const user = await this.findOneByEmail(email);
 
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) {
+      this.logger.error(`User not found for email: ${email}`);
+      return;
+    }
 
     if (user.provider === 'GOOGLE') {
-      throw new BadRequestException('Google users cannot request a password reset');
+      this.logger.error(`User is a Google user, cannot send password reset code`);
+      return;
     }
 
     await this.sendCodeForPasswordReset(user);
