@@ -402,6 +402,7 @@ describe('AuthB2CService', () => {
   describe('generateAccessTokenFromCode', () => {
     it('should generate access token from valid code', async () => {
       const mockCode = '123456';
+      const mockEmail = 'test@test.com';
       const mockVerificationCode = {
         uid: 'verification-uid-1',
         code: mockCode,
@@ -410,30 +411,27 @@ describe('AuthB2CService', () => {
       };
       const mockUser = {
         uid: 'user-1',
-        email: 'test@test.com',
+        email: mockEmail,
         firstname: 'John',
       };
 
+      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
       mockPrismaService.emailVerification.findFirst.mockResolvedValue(mockVerificationCode);
-      mockUsersService.findOne.mockResolvedValue(mockUser);
       mockPrismaService.userTokens.create.mockResolvedValue({
         uid: 'token-uid-1',
         token: 'mock_access_token',
         userUid: 'user-1',
       });
 
-      const result = await service.generateAccessTokenFromCode(mockCode);
+      const result = await service.generateAccessTokenFromCode(mockCode, mockEmail);
 
       expect(result).toBe('mock_token');
+      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(mockEmail.toLowerCase());
       expect(mockPrismaService.emailVerification.findFirst).toHaveBeenCalledWith({
-        where: { code: mockCode, expiresAt: { gt: expect.any(Date) } },
+        where: { code: mockCode, userUid: 'user-1' },
       });
-      expect(mockUsersService.findOne).toHaveBeenCalledWith(
-        'user-1',
-        expect.any(Object), // USERSELECT.checkIfUserExists
-      );
       expect(mockJwtService.sign).toHaveBeenCalledWith(
-        { uid: 'user-1' },
+        { uid: 'user-1', type: 'access' },
         { expiresIn: expect.any(String) },
       );
       expect(mockPrismaService.userTokens.create).toHaveBeenCalledWith({
@@ -444,37 +442,67 @@ describe('AuthB2CService', () => {
       });
     });
 
-    it('should throw NotFoundException if verification code is invalid or expired', async () => {
+    it('should throw NotFoundException if user not found', async () => {
       const mockCode = 'invalid-code';
+      const mockEmail = 'test@test.com';
 
-      mockPrismaService.emailVerification.findFirst.mockResolvedValue(null);
+      mockUsersService.findOneByEmail.mockResolvedValue(null);
 
-      await expect(service.generateAccessTokenFromCode(mockCode)).rejects.toThrow(
+      await expect(service.generateAccessTokenFromCode(mockCode, mockEmail)).rejects.toThrow(
         NotFoundException,
       );
-      await expect(service.generateAccessTokenFromCode(mockCode)).rejects.toThrow(
-        'Invalid or expired verification code',
+      await expect(service.generateAccessTokenFromCode(mockCode, mockEmail)).rejects.toThrow(
+        'User test@test.com not found',
       );
-      expect(mockUsersService.findOne).not.toHaveBeenCalled();
+      expect(mockPrismaService.emailVerification.findFirst).not.toHaveBeenCalled();
       expect(mockPrismaService.userTokens.create).not.toHaveBeenCalled();
     });
 
-    it('should throw NotFoundException if user not found', async () => {
+    it('should throw UnauthorizedException if verification code is invalid', async () => {
+      const mockCode = 'invalid-code';
+      const mockEmail = 'test@test.com';
+      const mockUser = {
+        uid: 'user-1',
+        email: mockEmail,
+        firstname: 'John',
+      };
+
+      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
+      mockPrismaService.emailVerification.findFirst.mockResolvedValue(null);
+
+      await expect(service.generateAccessTokenFromCode(mockCode, mockEmail)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(service.generateAccessTokenFromCode(mockCode, mockEmail)).rejects.toThrow(
+        'Invalid verification code',
+      );
+      expect(mockPrismaService.userTokens.create).not.toHaveBeenCalled();
+    });
+
+    it('should throw UnauthorizedException if verification code is expired', async () => {
       const mockCode = '123456';
+      const mockEmail = 'test@test.com';
+      const mockUser = {
+        uid: 'user-1',
+        email: mockEmail,
+        firstname: 'John',
+      };
       const mockVerificationCode = {
         uid: 'verification-uid-1',
         code: mockCode,
         userUid: 'user-1',
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        expiresAt: new Date(Date.now() - 10 * 60 * 1000), // 10 minutes in the past
       };
 
+      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
       mockPrismaService.emailVerification.findFirst.mockResolvedValue(mockVerificationCode);
-      mockUsersService.findOne.mockResolvedValue(null);
 
-      await expect(service.generateAccessTokenFromCode(mockCode)).rejects.toThrow(
-        NotFoundException,
+      await expect(service.generateAccessTokenFromCode(mockCode, mockEmail)).rejects.toThrow(
+        UnauthorizedException,
       );
-      await expect(service.generateAccessTokenFromCode(mockCode)).rejects.toThrow('User not found');
+      await expect(service.generateAccessTokenFromCode(mockCode, mockEmail)).rejects.toThrow(
+        'Expired verification code',
+      );
       expect(mockPrismaService.userTokens.create).not.toHaveBeenCalled();
     });
   });

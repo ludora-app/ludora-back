@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { UserType } from 'generated/prisma/client';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { USERSELECT } from 'src/shared/constants/select-user';
+import { TokenType } from 'src/shared/constants/constants';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
 import {
@@ -69,11 +69,19 @@ export class AuthB2CService {
         throw new BadRequestException('Invalid user type');
       }
 
-      const payload: { uid: string; deviceUid?: string } = { uid: newUser.uid };
+      const payload: { uid: string; deviceUid?: string; type?: 'access' | 'refresh' | 'reset' } = {
+        uid: newUser.uid,
+      };
       if (deviceUid) payload.deviceUid = deviceUid;
 
-      const accessToken = this.jwt.sign(payload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
-      const refreshToken = this.jwt.sign(payload, { expiresIn: '7d' });
+      const accessToken = this.jwt.sign(
+        { ...payload, type: TokenType.ACCESS },
+        { expiresIn: this.TOKEN_EXPIRATION_TIME },
+      );
+      const refreshToken = this.jwt.sign(
+        { ...payload, type: TokenType.REFRESH },
+        { expiresIn: '7d' },
+      );
 
       // Create the access token
       await tx.userTokens.create({
@@ -113,8 +121,14 @@ export class AuthB2CService {
       // if the user exists, connect the Google account to the user
       if (existingUser) {
         const payload = { uid: existingUser.uid };
-        const accessToken = this.jwt.sign(payload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
-        const refreshToken = this.jwt.sign(payload, { expiresIn: '7d' });
+        const accessToken = this.jwt.sign(
+          { ...payload, type: TokenType.ACCESS },
+          { expiresIn: this.TOKEN_EXPIRATION_TIME },
+        );
+        const refreshToken = this.jwt.sign(
+          { ...payload, type: TokenType.REFRESH },
+          { expiresIn: '7d' },
+        );
 
         await this.prismaService.userTokens.create({
           data: {
@@ -147,8 +161,14 @@ export class AuthB2CService {
       });
 
       const payload = { uid: newUser.uid };
-      const accessToken = this.jwt.sign(payload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
-      const refreshToken = this.jwt.sign(payload, { expiresIn: '7d' });
+      const accessToken = this.jwt.sign(
+        { ...payload, type: TokenType.ACCESS },
+        { expiresIn: this.TOKEN_EXPIRATION_TIME },
+      );
+      const refreshToken = this.jwt.sign(
+        { ...payload, type: TokenType.REFRESH },
+        { expiresIn: '7d' },
+      );
 
       await this.prismaService.userTokens.create({
         data: {
@@ -190,8 +210,14 @@ export class AuthB2CService {
       }
 
       const payload = { uid: user.uid, ...(deviceUid && { deviceUid }) };
-      const accessToken = this.jwt.sign(payload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
-      const refreshToken = this.jwt.sign(payload, { expiresIn: '1year' });
+      const accessToken = this.jwt.sign(
+        { ...payload, type: TokenType.ACCESS },
+        { expiresIn: this.TOKEN_EXPIRATION_TIME },
+      );
+      const refreshToken = this.jwt.sign(
+        { ...payload, type: TokenType.REFRESH },
+        { expiresIn: '1year' },
+      );
 
       // Optimisation: Paralléliser les requêtes DB indépendantes
       const [existingTokens, existingRefreshTokens] = await Promise.all([
@@ -353,7 +379,10 @@ export class AuthB2CService {
       throw new NotFoundException('User not found');
     }
     const payload = { uid: user.uid };
-    const token = this.jwt.sign(payload);
+    const token = this.jwt.sign(
+      { ...payload, type: TokenType.ACCESS },
+      { expiresIn: this.TOKEN_EXPIRATION_TIME },
+    );
     return { accessToken: token };
   }
 
@@ -502,8 +531,14 @@ export class AuthB2CService {
 
       // Generate new tokens
       const newPayload = { uid: userUid, ...(deviceUid && { deviceUid }) };
-      const newAccessToken = this.jwt.sign(newPayload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
-      const newRefreshToken = this.jwt.sign(newPayload, { expiresIn: '7d' });
+      const newAccessToken = this.jwt.sign(
+        { ...newPayload, type: TokenType.ACCESS },
+        { expiresIn: this.TOKEN_EXPIRATION_TIME },
+      );
+      const newRefreshToken = this.jwt.sign(
+        { ...newPayload, type: TokenType.REFRESH },
+        { expiresIn: '7d' },
+      );
 
       // Update tokens in the database
       await this.prismaService.$transaction(async (tx) => {
@@ -592,33 +627,43 @@ export class AuthB2CService {
    * @param code - The code to generate the access token from
    * @returns
    */
-  async generateAccessTokenFromCode(code: string): Promise<string> {
+  async generateAccessTokenFromCode(code: string, email: string): Promise<string> {
+    const formattedEmail = email.toLowerCase();
+    const user = await this.userService.findOneByEmail(formattedEmail);
+    if (!user) {
+      this.logger.error(`User not found for email: ${email}`);
+      throw new NotFoundException(`User ${email} not found`);
+    }
+
     const today = new Date();
     const existingVerificationCode = await this.prismaService.emailVerification.findFirst({
-      where: { code, expiresAt: { gt: today } },
+      where: { code, userUid: user.uid },
     });
 
-    if (!existingVerificationCode)
-      throw new NotFoundException('Invalid or expired verification code');
+    if (!existingVerificationCode) {
+      this.logger.error(`Verification code does not belong to user: ${email}`);
+      throw new UnauthorizedException('Invalid verification code');
+    }
 
-    const user = await this.userService.findOne(
-      existingVerificationCode.userUid,
-      USERSELECT.checkIfUserExists,
-    );
-
-    if (!user) throw new NotFoundException('User not found');
+    if (existingVerificationCode.expiresAt < today) {
+      this.logger.error(`Verification code expired for user: ${email}`);
+      throw new UnauthorizedException('Expired verification code');
+    }
 
     const payload = { uid: user.uid };
     // this
-    const accessToken = this.jwt.sign(payload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
+    const resetToken = this.jwt.sign(
+      { ...payload, type: TokenType.ACCESS },
+      { expiresIn: this.TOKEN_EXPIRATION_TIME },
+    );
 
     await this.prismaService.userTokens.create({
       data: {
-        token: accessToken,
+        token: resetToken,
         userUid: user.uid,
       },
     });
 
-    return accessToken;
+    return resetToken;
   }
 }

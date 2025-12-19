@@ -356,7 +356,7 @@ export class AuthB2CController {
     description: 'Access token generated successfully',
     schema: {
       properties: {
-        accessToken: { type: 'string' },
+        resetToken: { type: 'string' },
       },
       type: 'object',
     },
@@ -364,10 +364,11 @@ export class AuthB2CController {
   @HttpCode(HttpStatus.OK)
   async generateAccessTokenFromCode(
     @Body() generateAccessTokenFromCodeDto: GenerateAccessTokenFromCodeDto,
-  ): Promise<{ accessToken: string }> {
-    const accessToken = await this.authService.generateAccessTokenFromCode(
+  ): Promise<{ resetToken: string }> {
+    const resetToken = await this.authService.generateAccessTokenFromCode(
       generateAccessTokenFromCodeDto.code,
+      generateAccessTokenFromCodeDto.email,
     );
-    return { accessToken: accessToken };
+    return { resetToken: resetToken };
   }
 }

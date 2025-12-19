@@ -3,6 +3,7 @@ import { Public } from 'src/shared/decorators/public.decorator';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { ResetPassword } from 'src/auth-b2c/decorators/reset-password.decorator';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
@@ -283,6 +284,7 @@ export class UsersController {
   }
 
   @Patch('/password-reset')
+  @ResetPassword()
   @Protected()
   @ApiOperation({
     summary: 'This method is used to reset the password of a user when he forgot his password',

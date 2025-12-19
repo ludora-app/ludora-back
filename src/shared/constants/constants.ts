@@ -20,3 +20,9 @@ export enum StorageFolderName {
   PARTNERS = 'partners',
   FIELDS = 'fields',
 }
+
+export enum TokenType {
+  ACCESS = 'access',
+  REFRESH = 'refresh',
+  RESET = 'reset',
+}
