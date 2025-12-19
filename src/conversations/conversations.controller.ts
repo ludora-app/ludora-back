@@ -42,6 +42,19 @@ export class ConversationsController {
   //   return this.conversationsService.create(createConversationDto);
   // }
 
+  @Post('/mock')
+  @UseGuards(DevOnlyGuard)
+  @Protected()
+  @ApiOperation({ summary: 'DEV ONLY:Create mock conversations' })
+  @ApiOkResponse({ type: ConversationResponse })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.OK)
+  async createMockConversation(@Req() request: Request) {
+    const userUid = request['user'].uid;
+    return this.conversationsService.createMockConversation(userUid);
+  }
+
   @Get('/list/collection')
   @Protected()
   @ApiOperation({ summary: 'Get all conversations' })
@@ -93,17 +106,4 @@ export class ConversationsController {
   // remove(@Param('id') id: string) {
   //   return this.conversationsService.remove(+id);
   // }
-
-  @Post('/mock')
-  @UseGuards(DevOnlyGuard)
-  @Protected()
-  @ApiOperation({ summary: 'DEV ONLY:Create mock conversations' })
-  @ApiOkResponse({ type: ConversationResponse })
-  @ApiBadRequestResponse({ type: BadRequestResponseDto })
-  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  @HttpCode(HttpStatus.OK)
-  async createMockConversation(@Req() request: Request) {
-    const userUid = request['user'].uid;
-    return this.conversationsService.createMockConversation(userUid);
-  }
 }

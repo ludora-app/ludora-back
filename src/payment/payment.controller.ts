@@ -35,8 +35,8 @@ import { BankAccountDataDto } from './dto/output/stripe-responses.dto';
 import { ConfirmPaymentIntentDto } from './dto/input/confirm-payment.dto';
 import { PaymentIntentTestDto } from './dto/input/payment-intent-test.dto';
 import { CreateStripeAccountDto } from './dto/input/create-stripe-account.dto';
-import { StripeAccountResponseDto } from './dto/output/stripe-connect-response.dto';
 import { BankDetailsDto, UpdateBankDetailsDto } from './dto/input/bank-details.dto';
+import { StripeAccountResponseDto } from './dto/output/stripe-connect-response.dto';
 import {
   BankAccountListResponseDataDto,
   BankAccountListResponseDto,
@@ -45,34 +45,6 @@ import {
 @Controller('payment')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
-
-  @Get('connect')
-  @Protected()
-  @UseGuards(AuthB2CGuard)
-  @ApiOperation({
-    summary: 'Récupère le compte Stripe connecté.',
-  })
-  @ApiOkResponse({
-    description: 'Stripe connect account retrieved successfully',
-    type: StripeAccountResponseDto,
-  })
-  @ApiBadRequestResponse({
-    description: 'Error retrieving Stripe connect account',
-    type: BadRequestResponseDto,
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Token invalid: user missing',
-    type: UnauthorizedResponseDto,
-  })
-  async getStripeConnectAccount(@Req() request: Request): Promise<ResponseTypeDto<Stripe.Account>> {
-    const userUid = request['user'].uid;
-    const stripeAccount = await this.paymentService.getStripeConnectAccount(userUid);
-
-    return {
-      data: stripeAccount,
-      message: 'stripe connect account fetched',
-    };
-  }
 
   @Post('connect')
   @Protected()
@@ -168,6 +140,34 @@ export class PaymentController {
   ): Promise<void> {
     const userId = request['user'].uid;
     await this.paymentService.addBankAccount(userId, bankDetails);
+  }
+
+  @Get('stripe-connect-account')
+  @Protected()
+  @UseGuards(AuthB2CGuard)
+  @ApiOperation({
+    summary: 'Récupère le compte Stripe connecté.',
+  })
+  @ApiOkResponse({
+    description: 'Stripe connect account retrieved successfully',
+    type: StripeAccountResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Error retrieving Stripe connect account',
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
+  })
+  async getStripeConnectAccount(@Req() request: Request): Promise<ResponseTypeDto<Stripe.Account>> {
+    const userUid = request['user'].uid;
+    const stripeAccount = await this.paymentService.getStripeConnectAccount(userUid);
+
+    return {
+      data: stripeAccount,
+      message: 'stripe connect account fetched',
+    };
   }
 
   @Get('list-bank-accounts')
