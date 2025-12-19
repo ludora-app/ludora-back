@@ -12,6 +12,9 @@ import {
   Min,
 } from 'class-validator';
 
+/**
+ * @description DTO for filtering the sessions in most use cases (findAll methods)
+ */
 export class SessionFilterDto {
   @IsOptional()
   @Type(() => Number)
