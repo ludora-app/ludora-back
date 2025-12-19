@@ -1,9 +1,9 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
-import { SessionTeamsController } from 'src/session-teams/session-teams.controller';
-import { SessionTeamsService } from 'src/session-teams/session-teams.service';
-import { SessionsService } from 'src/sessions/sessions.service';
+import { SessionTeamsController } from 'src/sessions/controllers/session-teams.controller';
+import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
+import { SessionsService } from 'src/sessions/services/sessions.service';
 
 describe('SessionTeamsController', () => {
   let controller: SessionTeamsController;
@@ -16,6 +16,7 @@ describe('SessionTeamsController', () => {
 
   const mockSessionsService = {
     findOne: jest.fn(),
+    findTeamsBySessionUid: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -53,8 +54,7 @@ describe('SessionTeamsController', () => {
     });
 
     it('returns teams when session exists and teams found', async () => {
-      mockSessionsService.findOne.mockResolvedValue({ uid: 'session-1' });
-      mockSessionTeamsService.findTeamsBySessionUid.mockResolvedValue({
+      mockSessionsService.findTeamsBySessionUid.mockResolvedValue({
         items: [
           {
             uid: 'team-1',
@@ -68,35 +68,22 @@ describe('SessionTeamsController', () => {
 
       const result = await controller.findTeamsBySessionUid('session-1');
 
-      expect(mockSessionsService.findOne).toHaveBeenCalledWith('session-1');
-      expect(mockSessionTeamsService.findTeamsBySessionUid).toHaveBeenCalledWith('session-1');
+      expect(mockSessionsService.findTeamsBySessionUid).toHaveBeenCalledWith('session-1');
       expect(result.data.items.length).toBe(1);
       expect(result.message).toContain('session-1');
     });
 
-    it('throws NotFound if session does not exist', async () => {
-      mockSessionsService.findOne.mockResolvedValue(null);
-
-      await expect(controller.findTeamsBySessionUid('missing')).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
-      expect(mockSessionsService.findOne).toHaveBeenCalledWith('missing');
-      expect(mockSessionTeamsService.findTeamsBySessionUid).not.toHaveBeenCalled();
-    });
-
     it('throws NotFound if no teams found', async () => {
-      mockSessionsService.findOne.mockResolvedValue({ uid: 'session-1' });
-      mockSessionTeamsService.findTeamsBySessionUid.mockResolvedValue({
+      mockSessionsService.findTeamsBySessionUid.mockResolvedValue({
         items: [],
         nextCursor: null,
         totalCount: 0,
       });
 
-      await expect(controller.findTeamsBySessionUid('session-1')).rejects.toBeInstanceOf(
+      await expect(controller.findTeamsBySessionUid('missing')).rejects.toBeInstanceOf(
         NotFoundException,
       );
-      expect(mockSessionsService.findOne).toHaveBeenCalledWith('session-1');
-      expect(mockSessionTeamsService.findTeamsBySessionUid).toHaveBeenCalledWith('session-1');
+      expect(mockSessionsService.findTeamsBySessionUid).toHaveBeenCalledWith('missing');
     });
   });
 

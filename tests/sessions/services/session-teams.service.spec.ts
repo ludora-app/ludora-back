@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SessionTeams, TeamLabel } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SessionTeamsService } from 'src/session-teams/session-teams.service';
+import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
 
 describe('SessionTeamsService', () => {
   let service: SessionTeamsService;

@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SessionInvitationsController } from '../../src/session-invitations/session-invitations.controller';
-import { SessionInvitationsService } from '../../src/session-invitations/session-invitations.service';
+import { SessionInvitationsController } from '../../../src/sessions/controllers/session-invitations.controller';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { CreateSessionInvitationDto } from '../../src/session-invitations/dto/input/create-session-invitation.dto';
-import { UpdateSessionInvitationDto } from '../../src/session-invitations/dto/input/update-session-invitation.dto';
-import { SessionInvitationFilterDto } from '../../src/session-invitations/dto/input/session-invitation-filter.dto';
-import { AuthB2CGuard } from '../../src/auth-b2c/guards/auth-b2c.guard';
+import { CreateSessionInvitationDto } from '../../../src/sessions/dto/input/create-session-invitation.dto';
+import { UpdateSessionInvitationDto } from '../../../src/sessions/dto/input/update-session-invitation.dto';
+import { SessionInvitationFilterDto } from '../../../src/sessions/dto/input/session-invitation-filter.dto';
+import { AuthB2CGuard } from '../../../src/auth-b2c/guards/auth-b2c.guard';
+import { SessionInvitationsService } from 'src/sessions/services/session-invitations.service';
 
 describe('SessionInvitationsController', () => {
   let controller: SessionInvitationsController;

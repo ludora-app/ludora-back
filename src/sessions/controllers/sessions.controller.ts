@@ -31,16 +31,16 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { SessionsService } from './sessions.service';
-import { SessionMapper } from './mappers/session.mapper';
-import { SessionResponse } from './dto/output/session.response';
-import { CreateSessionDto } from './dto/input/create-session.dto';
-import { UpdateSessionDto } from './dto/input/update-session.dto';
-import { findAllSessionsDto } from './dto/input/session-filter.dto';
+import { SessionMapper } from '../mappers/session.mapper';
+import { SessionsService } from '../services/sessions.service';
+import { SessionResponse } from '../dto/output/session.response';
+import { CreateSessionDto } from '../dto/input/create-session.dto';
+import { UpdateSessionDto } from '../dto/input/update-session.dto';
+import { FindAllSessionsDto } from '../dto/input/session-filter.dto';
 import {
   PaginatedSessionCollectionResponse,
   SessionCollectionItem,
-} from './dto/output/session-collection.response';
+} from '../dto/output/session-collection.response';
 
 @Controller('sessions')
 @UseGuards(AuthB2CGuard)
@@ -76,7 +76,7 @@ export class SessionsController {
   @HttpCode(HttpStatus.OK)
   async findAll(
     @Req() request: Request,
-    @Query() filter: findAllSessionsDto,
+    @Query() filter: FindAllSessionsDto,
   ): Promise<PaginationResponseTypeDto<SessionCollectionItem>> {
     const userUid = request['user'].uid;
 

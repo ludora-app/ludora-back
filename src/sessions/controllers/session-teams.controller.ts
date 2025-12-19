@@ -1,20 +1,11 @@
-import { SessionsService } from 'src/sessions/sessions.service';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { Controller, Get, NotFoundException, Param, UseGuards } from '@nestjs/common';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
-import {
-  Controller,
-  forwardRef,
-  Get,
-  Inject,
-  NotFoundException,
-  Param,
-  UseGuards,
-} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
@@ -23,17 +14,18 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { SessionTeamsService } from './session-teams.service';
+import { SessionsService } from '../services/sessions.service';
+import { SessionTeamsService } from '../services/session-teams.service';
 import {
   PaginatedSessionTeamResponse,
   SessionTeamResponse,
-} from './dto/output/session-team.response';
+} from '../dto/output/session-team.response';
 
 @Controller('session-teams')
 @UseGuards(AuthB2CGuard)
 export class SessionTeamsController {
   constructor(
-    @Inject(forwardRef(() => SessionsService)) private readonly sessionsService: SessionsService,
+    private readonly sessionsService: SessionsService,
     private readonly teamsService: SessionTeamsService,
   ) {}
 
@@ -47,13 +39,7 @@ export class SessionTeamsController {
   async findTeamsBySessionUid(
     @Param('sessionUid') sessionUid: string,
   ): Promise<PaginationResponseTypeDto<SessionTeamResponse>> {
-    const existingSession = await this.sessionsService.findOne(sessionUid);
-
-    if (!existingSession) {
-      throw new NotFoundException('Session not found');
-    }
-
-    const teams = await this.teamsService.findTeamsBySessionUid(sessionUid);
+    const teams = await this.sessionsService.findTeamsBySessionUid(sessionUid);
 
     if (teams.items.length === 0) {
       throw new NotFoundException('No teams found for session');

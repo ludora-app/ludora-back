@@ -5,13 +5,10 @@ import { UsersModule } from 'src/users/users.module';
 import { UsersService } from 'src/users/users.service';
 import { SharedModule } from 'src/shared/shared.module';
 import { SessionsModule } from 'src/sessions/sessions.module';
-import { SessionsService } from 'src/sessions/sessions.service';
-import { SessionTeamsModule } from 'src/session-teams/session-teams.module';
+import { SessionsService } from 'src/sessions/services/sessions.service';
 import { ConversationsModule } from 'src/conversations/conversations.module';
 import { ConversationsService } from 'src/conversations/conversations.service';
-import { SessionPlayersModule } from 'src/session-players/session-players.module';
-import { SessionInvitationsModule } from 'src/session-invitations/session-invitations.module';
-import { SessionInvitationsService } from 'src/session-invitations/session-invitations.service';
+import { SessionInvitationsService } from 'src/sessions/services/session-invitations.service';
 import { UserHourPreferencesModule } from 'src/user-hour-preferences/user-hour-preferences.module';
 import { UserSportPreferencesModule } from 'src/user-sport-preferences/user-sport-preferences.module';
 import {
@@ -34,12 +31,9 @@ import { HttpMetricsInterceptor } from './http-metrics.interceptor';
     UsersModule,
     SharedModule,
     SessionsModule,
-    SessionTeamsModule,
-    SessionPlayersModule,
-    SessionInvitationsModule,
-    ConversationsModule,
     UserHourPreferencesModule,
     UserSportPreferencesModule,
+    ConversationsModule,
   ],
   providers: [
     MetricsService,

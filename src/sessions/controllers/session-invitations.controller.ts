@@ -33,14 +33,14 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { SessionInvitationsService } from './session-invitations.service';
-import { CreateSessionInvitationDto } from './dto/input/create-session-invitation.dto';
-import { UpdateSessionInvitationDto } from './dto/input/update-session-invitation.dto';
-import { SessionInvitationFilterDto } from './dto/input/session-invitation-filter.dto';
+import { SessionInvitationsService } from '../services/session-invitations.service';
+import { UpdateSessionInvitationDto } from '../dto/input/update-session-invitation.dto';
+import { SessionInvitationFilterDto } from '../dto/input/session-invitation-filter.dto';
+import { CreateSessionInvitationDto } from '../dto/input/create-session-invitation.dto';
 import {
   PaginatedSessionInvitationResponse,
   SessionInvitationResponse,
-} from './dto/output/session-invitation-response';
+} from '../dto/output/session-invitation-response';
 
 @Controller('session-invitations')
 @UseGuards(AuthB2CGuard)
