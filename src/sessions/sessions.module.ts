@@ -6,6 +6,8 @@ import { SessionTeamsModule } from 'src/session-teams/session-teams.module';
 import { ConversationsModule } from 'src/conversations/conversations.module';
 import { ConversationsService } from 'src/conversations/conversations.service';
 import { SessionPlayersModule } from 'src/session-players/session-players.module';
+import { UserHourPreferencesModule } from 'src/user-hour-preferences/user-hour-preferences.module';
+import { UserSportPreferencesModule } from 'src/user-sport-preferences/user-sport-preferences.module';
 
 import { SessionsService } from './sessions.service';
 import { SessionsController } from './sessions.controller';
@@ -19,6 +21,8 @@ import { SessionsController } from './sessions.controller';
     ConversationsModule,
     UsersModule,
     SharedModule,
+    UserSportPreferencesModule,
+    UserHourPreferencesModule,
   ],
   providers: [SessionsService, StorageService, ConversationsService],
 })

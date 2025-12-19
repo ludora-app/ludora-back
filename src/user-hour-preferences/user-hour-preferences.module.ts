@@ -8,6 +8,7 @@ import { UserHourPreferencesController } from './user-hour-preferences.controlle
 
 @Module({
   controllers: [UserHourPreferencesController],
+  exports: [UserHourPreferencesService],
   imports: [UsersModule, SharedModule],
   providers: [UserHourPreferencesService, UsersService],
 })

@@ -7,7 +7,7 @@ import {
   CreateSessionDto,
   CreateSessionWithUserDto,
 } from 'src/sessions/dto/input/create-session.dto';
-import { SessionFilterDto } from 'src/sessions/dto/input/session-filter.dto';
+import { findAllSessionsDto } from 'src/sessions/dto/input/session-filter.dto';
 import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
 import { SessionsController } from 'src/sessions/sessions.controller';
 import { SessionsService } from 'src/sessions/sessions.service';
@@ -130,7 +130,14 @@ describe('SessionsController', () => {
   });
 
   describe('findAll', () => {
-    const sessionFilterDto: SessionFilterDto = {
+    const mockRequest = {
+      user: {
+        uid: 'user-uid-1',
+      },
+    } as any;
+
+    const sessionFilterDto: findAllSessionsDto = {
+      userUid: 'user-uid-1',
       limit: 10,
       sports: [Sport.FOOTBALL],
     };
@@ -159,17 +166,24 @@ describe('SessionsController', () => {
 
       mockSessionsService.findAll.mockResolvedValue(sessionsData);
 
-      const result = await controller.findAll(sessionFilterDto);
+      const result = await controller.findAll(mockRequest, sessionFilterDto);
 
       expect(result).toEqual({
-        data: sessionsData,
+        data: {
+          items: sessionsData.items,
+          nextCursor: sessionsData.nextCursor,
+          totalCount: sessionsData.totalCount,
+        },
         message: 'Sessions fetched successfully',
       });
-      expect(service.findAll).toHaveBeenCalledWith(sessionFilterDto);
+      expect(service.findAll).toHaveBeenCalledWith({
+        userUid: 'user-uid-1',
+        ...sessionFilterDto,
+      });
     });
 
     it('should work with pagination', async () => {
-      const paginatedFilter: SessionFilterDto = {
+      const paginatedFilter: findAllSessionsDto = {
         ...sessionFilterDto,
         limit: 1,
         cursor: 'session-uid-1',
@@ -191,13 +205,20 @@ describe('SessionsController', () => {
 
       mockSessionsService.findAll.mockResolvedValue(paginatedData);
 
-      const result = await controller.findAll(paginatedFilter);
+      const result = await controller.findAll(mockRequest, paginatedFilter);
 
       expect(result).toEqual({
-        data: paginatedData,
+        data: {
+          items: paginatedData.items,
+          nextCursor: paginatedData.nextCursor,
+          totalCount: paginatedData.totalCount,
+        },
         message: 'Sessions fetched successfully',
       });
-      expect(service.findAll).toHaveBeenCalledWith(paginatedFilter);
+      expect(service.findAll).toHaveBeenCalledWith({
+        userUid: 'user-uid-1',
+        ...paginatedFilter,
+      });
     });
   });
 

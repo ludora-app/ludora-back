@@ -35,8 +35,8 @@ import { SessionsService } from './sessions.service';
 import { SessionMapper } from './mappers/session.mapper';
 import { SessionResponse } from './dto/output/session.response';
 import { CreateSessionDto } from './dto/input/create-session.dto';
-import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
+import { findAllSessionsDto } from './dto/input/session-filter.dto';
 import {
   PaginatedSessionCollectionResponse,
   SessionCollectionItem,
@@ -75,10 +75,15 @@ export class SessionsController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findAll(
-    @Query() filter: SessionFilterDto,
+    @Req() request: Request,
+    @Query() filter: findAllSessionsDto,
   ): Promise<PaginationResponseTypeDto<SessionCollectionItem>> {
-    const sessions = await this.sessionsService.findAll(filter);
+    const userUid = request['user'].uid;
 
+    const sessions = await this.sessionsService.findAll({
+      userUid,
+      ...filter,
+    });
     return {
       data: {
         items: sessions.items,

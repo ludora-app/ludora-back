@@ -10,14 +10,20 @@ export interface RawSession {
   sport: string;
   startDate: Date;
   gameMode: string;
-  distance?: number;
   creatorUid: string;
-  fieldLatitude: number;
-  fieldLongitude: number;
   maxPlayersPerTeam: number;
-  fieldShortAddress: string;
-  fieldImage: string | null;
-  sessionTeams: Array<{ teamName: string; numberOfPlayers: number }> | null;
+  sessionTeams: {
+    teamName: string;
+    _count: {
+      sessionPlayers: number;
+    };
+  }[];
+  field: {
+    latitude: number;
+    longitude: number;
+    shortAddress: string;
+    fieldImages: { url: string }[];
+  };
 }
 
 /**
@@ -42,28 +48,47 @@ export class SessionMapper {
    * @param session - Raw session data from the database
    * @returns Session collection item
    */
-  static fromRawToCollectionItem(session: RawSession): SessionCollectionItem {
+  static fromRawToCollectionItem(
+    session: RawSession,
+    distanceMap: Map<string, { distance: number | null; index: number }>,
+  ): SessionCollectionItem {
+    const { field, sessionTeams, ...sessionData } = session;
+    const distData = distanceMap.get(session.uid);
+
     return {
-      creatorUid: session.creatorUid,
-      endDate: session.endDate,
-      fieldImage: session.fieldImage || undefined,
-      fieldLatitude: session.fieldLatitude,
-      fieldLongitude: session.fieldLongitude,
-      fieldShortAddress: session.fieldShortAddress,
-      gameMode: session.gameMode as GameModes,
-      maxPlayersPerTeam: session.maxPlayersPerTeam,
-      sessionTeams: session.sessionTeams || [],
-      sport: session.sport as Sport,
-      startDate: session.startDate,
-      uid: session.uid,
+      creatorUid: sessionData.creatorUid,
+      endDate: sessionData.endDate,
+
+      fieldImage: field.fieldImages[0]?.url || undefined,
+      fieldLatitude: field.latitude,
+
+      fieldLongitude: field.longitude,
+      fieldShortAddress: field.shortAddress,
+      gameMode: sessionData.gameMode as GameModes,
+
+      maxPlayersPerTeam: sessionData.maxPlayersPerTeam,
+      sport: sessionData.sport as Sport,
+      startDate: sessionData.startDate,
+      uid: sessionData.uid,
+
+      // Teams
+      sessionTeams: sessionTeams.map((team) => ({
+        numberOfPlayers: team._count.sessionPlayers,
+        teamName: team.teamName,
+      })),
+
+      // Distance
+      userDistance: distData?.distance ? Math.round(Number(distData.distance)) : null,
     };
   }
-
   /**
    * @param sessions - Raw session data from the database
    * @returns Session collection items
    */
-  static fromRawToSessionResponses(sessions: RawSession[]): SessionCollectionItem[] {
-    return sessions.map(SessionMapper.fromRawToCollectionItem);
+  static fromRawToSessionResponses(
+    sessions: RawSession[],
+    distanceMap: Map<string, { distance: number | null; index: number }>,
+  ): SessionCollectionItem[] {
+    return sessions.map((session) => SessionMapper.fromRawToCollectionItem(session, distanceMap));
   }
 }
