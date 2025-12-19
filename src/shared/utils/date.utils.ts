@@ -69,4 +69,22 @@ export class DateUtils {
     const minutes = durationInMinutes % 60;
     return `${hours}h${minutes > 0 ? minutes : ''}`;
   }
+
+  /**
+   * Returns the min and max hours for a given time period
+   * @param period - The time period (MORNING, AFTERNOON, EVENING)
+   * @returns Object with min and max hours
+   */
+  public static getHoursForPeriod(period: string): { min: number; max: number } {
+    switch (period) {
+      case 'MORNING':
+        return { max: 12, min: 9 };
+      case 'AFTERNOON':
+        return { max: 17, min: 12 };
+      case 'EVENING':
+        return { max: 22, min: 17 };
+      default:
+        return { max: 24, min: 0 }; // Fallback
+    }
+  }
 }

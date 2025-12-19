@@ -6,8 +6,6 @@ import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dt
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
-import { UserHourPreferencesService } from 'src/user-hour-preferences/user-hour-preferences.service';
-import { UserSportPreferencesService } from 'src/user-sport-preferences/user-sport-preferences.service';
 import {
   Body,
   Controller,
@@ -37,10 +35,8 @@ import { SessionsService } from './sessions.service';
 import { SessionMapper } from './mappers/session.mapper';
 import { SessionResponse } from './dto/output/session.response';
 import { CreateSessionDto } from './dto/input/create-session.dto';
-import { SessionFilterDto } from './dto/input/session-filter.dto';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
-import { SessionSuggestionFilterDto } from './dto/input/session-suggestion-filter.dto';
-import { PaginatedSessionCollectionSuggestionResponse } from './dto/output/session-collection-suggestion.response';
+import { findAllSessionsDto } from './dto/input/session-filter.dto';
 import {
   PaginatedSessionCollectionResponse,
   SessionCollectionItem,
@@ -49,11 +45,7 @@ import {
 @Controller('sessions')
 @UseGuards(AuthB2CGuard)
 export class SessionsController {
-  constructor(
-    private readonly sessionsService: SessionsService,
-    private readonly userHourPreferencesService: UserHourPreferencesService,
-    private readonly userSportPreferencesService: UserSportPreferencesService,
-  ) {}
+  constructor(private readonly sessionsService: SessionsService) {}
 
   @Post()
   @Protected()
@@ -75,42 +67,6 @@ export class SessionsController {
     };
   }
 
-  @Get('list/suggestions/collection')
-  @Protected()
-  @ApiOperation({ summary: 'Find matching sessions based on user preferences and filters' })
-  @ApiOkResponse({ type: PaginatedSessionCollectionSuggestionResponse })
-  @ApiBadRequestResponse({ type: BadRequestResponseDto })
-  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  @HttpCode(HttpStatus.OK)
-  async findAllSuggestions(@Req() request: Request, @Query() filter: SessionSuggestionFilterDto) {
-    const { sports, urgent, ...rest } = filter;
-    const userUid = request['user'].uid;
-
-    const userSportPreferencesResponse =
-      await this.userSportPreferencesService.findAllByUserUid(userUid);
-    const userSportPreferences = userSportPreferencesResponse.items || [];
-
-    const userTimePreferencesResponse =
-      await this.userHourPreferencesService.findAllByUserUid(userUid);
-    const userTimePreferences = userTimePreferencesResponse.items || [];
-
-    const sessions = await this.sessionsService.findAllSessionsSuggestions({
-      filterSports: sports,
-      urgent: Boolean(urgent),
-      userSportPreferences,
-      userTimePreferences,
-      ...rest,
-    });
-    return {
-      data: {
-        items: sessions.items,
-        nextCursor: sessions.nextCursor,
-        totalCount: sessions.totalCount,
-      },
-      message: 'Sessions fetched successfully',
-    };
-  }
-
   @Get('/list/collection')
   @Protected()
   @ApiOperation({ summary: 'Get all sessions' })
@@ -119,10 +75,15 @@ export class SessionsController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findAll(
-    @Query() filter: SessionFilterDto,
+    @Req() request: Request,
+    @Query() filter: findAllSessionsDto,
   ): Promise<PaginationResponseTypeDto<SessionCollectionItem>> {
-    const sessions = await this.sessionsService.findAll(filter);
+    const userUid = request['user'].uid;
 
+    const sessions = await this.sessionsService.findAll({
+      userUid,
+      ...filter,
+    });
     return {
       data: {
         items: sessions.items,

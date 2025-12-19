@@ -12,6 +12,8 @@ import { ConversationsService } from 'src/conversations/conversations.service';
 import { SessionPlayersModule } from 'src/session-players/session-players.module';
 import { SessionInvitationsModule } from 'src/session-invitations/session-invitations.module';
 import { SessionInvitationsService } from 'src/session-invitations/session-invitations.service';
+import { UserHourPreferencesModule } from 'src/user-hour-preferences/user-hour-preferences.module';
+import { UserSportPreferencesModule } from 'src/user-sport-preferences/user-sport-preferences.module';
 import {
   makeGaugeProvider,
   makeHistogramProvider,
@@ -36,6 +38,8 @@ import { HttpMetricsInterceptor } from './http-metrics.interceptor';
     SessionPlayersModule,
     SessionInvitationsModule,
     ConversationsModule,
+    UserHourPreferencesModule,
+    UserSportPreferencesModule,
   ],
   providers: [
     MetricsService,

@@ -3,25 +3,8 @@ import { GameModes, Sessions } from 'generated/prisma/client';
 
 import { SessionResponse } from '../dto/output/session.response';
 import { SessionCollectionItem } from '../dto/output/session-collection.response';
-import { SessionCollectionSuggestionItem } from '../dto/output/session-collection-suggestion.response';
 
 export interface RawSession {
-  uid: string;
-  endDate: Date;
-  sport: string;
-  startDate: Date;
-  gameMode: string;
-  distance?: number;
-  creatorUid: string;
-  fieldLatitude: number;
-  fieldLongitude: number;
-  maxPlayersPerTeam: number;
-  fieldShortAddress: string;
-  fieldImage: string | null;
-  sessionTeams: Array<{ teamName: string; numberOfPlayers: number }> | null;
-}
-
-export interface RawSessionSuggestion {
   uid: string;
   endDate: Date;
   sport: string;
@@ -65,38 +48,10 @@ export class SessionMapper {
    * @param session - Raw session data from the database
    * @returns Session collection item
    */
-  static fromRawToCollectionItem(session: RawSession): SessionCollectionItem {
-    return {
-      creatorUid: session.creatorUid,
-      endDate: session.endDate,
-      fieldImage: session.fieldImage || undefined,
-      fieldLatitude: session.fieldLatitude,
-      fieldLongitude: session.fieldLongitude,
-      fieldShortAddress: session.fieldShortAddress,
-      gameMode: session.gameMode as GameModes,
-      maxPlayersPerTeam: session.maxPlayersPerTeam,
-      sessionTeams: session.sessionTeams || [],
-      sport: session.sport as Sport,
-      startDate: session.startDate,
-      uid: session.uid,
-    };
-  }
-
-  /**
-   * @param sessions - Raw session data from the database
-   * @returns Session collection items
-   */
-  static fromRawToSessionResponses(sessions: RawSession[]): SessionCollectionItem[] {
-    return sessions.map(SessionMapper.fromRawToCollectionItem);
-  }
-
-  /**
-   * @description Maps a single raw session + distance map to a Suggestion Item
-   */
-  static toCollectionSuggestionDto(
-    session: RawSessionSuggestion,
+  static fromRawToCollectionItem(
+    session: RawSession,
     distanceMap: Map<string, { distance: number | null; index: number }>,
-  ): SessionCollectionSuggestionItem {
+  ): SessionCollectionItem {
     const { field, sessionTeams, ...sessionData } = session;
     const distData = distanceMap.get(session.uid);
 
@@ -126,14 +81,14 @@ export class SessionMapper {
       userDistance: distData?.distance ? Math.round(Number(distData.distance)) : null,
     };
   }
-
   /**
-   * @description Maps raw sessions array to Suggestion Items array
+   * @param sessions - Raw session data from the database
+   * @returns Session collection items
    */
-  static toSessionCollectionSuggestionItems(
-    sessions: RawSessionSuggestion[],
+  static fromRawToSessionResponses(
+    sessions: RawSession[],
     distanceMap: Map<string, { distance: number | null; index: number }>,
-  ): SessionCollectionSuggestionItem[] {
-    return sessions.map((session) => SessionMapper.toCollectionSuggestionDto(session, distanceMap));
+  ): SessionCollectionItem[] {
+    return sessions.map((session) => SessionMapper.fromRawToCollectionItem(session, distanceMap));
   }
 }

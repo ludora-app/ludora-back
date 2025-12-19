@@ -1,21 +1,74 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { SessionScope, Sport } from 'src/shared/constants/constants';
-import { IsDate, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { Sport } from 'src/shared/constants/constants';
+import {
+  IsArray,
+  IsDate,
+  IsEnum,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export class SessionFilterDto {
   @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @ApiProperty({
+    description: 'User latitude for location-based filtering',
+    example: 48.8566,
+    required: false,
+  })
+  userLat?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @ApiProperty({
+    description: 'User longitude for location-based filtering',
+    example: 2.3522,
+    required: false,
+  })
+  userLon?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => new Date(value))
+  @IsDate()
+  @ApiProperty({
+    description: 'Start date for filtering sessions',
+    example: '2024-01-01T00:00:00.000Z',
+    required: false,
+  })
+  startDate?: Date;
+
+  @IsOptional()
+  @Transform(({ value }) => new Date(value))
+  @IsDate()
+  @ApiProperty({
+    description: 'End date for filtering sessions',
+    example: '2024-01-01T00:00:00.000Z',
+    required: false,
+  })
+  endDate?: Date;
+
+  @IsOptional()
   @Transform(({ value }) => {
-    // ? If it's already an array, return it as is
-    if (Array.isArray(value)) return value;
-    // ? If it's a string, put it in an array
+    if (typeof value === 'string') {
+      return value.split(',').map((s) => s.trim());
+    }
+    if (Array.isArray(value)) {
+      return value;
+    }
     return [value];
   })
   @IsEnum(Sport, { each: true })
+  @IsOptional()
+  @IsArray()
   @ApiProperty({
-    description: 'Sports of the session',
+    description: 'Sports to filter by',
     enum: Sport,
-    example: [Sport.BASKETBALL, Sport.FOOTBALL],
     isArray: true,
     required: false,
   })
@@ -23,89 +76,44 @@ export class SessionFilterDto {
 
   @IsOptional()
   @Type(() => Number)
-  @IsInt()
-  @Min(1)
+  @IsNumber()
   @ApiProperty({
-    description: 'Limit of sessions to return',
-    example: 10,
+    description: 'Maximum distance for location-based filtering',
+    example: 1000,
     required: false,
-    type: Number,
   })
-  limit?: number;
+  maxDistance?: number;
 
   @IsOptional()
   @IsString()
   @ApiProperty({
     description: 'Cursor for pagination',
-    example: 'fcacfaca3c2a323bhf',
+    example: 'abc123',
     required: false,
-    type: String,
   })
   cursor?: string;
 
   @IsOptional()
-  @Transform(({ value }) => new Date(value))
-  @IsDate()
-  @ApiProperty({
-    description: 'Minimum start date',
-    example: '2022-01-01T00:00:00.000Z',
-    required: false,
-    type: Date,
-  })
-  minStart?: Date;
-
-  @IsOptional()
-  @Transform(({ value }) => new Date(value))
-  @IsDate()
-  @ApiProperty({
-    description: 'Maximum start date',
-    example: '2022-01-01T00:00:00.000Z',
-    required: false,
-    type: Date,
-  })
-  maxStart?: Date;
-
-  @IsOptional()
   @Type(() => Number)
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   @ApiProperty({
-    description: 'Latitude of the user',
-    example: '48.8588443',
+    description: 'Number of results to return',
+    example: 10,
     required: false,
-    type: Number,
   })
-  latitude?: number;
+  limit?: number;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
+  @Transform(({ value }) => value === 'true')
   @ApiProperty({
-    description: 'Longitude of the user',
-    example: '2.2943506',
+    description: 'Filter for urgent sessions only',
+    example: true,
     required: false,
-    type: Number,
   })
-  longitude?: number;
+  urgent?: boolean;
+}
 
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  @ApiProperty({
-    description: 'Maximum distance of the session search (in km)',
-    example: '10',
-    required: false,
-    type: Number,
-  })
-  maxDistance?: number;
-
-  @IsOptional()
-  @IsEnum(SessionScope)
-  @ApiProperty({
-    description: `Filter sessions by whether they are past or upcoming, used to filter my sessions`,
-    enum: SessionScope,
-    example: SessionScope.UPCOMING,
-    required: false,
-  })
-  scope?: SessionScope;
+export class findAllSessionsDto extends SessionFilterDto {
+  userUid: string;
 }

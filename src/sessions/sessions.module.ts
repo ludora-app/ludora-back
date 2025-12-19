@@ -18,11 +18,11 @@ import { SessionsController } from './sessions.controller';
   imports: [
     forwardRef(() => SessionTeamsModule),
     forwardRef(() => SessionPlayersModule),
-    forwardRef(() => UserHourPreferencesModule),
-    forwardRef(() => UserSportPreferencesModule),
     ConversationsModule,
     UsersModule,
     SharedModule,
+    UserSportPreferencesModule,
+    UserHourPreferencesModule,
   ],
   providers: [SessionsService, StorageService, ConversationsService],
 })

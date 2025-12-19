@@ -10,6 +10,8 @@ import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 import { ConversationsService } from 'src/conversations/conversations.service';
 import { SessionPlayersModule } from 'src/session-players/session-players.module';
 import { SessionPlayersService } from 'src/session-players/session-players.service';
+import { UserHourPreferencesModule } from 'src/user-hour-preferences/user-hour-preferences.module';
+import { UserSportPreferencesModule } from 'src/user-sport-preferences/user-sport-preferences.module';
 
 import { SessionInvitationsService } from './session-invitations.service';
 import { SessionInvitationsController } from './session-invitations.controller';
@@ -23,6 +25,8 @@ import { SessionInvitationsController } from './session-invitations.controller';
     SessionTeamsModule,
     SessionPlayersModule,
     ConversationsModule,
+    UserSportPreferencesModule,
+    UserHourPreferencesModule,
   ],
   providers: [
     SessionInvitationsService,

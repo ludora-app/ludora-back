@@ -2,25 +2,23 @@ import { Prisma } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, Sessions } from 'generated/prisma/client';
+import { StorageFolderName, Sport } from 'src/shared/constants/constants';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 import { ConversationsService } from 'src/conversations/conversations.service';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
 import { SessionPlayersService } from 'src/session-players/session-players.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
-import { StorageFolderName, Sport, SessionScope } from 'src/shared/constants/constants';
-import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
+import { UserHourPreferencesService } from 'src/user-hour-preferences/user-hour-preferences.service';
+import { UserSportPreferencesService } from 'src/user-sport-preferences/user-sport-preferences.service';
 
 import { DateUtils } from './../shared/utils/date.utils';
-import { SessionFilterDto } from './dto/input/session-filter.dto';
+import { SessionMapper } from './mappers/session.mapper';
 import { UpdateSessionDto } from './dto/input/update-session.dto';
-import { RawSession, SessionMapper } from './mappers/session.mapper';
+import { SESSION_SUGGESTION_CONFIG } from './constants/constants';
+import { findAllSessionsDto } from './dto/input/session-filter.dto';
 import { CreateSessionWithUserDto } from './dto/input/create-session.dto';
-import { SESSION_SUGGESTION_CONFIG, SessionUtils } from './utils/session-utils';
 import { SessionCollectionItem } from './dto/output/session-collection.response';
-import { findAllSessionsSuggestionsDto } from './dto/input/session-suggestion-filter.dto';
-import { SessionCollectionSuggestionItem } from './dto/output/session-collection-suggestion.response';
-
 @Injectable()
 export class SessionsService {
   constructor(
@@ -29,6 +27,8 @@ export class SessionsService {
     private readonly sessionPlayersService: SessionPlayersService,
     private readonly storageService: StorageService,
     private readonly conversationsService: ConversationsService,
+    private readonly userHourPreferencesService: UserHourPreferencesService,
+    private readonly userSportPreferencesService: UserSportPreferencesService,
   ) {}
 
   async create(createSessionDto: CreateSessionWithUserDto): Promise<Sessions> {
@@ -150,180 +150,6 @@ export class SessionsService {
   }
 
   /**
-   * Find sessions with geographic filtering using PostGIS
-   *
-   * This method uses raw SQL queries to leverage PostGIS functions for efficient
-   * geographic distance calculations. The query uses ST_DWithin for filtering
-   * and ST_Distance for calculating exact distances.
-   *
-   * @param filter - Session filter parameters including geographic coordinates
-   * @returns Paginated list of sessions with field information
-   *
-   * @see {@link POSTGIS_IMPLEMENTATION.md} for detailed documentation
-   */
-  async findAll(filter: SessionFilterDto): Promise<PaginatedDataDto<SessionCollectionItem>> {
-    const {
-      cursor,
-      latitude,
-      limit = 10,
-      longitude,
-      maxDistance,
-      maxStart,
-      minStart,
-      scope,
-      sports,
-    } = filter;
-
-    // Build WHERE conditions
-    const conditions: string[] = [];
-    const params: unknown[] = [];
-    let paramIndex = 1;
-
-    // Store user coordinates indices for SELECT clause
-    let userLongitudeParamIndex: number | null = null;
-    let userLatitudeParamIndex: number | null = null;
-
-    // Date filters
-    const now = new Date();
-    if (scope === SessionScope.PAST) {
-      conditions.push(`s.start_date < $${paramIndex}`);
-      params.push(now);
-      paramIndex++;
-    } else if (scope === SessionScope.UPCOMING || !scope) {
-      conditions.push(`s.start_date >= $${paramIndex}`);
-      params.push(now);
-      paramIndex++;
-    }
-
-    if (minStart) {
-      conditions.push(`s.start_date >= $${paramIndex}`);
-      params.push(minStart);
-      paramIndex++;
-    }
-
-    if (maxStart) {
-      conditions.push(`s.start_date <= $${paramIndex}`);
-      params.push(maxStart);
-      paramIndex++;
-    }
-
-    // Sport filter
-    if (sports?.length) {
-      conditions.push(`s.sport = ANY($${paramIndex})`);
-      params.push(sports);
-      paramIndex++;
-    }
-
-    // Distance filter with PostGIS
-    if (latitude !== undefined && longitude !== undefined && maxDistance !== undefined) {
-      // ST_DWithin uses meters, so convert km to meters
-      const maxDistanceMeters = maxDistance * 1000;
-      userLongitudeParamIndex = paramIndex;
-      userLatitudeParamIndex = paramIndex + 1;
-      conditions.push(
-        `ST_DWithin(
-          ST_MakePoint(f.longitude, f.latitude)::geography,
-          ST_MakePoint($${paramIndex}, $${paramIndex + 1})::geography,
-          $${paramIndex + 2}
-        )`,
-      );
-      params.push(longitude, latitude, maxDistanceMeters);
-      paramIndex += 3;
-    }
-
-    // Cursor-based pagination
-    if (cursor) {
-      conditions.push(`s.uid > $${paramIndex}`);
-      params.push(cursor);
-      paramIndex++;
-    }
-
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-
-    // Build distance calculation for SELECT if coordinates provided
-    const distanceSelect =
-      userLongitudeParamIndex !== null && userLatitudeParamIndex !== null
-        ? `, ST_Distance(
-            ST_MakePoint(f.longitude, f.latitude)::geography, 
-            ST_MakePoint($${userLongitudeParamIndex}, $${userLatitudeParamIndex})::geography
-          ) as distance`
-        : '';
-
-    const query = `
-      SELECT 
-        s.uid,
-        s.creator_uid as "creatorUid",
-        s.start_date as "startDate",
-        s.end_date as "endDate",
-        s.sport,
-        s.game_mode as "gameMode",
-        s.max_players_per_team as "maxPlayersPerTeam",
-        f.short_address as "fieldShortAddress",
-        f.latitude as "fieldLatitude",
-        f.longitude as "fieldLongitude",
-        (
-          SELECT json_agg(
-            json_build_object(
-              'teamName', st.team_name,
-              'numberOfPlayers', (
-                SELECT COUNT(*)::int 
-                FROM sessions."Session_players" sp 
-                WHERE sp.team_uid = st.uid
-              )
-            )
-          )
-          FROM sessions."Session_teams" st
-          WHERE st.session_uid = s.uid
-        ) as "sessionTeams",
-        (
-          SELECT fi.url
-          FROM infrastructure."Field_images" fi
-          WHERE fi.field_uid = f.uid
-          ORDER BY fi."order" ASC
-          LIMIT 1
-        ) as "fieldImage"
-        ${distanceSelect}
-      FROM sessions."Sessions" s
-      INNER JOIN infrastructure."Fields" f ON s.field_uid = f.uid
-      ${whereClause}
-      ORDER BY s.start_date ASC
-      LIMIT $${paramIndex}
-    `;
-
-    params.push(limit + 1);
-
-    // Execute raw query
-    const sessions = await this.prisma.$queryRawUnsafe<Array<RawSession>>(query, ...params);
-
-    // Handle pagination
-    let nextCursor: string | null = null;
-    if (sessions.length > limit) {
-      const nextItem = sessions.pop();
-      nextCursor = nextItem!.uid;
-    }
-
-    const items = SessionMapper.fromRawToSessionResponses(sessions);
-
-    // Calculate distance between user and session field
-    items.forEach((item) => {
-      if (latitude !== undefined && longitude !== undefined) {
-        item.distance = GeolocalisationService.calculateDistanceBetweenCoordinates(
-          latitude,
-          longitude,
-          item.fieldLatitude,
-          item.fieldLongitude,
-        );
-      }
-    });
-
-    return {
-      items,
-      nextCursor,
-      totalCount: items.length,
-    };
-  }
-
-  /**
    * Find all sessions suggestions with filtering and scoring
    * This method filters sessions based on sports, date range, and location,
    * then scores them based on user preferences and proximity
@@ -331,19 +157,26 @@ export class SessionsService {
    * @param params - Filtering and pagination parameters
    * @returns Paginated list of session suggestions with scores
    */
-  async findAllSessionsSuggestions({
+  async findAll({
     cursor,
     endDate,
-    filterSports = [],
     limit = 10,
     maxDistance = SESSION_SUGGESTION_CONFIG.THRESHOLDS.MAX_DISTANCE_METERS,
+    sports: filterSports = [],
     startDate,
     urgent = false,
     userLat,
     userLon,
-    userSportPreferences = [],
-    userTimePreferences = [],
-  }: findAllSessionsSuggestionsDto): Promise<PaginatedDataDto<SessionCollectionSuggestionItem>> {
+    userUid,
+  }: findAllSessionsDto): Promise<PaginatedDataDto<SessionCollectionItem>> {
+    const userSportPreferencesResponse =
+      await this.userSportPreferencesService.findAllByUserUid(userUid);
+    const userSportPreferences = userSportPreferencesResponse.items || [];
+
+    const userTimePreferencesResponse =
+      await this.userHourPreferencesService.findAllByUserUid(userUid);
+    const userTimePreferences = userTimePreferencesResponse.items || [];
+
     // ---------------------------------------------------------
     // 0. INITIALIZATION CONFIG
     // ---------------------------------------------------------
@@ -442,7 +275,7 @@ export class SessionsService {
     let timeScoreSql = Prisma.sql`0`;
     if (hasTimePrefs) {
       const timeConditions = userTimePreferences.map((pref) => {
-        const { max, min } = SessionUtils.getHoursForPeriod(pref.timePeriod);
+        const { max, min } = DateUtils.getHoursForPeriod(pref.timePeriod);
         const hourCondition = Prisma.sql`EXTRACT(HOUR FROM s.start_date) >= ${min} AND EXTRACT(HOUR FROM s.start_date) < ${max}`;
         if (pref.type === 'RECURRENT')
           return Prisma.sql`(EXTRACT(DOW FROM s.start_date) = ${pref.dayOfWeek} AND ${hourCondition})`;
@@ -587,7 +420,7 @@ export class SessionsService {
       return indexA - indexB;
     });
 
-    const items = SessionMapper.toSessionCollectionSuggestionItems(sortedSessions, rawDataMap);
+    const items = SessionMapper.fromRawToSessionResponses(sortedSessions, rawDataMap);
 
     return {
       items,

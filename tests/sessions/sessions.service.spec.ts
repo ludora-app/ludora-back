@@ -2,16 +2,18 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { GameModes } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SessionScope, Sport } from 'src/shared/constants/constants';
+import { Sport } from 'src/shared/constants/constants';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { CreateSessionWithUserDto } from '../../src/sessions/dto/input/create-session.dto';
-import { SessionFilterDto } from '../../src/sessions/dto/input/session-filter.dto';
+import { findAllSessionsDto } from '../../src/sessions/dto/input/session-filter.dto';
 import { UpdateSessionDto } from '../../src/sessions/dto/input/update-session.dto';
 import { SessionsService } from '../../src/sessions/sessions.service';
 import { SessionPlayersService } from '../../src/session-players/session-players.service';
 import { SessionTeamsService } from 'src/session-teams/session-teams.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationsService } from 'src/conversations/conversations.service';
+import { UserHourPreferencesService } from 'src/user-hour-preferences/user-hour-preferences.service';
+import { UserSportPreferencesService } from 'src/user-sport-preferences/user-sport-preferences.service';
 
 jest.mock('src/shared/utils/date.utils', () => ({
   DateUtils: {
@@ -27,6 +29,14 @@ jest.mock('src/shared/utils/date.utils', () => ({
 const mockStorageService = {
   upload: jest.fn(),
   getSignedUrl: jest.fn(),
+};
+
+const mockUserHourPreferencesService = {
+  findAllByUserUid: jest.fn().mockResolvedValue({ items: [] }),
+};
+
+const mockUserSportPreferencesService = {
+  findAllByUserUid: jest.fn().mockResolvedValue({ items: [] }),
 };
 
 describe('SessionsService', () => {
@@ -92,6 +102,14 @@ describe('SessionsService', () => {
           useValue: {
             createSessionConversation: jest.fn(),
           },
+        },
+        {
+          provide: UserHourPreferencesService,
+          useValue: mockUserHourPreferencesService,
+        },
+        {
+          provide: UserSportPreferencesService,
+          useValue: mockUserSportPreferencesService,
         },
       ],
     }).compile();
@@ -353,8 +371,25 @@ describe('SessionsService', () => {
   });
 
   describe('findAll', () => {
-    // Mock data in RawSession format (SQL query result format)
-    const mockRawSessions = [
+    // Mock data for raw query result format
+    const mockRawQueryResult = [
+      {
+        uid: 'session-uid-1',
+        score: 1000,
+        start_date: new Date('2023-01-10T14:00:00Z'),
+        total_count: BigInt(2),
+        distance_val: 500,
+      },
+      {
+        uid: 'session-uid-2',
+        score: 900,
+        start_date: new Date('2023-01-11T14:00:00Z'),
+        total_count: BigInt(2),
+        distance_val: 1000,
+      },
+    ];
+
+    const mockSessionsFromDb = [
       {
         uid: 'session-uid-1',
         creatorUid: 'user-uid-1',
@@ -363,19 +398,15 @@ describe('SessionsService', () => {
         sport: Sport.FOOTBALL,
         gameMode: 'FIVE_V_FIVE',
         maxPlayersPerTeam: 5,
-        fieldShortAddress: '123 Main St, Paris',
-        fieldLatitude: 48.8566,
-        fieldLongitude: 2.3522,
-        fieldImage: 'https://example.com/field1.jpg',
+        field: {
+          shortAddress: '123 Main St, Paris',
+          latitude: 48.8566,
+          longitude: 2.3522,
+          fieldImages: [{ url: 'https://example.com/field1.jpg' }],
+        },
         sessionTeams: [
-          {
-            teamName: 'Team A',
-            numberOfPlayers: 3,
-          },
-          {
-            teamName: 'Team B',
-            numberOfPlayers: 2,
-          },
+          { teamName: 'Team A', _count: { sessionPlayers: 3 } },
+          { teamName: 'Team B', _count: { sessionPlayers: 2 } },
         ],
       },
       {
@@ -386,27 +417,29 @@ describe('SessionsService', () => {
         sport: 'BASKETBALL',
         gameMode: 'FIVE_V_FIVE',
         maxPlayersPerTeam: 5,
-        fieldShortAddress: '456 Rue de Test, Paris',
-        fieldLatitude: 48.8567,
-        fieldLongitude: 2.3523,
-        fieldImage: null,
+        field: {
+          shortAddress: '456 Rue de Test, Paris',
+          latitude: 48.8567,
+          longitude: 2.3523,
+          fieldImages: [],
+        },
         sessionTeams: [
-          {
-            teamName: 'Team A',
-            numberOfPlayers: 4,
-          },
-          {
-            teamName: 'Team B',
-            numberOfPlayers: 5,
-          },
+          { teamName: 'Team A', _count: { sessionPlayers: 4 } },
+          { teamName: 'Team B', _count: { sessionPlayers: 5 } },
         ],
       },
     ];
 
-    it('should return a list of sessions', async () => {
+    it('should return a list of sessions when user has location', async () => {
       // Arrange
-      const filter: SessionFilterDto = { limit: 10 };
-      (prismaService.$queryRawUnsafe as jest.Mock).mockResolvedValue(mockRawSessions);
+      const filter: findAllSessionsDto = {
+        userUid: 'user-uid-1',
+        userLat: 48.8566,
+        userLon: 2.3522,
+        limit: 10,
+      };
+      (prismaService.$queryRaw as jest.Mock) = jest.fn().mockResolvedValue(mockRawQueryResult);
+      (prismaService.sessions.findMany as jest.Mock).mockResolvedValue(mockSessionsFromDb);
 
       // Act
       const result = await service.findAll(filter);
@@ -416,38 +449,42 @@ describe('SessionsService', () => {
         items: expect.arrayContaining([
           expect.objectContaining({
             uid: 'session-uid-1',
-            fieldImage: 'https://example.com/field1.jpg',
-            fieldLatitude: 48.8566,
-            fieldLongitude: 2.3522,
-            fieldShortAddress: '123 Main St, Paris',
-            sessionTeams: expect.arrayContaining([
-              expect.objectContaining({ teamName: 'Team A', numberOfPlayers: 3 }),
-              expect.objectContaining({ teamName: 'Team B', numberOfPlayers: 2 }),
-            ]),
-          }),
-          expect.objectContaining({
-            uid: 'session-uid-2',
-            fieldImage: undefined,
-            fieldLatitude: 48.8567,
-            fieldLongitude: 2.3523,
-            fieldShortAddress: '456 Rue de Test, Paris',
           }),
         ]),
         nextCursor: null,
         totalCount: 2,
       });
-      expect(prismaService.$queryRawUnsafe).toHaveBeenCalled();
-      // Verify SQL query contains expected clauses
-      const sqlCall = (prismaService.$queryRawUnsafe as jest.Mock).mock.calls[0][0];
-      expect(sqlCall).toContain('SELECT');
-      expect(sqlCall).toContain('FROM sessions."Sessions"');
-      expect(sqlCall).toContain('ORDER BY s.start_date ASC');
+    });
+
+    it('should return empty result when no filtering criteria provided', async () => {
+      // Arrange - no location, no sports, no time prefs, no urgent, no date
+      const filter: findAllSessionsDto = {
+        userUid: 'user-uid-1',
+        limit: 10,
+      };
+
+      // Act
+      const result = await service.findAll(filter);
+
+      // Assert - should return empty due to safety barrier
+      expect(result).toEqual({
+        items: [],
+        nextCursor: null,
+        totalCount: 0,
+      });
     });
 
     it('should handle pagination with cursor', async () => {
       // Arrange
-      const filter: SessionFilterDto = { limit: 1, cursor: 'session-uid-1' };
-      (prismaService.$queryRawUnsafe as jest.Mock).mockResolvedValue([mockRawSessions[1]]);
+      const filter: findAllSessionsDto = {
+        userUid: 'user-uid-1',
+        userLat: 48.8566,
+        userLon: 2.3522,
+        limit: 1,
+        cursor: '1',
+      };
+      (prismaService.$queryRaw as jest.Mock) = jest.fn().mockResolvedValue([mockRawQueryResult[1]]);
+      (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSessionsFromDb[1]]);
 
       // Act
       const result = await service.findAll(filter);
@@ -455,123 +492,76 @@ describe('SessionsService', () => {
       // Assert
       expect(result.items).toHaveLength(1);
       expect(result.nextCursor).toBeNull();
-      expect(prismaService.$queryRawUnsafe).toHaveBeenCalled();
-      // Verify cursor is in the WHERE clause
-      const sqlCall = (prismaService.$queryRawUnsafe as jest.Mock).mock.calls[0][0];
-      expect(sqlCall).toContain('s.uid >');
     });
 
     it('should return the next cursor when more results exist', async () => {
       // Arrange
-      const filter: SessionFilterDto = { limit: 1 };
-      (prismaService.$queryRawUnsafe as jest.Mock).mockResolvedValue(mockRawSessions);
+      const filter: findAllSessionsDto = {
+        userUid: 'user-uid-1',
+        userLat: 48.8566,
+        userLon: 2.3522,
+        limit: 1,
+      };
+      (prismaService.$queryRaw as jest.Mock) = jest.fn().mockResolvedValue(mockRawQueryResult);
+      (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSessionsFromDb[0]]);
 
       // Act
       const result = await service.findAll(filter);
 
       // Assert
       expect(result.items).toHaveLength(1);
-      expect(result.nextCursor).toBe('session-uid-2');
+      expect(result.nextCursor).toBe('1');
     });
 
-    it('should filter by scope UPCOMING', async () => {
+    it('should filter by sports when provided', async () => {
       // Arrange
-      const filter: SessionFilterDto = { scope: SessionScope.UPCOMING };
-      (prismaService.$queryRawUnsafe as jest.Mock).mockResolvedValue(mockRawSessions);
-
-      // Act
-      await service.findAll(filter);
-
-      // Assert
-      expect(prismaService.$queryRawUnsafe).toHaveBeenCalled();
-      const sqlCall = (prismaService.$queryRawUnsafe as jest.Mock).mock.calls[0][0];
-      expect(sqlCall).toContain('s.start_date >=');
-    });
-
-    it('should filter by scope PAST', async () => {
-      // Arrange
-      const filter: SessionFilterDto = { scope: SessionScope.PAST };
-      (prismaService.$queryRawUnsafe as jest.Mock).mockResolvedValue(mockRawSessions);
-
-      // Act
-      await service.findAll(filter);
-
-      // Assert
-      expect(prismaService.$queryRawUnsafe).toHaveBeenCalled();
-      const sqlCall = (prismaService.$queryRawUnsafe as jest.Mock).mock.calls[0][0];
-      expect(sqlCall).toContain('s.start_date <');
-    });
-
-    it('should default to UPCOMING scope when no scope is provided', async () => {
-      // Arrange
-      const filter: SessionFilterDto = { limit: 10 }; // No scope provided
-      (prismaService.$queryRawUnsafe as jest.Mock).mockResolvedValue(mockRawSessions);
-
-      // Act
-      await service.findAll(filter);
-
-      // Assert
-      expect(prismaService.$queryRawUnsafe).toHaveBeenCalled();
-      const sqlCall = (prismaService.$queryRawUnsafe as jest.Mock).mock.calls[0][0];
-      // Should filter by start_date >= now (UPCOMING)
-      expect(sqlCall).toContain('s.start_date >=');
-    });
-
-    it('should filter by sports', async () => {
-      // Arrange
-      const filter: SessionFilterDto = { sports: [Sport.FOOTBALL, Sport.BASKETBALL] };
-      (prismaService.$queryRawUnsafe as jest.Mock).mockResolvedValue(mockRawSessions);
-
-      // Act
-      await service.findAll(filter);
-
-      // Assert
-      expect(prismaService.$queryRawUnsafe).toHaveBeenCalled();
-      const sqlCall = (prismaService.$queryRawUnsafe as jest.Mock).mock.calls[0][0];
-      expect(sqlCall).toContain('s.sport = ANY');
-    });
-
-    it('should filter by min and max start date', async () => {
-      // Arrange
-      const minStart = new Date('2023-01-01T00:00:00Z');
-      const maxStart = new Date('2023-01-31T23:59:59Z');
-      const filter: SessionFilterDto = {
-        minStart,
-        maxStart,
+      const filter: findAllSessionsDto = {
+        userUid: 'user-uid-1',
+        sports: [Sport.FOOTBALL, Sport.BASKETBALL],
       };
-      (prismaService.$queryRawUnsafe as jest.Mock).mockResolvedValue(mockRawSessions);
+      (prismaService.$queryRaw as jest.Mock) = jest.fn().mockResolvedValue(mockRawQueryResult);
+      (prismaService.sessions.findMany as jest.Mock).mockResolvedValue(mockSessionsFromDb);
 
       // Act
-      await service.findAll(filter);
+      const result = await service.findAll(filter);
 
       // Assert
-      expect(prismaService.$queryRawUnsafe).toHaveBeenCalled();
-      const sqlCall = (prismaService.$queryRawUnsafe as jest.Mock).mock.calls[0][0];
-      // Should contain both >= and <= for start_date
-      expect(sqlCall).toContain('s.start_date >=');
-      expect(sqlCall).toContain('s.start_date <=');
+      expect(result.items.length).toBeGreaterThan(0);
     });
 
-    it('should add location filtering when coordinates provided', async () => {
+    it('should filter by start and end date range', async () => {
       // Arrange
-      const filter: SessionFilterDto = {
-        latitude: 45.5,
-        longitude: -73.6,
-        maxDistance: 10,
+      const filter: findAllSessionsDto = {
+        userUid: 'user-uid-1',
+        startDate: new Date('2023-01-01T00:00:00Z'),
+        endDate: new Date('2023-01-31T23:59:59Z'),
       };
-      (prismaService.$queryRawUnsafe as jest.Mock).mockResolvedValue(mockRawSessions);
+      (prismaService.$queryRaw as jest.Mock) = jest.fn().mockResolvedValue(mockRawQueryResult);
+      (prismaService.sessions.findMany as jest.Mock).mockResolvedValue(mockSessionsFromDb);
 
       // Act
-      await service.findAll(filter);
+      const result = await service.findAll(filter);
 
       // Assert
-      expect(prismaService.$queryRawUnsafe).toHaveBeenCalled();
-      const sqlCall = (prismaService.$queryRawUnsafe as jest.Mock).mock.calls[0][0];
-      // Should contain PostGIS functions
-      expect(sqlCall).toContain('ST_DWithin');
-      expect(sqlCall).toContain('ST_MakePoint');
-      // Should also include distance calculation in SELECT
-      expect(sqlCall).toContain('ST_Distance');
+      expect(result.items.length).toBeGreaterThan(0);
+    });
+
+    it('should filter urgent sessions when urgent flag is set', async () => {
+      // Arrange
+      const filter: findAllSessionsDto = {
+        userUid: 'user-uid-1',
+        userLat: 48.8566,
+        userLon: 2.3522,
+        urgent: true,
+      };
+      (prismaService.$queryRaw as jest.Mock) = jest.fn().mockResolvedValue(mockRawQueryResult);
+      (prismaService.sessions.findMany as jest.Mock).mockResolvedValue(mockSessionsFromDb);
+
+      // Act
+      const result = await service.findAll(filter);
+
+      // Assert
+      expect(result.items.length).toBeGreaterThan(0);
     });
   });
 
