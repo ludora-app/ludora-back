@@ -10,11 +10,11 @@ import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationsService } from 'src/conversations/conversations.service';
 import { SessionsService } from 'src/sessions/services/sessions.service';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
-import { CreateSessionWithUserDto } from 'src/sessions/dto/input/create-session.dto';
 import { FindAllSessionsDto, SessionFilterDto } from 'src/sessions/dto/input/session-filter.dto';
 import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
 import { UserHourPreferencesService } from 'src/user-hour-preferences/user-hour-preferences.service';
 import { UserSportPreferencesService } from 'src/user-sport-preferences/user-sport-preferences.service';
+import { CreateSessionDto } from 'src/sessions/dto/input/create-session.dto';
 
 jest.mock('src/shared/utils/date.utils', () => ({
   DateUtils: {
