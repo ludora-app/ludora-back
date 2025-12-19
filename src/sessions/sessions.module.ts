@@ -4,6 +4,8 @@ import { SharedModule } from 'src/shared/shared.module';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationsModule } from 'src/conversations/conversations.module';
 import { ConversationsService } from 'src/conversations/conversations.service';
+import { UserHourPreferencesModule } from 'src/user-hour-preferences/user-hour-preferences.module';
+import { UserSportPreferencesModule } from 'src/user-sport-preferences/user-sport-preferences.module';
 
 import { SessionsService } from './services/sessions.service';
 import { SessionsController } from './controllers/sessions.controller';
@@ -22,7 +24,13 @@ import { SessionInvitationsController } from './controllers/session-invitations.
     SessionTeamsController,
   ],
   exports: [SessionsService, SessionPlayersService, SessionTeamsService, SessionInvitationsService],
-  imports: [ConversationsModule, UsersModule, SharedModule],
+  imports: [
+    ConversationsModule,
+    UsersModule,
+    SharedModule,
+    UserHourPreferencesModule,
+    UserSportPreferencesModule,
+  ],
   providers: [
     SessionsService,
     SessionPlayersService,

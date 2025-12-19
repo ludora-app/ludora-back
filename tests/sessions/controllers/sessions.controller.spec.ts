@@ -7,7 +7,7 @@ import {
   CreateSessionDto,
   CreateSessionWithUserDto,
 } from 'src/sessions/dto/input/create-session.dto';
-import { findAllSessionsDto } from 'src/sessions/dto/input/session-filter.dto';
+import { FindAllSessionsDto } from 'src/sessions/dto/input/session-filter.dto';
 import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
 import { SessionsController } from 'src/sessions/controllers/sessions.controller';
 import { Sport } from 'src/shared/constants/constants';
@@ -136,7 +136,7 @@ describe('SessionsController', () => {
       },
     } as any;
 
-    const sessionFilterDto: findAllSessionsDto = {
+    const sessionFilterDto: FindAllSessionsDto = {
       userUid: 'user-uid-1',
       limit: 10,
       sports: [Sport.FOOTBALL],
@@ -183,7 +183,7 @@ describe('SessionsController', () => {
     });
 
     it('should work with pagination', async () => {
-      const paginatedFilter: findAllSessionsDto = {
+      const paginatedFilter: FindAllSessionsDto = {
         ...sessionFilterDto,
         limit: 1,
         cursor: 'session-uid-1',
