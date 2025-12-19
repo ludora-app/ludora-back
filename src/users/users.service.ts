@@ -404,26 +404,4 @@ export class UsersService {
 
     await this.sendCodeForPasswordReset(user);
   }
-
-  async resetForgottenPassword(newPassword: string, userUid: string): Promise<void> {
-    const existingUser = await this.findOne(userUid, USERSELECT.findMe);
-
-    if (!existingUser) throw new NotFoundException('User not found');
-
-    const hashedPassword = await argon2.hash(newPassword);
-
-    await this.prismaService.users.update({
-      data: { password: hashedPassword },
-      where: { uid: userUid },
-    });
-
-    await this.emailsService.sendEmail({
-      data: { name: existingUser.firstname },
-      recipients: [existingUser.email],
-      template: 'passwordReset',
-    });
-
-    this.logger.info(`User ${existingUser.email} password has been updated successfully`);
-    return;
-  }
 }

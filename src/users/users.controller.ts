@@ -3,7 +3,6 @@ import { Public } from 'src/shared/decorators/public.decorator';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import { ResetPassword } from 'src/auth-b2c/decorators/reset-password.decorator';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
@@ -35,7 +34,6 @@ import {
 
 import { UsersService } from './users.service';
 import { USERSELECT } from '../shared/constants/select-user';
-import { ForgottenPasswordDto } from './dto/input/forgotten-password.dto';
 import { PasswordResetRequestDto } from './dto/input/password-reset-request.dto';
 import {
   FindAllUsersResponseDataDto,
@@ -257,32 +255,6 @@ export class UsersController {
   deactivate(@Req() request: Request) {
     const uid = request['user'].uid;
     return this.usersService.deactivate(uid);
-  }
-
-  @Patch('/password-reset')
-  @ResetPassword()
-  @Protected()
-  @ApiOperation({
-    summary: 'This method is used to reset the password of a user when he forgot his password',
-  })
-  @ApiBadRequestResponse({
-    description: 'Error resetting password',
-    type: BadRequestResponseDto,
-  })
-  @ApiNotFoundResponse({
-    description: 'Verification code not found',
-    type: NotFoundResponseDto,
-  })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-    type: NotFoundResponseDto,
-  })
-  @ApiNoContentResponse({ description: 'Password reset successfully' })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async passwordReset(@Body() dto: ForgottenPasswordDto, @Req() request: Request): Promise<void> {
-    const userUid = request['user'].uid;
-    await this.usersService.resetForgottenPassword(dto.newPassword, userUid);
-    return;
   }
 
   @Delete('/delete')

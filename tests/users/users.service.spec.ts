@@ -470,43 +470,4 @@ describe('UsersService', () => {
       expect(mockEmailsService.sendEmail).not.toHaveBeenCalled();
     });
   });
-
-  describe('resetForgottenPassword', () => {
-    it('should reset forgotten password successfully', async () => {
-      const mockUser = {
-        uid: '1',
-        firstname: 'John',
-        email: 'test@test.com',
-      };
-
-      mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
-      mockPrismaService.users.update.mockResolvedValueOnce({
-        ...mockUser,
-        password: 'hashedPassword',
-      });
-
-      await service.resetForgottenPassword('newPassword123', '1');
-
-      expect(mockPrismaService.users.findUnique).toHaveBeenCalled();
-      expect(argon2.hash).toHaveBeenCalledWith('newPassword123');
-      expect(mockPrismaService.users.update).toHaveBeenCalledWith({
-        data: { password: 'hashedPassword' },
-        where: { uid: '1' },
-      });
-      expect(mockEmailsService.sendEmail).toHaveBeenCalledWith({
-        data: { name: 'John' },
-        recipients: ['test@test.com'],
-        template: 'passwordReset',
-      });
-    });
-
-    it('should throw NotFoundException if user not found', async () => {
-      mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
-
-      await expect(service.resetForgottenPassword('newPassword123', '1')).rejects.toThrow(
-        NotFoundException,
-      );
-      expect(mockPrismaService.users.update).not.toHaveBeenCalled();
-    });
-  });
 });

@@ -666,4 +666,67 @@ export class AuthB2CService {
 
     return resetToken;
   }
+
+  async resetForgottenPassword(
+    newPassword: string,
+    userUid: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const payload = { uid: userUid };
+    const accessToken = this.jwt.sign(
+      { ...payload, type: TokenType.ACCESS },
+      { expiresIn: this.TOKEN_EXPIRATION_TIME },
+    );
+    const refreshToken = this.jwt.sign(
+      { ...payload, type: TokenType.REFRESH },
+      { expiresIn: '7d' },
+    );
+
+    const updatedUser = await this.prismaService.$transaction(async (tx) => {
+      const user = await tx.users.findUnique({
+        where: { uid: userUid },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const hashedPassword = await argon2.hash(newPassword);
+      const updated = await tx.users.update({
+        data: { password: hashedPassword },
+        where: { uid: userUid },
+      });
+
+      await tx.userTokens.deleteMany({
+        where: { userUid: userUid },
+      });
+
+      await tx.refreshTokens.deleteMany({
+        where: { userUid: userUid },
+      });
+
+      await tx.userTokens.create({
+        data: { token: accessToken, userUid: userUid },
+      });
+
+      await tx.refreshTokens.create({
+        data: {
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          token: refreshToken,
+          userUid: userUid,
+        },
+      });
+
+      return updated;
+    });
+
+    await this.emailsService.sendEmail({
+      data: { name: updatedUser.firstname },
+      recipients: [updatedUser.email],
+      template: 'passwordReset',
+    });
+
+    this.logger.info(`User ${updatedUser.email} password has been reset successfully`);
+
+    return { accessToken, refreshToken };
+  }
 }

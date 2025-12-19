@@ -22,6 +22,7 @@ describe('AuthB2CController', () => {
     logoutAllDevices: jest.fn(),
     generateAccessTokenFromCode: jest.fn(),
     createOrConnectGoogleUser: jest.fn(),
+    resetForgottenPassword: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -375,6 +376,96 @@ describe('AuthB2CController', () => {
         'Error creating or connecting Google user',
       );
       expect(mockAuthB2CService.createOrConnectGoogleUser).toHaveBeenCalled();
+    });
+  });
+
+  describe('passwordReset', () => {
+    it('should reset password successfully', async () => {
+      const mockRequest = {
+        user: { uid: 'user-1' },
+      };
+      const dto = {
+        newPassword: 'newSecurePassword123!',
+      };
+
+      mockAuthB2CService.resetForgottenPassword.mockResolvedValue({
+        accessToken: 'new_access_token',
+        refreshToken: 'new_refresh_token',
+      });
+
+      const result = await controller.passwordReset(dto, mockRequest as any);
+
+      expect(result).toEqual({
+        data: {
+          accessToken: 'new_access_token',
+          refreshToken: 'new_refresh_token',
+        },
+        message: 'Password reset successfully',
+      });
+      expect(mockAuthB2CService.resetForgottenPassword).toHaveBeenCalledWith(
+        'newSecurePassword123!',
+        'user-1',
+      );
+    });
+
+    it('should handle NotFoundException when user not found', async () => {
+      const mockRequest = {
+        user: { uid: 'non-existent-user' },
+      };
+      const dto = {
+        newPassword: 'newPassword123!',
+      };
+
+      mockAuthB2CService.resetForgottenPassword.mockRejectedValue(new Error('User not found'));
+
+      await expect(controller.passwordReset(dto, mockRequest as any)).rejects.toThrow(
+        'User not found',
+      );
+      expect(mockAuthB2CService.resetForgottenPassword).toHaveBeenCalledWith(
+        'newPassword123!',
+        'non-existent-user',
+      );
+    });
+
+    it('should handle transaction errors during password reset', async () => {
+      const mockRequest = {
+        user: { uid: 'user-1' },
+      };
+      const dto = {
+        newPassword: 'newPassword123!',
+      };
+
+      mockAuthB2CService.resetForgottenPassword.mockRejectedValue(new Error('Transaction failed'));
+
+      await expect(controller.passwordReset(dto, mockRequest as any)).rejects.toThrow(
+        'Transaction failed',
+      );
+      expect(mockAuthB2CService.resetForgottenPassword).toHaveBeenCalledWith(
+        'newPassword123!',
+        'user-1',
+      );
+    });
+
+    it('should return new tokens after successful password reset', async () => {
+      const mockRequest = {
+        user: { uid: 'user-123' },
+      };
+      const dto = {
+        newPassword: 'SuperSecure@2024!',
+      };
+      const expectedTokens = {
+        accessToken: 'jwt_access_token_xyz',
+        refreshToken: 'jwt_refresh_token_abc',
+      };
+
+      mockAuthB2CService.resetForgottenPassword.mockResolvedValue(expectedTokens);
+
+      const result = await controller.passwordReset(dto, mockRequest as any);
+
+      expect(result.data.accessToken).toBe('jwt_access_token_xyz');
+      expect(result.data.refreshToken).toBe('jwt_refresh_token_abc');
+      expect(result.message).toBe('Password reset successfully');
+      expect(mockAuthB2CService.resetForgottenPassword).toHaveBeenCalledTimes(1);
     });
   });
 });

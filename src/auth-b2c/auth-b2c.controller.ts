@@ -3,6 +3,8 @@ import { Provider } from 'generated/prisma/enums';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SuccessTypeDto } from 'src/shared/dto/responses/success-type';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
+import { ForgottenPasswordDto } from 'src/users/dto/input/forgotten-password.dto';
+import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import {
@@ -11,6 +13,7 @@ import {
   ApiConflictResponse,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiUnauthorizedResponse,
@@ -23,6 +26,7 @@ import {
   HttpStatus,
   InternalServerErrorException,
   NotFoundException,
+  Patch,
   Post,
   Req,
   Request,
@@ -49,6 +53,7 @@ import { AuthB2CService } from './auth-b2c.service';
 import { AuthB2CGuard } from './guards/auth-b2c.guard';
 import { Public } from '../shared/decorators/public.decorator';
 import { Protected } from '../shared/decorators/protected.decorator';
+import { ResetPassword } from './decorators/reset-password.decorator';
 import { VerifyEmailCodeDto } from './dto/input/verify-email-code.dto';
 import { CreateGoogleUserDto } from './dto/input/create-google-user.dto';
 import { CreateOrConnectGoogleResponseDto } from './dto/output/create-or-connect-google.response';
@@ -370,5 +375,40 @@ export class AuthB2CController {
       if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException(error.message);
     }
+  }
+
+  @Patch('/password-reset')
+  @ResetPassword()
+  @Protected()
+  @ApiOperation({
+    summary: 'This method is used to reset the password of a user when he forgot his password',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error resetting password',
+    type: BadRequestResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'Verification code not found',
+    type: NotFoundResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundResponseDto,
+  })
+  @HttpCode(HttpStatus.OK)
+  async passwordReset(
+    @Body() dto: ForgottenPasswordDto,
+    @Req() request: Request,
+  ): Promise<LoginResponseDto> {
+    const userUid = request['user'].uid;
+    const { accessToken, refreshToken } = await this.authService.resetForgottenPassword(
+      dto.newPassword,
+      userUid,
+    );
+    return {
+      data: { accessToken: accessToken, refreshToken: refreshToken },
+      message: 'Password reset successfully',
+    };
+    return;
   }
 }

@@ -4,7 +4,6 @@ import { UpdatePasswordDto, UpdateUserDto, UserFilterDto } from 'src/users/dto';
 import { UsersController } from 'src/users/users.controller';
 import { UsersService } from 'src/users/users.service';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
-import { ForgottenPasswordDto } from 'src/users/dto/input/forgotten-password.dto';
 import { PasswordResetRequestDto } from 'src/users/dto/input/password-reset-request.dto';
 
 describe('UsersController', () => {
@@ -20,7 +19,6 @@ describe('UsersController', () => {
     update: jest.fn(),
     updatePassword: jest.fn(),
     sendCodeForPasswordResetRequest: jest.fn(),
-    resetForgottenPassword: jest.fn(),
   };
 
   const mockUser = {
@@ -223,38 +221,6 @@ describe('UsersController', () => {
         'Password reset request failed',
       );
       expect(service.sendCodeForPasswordResetRequest).toHaveBeenCalledWith('test@test.com');
-    });
-  });
-
-  describe('passwordReset', () => {
-    it('should reset password successfully', async () => {
-      const mockRequest = {
-        user: { uid: '1' },
-      };
-      const forgottenPasswordDto: ForgottenPasswordDto = {
-        newPassword: 'newPassword123',
-      };
-      mockUsersService.resetForgottenPassword.mockResolvedValue(undefined);
-
-      const result = await controller.passwordReset(forgottenPasswordDto, mockRequest as any);
-
-      expect(result).toBeUndefined();
-      expect(service.resetForgottenPassword).toHaveBeenCalledWith('newPassword123', '1');
-    });
-
-    it('should handle errors from service', async () => {
-      const mockRequest = {
-        user: { uid: '1' },
-      };
-      const forgottenPasswordDto: ForgottenPasswordDto = {
-        newPassword: 'newPassword123',
-      };
-      mockUsersService.resetForgottenPassword.mockRejectedValue(new Error('Password reset failed'));
-
-      await expect(
-        controller.passwordReset(forgottenPasswordDto, mockRequest as any),
-      ).rejects.toThrow('Password reset failed');
-      expect(service.resetForgottenPassword).toHaveBeenCalledWith('newPassword123', '1');
     });
   });
 });

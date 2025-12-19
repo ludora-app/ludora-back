@@ -630,4 +630,155 @@ describe('AuthB2CService', () => {
       );
     });
   });
+
+  describe('resetForgottenPassword', () => {
+    it('should reset forgotten password successfully', async () => {
+      const mockUser = {
+        uid: 'user-1',
+        email: 'test@test.com',
+        firstname: 'John',
+        password: 'oldHashedPassword',
+      };
+
+      const hashedPassword = await argon2.hash('newPassword123');
+
+      mockPrismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          users: {
+            findUnique: jest.fn().mockResolvedValue(mockUser),
+            update: jest.fn().mockResolvedValue({ ...mockUser, password: hashedPassword }),
+          },
+          userTokens: {
+            deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+            create: jest.fn().mockResolvedValue({
+              uid: 'token-1',
+              token: 'mock_access_token',
+              userUid: mockUser.uid,
+            }),
+          },
+          refreshTokens: {
+            deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+            create: jest.fn().mockResolvedValue({
+              uid: 'refresh-token-1',
+              token: 'mock_refresh_token',
+              userUid: mockUser.uid,
+            }),
+          },
+        });
+      });
+
+      const result = await service.resetForgottenPassword('newPassword123', 'user-1');
+
+      expect(result).toEqual({
+        accessToken: 'mock_token',
+        refreshToken: 'mock_token',
+      });
+      expect(mockPrismaService.$transaction).toHaveBeenCalled();
+      expect(mockEmailsService.sendEmail).toHaveBeenCalledWith({
+        data: { name: 'John' },
+        recipients: ['test@test.com'],
+        template: 'passwordReset',
+      });
+      expect(mockPinoLogger.info).toHaveBeenCalledWith(
+        'User test@test.com password has been reset successfully',
+      );
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      mockPrismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          users: {
+            findUnique: jest.fn().mockResolvedValue(null),
+          },
+        });
+      });
+
+      await expect(
+        service.resetForgottenPassword('newPassword123', 'non-existent'),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.resetForgottenPassword('newPassword123', 'non-existent'),
+      ).rejects.toThrow('User not found');
+      expect(mockEmailsService.sendEmail).not.toHaveBeenCalled();
+    });
+
+    it('should rollback transaction on error', async () => {
+      const mockUser = {
+        uid: 'user-1',
+        email: 'test@test.com',
+        firstname: 'John',
+        password: 'oldHashedPassword',
+      };
+
+      mockPrismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          users: {
+            findUnique: jest.fn().mockResolvedValue(mockUser),
+            update: jest.fn().mockResolvedValue(mockUser),
+          },
+          userTokens: {
+            deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+            create: jest.fn().mockRejectedValue(new Error('Token creation failed')),
+          },
+          refreshTokens: {
+            deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+          },
+        });
+      });
+
+      await expect(service.resetForgottenPassword('newPassword123', 'user-1')).rejects.toThrow(
+        'Token creation failed',
+      );
+      expect(mockEmailsService.sendEmail).not.toHaveBeenCalled();
+    });
+
+    it('should delete all existing tokens before creating new ones', async () => {
+      const mockUser = {
+        uid: 'user-1',
+        email: 'test@test.com',
+        firstname: 'John',
+        password: 'oldHashedPassword',
+      };
+
+      const mockTxUserTokens = {
+        deleteMany: jest.fn().mockResolvedValue({ count: 2 }),
+        create: jest.fn().mockResolvedValue({
+          uid: 'token-1',
+          token: 'mock_access_token',
+          userUid: mockUser.uid,
+        }),
+      };
+
+      const mockTxRefreshTokens = {
+        deleteMany: jest.fn().mockResolvedValue({ count: 3 }),
+        create: jest.fn().mockResolvedValue({
+          uid: 'refresh-token-1',
+          token: 'mock_refresh_token',
+          userUid: mockUser.uid,
+        }),
+      };
+
+      mockPrismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          users: {
+            findUnique: jest.fn().mockResolvedValue(mockUser),
+            update: jest.fn().mockResolvedValue(mockUser),
+          },
+          userTokens: mockTxUserTokens,
+          refreshTokens: mockTxRefreshTokens,
+        });
+      });
+
+      await service.resetForgottenPassword('newPassword123', 'user-1');
+
+      expect(mockTxUserTokens.deleteMany).toHaveBeenCalledWith({
+        where: { userUid: 'user-1' },
+      });
+      expect(mockTxRefreshTokens.deleteMany).toHaveBeenCalledWith({
+        where: { userUid: 'user-1' },
+      });
+      expect(mockTxUserTokens.create).toHaveBeenCalled();
+      expect(mockTxRefreshTokens.create).toHaveBeenCalled();
+    });
+  });
 });
