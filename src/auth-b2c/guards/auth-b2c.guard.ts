@@ -4,10 +4,12 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { TokenType } from 'src/shared/constants/constants';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 
 import { IS_PUBLIC_KEY } from '../../shared/decorators/public.decorator';
+import { RESET_PASSWORD_KEY } from '../decorators/reset-password.decorator';
 
 @Injectable()
 export class AuthB2CGuard implements CanActivate {
@@ -21,6 +23,11 @@ export class AuthB2CGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    const isResetPassword = this.reflector.getAllAndOverride<boolean>(RESET_PASSWORD_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
@@ -38,10 +45,14 @@ export class AuthB2CGuard implements CanActivate {
     try {
       // Verify and decode the JWT
       const payload = await this.jwtService.verifyAsync(token);
-      const { uid: userUid } = payload;
+      const { type, uid: userUid } = payload;
 
       if (!userUid) {
         throw new UnauthorizedException('Token invalid: user missing');
+      }
+
+      if (type === TokenType.RESET && !isResetPassword) {
+        throw new UnauthorizedException('Invalid token type');
       }
 
       // Verify that the token still exists in the database

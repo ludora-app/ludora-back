@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, Length } from 'class-validator';
+import { IsEmail, IsString, Length } from 'class-validator';
 
 export class GenerateAccessTokenFromCodeDto {
   @IsString()
@@ -10,4 +10,12 @@ export class GenerateAccessTokenFromCodeDto {
     type: String,
   })
   code: string;
+
+  @IsEmail()
+  @ApiProperty({
+    description: 'User email',
+    example: 'test@gmail.com',
+    type: String,
+  })
+  readonly email: string;
 }

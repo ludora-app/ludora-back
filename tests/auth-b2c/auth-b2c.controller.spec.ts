@@ -5,6 +5,7 @@ import { AuthB2CService } from 'src/auth-b2c/auth-b2c.service';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { VerifyEmailCodeDto } from 'src/auth-b2c/dto/input/verify-email-code.dto';
 import { CreateGoogleUserDto } from 'src/auth-b2c/dto/input/create-google-user.dto';
+import { UnauthorizedException } from '@nestjs/common';
 
 describe('AuthB2CController', () => {
   let controller: AuthB2CController;
@@ -256,7 +257,7 @@ describe('AuthB2CController', () => {
 
   describe('generateAccessTokenFromCode', () => {
     it('should generate access token from valid code', async () => {
-      const dto = { code: '123456' };
+      const dto = { code: '123456', email: 'test@test.com' };
       const mockAccessToken = 'mock_generated_access_token';
 
       mockAuthB2CService.generateAccessTokenFromCode.mockResolvedValue(mockAccessToken);
@@ -264,22 +265,31 @@ describe('AuthB2CController', () => {
       const result = await controller.generateAccessTokenFromCode(dto);
 
       expect(result).toEqual({
-        accessToken: mockAccessToken,
+        resetToken: mockAccessToken,
       });
-      expect(mockAuthB2CService.generateAccessTokenFromCode).toHaveBeenCalledWith('123456');
+      expect(mockAuthB2CService.generateAccessTokenFromCode).toHaveBeenCalledWith(
+        '123456',
+        'test@test.com',
+      );
     });
 
     it('should handle errors from service when generating access token', async () => {
-      const dto = { code: 'invalid-code' };
+      const dto = { code: 'invalid-code', email: 'test@test.com' };
 
       mockAuthB2CService.generateAccessTokenFromCode.mockRejectedValue(
-        new Error('Invalid or expired verification code'),
+        new UnauthorizedException('Invalid verification code'),
       );
 
       await expect(controller.generateAccessTokenFromCode(dto)).rejects.toThrow(
-        'Invalid or expired verification code',
+        UnauthorizedException,
       );
-      expect(mockAuthB2CService.generateAccessTokenFromCode).toHaveBeenCalledWith('invalid-code');
+      await expect(controller.generateAccessTokenFromCode(dto)).rejects.toThrow(
+        'Invalid verification code',
+      );
+      expect(mockAuthB2CService.generateAccessTokenFromCode).toHaveBeenCalledWith(
+        'invalid-code',
+        'test@test.com',
+      );
     });
   });
 
