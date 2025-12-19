@@ -5,28 +5,30 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, Sessions } from 'generated/prisma/client';
 import { SessionPlayers, SessionTeams } from 'generated/prisma/browser';
-import { Sport, StorageFolderName } from 'src/shared/constants/constants';
 import { ConversationsService } from 'src/conversations/conversations.service';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
+import { SessionScope, Sport, StorageFolderName } from 'src/shared/constants/constants';
 import { UserHourPreferencesService } from 'src/user-hour-preferences/user-hour-preferences.service';
 import { UserSportPreferencesService } from 'src/user-sport-preferences/user-sport-preferences.service';
 
 import { SessionMapper } from '../mappers/session.mapper';
 import { SessionTeamsService } from './session-teams.service';
 import { UpdateSessionDto } from '../dto/input/update-session.dto';
-import { SESSION_SUGGESTION_CONFIG } from '../constants/constants';
+import { CreateSessionDto } from '../dto/input/create-session.dto';
 import { FindAllSessionsDto } from '../dto/input/session-filter.dto';
-import { CreateSessionWithUserDto } from '../dto/input/create-session.dto';
+import { SESSION_SUGGESTION_CONFIG } from '../constants/session-constants';
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
 import { SessionCollectionItem } from '../dto/output/session-collection.response';
+import { MySessionFilterDto, SessionOwnnership } from '../dto/input/my-session-filter.dto';
 
 /**
  * This service is responsible for the creation, retrieval, and management of sessions.
  * In order to avoid circular dependencies, it is also the orchestrator for other session-related services.
  */
+
 @Injectable()
 export class SessionsService {
   constructor(
@@ -42,7 +44,7 @@ export class SessionsService {
     this.logger.setContext(SessionsService.name);
   }
 
-  async create(createSessionDto: CreateSessionWithUserDto): Promise<Sessions> {
+  async create(createSessionDto: CreateSessionDto): Promise<Sessions> {
     const { endDate, fieldUid, startDate, userUid } = createSessionDto;
 
     const start = new Date(startDate);
@@ -434,6 +436,111 @@ export class SessionsService {
       items,
       nextCursor,
       totalCount,
+    };
+  }
+
+  async findAllByUserUid(
+    userUid: string,
+    filters: MySessionFilterDto,
+  ): Promise<PaginatedDataDto<SessionCollectionItem>> {
+    const {
+      createdAtSortOrder,
+      endDate,
+      maxStart,
+      minStart,
+      ownership,
+      scope,
+      sports,
+      startDateSortOrder,
+    } = filters;
+
+    const where: Prisma.SessionsWhereInput = {};
+
+    if (ownership === SessionOwnnership.CREATOR) {
+      where.creatorUid = userUid;
+    } else if (ownership === SessionOwnnership.PLAYER) {
+      where.sessionPlayers = {
+        some: {
+          userUid: userUid,
+        },
+      };
+    } else {
+      // If no ownership specified, get both creator and player sessions
+      where.OR = [{ creatorUid: userUid }, { sessionPlayers: { some: { userUid: userUid } } }];
+    }
+
+    // Handle date filters
+    const startDateFilter: Prisma.DateTimeFilter = {};
+    const endDateFilter: Prisma.DateTimeFilter = {};
+
+    if (minStart) {
+      startDateFilter.gte = minStart;
+    }
+    if (maxStart) {
+      startDateFilter.lte = maxStart;
+    }
+    if (endDate) {
+      endDateFilter.lte = endDate;
+    }
+
+    if (scope) {
+      if (scope === SessionScope.UPCOMING) {
+        startDateFilter.gte = new Date();
+      } else if (scope === SessionScope.PAST) {
+        startDateFilter.lt = new Date();
+      }
+    }
+
+    if (Object.keys(startDateFilter).length > 0) {
+      where.startDate = startDateFilter;
+    }
+    if (Object.keys(endDateFilter).length > 0) {
+      where.endDate = endDateFilter;
+    }
+
+    // Handle sports filter
+    if (sports && sports.length > 0) {
+      where.sport = { in: sports };
+    }
+
+    // Build orderBy
+    const orderBy: Prisma.SessionsOrderByWithRelationInput[] = [];
+    if (startDateSortOrder) {
+      orderBy.push({ startDate: startDateSortOrder });
+    }
+    if (createdAtSortOrder) {
+      orderBy.push({ createdAt: createdAtSortOrder });
+    }
+
+    const sessions = await this.prisma.sessions.findMany({
+      orderBy: orderBy.length > 0 ? orderBy : undefined,
+      select: {
+        creatorUid: true,
+        endDate: true,
+        field: {
+          select: {
+            fieldImages: { select: { url: true }, take: 1 },
+            latitude: true,
+            longitude: true,
+            shortAddress: true,
+          },
+        },
+        gameMode: true,
+        maxPlayersPerTeam: true,
+        sessionTeams: { select: { _count: { select: { sessionPlayers: true } }, teamName: true } },
+        sport: true,
+        startDate: true,
+        uid: true,
+      },
+      where,
+    });
+
+    const items = SessionMapper.fromRawToSessionResponses(sessions, new Map());
+
+    return {
+      items,
+      nextCursor: null,
+      totalCount: items.length,
     };
   }
 

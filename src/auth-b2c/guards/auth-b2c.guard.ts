@@ -68,7 +68,7 @@ export class AuthB2CGuard implements CanActivate {
       }
 
       // Check if the user is verified and active
-      const user = await this.usersService.findOne(userUid, USERSELECT.findOne);
+      const user = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
 
       if (!user) {
         throw new UnauthorizedException('User not found');

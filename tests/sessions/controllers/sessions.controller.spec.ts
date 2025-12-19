@@ -5,13 +5,17 @@ import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
 import {
   CreateSessionDto,
-  CreateSessionWithUserDto,
+  CreateSessionFromRequestDto,
 } from 'src/sessions/dto/input/create-session.dto';
 import { FindAllSessionsDto } from 'src/sessions/dto/input/session-filter.dto';
 import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
 import { SessionsController } from 'src/sessions/controllers/sessions.controller';
-import { Sport } from 'src/shared/constants/constants';
+import { SessionScope, Sport } from 'src/shared/constants/constants';
 import { SessionsService } from 'src/sessions/services/sessions.service';
+import {
+  MySessionFilterDto,
+  SessionOwnnership,
+} from 'src/sessions/dto/input/my-session-filter.dto';
 
 describe('SessionsController', () => {
   let controller: SessionsController;
@@ -20,6 +24,7 @@ describe('SessionsController', () => {
   const mockSessionsService = {
     create: jest.fn(),
     findAll: jest.fn(),
+    findAllByUserUid: jest.fn(),
     findOne: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
@@ -66,7 +71,7 @@ describe('SessionsController', () => {
   });
 
   describe('create', () => {
-    const createSessionDto: CreateSessionDto = {
+    const createSessionDto: CreateSessionFromRequestDto = {
       endDate: '2023-02-15T16:00:00Z',
       fieldUid: 'field-uid-1',
       startDate: '2023-02-15T14:00:00Z',
@@ -84,7 +89,7 @@ describe('SessionsController', () => {
       },
     } as any;
 
-    const createSessionWithUserDto: CreateSessionWithUserDto = {
+    const createSessionWithUserDto: CreateSessionDto = {
       ...createSessionDto,
       userUid: 'user-uid-1',
     };
@@ -311,6 +316,337 @@ describe('SessionsController', () => {
         BadRequestException,
       );
       expect(service.update).toHaveBeenCalledWith(sessionUid, updateSessionDto);
+    });
+  });
+
+  describe('findAllByUserUid', () => {
+    const mockRequest = {
+      user: {
+        uid: 'user-uid-1',
+      },
+    } as any;
+
+    const mockSessionCollectionItems = [
+      {
+        uid: 'session-uid-1',
+        title: 'Test Session 1',
+        sport: Sport.FOOTBALL,
+        startDate: '2023-02-15T14:00:00Z',
+        endDate: '2023-02-15T16:00:00Z',
+        field: {
+          latitude: 48.8566,
+          longitude: 2.3522,
+          shortAddress: 'Paris',
+        },
+        teams: [
+          { teamName: 'Team A', playersCount: 3 },
+          { teamName: 'Team B', playersCount: 2 },
+        ],
+      },
+      {
+        uid: 'session-uid-2',
+        title: 'Test Session 2',
+        sport: Sport.BASKETBALL,
+        startDate: '2023-02-16T14:00:00Z',
+        endDate: '2023-02-16T16:00:00Z',
+        field: {
+          latitude: 48.8566,
+          longitude: 2.3522,
+          shortAddress: 'Paris',
+        },
+        teams: [
+          { teamName: 'Team A', playersCount: 4 },
+          { teamName: 'Team B', playersCount: 3 },
+        ],
+      },
+    ];
+
+    it('should return sessions created by the user when ownership is CREATOR', async () => {
+      const filters: MySessionFilterDto = {
+        ownership: SessionOwnnership.CREATOR,
+      };
+
+      const sessionsData = {
+        items: [mockSessionCollectionItems[0]],
+        nextCursor: null,
+        totalCount: 1,
+      };
+
+      mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
+
+      const result = await controller.findAllByUserUid(mockRequest, filters);
+
+      expect(result).toEqual({
+        data: {
+          items: sessionsData.items,
+          nextCursor: sessionsData.nextCursor,
+          totalCount: sessionsData.totalCount,
+        },
+        message: 'Sessions fetched successfully',
+      });
+      expect(service.findAllByUserUid).toHaveBeenCalledWith('user-uid-1', filters);
+    });
+
+    it('should return sessions where user is a player when ownership is PLAYER', async () => {
+      const filters: MySessionFilterDto = {
+        ownership: SessionOwnnership.PLAYER,
+      };
+
+      const sessionsData = {
+        items: [mockSessionCollectionItems[1]],
+        nextCursor: null,
+        totalCount: 1,
+      };
+
+      mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
+
+      const result = await controller.findAllByUserUid(mockRequest, filters);
+
+      expect(result).toEqual({
+        data: {
+          items: sessionsData.items,
+          nextCursor: sessionsData.nextCursor,
+          totalCount: sessionsData.totalCount,
+        },
+        message: 'Sessions fetched successfully',
+      });
+      expect(service.findAllByUserUid).toHaveBeenCalledWith('user-uid-1', filters);
+    });
+
+    it('should return both creator and player sessions when ownership is not specified', async () => {
+      const filters: MySessionFilterDto = {};
+
+      const sessionsData = {
+        items: mockSessionCollectionItems,
+        nextCursor: null,
+        totalCount: 2,
+      };
+
+      mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
+
+      const result = await controller.findAllByUserUid(mockRequest, filters);
+
+      expect(result).toEqual({
+        data: {
+          items: sessionsData.items,
+          nextCursor: sessionsData.nextCursor,
+          totalCount: sessionsData.totalCount,
+        },
+        message: 'Sessions fetched successfully',
+      });
+      expect(service.findAllByUserUid).toHaveBeenCalledWith('user-uid-1', filters);
+    });
+
+    it('should filter sessions by date range', async () => {
+      const filters: MySessionFilterDto = {
+        minStart: new Date('2023-02-15T00:00:00Z'),
+        maxStart: new Date('2023-02-16T00:00:00Z'),
+      };
+
+      const sessionsData = {
+        items: mockSessionCollectionItems,
+        nextCursor: null,
+        totalCount: 2,
+      };
+
+      mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
+
+      const result = await controller.findAllByUserUid(mockRequest, filters);
+
+      expect(result).toEqual({
+        data: {
+          items: sessionsData.items,
+          nextCursor: sessionsData.nextCursor,
+          totalCount: sessionsData.totalCount,
+        },
+        message: 'Sessions fetched successfully',
+      });
+      expect(service.findAllByUserUid).toHaveBeenCalledWith('user-uid-1', filters);
+    });
+
+    it('should filter sessions by scope UPCOMING', async () => {
+      const filters: MySessionFilterDto = {
+        scope: SessionScope.UPCOMING,
+      };
+
+      const sessionsData = {
+        items: mockSessionCollectionItems,
+        nextCursor: null,
+        totalCount: 2,
+      };
+
+      mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
+
+      const result = await controller.findAllByUserUid(mockRequest, filters);
+
+      expect(result).toEqual({
+        data: {
+          items: sessionsData.items,
+          nextCursor: sessionsData.nextCursor,
+          totalCount: sessionsData.totalCount,
+        },
+        message: 'Sessions fetched successfully',
+      });
+      expect(service.findAllByUserUid).toHaveBeenCalledWith('user-uid-1', filters);
+    });
+
+    it('should filter sessions by scope PAST', async () => {
+      const filters: MySessionFilterDto = {
+        scope: SessionScope.PAST,
+      };
+
+      const sessionsData = {
+        items: [],
+        nextCursor: null,
+        totalCount: 0,
+      };
+
+      mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
+
+      const result = await controller.findAllByUserUid(mockRequest, filters);
+
+      expect(result).toEqual({
+        data: {
+          items: sessionsData.items,
+          nextCursor: sessionsData.nextCursor,
+          totalCount: sessionsData.totalCount,
+        },
+        message: 'Sessions fetched successfully',
+      });
+      expect(service.findAllByUserUid).toHaveBeenCalledWith('user-uid-1', filters);
+    });
+
+    it('should filter sessions by sports', async () => {
+      const filters: MySessionFilterDto = {
+        sports: [Sport.FOOTBALL],
+      };
+
+      const sessionsData = {
+        items: [mockSessionCollectionItems[0]],
+        nextCursor: null,
+        totalCount: 1,
+      };
+
+      mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
+
+      const result = await controller.findAllByUserUid(mockRequest, filters);
+
+      expect(result).toEqual({
+        data: {
+          items: sessionsData.items,
+          nextCursor: sessionsData.nextCursor,
+          totalCount: sessionsData.totalCount,
+        },
+        message: 'Sessions fetched successfully',
+      });
+      expect(service.findAllByUserUid).toHaveBeenCalledWith('user-uid-1', filters);
+    });
+
+    it('should sort sessions by startDate', async () => {
+      const filters: MySessionFilterDto = {
+        startDateSortOrder: 'desc',
+      };
+
+      const sessionsData = {
+        items: mockSessionCollectionItems.reverse(),
+        nextCursor: null,
+        totalCount: 2,
+      };
+
+      mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
+
+      const result = await controller.findAllByUserUid(mockRequest, filters);
+
+      expect(result).toEqual({
+        data: {
+          items: sessionsData.items,
+          nextCursor: sessionsData.nextCursor,
+          totalCount: sessionsData.totalCount,
+        },
+        message: 'Sessions fetched successfully',
+      });
+      expect(service.findAllByUserUid).toHaveBeenCalledWith('user-uid-1', filters);
+    });
+
+    it('should sort sessions by createdAt', async () => {
+      const filters: MySessionFilterDto = {
+        createdAtSortOrder: 'asc',
+      };
+
+      const sessionsData = {
+        items: mockSessionCollectionItems,
+        nextCursor: null,
+        totalCount: 2,
+      };
+
+      mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
+
+      const result = await controller.findAllByUserUid(mockRequest, filters);
+
+      expect(result).toEqual({
+        data: {
+          items: sessionsData.items,
+          nextCursor: sessionsData.nextCursor,
+          totalCount: sessionsData.totalCount,
+        },
+        message: 'Sessions fetched successfully',
+      });
+      expect(service.findAllByUserUid).toHaveBeenCalledWith('user-uid-1', filters);
+    });
+
+    it('should apply multiple filters and sorting', async () => {
+      const filters: MySessionFilterDto = {
+        ownership: SessionOwnnership.CREATOR,
+        sports: [Sport.FOOTBALL, Sport.BASKETBALL],
+        scope: SessionScope.UPCOMING,
+        startDateSortOrder: 'asc',
+      };
+
+      const sessionsData = {
+        items: mockSessionCollectionItems,
+        nextCursor: null,
+        totalCount: 2,
+      };
+
+      mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
+
+      const result = await controller.findAllByUserUid(mockRequest, filters);
+
+      expect(result).toEqual({
+        data: {
+          items: sessionsData.items,
+          nextCursor: sessionsData.nextCursor,
+          totalCount: sessionsData.totalCount,
+        },
+        message: 'Sessions fetched successfully',
+      });
+      expect(service.findAllByUserUid).toHaveBeenCalledWith('user-uid-1', filters);
+    });
+
+    it('should return empty array when no sessions found', async () => {
+      const filters: MySessionFilterDto = {
+        ownership: SessionOwnnership.CREATOR,
+      };
+
+      const sessionsData = {
+        items: [],
+        nextCursor: null,
+        totalCount: 0,
+      };
+
+      mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
+
+      const result = await controller.findAllByUserUid(mockRequest, filters);
+
+      expect(result).toEqual({
+        data: {
+          items: [],
+          nextCursor: null,
+          totalCount: 0,
+        },
+        message: 'Sessions fetched successfully',
+      });
+      expect(service.findAllByUserUid).toHaveBeenCalledWith('user-uid-1', filters);
     });
   });
 

@@ -34,9 +34,10 @@ import {
 import { SessionMapper } from '../mappers/session.mapper';
 import { SessionsService } from '../services/sessions.service';
 import { SessionResponse } from '../dto/output/session.response';
-import { CreateSessionDto } from '../dto/input/create-session.dto';
 import { UpdateSessionDto } from '../dto/input/update-session.dto';
 import { FindAllSessionsDto } from '../dto/input/session-filter.dto';
+import { MySessionFilterDto } from '../dto/input/my-session-filter.dto';
+import { CreateSessionFromRequestDto } from '../dto/input/create-session.dto';
 import {
   PaginatedSessionCollectionResponse,
   SessionCollectionItem,
@@ -55,7 +56,7 @@ export class SessionsController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.CREATED)
   async create(
-    @Body() createSessionDto: CreateSessionDto,
+    @Body() createSessionDto: CreateSessionFromRequestDto,
     @Req() request: Request,
   ): Promise<ResponseTypeDto<SessionResponse>> {
     const userUid = request['user'].uid;
@@ -90,6 +91,25 @@ export class SessionsController {
         nextCursor: sessions.nextCursor,
         totalCount: sessions.totalCount,
       },
+      message: 'Sessions fetched successfully',
+    };
+  }
+
+  @Get('my-list/collection')
+  @Protected()
+  @ApiOperation({ summary: 'Get all sessions created or joined by the current user' })
+  @ApiOkResponse({ type: PaginatedSessionCollectionResponse })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.OK)
+  async findAllByUserUid(
+    @Req() request: Request,
+    @Query() filters: MySessionFilterDto,
+  ): Promise<PaginationResponseTypeDto<SessionCollectionItem>> {
+    const userUid = request['user'].uid;
+    const sessions = await this.sessionsService.findAllByUserUid(userUid, filters);
+    return {
+      data: sessions,
       message: 'Sessions fetched successfully',
     };
   }
