@@ -2,18 +2,20 @@ FROM node:22.13.1-slim
 
 WORKDIR /usr/src/app
 
+# Install dependencies and envconsul for Vault integration
 RUN apt-get update && apt-get install -y \
     apt-transport-https \
     ca-certificates \
     curl \
     gnupg \
-    procps && \
-    curl --proto "=https" -sLf --retry 3 --tlsv1.2 'https://packages.doppler.com/public/cli/gpg.DE2A7741A397C129.key' | \
-    gpg --dearmor -o /usr/share/keyrings/doppler-archive-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/doppler-archive-keyring.gpg] https://packages.doppler.com/public/cli/deb/debian any-version main" | \
-    tee /etc/apt/sources.list.d/doppler-cli.list && \
-    apt-get update && \
-    apt --no-install-recommends install -y build-essential doppler && \
+    procps \
+    unzip && \
+    # Install envconsul
+    curl -L https://releases.hashicorp.com/envconsul/0.13.1/envconsul_0.13.1_linux_amd64.zip -o /tmp/envconsul.zip && \
+    unzip /tmp/envconsul.zip -d /usr/local/bin && \
+    rm /tmp/envconsul.zip && \
+    chmod +x /usr/local/bin/envconsul && \
+    apt --no-install-recommends install -y build-essential && \
     rm -rf /var/lib/apt/lists/*  
 
 RUN npm i -g pnpm && npm uninstall -g npm
@@ -24,6 +26,12 @@ RUN pnpm install
 
 COPY . ./
 
+# Copy envconsul config and vault-auth script
+COPY scripts/vault/envconsul-docker.hcl /etc/envconsul/config.hcl
+COPY scripts/vault/vault-auth.sh /usr/local/bin/vault-auth.sh
+RUN chmod +x /usr/local/bin/vault-auth.sh
+
 EXPOSE 2424
 
-CMD ["doppler", "run", "--", "pnpm", "run", "start:dev"]
+# Le script start-dev.sh gère l'auth AppRole puis lance envconsul
+CMD ["sh", "scripts/start-dev.sh"]

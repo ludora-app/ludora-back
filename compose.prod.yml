@@ -12,7 +12,10 @@ services:
       - '2424:2424'
     environment:
       - NODE_ENV=production
-      - DOPPLER_TOKEN
+      # Vault AppRole configuration
+      - VAULT_ADDR=${VAULT_ADDR:-https://vault.ludora.fr}
+      - VAULT_ROLE_ID
+      - VAULT_SECRET_ID
     networks:
       - ludora-network
       - traefik
@@ -36,7 +39,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp
-    command: ['npm', 'run', 'start:prod']
+    command: ['sh', 'scripts/start-prod.sh']
     labels:
       - 'prod.environment=production'
       - 'traefik.enable=true'
