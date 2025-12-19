@@ -53,6 +53,20 @@ import {
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Public()
+  @Protected()
+  @Post('/password-reset-request')
+  @ApiNoContentResponse({ description: 'Password reset request sent successfully' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary:
+      'This method is used to initiate the password reset process, sends a verification code to the user email',
+  })
+  async passwordResetRequest(@Body() dto: PasswordResetRequestDto): Promise<void> {
+    await this.usersService.sendCodeForPasswordResetRequest(dto.email);
+    return;
+  }
+
   @Get('/list/collection')
   @Protected()
   @ApiOperation({
@@ -245,44 +259,6 @@ export class UsersController {
     return this.usersService.deactivate(uid);
   }
 
-  @Delete('/delete')
-  @Protected()
-  @ApiOperation({
-    summary: 'delete user requires to be connected',
-  })
-  @ApiBadRequestResponse({
-    description: 'Error deleting user',
-    type: BadRequestResponseDto,
-  })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-    type: NotFoundResponseDto,
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Token invalid: user missing',
-    type: UnauthorizedResponseDto,
-  })
-  @ApiNoContentResponse({ description: 'User deleted successfully' })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Req() request: Request) {
-    const uid = request['user'].uid;
-    return this.usersService.remove(uid);
-  }
-
-  @Public()
-  @Protected()
-  @Post('/password-reset-request')
-  @ApiNoContentResponse({ description: 'Password reset request sent successfully' })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({
-    summary:
-      'This method is used to initiate the password reset process, sends a verification code to the user email',
-  })
-  async passwordResetRequest(@Body() dto: PasswordResetRequestDto): Promise<void> {
-    await this.usersService.sendCodeForPasswordResetRequest(dto.email);
-    return;
-  }
-
   @Patch('/password-reset')
   @ResetPassword()
   @Protected()
@@ -307,5 +283,29 @@ export class UsersController {
     const userUid = request['user'].uid;
     await this.usersService.resetForgottenPassword(dto.newPassword, userUid);
     return;
+  }
+
+  @Delete('/delete')
+  @Protected()
+  @ApiOperation({
+    summary: 'delete user requires to be connected',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error deleting user',
+    type: BadRequestResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
+  })
+  @ApiNoContentResponse({ description: 'User deleted successfully' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Req() request: Request) {
+    const uid = request['user'].uid;
+    return this.usersService.remove(uid);
   }
 }

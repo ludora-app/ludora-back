@@ -174,31 +174,6 @@ export class AuthB2CController {
   }
 
   @Protected()
-  @Get('verify')
-  @ApiOperation({
-    summary: 'Verify the validity of the token & the user account',
-  })
-  @ApiBadRequestResponse({
-    description: 'Error during token verification',
-    type: BadRequestResponseDto,
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Token invalid: user missing',
-    type: UnauthorizedResponseDto,
-  })
-  @ApiOkResponse({
-    description: 'Token is valid',
-    type: VerifyTokenResponseDto,
-  })
-  @HttpCode(HttpStatus.OK)
-  async verifyToken(@Req() request: Request): Promise<VerifyTokenResponseDto> {
-    const uid = request['user'].uid;
-
-    const isValid = await this.authService.verifyToken(uid);
-    return { data: { isValid: isValid }, message: 'token is valid' };
-  }
-
-  @Protected()
   @Post('verify-email-code')
   @ApiOperation({
     summary: 'Verify the email code',
@@ -322,27 +297,6 @@ export class AuthB2CController {
     };
   }
 
-  // **************************/
-  // ** GOOGLE AUTHENTICATION *
-  // **************************/
-
-  @Public() // ? décorateur @Public() pour ignorer le middleware d'authentification
-  @Get('google/callback')
-  async googleCallback(@Req() req, @Res() res): Promise<any> {
-    try {
-      if (req?.user || req?.user.id) {
-        throw new NotFoundException('User not found in request');
-      }
-
-      const response = await this.authService.googleLogin(req.user.id);
-      // !! changer l'addresse de redirection pour le front
-      return res.redirect(`http://localhost:3000?token=${response.accessToken}`);
-    } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException(error.message);
-    }
-  }
-
   @Public()
   @Post('generate-access-token-from-code')
   @ApiOperation({
@@ -370,5 +324,51 @@ export class AuthB2CController {
       generateAccessTokenFromCodeDto.email,
     );
     return { resetToken: resetToken };
+  }
+
+  @Protected()
+  @Get('verify')
+  @ApiOperation({
+    summary: 'Verify the validity of the token & the user account',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error during token verification',
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
+  })
+  @ApiOkResponse({
+    description: 'Token is valid',
+    type: VerifyTokenResponseDto,
+  })
+  @HttpCode(HttpStatus.OK)
+  async verifyToken(@Req() request: Request): Promise<VerifyTokenResponseDto> {
+    const uid = request['user'].uid;
+
+    const isValid = await this.authService.verifyToken(uid);
+    return { data: { isValid: isValid }, message: 'token is valid' };
+  }
+
+  // **************************/
+  // ** GOOGLE AUTHENTICATION *
+  // **************************/
+
+  @Public() // ? décorateur @Public() pour ignorer le middleware d'authentification
+  @Get('google/callback')
+  async googleCallback(@Req() req, @Res() res): Promise<any> {
+    try {
+      if (req?.user || req?.user.id) {
+        throw new NotFoundException('User not found in request');
+      }
+
+      const response = await this.authService.googleLogin(req.user.id);
+      // !! changer l'addresse de redirection pour le front
+      return res.redirect(`http://localhost:3000?token=${response.accessToken}`);
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException(error.message);
+    }
   }
 }
