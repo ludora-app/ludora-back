@@ -10,12 +10,6 @@ RUN apt-get update && apt-get install -y \
     curl \
     gnupg \
     build-essential && \
-    curl --proto "=https" -sLf --retry 3 --tlsv1.2 'https://packages.doppler.com/public/cli/gpg.DE2A7741A397C129.key' | \
-    gpg --dearmor -o /usr/share/keyrings/doppler-archive-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/doppler-archive-keyring.gpg] https://packages.doppler.com/public/cli/deb/debian any-version main" | \
-    tee /etc/apt/sources.list.d/doppler-cli.list && \
-    apt-get update && \
-    apt --no-install-recommends install -y doppler && \
     rm -rf /var/lib/apt/lists/*
 
 # Install pnpm
@@ -46,19 +40,19 @@ FROM node:22.13.1-slim AS production
 
 WORKDIR /usr/src/app
 
-# Install only runtime dependencies
+# Install only runtime dependencies and envconsul
 RUN apt-get update && apt-get install -y \
     apt-transport-https \
     ca-certificates \
     curl \
     gnupg \
-    dumb-init && \
-    curl --proto "=https" -sLf --retry 3 --tlsv1.2 'https://packages.doppler.com/public/cli/gpg.DE2A7741A397C129.key' | \
-    gpg --dearmor -o /usr/share/keyrings/doppler-archive-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/doppler-archive-keyring.gpg] https://packages.doppler.com/public/cli/deb/debian any-version main" | \
-    tee /etc/apt/sources.list.d/doppler-cli.list && \
-    apt-get update && \
-    apt --no-install-recommends install -y doppler && \
+    dumb-init \
+    unzip && \
+    # Install envconsul
+    curl -L https://releases.hashicorp.com/envconsul/0.13.1/envconsul_0.13.1_linux_amd64.zip -o /tmp/envconsul.zip && \
+    unzip /tmp/envconsul.zip -d /usr/local/bin && \
+    rm /tmp/envconsul.zip && \
+    chmod +x /usr/local/bin/envconsul && \
     rm -rf /var/lib/apt/lists/*
 
 # Install pnpm
@@ -73,6 +67,12 @@ COPY --from=builder --chown=nodejs:nodejs /usr/src/app/node_modules ./node_modul
 COPY --from=builder --chown=nodejs:nodejs /usr/src/app/package.json ./
 COPY --from=builder --chown=nodejs:nodejs /usr/src/app/prisma ./prisma
 
+# Copy envconsul config, vault-auth and start script
+COPY --chown=nodejs:nodejs scripts/vault/envconsul-docker-prod.hcl /etc/envconsul/config.hcl
+COPY --chown=nodejs:nodejs scripts/vault/vault-auth.sh /usr/local/bin/vault-auth.sh
+COPY --chown=nodejs:nodejs scripts/start-prod.sh ./scripts/start-prod.sh
+RUN chmod +x /usr/local/bin/vault-auth.sh
+
 # Create writable directories for the app
 RUN mkdir -p /usr/src/app/logs && chown -R nodejs:nodejs /usr/src/app/logs
 
@@ -85,6 +85,5 @@ EXPOSE 2424
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start the application with Doppler
-CMD ["doppler", "run", "--", "node", "dist/main"]
-
+# Le script start-prod.sh gère l'auth AppRole puis lance envconsul
+CMD ["sh", "scripts/start-prod.sh"]

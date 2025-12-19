@@ -30,8 +30,10 @@ async function seed() {
 
   const createdSports: { uid: string; name: string }[] = [];
   for (const sport of sports) {
-    const createdSport = await prisma.sports.create({
-      data: sport,
+    const createdSport = await prisma.sports.upsert({
+      where: { name: sport.name },
+      update: {},
+      create: sport,
     });
     createdSports.push(createdSport);
   }
@@ -73,10 +75,12 @@ async function seed() {
 
   const createdPartners: { uid: string; name: string }[] = [];
   for (const p of partners) {
-    const createdPartner = await prisma.partners.create({
-      data: p,
+    const createdPartner = await prisma.partners.upsert({
+      where: { name: p.name },
+      update: {},
+      create: p,
     });
-    console.log(`Partner ${createdPartner.name} has been created`);
+    console.log(`Partner ${createdPartner.name} has been created/found`);
     createdPartners.push(createdPartner);
   }
 
@@ -132,8 +136,15 @@ async function seed() {
   ];
 
   for (const relation of partner_sport) {
-    await prisma.partnerSports.create({
-      data: relation,
+    await prisma.partnerSports.upsert({
+      where: {
+        partnerUid_sport: {
+          partnerUid: relation.partnerUid,
+          sport: relation.sport,
+        },
+      },
+      update: {},
+      create: relation,
     });
   }
   console.log('Partner sports relations populated');
@@ -446,22 +457,35 @@ async function seed() {
   ];
 
   const createdFields: { uid: string; sport: string; partnerUid: string; gameMode: string }[] = [];
-  for (const field of fields) {
-    const createdField = await prisma.fields.create({
-      data: {
-        partner: { connect: { uid: field.partnerUid } },
-        sportRelation: { connect: { name: field.sport } },
-        address: field.address,
-        shortAddress: field.address,
-        latitude: field.latitude,
-        longitude: field.longitude,
-        gameMode: field.gameMode as GameModes,
-        entryFee: field.entryFee,
-        isVerified: field.isVerified,
-      },
-    });
-    console.log(`Field ${createdField.uid} has been created`);
-    createdFields.push(createdField);
+  
+  // Check if fields already exist for partners
+  const existingFields = await prisma.fields.findMany({
+    where: {
+      partnerUid: { in: createdPartners.map((p) => p.uid) },
+    },
+  });
+
+  if (existingFields.length > 0) {
+    console.log(`Found ${existingFields.length} existing fields, skipping field creation`);
+    createdFields.push(...existingFields);
+  } else {
+    for (const field of fields) {
+      const createdField = await prisma.fields.create({
+        data: {
+          partner: { connect: { uid: field.partnerUid } },
+          sportRelation: { connect: { name: field.sport } },
+          address: field.address,
+          shortAddress: field.address,
+          latitude: field.latitude,
+          longitude: field.longitude,
+          gameMode: field.gameMode as GameModes,
+          entryFee: field.entryFee,
+          isVerified: field.isVerified,
+        },
+      });
+      console.log(`Field ${createdField.uid} has been created`);
+      createdFields.push(createdField);
+    }
   }
 
   const partners_openingHours = [
@@ -641,8 +665,15 @@ async function seed() {
   ];
 
   for (const hours of partners_openingHours) {
-    await prisma.partnerOpeningHours.create({
-      data: {
+    await prisma.partnerOpeningHours.upsert({
+      where: {
+        partnerUid_dayOfWeek: {
+          partnerUid: hours.partnerUid,
+          dayOfWeek: hours.dayOfWeek,
+        },
+      },
+      update: {},
+      create: {
         partner: { connect: { uid: hours.partnerUid } },
         dayOfWeek: hours.dayOfWeek,
         openTime: hours.opening_time,
@@ -869,76 +900,87 @@ async function seed() {
   const today = new Date();
   const createdSessions = [];
 
-  // Generate 30 past sessions
-  console.log('Creating 30 past sessions...');
-  for (let i = 0; i < 30; i++) {
-    const daysAgo = Math.floor(Math.random() * 30) + 1; // 1-30 days ago
-    const startDate = new Date(today);
-    startDate.setDate(today.getDate() - daysAgo);
-    startDate.setHours(10 + Math.floor(Math.random() * 10), 0, 0, 0); // 10h-20h
+  // Check if sessions already exist
+  const existingSessions = await prisma.sessions.findMany({
+    take: 1,
+  });
 
-    const endDate = new Date(startDate);
-    endDate.setHours(startDate.getHours() + 1 + Math.floor(Math.random() * 2)); // +1 to +3 hours
+  if (existingSessions.length > 0) {
+    console.log('Sessions already exist, skipping session creation');
+    const allSessions = await prisma.sessions.findMany();
+    createdSessions.push(...allSessions);
+  } else {
+    // Generate 30 past sessions
+    console.log('Creating 30 past sessions...');
+    for (let i = 0; i < 30; i++) {
+      const daysAgo = Math.floor(Math.random() * 30) + 1; // 1-30 days ago
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() - daysAgo);
+      startDate.setHours(10 + Math.floor(Math.random() * 10), 0, 0, 0); // 10h-20h
 
-    const createdAt = new Date(startDate);
-    createdAt.setDate(startDate.getDate() - Math.floor(Math.random() * 7) - 1); // created 1-7 days before
+      const endDate = new Date(startDate);
+      endDate.setHours(startDate.getHours() + 1 + Math.floor(Math.random() * 2)); // +1 to +3 hours
 
-    const field = createdFields[i % createdFields.length];
-    const creator = createdUsers[i % createdUsers.length];
-    const gameMode = allGameModes[i % allGameModes.length];
+      const createdAt = new Date(startDate);
+      createdAt.setDate(startDate.getDate() - Math.floor(Math.random() * 7) - 1); // created 1-7 days before
 
-    const createdSession = await prisma.sessions.create({
-      data: {
-        creatorUid: creator.uid,
-        fieldUid: field.uid,
-        sport: field.sport,
-        gameMode: gameMode,
-        startDate: startDate,
-        endDate: endDate,
-        title: `Session passée ${i + 1}`,
-        maxPlayersPerTeam: 5,
-        minPlayersPerTeam: 3,
-        teamsPerGame: 2,
-        description: `Session de ${field.sport} terminée`,
-        createdAt: createdAt,
-      },
-    });
-    createdSessions.push(createdSession);
+      const field = createdFields[i % createdFields.length];
+      const creator = createdUsers[i % createdUsers.length];
+      const gameMode = allGameModes[i % allGameModes.length];
+
+      const createdSession = await prisma.sessions.create({
+        data: {
+          creatorUid: creator.uid,
+          fieldUid: field.uid,
+          sport: field.sport,
+          gameMode: gameMode,
+          startDate: startDate,
+          endDate: endDate,
+          title: `Session passée ${i + 1}`,
+          maxPlayersPerTeam: 5,
+          minPlayersPerTeam: 3,
+          teamsPerGame: 2,
+          description: `Session de ${field.sport} terminée`,
+          createdAt: createdAt,
+        },
+      });
+      createdSessions.push(createdSession);
+    }
+
+    // Generate 120 upcoming sessions
+    console.log('Creating 120 upcoming sessions...');
+    for (let i = 0; i < 120; i++) {
+      const daysAhead = Math.floor(Math.random() * 90) + 1; // 1-90 days ahead
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() + daysAhead);
+      startDate.setHours(10 + Math.floor(Math.random() * 10), 0, 0, 0); // 10h-20h
+
+      const endDate = new Date(startDate);
+      endDate.setHours(startDate.getHours() + 1 + Math.floor(Math.random() * 2)); // +1 to +3 hours
+
+      const field = createdFields[i % createdFields.length];
+      const creator = createdUsers[i % createdUsers.length];
+      const gameMode = allGameModes[i % allGameModes.length];
+
+      const createdSession = await prisma.sessions.create({
+        data: {
+          creatorUid: creator.uid,
+          fieldUid: field.uid,
+          sport: field.sport,
+          gameMode: gameMode,
+          startDate: startDate,
+          endDate: endDate,
+          title: `Session à venir ${i + 1}`,
+          maxPlayersPerTeam: 5,
+          minPlayersPerTeam: 3,
+          teamsPerGame: 2,
+          description: `Session de ${field.sport} prévue`,
+        },
+      });
+      createdSessions.push(createdSession);
+    }
+    console.log(`${createdSessions.length} sessions created (30 past + 120 upcoming)`);
   }
-
-  // Generate 120 upcoming sessions
-  console.log('Creating 120 upcoming sessions...');
-  for (let i = 0; i < 120; i++) {
-    const daysAhead = Math.floor(Math.random() * 90) + 1; // 1-90 days ahead
-    const startDate = new Date(today);
-    startDate.setDate(today.getDate() + daysAhead);
-    startDate.setHours(10 + Math.floor(Math.random() * 10), 0, 0, 0); // 10h-20h
-
-    const endDate = new Date(startDate);
-    endDate.setHours(startDate.getHours() + 1 + Math.floor(Math.random() * 2)); // +1 to +3 hours
-
-    const field = createdFields[i % createdFields.length];
-    const creator = createdUsers[i % createdUsers.length];
-    const gameMode = allGameModes[i % allGameModes.length];
-
-    const createdSession = await prisma.sessions.create({
-      data: {
-        creatorUid: creator.uid,
-        fieldUid: field.uid,
-        sport: field.sport,
-        gameMode: gameMode,
-        startDate: startDate,
-        endDate: endDate,
-        title: `Session à venir ${i + 1}`,
-        maxPlayersPerTeam: 5,
-        minPlayersPerTeam: 3,
-        teamsPerGame: 2,
-        description: `Session de ${field.sport} prévue`,
-      },
-    });
-    createdSessions.push(createdSession);
-  }
-  console.log(`${createdSessions.length} sessions created (30 past + 120 upcoming)`);
 
   const partnerUsers = [
     {
