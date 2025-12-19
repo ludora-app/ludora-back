@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { UserSportLevel } from 'src/shared/constants/constants';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 /**
@@ -13,6 +14,13 @@ export class UserSportPreferenceResponse {
 
   @ApiProperty({ description: 'The user ID of the user sport preference' })
   userUid: string;
+
+  @ApiProperty({
+    description: 'The level of the user sport preference',
+    enum: UserSportLevel,
+    example: UserSportLevel.BEGINNER,
+  })
+  level: UserSportLevel;
 
   @ApiProperty({ description: 'The creation date of the user sport preference' })
   createdAt: Date;

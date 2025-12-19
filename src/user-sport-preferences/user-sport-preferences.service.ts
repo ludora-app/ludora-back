@@ -7,6 +7,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
 import { UserSportPreferenceResponse } from './dto/output/user-sport-preference.response';
+import { CreateUserSportPreferenceDto } from './dto/input/create-user-sport-preference.dto';
 
 @Injectable()
 export class UserSportPreferencesService {
@@ -17,7 +18,8 @@ export class UserSportPreferencesService {
   ) {
     this.logger.setContext(UserSportPreferencesService.name);
   }
-  async create(sport: string, userUid: string): Promise<UserSports> {
+  async create(createUserSportPreferenceDto: CreateUserSportPreferenceDto): Promise<UserSports> {
+    const { level, sport, userUid } = createUserSportPreferenceDto;
     const existingUser = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
 
     if (!existingUser) {
@@ -35,7 +37,7 @@ export class UserSportPreferencesService {
     }
 
     const newSportPreference = await this.prisma.userSports.create({
-      data: { sport, userUid },
+      data: { level, sport, userUid },
     });
 
     return newSportPreference;
