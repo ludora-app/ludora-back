@@ -35,7 +35,7 @@ import { SessionMapper } from '../mappers/session.mapper';
 import { SessionsService } from '../services/sessions.service';
 import { SessionResponse } from '../dto/output/session.response';
 import { UpdateSessionDto } from '../dto/input/update-session.dto';
-import { FindAllSessionsDto } from '../dto/input/session-filter.dto';
+import { SessionFilterDto } from '../dto/input/session-filter.dto';
 import { MySessionFilterDto } from '../dto/input/my-session-filter.dto';
 import { CreateSessionFromRequestDto } from '../dto/input/create-session.dto';
 import {
@@ -77,7 +77,7 @@ export class SessionsController {
   @HttpCode(HttpStatus.OK)
   async findAll(
     @Req() request: Request,
-    @Query() filter: FindAllSessionsDto,
+    @Query() filter: SessionFilterDto,
   ): Promise<PaginationResponseTypeDto<SessionCollectionItem>> {
     const userUid = request['user'].uid;
 
