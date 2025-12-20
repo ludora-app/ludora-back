@@ -32,6 +32,7 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
       },
     ]),
     LoggerModule.forRoot({
+      exclude: ['/health', '/metrics', '/swagger', '/swagger/*path'],
       pinoHttp: {
         // Set log level based on environment
         // debug: show all logs including debug
@@ -39,15 +40,10 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
         level: isDevelopment ? 'debug' : 'info',
         // Exclude the health check and metrics routes from automatic logging
         autoLogging: {
-          ignore: (req) => {
-            const url = req.url || '';
+          ignore: (req: any) => {
+            const url = req.raw?.url || req.url || '';
             // Ignore the monitoring routes (health check, metrics, etc.)
-            return (
-              url === '/health' ||
-              url.startsWith('/metrics') ||
-              url === '/swagger' ||
-              url.startsWith('/swagger/')
-            );
+            return url.includes('/health') || url.includes('/metrics') || url.includes('/swagger');
           },
         },
         customErrorMessage: (req, res, err) => {
@@ -71,7 +67,7 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
             customColors: 'info:green,warn:bgYellow,error:bgRed,debug:bgMagenta',
             ignore: 'hostname,req,res,responseTime',
             levelFirst: false,
-            messageFormat: '{pid}  - {time} {levelLabel} [{context}] {msg}',
+            messageFormat: '{pid}  - {time} {level} [{context}] {msg}',
             translateTime: 'dd/mm/yyyy, h:MM:ss TT',
           },
           target: 'pino-pretty',
