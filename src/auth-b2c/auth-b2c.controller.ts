@@ -365,6 +365,7 @@ export class AuthB2CController {
 
   @Patch('/password-reset')
   @ResetPassword()
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Protected()
   @ApiOperation({
     summary: 'This method is used to reset the password of a user when he forgot his password',

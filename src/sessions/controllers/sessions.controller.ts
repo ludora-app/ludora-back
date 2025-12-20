@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import { Sessions } from 'generated/prisma/client';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
@@ -50,6 +51,7 @@ export class SessionsController {
 
   @Post()
   @Protected()
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'Create a new session' })
   @ApiCreatedResponse({ type: ResponseTypeDto<Sessions> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -70,6 +72,7 @@ export class SessionsController {
 
   @Get('/list/collection')
   @Protected()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Get all sessions' })
   @ApiOkResponse({ type: PaginatedSessionCollectionResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -97,6 +100,7 @@ export class SessionsController {
 
   @Get('my-list/collection')
   @Protected()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Get all sessions created or joined by the current user' })
   @ApiOkResponse({ type: PaginatedSessionCollectionResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
