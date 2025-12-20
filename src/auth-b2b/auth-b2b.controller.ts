@@ -1,8 +1,9 @@
-import { FileInterceptor } from '@nestjs/platform-express';
 import { Public } from 'src/shared/decorators/public.decorator';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
 import { CreateImageDto, LoginDto, LoginResponseDto, RegisterResponseDto } from 'src/auth-b2c/dto';
 import {
   Body,
@@ -10,7 +11,6 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -36,7 +36,7 @@ export class AuthB2BController {
 
   @Post('register')
   @Public()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(new FastifyFilesInterceptor('file'))
   @ApiOperation({ summary: 'Create a partner and user account' })
   @ApiCreatedResponse({
     description: 'Partner and user created successfully',
@@ -59,25 +59,23 @@ export class AuthB2BController {
   @HttpCode(HttpStatus.CREATED)
   async register(
     @Body() registerDto: RegisterB2BWithFileDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFilesCustom() files?: { buffer: Buffer; originalname: string }[],
   ): Promise<RegisterResponseDto> {
-    if (file) {
-      const imageName = Date.now() + file.originalname;
-
+    if (files) {
       const createImageDto: CreateImageDto = {
-        file: file.buffer,
-        name: imageName,
+        file: files[0].buffer,
+        name: files[0].originalname,
       };
-      const tokens = await this.authService.register(registerDto, createImageDto);
+      const res = await this.authService.register(registerDto, createImageDto);
       return {
-        data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
+        data: { accessToken: res.accessToken, refreshToken: res.refreshToken },
         message: 'Partner and user created successfully',
       };
     }
 
-    const tokens = await this.authService.register(registerDto);
+    const res = await this.authService.register(registerDto);
     return {
-      data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
+      data: { accessToken: res.accessToken, refreshToken: res.refreshToken },
       message: 'Partner and user created successfully',
     };
   }

@@ -22,10 +22,16 @@ import { MetricsController } from './metrics.controller';
 import { HttpMetricsInterceptor } from './http-metrics.interceptor';
 
 @Module({
-  controllers: [MetricsController],
+  controllers: [],
   imports: [
     PrometheusModule.register({
+      defaultMetrics: {
+        enabled: true,
+      },
+      // Use our custom controller so we can decorate it with @Public()
+      // and to avoid conflicts with the default PrometheusController.
       controller: MetricsController,
+      path: '/metrics',
     }),
     ScheduleModule.forRoot(),
     UsersModule,

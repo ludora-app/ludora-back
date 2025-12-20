@@ -1,12 +1,13 @@
-import { FilesInterceptor } from '@nestjs/platform-express';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { AuthB2BGuard } from 'src/auth-b2b/guards/auth-b2b.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   Body,
@@ -20,7 +21,6 @@ import {
   Post,
   Query,
   Req,
-  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -51,7 +51,7 @@ export class FieldsController {
   @Post()
   @UseGuards(AuthB2CGuard)
   @Protected()
-  @UseInterceptors(FilesInterceptor('images', 5))
+  @UseInterceptors(new FastifyFilesInterceptor('images'))
   @ApiConsumes('multipart/form-data')
   @ApiCreatedResponse({ type: ResponseTypeDto<FieldResponseDto> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -61,13 +61,20 @@ export class FieldsController {
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createFieldDto: Omit<CreatePublicFieldDto, 'images'>,
-    @UploadedFiles() images: Express.Multer.File[],
+    @UploadedFilesCustom() images: { buffer: Buffer; originalname: string }[],
   ) {
-    const imagesDto = images.map((image, index) => ({
-      file: image.buffer,
-      name: image.originalname,
-      order: index,
-    }));
+    const imagesDto = Array.isArray(images)
+      ? images.map(
+          (image, index) => (
+            console.log(image.originalname),
+            {
+              file: image.buffer,
+              name: image.originalname,
+              order: index,
+            }
+          ),
+        )
+      : [];
 
     const response = await this.fieldsService.create({
       ...createFieldDto,

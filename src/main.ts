@@ -1,11 +1,14 @@
 import { NestFactory } from '@nestjs/core';
+import contentParser from '@fastify/multipart';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  await app.register(contentParser);
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -38,6 +41,10 @@ async function bootstrap() {
 
     SwaggerModule.setup('swagger', app, document);
   }
-  await app.listen(process.env.PORT ?? 2424);
+
+  // In Docker, Fastify must listen on 0.0.0.0 to be reachable from outside the container.
+  const port = Number(process.env.PORT ?? 2424);
+  const host = process.env.HOST ?? '0.0.0.0';
+  await app.listen({ host, port });
 }
 bootstrap();
