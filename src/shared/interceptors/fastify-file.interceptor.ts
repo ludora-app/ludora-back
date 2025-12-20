@@ -32,17 +32,15 @@ export class FastifyFilesInterceptor implements NestInterceptor {
     try {
       for await (const part of parts) {
         count++;
-        // 1. Nettoyage du nom (ex: "images[]" -> "images")
+        // 1. Name cleanup (e.g.: "images[]" -> "images")
         const cleanFieldName = part.fieldname.replace('[]', '').trim();
 
         if (part.type === 'file') {
-          // Vérifie si le nom correspond
+          // Checks if the name matches
           if (cleanFieldName === this.fieldName) {
-            // LOG CRITIQUE : Vérifier si filename existe
-
             const buffer = await part.toBuffer();
 
-            // SOLUTION AU "UNDEFINED": Si pas de nom, on en invente un
+            // SOLUTION FOR "UNDEFINED": If there is no name, generate one
             const safeFilename = part.filename || `file-${Date.now()}-${count}.bin`;
 
             files.push({
@@ -50,13 +48,13 @@ export class FastifyFilesInterceptor implements NestInterceptor {
               encoding: part.encoding,
               fieldname: part.fieldname,
               mimetype: part.mimetype,
-              originalname: safeFilename, // <-- ICI, on force une valeur
+              originalname: safeFilename,
             });
           } else {
-            await part.toBuffer(); // On vide le flux
+            await part.toBuffer(); // We drain the stream
           }
         } else {
-          // Gestion des champs (inchangée)
+          // Field handling (unchanged)
           const value = (part as any).value;
           if (body[cleanFieldName]) {
             if (!Array.isArray(body[cleanFieldName])) {
