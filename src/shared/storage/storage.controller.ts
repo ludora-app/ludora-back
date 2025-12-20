@@ -1,5 +1,4 @@
-import { FileInterceptor } from '@nestjs/platform-express';
-import { Controller, Get, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Query, Req } from '@nestjs/common';
 
 import { StorageService } from './storage.service';
 import { Protected } from '../decorators/protected.decorator';
@@ -10,12 +9,18 @@ export class StorageController {
 
   @Post('upload')
   @Protected()
-  @UseInterceptors(FileInterceptor('file'))
-  async upload(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
+  async upload(@Req() request: any) {
+    // Handle multipart form data with Fastify
+    const data = await request.file();
+
+    if (!data) {
       throw new Error('No file uploaded');
     }
-    return this.storageService.upload('users', file.originalname, file.buffer);
+
+    const fileBuffer = await data.toBuffer();
+    const filename = data.filename;
+
+    return this.storageService.upload('users', filename, fileBuffer);
   }
 
   @Get('get-signed-url')

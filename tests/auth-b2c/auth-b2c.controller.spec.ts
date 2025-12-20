@@ -55,12 +55,12 @@ describe('AuthB2CController', () => {
     it('should register a new user without file', async () => {
       const registerDto = {
         bio: 'Test bio',
-        birthdate: new Date().toString(),
+        birthdate: new Date().toISOString(),
         email: 'test@test.com',
         firstname: 'John',
         lastname: 'Doe',
-        password: 'password',
-        phone: '1234567890',
+        password: 'Password123!',
+        phone: '+33612345678',
         sex: Sex.MALE,
         type: UserType.USER,
       };
@@ -70,7 +70,7 @@ describe('AuthB2CController', () => {
         refreshToken: 'mock_refresh_token',
       });
 
-      const result = await controller.register(registerDto, undefined);
+      const result = await controller.register(registerDto);
 
       expect(result).toEqual({
         data: { accessToken: 'mock_token', refreshToken: 'mock_refresh_token' },
@@ -80,29 +80,34 @@ describe('AuthB2CController', () => {
     });
 
     it('should register a new user with file', async () => {
-      const registerDto = {
-        bio: 'Test bio',
-        birthdate: new Date().toString(),
-        email: 'test@test.com',
-        firstname: 'John',
-        lastname: 'Doe',
-        password: 'password',
-        phone: '1234567890',
-        sex: Sex.MALE,
-        type: UserType.USER,
-      };
-
-      const mockFile = {
-        buffer: Buffer.from('test'),
-        originalname: 'test.jpg',
-      } as Express.Multer.File;
+      async function* parts() {
+        yield { type: 'field', fieldname: 'type', value: UserType.USER };
+        yield { type: 'field', fieldname: 'email', value: 'test@test.com' };
+        yield { type: 'field', fieldname: 'password', value: 'Password123!' };
+        yield { type: 'field', fieldname: 'firstname', value: 'John' };
+        yield { type: 'field', fieldname: 'lastname', value: 'Doe' };
+        yield { type: 'field', fieldname: 'birthdate', value: new Date().toISOString() };
+        yield { type: 'field', fieldname: 'sex', value: Sex.MALE };
+        yield { type: 'field', fieldname: 'bio', value: 'Test bio' };
+        yield { type: 'field', fieldname: 'phone', value: '+33612345678' };
+        yield {
+          type: 'file',
+          filename: 'test.jpg',
+          toBuffer: async () => Buffer.from('test'),
+        };
+      }
 
       mockAuthB2CService.register.mockResolvedValue({
         accessToken: 'mock_token',
         refreshToken: 'mock_refresh_token',
       });
 
-      const result = await controller.register(registerDto, mockFile);
+      const request = {
+        isMultipart: () => true,
+        parts: () => parts(),
+      };
+
+      const result = await controller.register(request as any);
 
       expect(result).toEqual({
         data: { accessToken: 'mock_token', refreshToken: 'mock_refresh_token' },

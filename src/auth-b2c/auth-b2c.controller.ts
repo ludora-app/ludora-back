@@ -1,16 +1,15 @@
 import { Throttle } from '@nestjs/throttler';
 import { Provider } from 'generated/prisma/enums';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { SuccessTypeDto } from 'src/shared/dto/responses/success-type';
-import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
 import { ForgottenPasswordDto } from 'src/users/dto/input/forgotten-password.dto';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
 import {
   ApiBadRequestResponse,
   ApiBody,
-  ApiConflictResponse,
   ApiConsumes,
   ApiCreatedResponse,
   ApiNotFoundResponse,
@@ -31,7 +30,6 @@ import {
   Req,
   Request,
   Res,
-  UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -66,44 +64,31 @@ export class AuthB2CController {
 
   @Public()
   @Post('register')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(new FastifyFilesInterceptor('file'))
   @ApiOperation({ summary: 'Create a user account' })
-  @ApiCreatedResponse({
-    description: 'User created successfully',
-    type: RegisterResponseDto,
-  })
+  @ApiCreatedResponse({ description: 'User created successfully', type: RegisterResponseDto })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: RegisterB2CWithFileDto })
-  @ApiBadRequestResponse({
-    description: 'Error during registration',
-    type: BadRequestResponseDto,
-  })
-  @ApiConflictResponse({
-    description: 'User already exists',
-    type: ConflictResponseDto,
-  })
   @HttpCode(HttpStatus.CREATED)
   async register(
     @Body() registerDto: RegisterB2CWithFileDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFilesCustom() files?: { buffer: Buffer; originalname: string }[],
   ): Promise<RegisterResponseDto> {
-    if (file) {
-      const imageName = Date.now() + file.originalname;
-
+    if (files) {
       const createImageDto: CreateImageDto = {
-        file: file.buffer,
-        name: imageName,
+        file: files[0].buffer,
+        name: files[0].originalname,
       };
-      const tokens = await this.authService.register(registerDto, createImageDto);
+      const response = await this.authService.register(registerDto, createImageDto);
       return {
-        data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
+        data: { accessToken: response.accessToken, refreshToken: response.refreshToken },
         message: 'User created successfully',
       };
     }
 
-    const tokens = await this.authService.register(registerDto);
+    const response = await this.authService.register(registerDto);
     return {
-      data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
+      data: { accessToken: response.accessToken, refreshToken: response.refreshToken },
       message: 'User created successfully',
     };
   }

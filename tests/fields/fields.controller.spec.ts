@@ -65,77 +65,111 @@ describe('FieldsController', () => {
         sport: Sport.FOOTBALL,
       };
 
-      const mockFiles = [
-        {
-          buffer: Buffer.from('test1'),
-          originalname: 'image1.jpg',
-        } as Express.Multer.File,
-        {
-          buffer: Buffer.from('test2'),
-          originalname: 'image2.jpg',
-        } as Express.Multer.File,
+      const mockImages = [
+        { buffer: Buffer.from('image1'), originalname: 'image1.jpg' },
+        { buffer: Buffer.from('image2'), originalname: 'image2.jpg' },
       ];
 
-      const mockCreatedField = {
+      const mockResponse = {
         uid: 'field-uid-1',
         address: '123 Main St',
         sport: Sport.FOOTBALL,
-        latitude: 48.8566,
-        longitude: 2.3522,
-        name: null,
-        partnerUid: null,
-        entryFee: null,
-        gameMode: null,
-        isVerified: false,
-        fieldImages: [
-          { uid: 'img-1', url: 'https://storage/image1.jpg', order: 0 },
-          { uid: 'img-2', url: 'https://storage/image2.jpg', order: 1 },
-        ],
+        fieldImages: [],
       };
 
-      mockFieldsService.create.mockResolvedValue(mockCreatedField);
+      mockFieldsService.create.mockResolvedValue(mockResponse);
 
-      const result = await controller.create(createFieldDto, mockFiles);
+      const result = await controller.create(createFieldDto, mockImages);
 
       expect(result).toEqual({
-        data: mockCreatedField,
+        data: mockResponse,
         message: 'Field created successfully',
       });
       expect(mockFieldsService.create).toHaveBeenCalledWith({
         ...createFieldDto,
         images: [
-          { file: mockFiles[0].buffer, name: mockFiles[0].originalname, order: 0 },
-          { file: mockFiles[1].buffer, name: mockFiles[1].originalname, order: 1 },
+          { file: mockImages[0].buffer, name: 'image1.jpg', order: 0 },
+          { file: mockImages[1].buffer, name: 'image2.jpg', order: 1 },
         ],
       });
     });
 
-    it('should create a field without images', async () => {
+    it('should create a new field without images (undefined)', async () => {
       const createFieldDto: Omit<CreatePublicFieldDto, 'images'> = {
         address: '123 Main St',
-        sport: Sport.BASKETBALL,
+        sport: Sport.FOOTBALL,
       };
 
-      const mockCreatedField = {
-        uid: 'field-uid-2',
+      const mockResponse = {
+        uid: 'field-uid-1',
         address: '123 Main St',
-        sport: Sport.BASKETBALL,
-        latitude: 48.8566,
-        longitude: 2.3522,
-        name: null,
-        partnerUid: null,
-        entryFee: null,
-        gameMode: null,
-        isVerified: false,
+        sport: Sport.FOOTBALL,
         fieldImages: [],
       };
 
-      mockFieldsService.create.mockResolvedValue(mockCreatedField);
+      mockFieldsService.create.mockResolvedValue(mockResponse);
 
+      // Call with undefined images (as would happen when no files are uploaded)
+      const result = await controller.create(createFieldDto, undefined as any);
+
+      expect(result).toEqual({
+        data: mockResponse,
+        message: 'Field created successfully',
+      });
+      expect(mockFieldsService.create).toHaveBeenCalledWith({
+        ...createFieldDto,
+        images: [],
+      });
+    });
+
+    it('should create a new field without images (empty array)', async () => {
+      const createFieldDto: Omit<CreatePublicFieldDto, 'images'> = {
+        address: '123 Main St',
+        sport: Sport.FOOTBALL,
+      };
+
+      const mockResponse = {
+        uid: 'field-uid-1',
+        address: '123 Main St',
+        sport: Sport.FOOTBALL,
+        fieldImages: [],
+      };
+
+      mockFieldsService.create.mockResolvedValue(mockResponse);
+
+      // Call with empty array
       const result = await controller.create(createFieldDto, []);
 
       expect(result).toEqual({
-        data: mockCreatedField,
+        data: mockResponse,
+        message: 'Field created successfully',
+      });
+      expect(mockFieldsService.create).toHaveBeenCalledWith({
+        ...createFieldDto,
+        images: [],
+      });
+    });
+
+    it('should handle non-array images gracefully', async () => {
+      const createFieldDto: Omit<CreatePublicFieldDto, 'images'> = {
+        address: '123 Main St',
+        sport: Sport.FOOTBALL,
+      };
+
+      const mockResponse = {
+        uid: 'field-uid-1',
+        address: '123 Main St',
+        sport: Sport.FOOTBALL,
+        fieldImages: [],
+      };
+
+      mockFieldsService.create.mockResolvedValue(mockResponse);
+
+      // Call with non-array value (e.g., empty object or other unexpected value)
+      const result = await controller.create(createFieldDto, {} as any);
+
+      expect(result).toEqual({
+        data: mockResponse,
         message: 'Field created successfully',
       });
       expect(mockFieldsService.create).toHaveBeenCalledWith({

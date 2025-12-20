@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Histogram } from 'prom-client';
-import { Request, Response } from 'express';
+import { FastifyRequest, FastifyReply } from 'fastify';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 
@@ -15,13 +15,13 @@ export class HttpMetricsInterceptor implements NestInterceptor {
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest<Request>();
-    const response = context.switchToHttp().getResponse<Response>();
+    const request = context.switchToHttp().getRequest<FastifyRequest>();
+    const response = context.switchToHttp().getResponse<FastifyReply>();
 
     const startTime = Date.now();
     const method = request.method;
     // Utiliser le pattern de route ou l'URL comme fallback
-    const route = request.route?.path || this.normalizeRoute(request.url);
+    const route = (request.routeOptions?.url as string) || this.normalizeRoute(request.url);
     const statusCode = response.statusCode;
 
     return next.handle().pipe(

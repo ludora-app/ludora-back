@@ -1,12 +1,20 @@
+import { FastifyReply } from 'fastify';
+import { register } from 'prom-client';
 import { Controller, Get, Res } from '@nestjs/common';
 import { Public } from 'src/shared/decorators/public.decorator';
-import { PrometheusController } from '@willsoto/nestjs-prometheus';
 
-@Controller('metrics')
-export class MetricsController extends PrometheusController {
+/**
+ * Custom Prometheus metrics endpoint.
+ *
+ * NOTE: The final route path is configured via `PrometheusModule.register({ path, controller })`
+ * in `src/metrics/metrics.module.ts` to avoid Fastify duplicated-route errors.
+ */
+@Controller()
+export class MetricsController {
   @Get()
   @Public()
-  async index(@Res({ passthrough: true }) response: Response) {
-    return super.index(response);
+  async index(@Res({ passthrough: true }) response: FastifyReply) {
+    response.header('Content-Type', register.contentType);
+    return register.metrics();
   }
 }

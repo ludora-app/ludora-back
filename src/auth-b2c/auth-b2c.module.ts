@@ -4,7 +4,6 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { UsersModule } from 'src/users/users.module';
 import { SharedModule } from 'src/shared/shared.module';
-import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 import { AuthB2CService } from './auth-b2c.service';
 import { AuthB2CGuard } from './guards/auth-b2c.guard';
@@ -24,11 +23,6 @@ import { AuthB2CController } from './auth-b2c.controller';
     }),
     UsersModule,
     SharedModule,
-    PrometheusModule.register({
-      defaultMetrics: {
-        enabled: false,
-      },
-    }),
   ],
   providers: [
     AuthB2CService,
