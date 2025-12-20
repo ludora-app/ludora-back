@@ -651,7 +651,7 @@ export class AuthB2CService {
     }
 
     const payload = { uid: user.uid };
-    // this
+
     const resetToken = this.jwt.sign(
       { ...payload, type: TokenType.ACCESS },
       { expiresIn: this.TOKEN_EXPIRATION_TIME },
@@ -662,6 +662,10 @@ export class AuthB2CService {
         token: resetToken,
         userUid: user.uid,
       },
+    });
+
+    await this.prismaService.emailVerification.delete({
+      where: { uid: existingVerificationCode.uid },
     });
 
     return resetToken;

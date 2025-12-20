@@ -289,6 +289,7 @@ export class AuthB2CController {
 
   @Public()
   @Post('generate-access-token-from-code')
+  @Throttle({ default: { limit: 5, ttl: 1800000 } })
   @ApiOperation({
     summary: 'Generate an access token from a verification code',
   })
