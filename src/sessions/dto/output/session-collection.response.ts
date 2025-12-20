@@ -1,5 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { OmitType } from '@nestjs/mapped-types';
+import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 import { SessionResponse } from './session.response';
