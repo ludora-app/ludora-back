@@ -45,7 +45,7 @@ export class SessionsService {
   }
 
   async create(createSessionDto: CreateSessionDto): Promise<Sessions> {
-    const { endDate, fieldUid, startDate, userUid } = createSessionDto;
+    const { endDate, fieldUid, level, startDate, userUid } = createSessionDto;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -121,6 +121,7 @@ export class SessionsService {
           endDate: endDate,
           fieldUid: field.uid,
           gameMode: field.gameMode,
+          level,
           maxPlayersPerTeam: createSessionDto.maxPlayersPerTeam,
           minPlayersPerTeam: createSessionDto.minPlayersPerTeam,
           sport: field.sport as Sport,
@@ -170,6 +171,7 @@ export class SessionsService {
   async findAll({
     cursor,
     endDate,
+    level,
     limit = 10,
     maxDistance = SESSION_SUGGESTION_CONFIG.THRESHOLDS.MAX_DISTANCE_METERS,
     sports: filterSports = [],
@@ -215,6 +217,12 @@ export class SessionsService {
     let sportWhereSql = Prisma.empty;
     if (isFiltering) {
       sportWhereSql = Prisma.sql`AND s.sport::text IN (${Prisma.join(filterSports)})`;
+    }
+
+    // C. LEVEL
+    let levelWhereSql = Prisma.empty;
+    if (level) {
+      levelWhereSql = Prisma.sql`AND s.level = ${level}`;
     }
 
     // ---------------------------------------------------------
@@ -369,6 +377,7 @@ export class SessionsService {
           ${distanceWhereSql}
           ${dateWhereSql}
           ${sportWhereSql} -- HERE: Strict filter only if filterSports is filled
+          ${levelWhereSql}
       ) as ranked_sessions
       
       WHERE 1=1
@@ -412,6 +421,7 @@ export class SessionsService {
           },
         },
         gameMode: true,
+        level: true,
         maxPlayersPerTeam: true,
         sessionTeams: { select: { _count: { select: { sessionPlayers: true } }, teamName: true } },
         sport: true,
@@ -446,6 +456,7 @@ export class SessionsService {
     const {
       createdAtSortOrder,
       endDate,
+      level,
       maxStart,
       minStart,
       ownership,
@@ -503,6 +514,11 @@ export class SessionsService {
       where.sport = { in: sports };
     }
 
+    // Handle level filter
+    if (level) {
+      where.level = level;
+    }
+
     // Build orderBy
     const orderBy: Prisma.SessionsOrderByWithRelationInput[] = [];
     if (startDateSortOrder) {
@@ -526,6 +542,7 @@ export class SessionsService {
           },
         },
         gameMode: true,
+        level: true,
         maxPlayersPerTeam: true,
         sessionTeams: { select: { _count: { select: { sessionPlayers: true } }, teamName: true } },
         sport: true,
