@@ -1,5 +1,7 @@
+import { Type } from 'class-transformer';
 import { GameModes } from 'generated/prisma/client';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
+import { SessionSportLevel } from 'src/shared/constants/constants';
 import { IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 /**
@@ -97,6 +99,17 @@ export class CreateSessionDto {
     required: true,
   })
   userUid: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @ApiProperty({
+    description: 'Level for the session',
+    enum: SessionSportLevel,
+    example: SessionSportLevel.BEGINNER,
+    required: false,
+  })
+  level?: SessionSportLevel;
 }
 
 export class CreateSessionFromRequestDto extends OmitType(CreateSessionDto, ['userUid']) {}

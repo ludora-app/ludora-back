@@ -45,7 +45,7 @@ export class SessionsService {
   }
 
   async create(createSessionDto: CreateSessionDto): Promise<Sessions> {
-    const { endDate, fieldUid, startDate, userUid } = createSessionDto;
+    const { endDate, fieldUid, level, startDate, userUid } = createSessionDto;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -121,6 +121,7 @@ export class SessionsService {
           endDate: endDate,
           fieldUid: field.uid,
           gameMode: field.gameMode,
+          level,
           maxPlayersPerTeam: createSessionDto.maxPlayersPerTeam,
           minPlayersPerTeam: createSessionDto.minPlayersPerTeam,
           sport: field.sport as Sport,
