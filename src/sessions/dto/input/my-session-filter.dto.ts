@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
-import { IsDate, IsEnum, IsOptional } from 'class-validator';
-import { SessionScope, Sport } from 'src/shared/constants/constants';
+import { Transform, Type } from 'class-transformer';
 import { SortOrder } from 'generated/prisma/internal/prismaNamespace';
+import { IsDate, IsEnum, IsNumber, IsOptional } from 'class-validator';
+import { SessionScope, SessionSportLevel, Sport } from 'src/shared/constants/constants';
 
 export enum SessionOwnnership {
   CREATOR = 'CREATOR',
@@ -102,4 +102,14 @@ export class MySessionFilterDto {
     required: false,
   })
   sports?: Sport[];
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @ApiProperty({
+    description: 'Level for filtering sessions',
+    example: SessionSportLevel.BEGINNER,
+    required: false,
+  })
+  level?: SessionSportLevel;
 }

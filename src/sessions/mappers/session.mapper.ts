@@ -1,5 +1,5 @@
-import { Sport } from 'src/shared/constants/constants';
 import { GameModes, Sessions } from 'generated/prisma/client';
+import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
 
 import { SessionResponse } from '../dto/output/session.response';
 import { SessionCollectionItem } from '../dto/output/session-collection.response';
@@ -8,6 +8,7 @@ export interface RawSession {
   uid: string;
   endDate: Date;
   sport: string;
+  level: number;
   startDate: Date;
   gameMode: string;
   creatorUid: string;
@@ -66,6 +67,7 @@ export class SessionMapper {
       fieldShortAddress: field.shortAddress,
       gameMode: sessionData.gameMode as GameModes,
 
+      level: sessionData.level as SessionSportLevel,
       maxPlayersPerTeam: sessionData.maxPlayersPerTeam,
       sport: sessionData.sport as Sport,
       startDate: sessionData.startDate,

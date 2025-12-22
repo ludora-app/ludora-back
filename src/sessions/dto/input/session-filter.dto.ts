@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { Sport } from 'src/shared/constants/constants';
+import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
 import {
   IsArray,
   IsDate,
@@ -115,6 +115,16 @@ export class SessionFilterDto {
     required: false,
   })
   urgent?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @ApiProperty({
+    description: 'Level for filtering sessions',
+    example: SessionSportLevel.BEGINNER,
+    required: false,
+  })
+  level?: SessionSportLevel;
 }
 
 export class FindAllSessionsDto extends SessionFilterDto {

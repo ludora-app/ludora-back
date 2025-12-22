@@ -1,4 +1,5 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger';
+import { SessionSportLevel } from 'src/shared/constants/constants';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 import { SessionResponse } from './session.response';
@@ -66,6 +67,13 @@ export class SessionCollectionItem extends OmitType(SessionResponse, [
     readOnly: true,
   })
   userDistance?: number;
+
+  @ApiProperty({
+    description: 'Session level',
+    example: SessionSportLevel.BEGINNER,
+    readOnly: true,
+  })
+  level: SessionSportLevel;
 }
 
 /**
