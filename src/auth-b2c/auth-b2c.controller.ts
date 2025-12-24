@@ -289,6 +289,7 @@ export class AuthB2CController {
 
   @Public()
   @Post('generate-access-token-from-code')
+  @Throttle({ default: { limit: 5, ttl: 1800000 } })
   @ApiOperation({
     summary: 'Generate an access token from a verification code',
   })
@@ -364,6 +365,7 @@ export class AuthB2CController {
 
   @Patch('/password-reset')
   @ResetPassword()
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Protected()
   @ApiOperation({
     summary: 'This method is used to reset the password of a user when he forgot his password',

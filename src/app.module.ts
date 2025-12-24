@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 import { AppService } from './app.service';
 import { AppController } from './app.controller';
@@ -27,8 +28,28 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([
       {
-        limit: 10, // 10 requests per minute
+        // Default configuration - applied globally if not overridden
+        limit: 100, // Max 100 req/min (normal mobile app usage)
+        name: 'default',
         ttl: 60000, // 1 minute
+      },
+      {
+        // Anti-burst protection (requests too fast)
+        limit: 10, // Max 10 req/sec
+        name: 'short',
+        ttl: 1000, // 1 second
+      },
+      {
+        // Medium duration protection (intensive usage)
+        limit: 100, // Max 100 req/min
+        name: 'medium',
+        ttl: 60000, // 1 minute
+      },
+      {
+        // Long duration protection (anti-DDoS)
+        limit: 1000, // Max 1000 req/15min
+        name: 'long',
+        ttl: 900000, // 15 minutes
       },
     ]),
     LoggerModule.forRoot({
@@ -88,6 +109,12 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
     UserSportPreferencesModule,
     UsersModule,
   ],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
