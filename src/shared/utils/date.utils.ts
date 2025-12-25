@@ -3,6 +3,21 @@ import 'dayjs/locale/fr';
 
 export class DateUtils {
   /**
+   * @type {number}
+   * @description The number of milliseconds in 15 minutes
+   */
+  static readonly FIFTEEN_MINUTES = 15 * 60 * 1000;
+  /**
+   * @type {number}
+   * @description The number of milliseconds in 24 hours
+   */
+  static readonly TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+  /**
+   * @type {number}
+   * @description The number of milliseconds in 7 days
+   */
+  static readonly SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+  /**
    * The method `timeStringToMinutes` converts a time string in the format "HH:MM" to the total number
    * of minutes.
    * @param {string} time - A string representing time in the format "HH:MM"

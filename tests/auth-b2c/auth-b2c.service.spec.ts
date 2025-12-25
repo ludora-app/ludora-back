@@ -11,6 +11,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { UsersService } from 'src/users/users.service';
 import { CreateGoogleUserDto } from 'src/auth-b2c/dto/input/create-google-user.dto';
+import { DateUtils } from 'src/shared/utils/date.utils';
 
 describe('AuthB2CService', () => {
   let service: AuthB2CService;
@@ -344,7 +345,7 @@ describe('AuthB2CService', () => {
         uid: '1',
         token: 'valid_refresh_token',
         userUid: '1',
-        expiresAt: new Date(Date.now() + 60000), // 1 minute from now
+        expiresAt: new Date(Date.now() + DateUtils.FIFTEEN_MINUTES),
       });
 
       mockPrismaService.users.findUnique.mockResolvedValue({
@@ -407,7 +408,7 @@ describe('AuthB2CService', () => {
         uid: 'verification-uid-1',
         code: mockCode,
         userUid: 'user-1',
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes in future
+        expiresAt: new Date(Date.now() + DateUtils.FIFTEEN_MINUTES),
       };
       const mockUser = {
         uid: 'user-1',
