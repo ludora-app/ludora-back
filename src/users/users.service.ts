@@ -170,8 +170,9 @@ export class UsersService {
    * @description This method is used in the auth service to find a user by email
    * @returns The user
    */
-  async findOneByEmail(email: string): Promise<Users> {
+  async findOneByEmail(email: string, select?: Prisma.UsersSelect): Promise<Users> {
     const user = await this.prismaService.users.findUnique({
+      select: select ?? USERSELECT.checkIfUserExistsByEmail,
       where: { email },
     });
 
@@ -337,7 +338,7 @@ export class UsersService {
     await this.emailsService.sendEmail({
       data: { code: verificationCode },
       recipients: [email],
-      template: 'verificationCode',
+      template: 'verificationLink',
     });
   }
 
@@ -358,7 +359,12 @@ export class UsersService {
   /**   * @param user - The user
    * @description This method is used to send a verification code for password reset to the user
    */
-  async sendCodeForPasswordReset(user: Users): Promise<void> {
+  async sendCodeForPasswordReset(
+    user: Pick<
+      Users,
+      'uid' | 'email' | 'firstname' | 'lastname' | 'imageUrl' | 'provider' | 'emailVerified'
+    >,
+  ): Promise<void> {
     const verificationCode = VerificationCodeUtil.generateVerificationCode();
     this.logger.debug('verificationCode', verificationCode);
     const expiresAt = new Date(Date.now() + DateUtils.FIFTEEN_MINUTES);
@@ -391,7 +397,7 @@ export class UsersService {
    * @description This method is used to send a verification code for password reset to the user email
    */
   async sendCodeForPasswordResetRequest(email: string): Promise<void> {
-    const user = await this.findOneByEmail(email);
+    const user = await this.findOneByEmail(email, USERSELECT.findOneByEmail);
 
     if (!user) {
       this.logger.error(`User not found for email: ${email}`);

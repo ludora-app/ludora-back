@@ -1,4 +1,5 @@
 import { Throttle } from '@nestjs/throttler';
+import { Users } from 'generated/prisma/browser';
 import { Provider } from 'generated/prisma/enums';
 import { SuccessTypeDto } from 'src/shared/dto/responses/success-type';
 import { ForgottenPasswordDto } from 'src/users/dto/input/forgotten-password.dto';
@@ -50,9 +51,9 @@ import {
 import { AuthB2CService } from './auth-b2c.service';
 import { AuthB2CGuard } from './guards/auth-b2c.guard';
 import { Public } from '../shared/decorators/public.decorator';
+import { VerifyEmailGuard } from './guards/verify-email.guard';
 import { Protected } from '../shared/decorators/protected.decorator';
 import { ResetPassword } from './decorators/reset-password.decorator';
-import { VerifyEmailCodeDto } from './dto/input/verify-email-code.dto';
 import { CreateGoogleUserDto } from './dto/input/create-google-user.dto';
 import { CreateOrConnectGoogleResponseDto } from './dto/output/create-or-connect-google.response';
 import { GenerateAccessTokenFromCodeDto } from './dto/output/generate-access-token-from-code.dto';
@@ -163,13 +164,14 @@ export class AuthB2CController {
     };
   }
 
-  @Protected()
-  @Post('verify-email-code')
+  @Public() //? bypass the auth-b2c guard
+  @UseGuards(VerifyEmailGuard)
+  @Get('verify-email-link')
   @ApiOperation({
-    summary: 'Verify the email code',
+    summary: 'Allows a user to verify his email by clicking on the link in the email',
   })
   @ApiBadRequestResponse({
-    description: 'Error during email code verification',
+    description: 'Error during email verification',
     type: BadRequestResponseDto,
   })
   @ApiUnauthorizedResponse({
@@ -181,11 +183,9 @@ export class AuthB2CController {
     type: VerifyEmailResponseDto,
   })
   @HttpCode(HttpStatus.OK)
-  async verifyEmailCode(
-    @Request() req,
-    @Body() verifyEmailCodeDto: VerifyEmailCodeDto,
-  ): Promise<SuccessTypeDto> {
-    await this.authService.verifyEmailCode(req.user.uid, verifyEmailCodeDto.code);
+  async verifyEmailCode(@Request() req): Promise<SuccessTypeDto> {
+    const user = req.user as Users;
+    await this.authService.verifyEmailLink(user);
 
     return {
       message: 'Email verified successfully',

@@ -2,11 +2,13 @@ import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { PinoLogger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
+import { Users } from 'generated/prisma/browser';
 import { UserType } from 'generated/prisma/client';
 import { UsersService } from 'src/users/users.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TokenType } from 'src/shared/constants/constants';
+import { USERSELECT } from 'src/shared/constants/select-user';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
 import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
@@ -118,7 +120,7 @@ export class AuthB2CService {
     const { email, firstname, imageUrl, lastname, provider } = createGoogleUserDto;
 
     try {
-      const existingUser = await this.userService.findOneByEmail(email);
+      const existingUser = await this.userService.findOneByEmail(email, USERSELECT.findOneByEmail);
 
       // if the user exists, connect the Google account to the user
       if (existingUser) {
@@ -201,7 +203,7 @@ export class AuthB2CService {
       const { deviceUid, email, password } = loginDto;
       const formattedEmail = email.toLowerCase();
 
-      const user = await this.userService.findOneByEmail(formattedEmail);
+      const user = await this.userService.findOneByEmail(formattedEmail, USERSELECT.login);
       if (!user) {
         throw new NotFoundException('User not found');
       }
@@ -344,7 +346,7 @@ export class AuthB2CService {
   async verifyEmail(emailDto: VerifyMailDto): Promise<boolean> {
     const { email } = emailDto;
     const formattedEmail = email.toLowerCase();
-    const user = await this.userService.findOneByEmail(formattedEmail);
+    const user = await this.userService.findOneByEmail(formattedEmail, USERSELECT.findOneByEmail);
     if (!user) {
       return true;
     }
@@ -427,44 +429,43 @@ export class AuthB2CService {
       });
     });
 
+    //! set this property in vault
+    const baseUrl = this.configService.get('BASE_URL') ?? 'http://localhost:2424';
+    const payload = { code: verificationCode, email };
+    const token = this.jwt.sign(payload, { expiresIn: '24h' });
+    const link = `${baseUrl}/auth-b2c/verify-email-link?token=${token}`;
+
     // Send the email outside the transaction
     await this.emailsService.sendEmail({
-      data: { code: verificationCode },
+      data: { link },
       recipients: [email],
-      template: 'verificationCode',
+      template: 'verificationLink',
     });
   }
 
   /**
    * Verify the email of the user with the verification code
+   * Updates the user entity to set the emailVerified flag to true
    * @param code - The code of the user
    */
-  async verifyEmailCode(userUid: string, code: string): Promise<void> {
-    const verification = await this.prismaService.emailVerification.findFirst({
-      where: {
-        code,
-        expiresAt: {
-          gt: new Date(), // Check that the code is not expired
-        },
-        userUid: userUid,
-      },
-    });
-
-    if (!verification) {
-      throw new BadRequestException('Invalid or expired code');
-    }
-
+  async verifyEmailLink(user: Users): Promise<void> {
     // Update user verification status
     await this.prismaService.$transaction([
       this.prismaService.users.update({
         data: { emailVerified: true },
-        where: { uid: userUid },
+        where: { uid: user.uid },
       }),
       // Delete all user verification codes
       this.prismaService.emailVerification.deleteMany({
-        where: { userUid: userUid },
+        where: { userUid: user.uid },
       }),
     ]);
+
+    await this.emailsService.sendEmail({
+      data: { name: user.firstname },
+      recipients: [user.email],
+      template: 'emailVerified',
+    });
   }
 
   async resendVerificationCode(userUid: string): Promise<void> {
@@ -631,7 +632,7 @@ export class AuthB2CService {
    */
   async generateAccessTokenFromCode(code: string, email: string): Promise<string> {
     const formattedEmail = email.toLowerCase();
-    const user = await this.userService.findOneByEmail(formattedEmail);
+    const user = await this.userService.findOneByEmail(formattedEmail, USERSELECT.findOneByEmail);
     if (!user) {
       this.logger.error(`User not found for email: ${email}`);
       throw new NotFoundException(`User ${email} not found`);

@@ -3,13 +3,13 @@ interface EmailTemplate {
   html: (data: any) => string;
 }
 
-export const VERIFICATION_CODE_TEMPLATE: EmailTemplate = {
-  html: (data: { code: string }) => `
+export const VERIFICATION_LINK_TEMPLATE: EmailTemplate = {
+  html: (data: { link: string }) => `
     <div style="font-family: Arial, sans-serif;">
         <h2>Bienvenue sur Ludora !</h2>
         <p>Voici votre code de vérification :</p>
         <h1 style="font-size: 32px; letter-spacing: 5px; text-align: center; padding: 20px; background-color: #f5f5f5; border-radius: 8px;">
-            ${data.code}
+            <a href="${data.link}">${data.link}</a>
         </h1>
         <p>Ce code est valable pendant 15 minutes.</p>
         <p>Si vous n'avez pas demandé ce code, vous pouvez ignorer cet email.</p>
@@ -73,8 +73,9 @@ export const PASSWORD_RESET_REQUEST_TEMPLATE: EmailTemplate = {
 
 // Objet qui regroupe tous les templates pour faciliter l'accès
 export const emailTemplates = {
+  emailVerified: VERIFIED_EMAIL_TEMPLATE,
   passwordReset: PASSWORD_RESET_TEMPLATE,
   passwordResetRequest: PASSWORD_RESET_REQUEST_TEMPLATE,
-  verificationCode: VERIFICATION_CODE_TEMPLATE,
+  verificationLink: VERIFICATION_LINK_TEMPLATE,
   welcomeEmail: WELCOME_EMAIL_TEMPLATE,
 } as const;

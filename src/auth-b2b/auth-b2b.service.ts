@@ -8,6 +8,7 @@ import { UsersService } from 'src/users/users.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateImageDto, LoginDto } from 'src/auth-b2c/dto';
+import { USERSELECT } from 'src/shared/constants/select-user';
 import { PartnersService } from 'src/partners/partners.service';
 import { CreatePartnerDto } from 'src/partners/dto/create-partner.dto';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
@@ -50,7 +51,7 @@ export class AuthB2BService {
       userPhone,
     } = dto;
 
-    const existingUser = await this.userService.findOneByEmail(email);
+    const existingUser = await this.userService.findOneByEmail(email, USERSELECT.findOneByEmail);
     if (existingUser) {
       throw new ConflictException('User already exists');
     }

@@ -11,6 +11,11 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     uid: true,
   },
 
+  checkIfUserExistsByEmail: {
+    email: true,
+    uid: true,
+  },
+
   createStripeAccountToken: {
     birthdate: true,
     email: true,
@@ -18,7 +23,6 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     lastname: true,
     phone: true,
   },
-
   createStripeConnectAccount: {
     birthdate: true,
     email: true,
@@ -27,6 +31,7 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     stripeAccountId: true,
     uid: true,
   },
+
   findMe: {
     bio: true,
     birthdate: true,
@@ -58,7 +63,21 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
       },
     },
   },
+  findOneByEmail: {
+    email: true,
+    emailVerified: true,
+    firstname: true,
+    imageUrl: true,
+    lastname: true,
+    provider: true,
+    uid: true,
+  },
 
+  login: {
+    email: true,
+    password: true,
+    uid: true,
+  },
   stripeAccountId: {
     stripeAccountId: true,
   },
