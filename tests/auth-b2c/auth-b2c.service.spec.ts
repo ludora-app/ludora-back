@@ -587,7 +587,7 @@ describe('AuthB2CService', () => {
       expect(mockPrismaService.users.create).toHaveBeenCalledWith({
         data: {
           email: createGoogleUserDto.email,
-          emailVerified: true,
+          isEmailVerified: true,
           firstname: createGoogleUserDto.firstname,
           imageUrl: createGoogleUserDto.imageUrl,
           lastname: createGoogleUserDto.lastname,

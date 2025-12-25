@@ -159,9 +159,9 @@ export class AuthB2CService {
       const newUser = await this.prismaService.users.create({
         data: {
           email,
-          emailVerified: true,
           firstname,
           imageUrl,
+          isEmailVerified: true,
           lastname,
           provider,
         },
