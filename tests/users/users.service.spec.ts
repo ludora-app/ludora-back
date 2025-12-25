@@ -384,7 +384,7 @@ describe('UsersService', () => {
       expect(mockEmailsService.sendEmail).toHaveBeenCalledWith({
         data: { code: expect.any(String) },
         recipients: ['test@test.com'],
-        template: 'verificationCode',
+        template: 'verificationLink',
       });
 
       mockRandom.mockRestore();
@@ -434,6 +434,15 @@ describe('UsersService', () => {
       await service.sendCodeForPasswordResetRequest('test@test.com');
 
       expect(mockPrismaService.users.findUnique).toHaveBeenCalledWith({
+        select: {
+          email: true,
+          emailVerified: true,
+          firstname: true,
+          imageUrl: true,
+          lastname: true,
+          provider: true,
+          uid: true,
+        },
         where: { email: 'test@test.com' },
       });
       expect(mockEmailsService.sendEmail).toHaveBeenCalledWith({

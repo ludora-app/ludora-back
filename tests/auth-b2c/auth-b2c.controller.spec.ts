@@ -3,6 +3,7 @@ import { Provider, Sex, UserType } from 'generated/prisma/client';
 import { AuthB2CController } from 'src/auth-b2c/auth-b2c.controller';
 import { AuthB2CService } from 'src/auth-b2c/auth-b2c.service';
 import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { VerifyEmailGuard } from 'src/auth-b2c/guards/verify-email.guard';
 import { VerifyEmailCodeDto } from 'src/auth-b2c/dto/input/verify-email-code.dto';
 import { CreateGoogleUserDto } from 'src/auth-b2c/dto/input/create-google-user.dto';
 import { UnauthorizedException } from '@nestjs/common';
@@ -16,6 +17,7 @@ describe('AuthB2CController', () => {
     resendVerificationCode: jest.fn(),
     verifyEmail: jest.fn(),
     verifyEmailCode: jest.fn(),
+    verifyEmailLink: jest.fn(),
     verifyToken: jest.fn(),
     refreshToken: jest.fn(),
     logout: jest.fn(),
@@ -40,6 +42,8 @@ describe('AuthB2CController', () => {
       ],
     })
       .overrideGuard(AuthB2CGuard)
+      .useValue(mockAuthGuard)
+      .overrideGuard(VerifyEmailGuard)
       .useValue(mockAuthGuard)
       .compile();
 
@@ -178,16 +182,15 @@ describe('AuthB2CController', () => {
       const mockRequest = {
         user: { uid: '1' },
       };
-      const dto: VerifyEmailCodeDto = { code: '123456' };
 
-      mockAuthB2CService.verifyEmailCode.mockResolvedValue(undefined);
+      mockAuthB2CService.verifyEmailLink.mockResolvedValue(undefined);
 
-      const result = await controller.verifyEmailCode(mockRequest as any, dto);
+      const result = await controller.verifyEmailCode(mockRequest as any);
 
       expect(result).toEqual({
         message: 'Email verified successfully',
       });
-      expect(mockAuthB2CService.verifyEmailCode).toHaveBeenCalledWith('1', '123456');
+      expect(mockAuthB2CService.verifyEmailLink).toHaveBeenCalledWith({ uid: '1' });
     });
   });
 

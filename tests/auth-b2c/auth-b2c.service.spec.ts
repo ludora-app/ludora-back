@@ -6,12 +6,13 @@ import { Provider, Sex, UserType } from 'generated/prisma/client';
 import * as argon2 from 'argon2';
 import { PinoLogger } from 'nestjs-pino';
 import { AuthB2CService } from 'src/auth-b2c/auth-b2c.service';
-import { RefreshTokenDto } from 'src/auth-b2c/dto';
+import { RefreshTokenDto, VerifyMailDto } from 'src/auth-b2c/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { UsersService } from 'src/users/users.service';
 import { CreateGoogleUserDto } from 'src/auth-b2c/dto/input/create-google-user.dto';
 import { DateUtils } from 'src/shared/utils/date.utils';
+import { USERSELECT } from 'src/shared/constants/select-user';
 
 describe('AuthB2CService', () => {
   let service: AuthB2CService;
@@ -89,6 +90,7 @@ describe('AuthB2CService', () => {
     sendEmail: jest.fn().mockResolvedValue(undefined),
   };
   const mockConfigService = {
+    get: jest.fn().mockReturnValue('http://localhost:2424'),
     getOrThrow: jest.fn().mockReturnValue('test-secret'),
   };
 
@@ -269,38 +271,39 @@ describe('AuthB2CService', () => {
 
       expect(mockPrismaService.$transaction).toHaveBeenCalled();
       expect(mockEmailsService.sendEmail).toHaveBeenCalledWith({
-        data: { code: expect.any(String) },
+        data: { link: expect.any(String) },
         recipients: ['test@test.com'],
-        template: 'verificationCode',
+        template: 'verificationLink',
       });
     });
   });
 
   describe('verifyEmailCode', () => {
-    it('should verify email code successfully', async () => {
-      const now = new Date();
-      const futureDate = new Date(now.getTime() + 60000); // 1 minute in the future
+    it('should verify email successfully', async () => {
+      const emailDto: VerifyMailDto = { email: 'test@test.com' };
 
-      mockPrismaService.emailVerification.findFirst.mockResolvedValue({
+      mockUsersService.findOneByEmail.mockResolvedValue({
         uid: '1',
-        code: '123456',
-        expiresAt: futureDate,
-        userUid: '1',
+        email: 'test@test.com',
       });
 
-      const result = await service.verifyEmailCode('1', '123456');
+      const result = await service.verifyEmail(emailDto);
 
-      expect(result).toBeUndefined();
-      expect(mockPrismaService.users.update).toHaveBeenCalledWith({
-        data: { emailVerified: true },
-        where: { uid: '1' },
-      });
+      expect(result).toBe(false);
+      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+        'test@test.com',
+        USERSELECT.findOneByEmail,
+      );
     });
 
-    it('should throw BadRequestException for invalid or expired code', async () => {
-      mockPrismaService.emailVerification.findFirst.mockResolvedValue(null);
+    it('should return true when email does not exist', async () => {
+      const emailDto: VerifyMailDto = { email: 'nonexistent@test.com' };
 
-      await expect(service.verifyEmailCode('1', '123456')).rejects.toThrow(BadRequestException);
+      mockUsersService.findOneByEmail.mockResolvedValue(null);
+
+      const result = await service.verifyEmail(emailDto);
+
+      expect(result).toBe(true);
     });
   });
 
@@ -427,7 +430,10 @@ describe('AuthB2CService', () => {
       const result = await service.generateAccessTokenFromCode(mockCode, mockEmail);
 
       expect(result).toBe('mock_token');
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(mockEmail.toLowerCase());
+      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+        mockEmail.toLowerCase(),
+        USERSELECT.findOneByEmail,
+      );
       expect(mockPrismaService.emailVerification.findFirst).toHaveBeenCalledWith({
         where: { code: mockCode, userUid: 'user-1' },
       });
@@ -544,7 +550,10 @@ describe('AuthB2CService', () => {
         message: 'User already exists, successfully connected to Google account',
         refreshToken: 'mock_token',
       });
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith('existing@test.com');
+      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+        'existing@test.com',
+        USERSELECT.findOneByEmail,
+      );
       expect(mockPrismaService.userTokens.create).toHaveBeenCalledWith({
         data: {
           token: 'mock_token',
@@ -598,7 +607,10 @@ describe('AuthB2CService', () => {
         message: 'New user created and connected to Google account',
         refreshToken: 'mock_token',
       });
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith('new@test.com');
+      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+        'new@test.com',
+        USERSELECT.findOneByEmail,
+      );
       expect(mockPrismaService.users.create).toHaveBeenCalledWith({
         data: {
           email: createGoogleUserDto.email,
