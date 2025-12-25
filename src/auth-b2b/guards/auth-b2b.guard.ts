@@ -57,7 +57,7 @@ export class AuthB2BGuard implements CanActivate {
 
       // Check if the user is verified and active
       const user = await this.prisma.users.findUnique({
-        select: { emailVerified: true, isConnected: true, uid: true },
+        select: { isConnected: true, isEmailVerified: true, uid: true },
         where: { uid: userUid },
       });
 

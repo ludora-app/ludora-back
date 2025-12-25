@@ -48,7 +48,7 @@ describe('AuthB2CService', () => {
     users: {
       findUnique: jest.fn(),
       create: jest.fn(),
-      update: jest.fn().mockResolvedValue({ uid: '1', emailVerified: true }),
+      update: jest.fn().mockResolvedValue({ uid: '1', isEmailVerified: true }),
     },
     userTokens: {
       findMany: jest.fn().mockResolvedValue([]),
@@ -289,11 +289,11 @@ describe('AuthB2CService', () => {
 
       const result = await service.verifyEmail(emailDto);
 
-      expect(result).toBe(false);
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
-        'test@test.com',
-        USERSELECT.findOneByEmail,
-      );
+      expect(result).toBeUndefined();
+      expect(mockPrismaService.users.update).toHaveBeenCalledWith({
+        data: { isEmailVerified: true },
+        where: { uid: '1' },
+      });
     });
 
     it('should return true when email does not exist', async () => {
@@ -312,7 +312,7 @@ describe('AuthB2CService', () => {
       mockPrismaService.users.findUnique.mockResolvedValue({
         uid: '1',
         email: 'test@test.com',
-        emailVerified: false,
+        isEmailVerified: false,
       });
 
       jest.spyOn(service, 'sendVerificationEmail').mockResolvedValue();
@@ -333,7 +333,7 @@ describe('AuthB2CService', () => {
       mockPrismaService.users.findUnique.mockResolvedValue({
         uid: '1',
         email: 'test@test.com',
-        emailVerified: true,
+        isEmailVerified: true,
       });
 
       await expect(service.resendVerificationCode('1')).rejects.toThrow(BadRequestException);
@@ -354,7 +354,7 @@ describe('AuthB2CService', () => {
       mockPrismaService.users.findUnique.mockResolvedValue({
         uid: '1',
         isConnected: true,
-        emailVerified: true,
+        isEmailVerified: true,
       });
 
       const result = await service.refreshToken(refreshTokenDto);

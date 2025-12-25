@@ -39,6 +39,7 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     firstname: true,
     imageUrl: true,
     isConnected: true,
+    isEmailVerified: true,
     lastname: true,
     phone: true,
     stripeAccountId: true,

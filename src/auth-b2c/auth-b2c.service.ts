@@ -452,8 +452,8 @@ export class AuthB2CService {
     // Update user verification status
     await this.prismaService.$transaction([
       this.prismaService.users.update({
-        data: { emailVerified: true },
-        where: { uid: user.uid },
+        data: { isEmailVerified: true },
+        where: { uid: userUid },
       }),
       // Delete all user verification codes
       this.prismaService.emailVerification.deleteMany({
@@ -477,7 +477,7 @@ export class AuthB2CService {
       throw new NotFoundException('User not found');
     }
 
-    if (user.emailVerified) {
+    if (user.isEmailVerified) {
       throw new BadRequestException('Email already verified');
     }
 
@@ -524,7 +524,7 @@ export class AuthB2CService {
 
       // Verify that the user is still active
       const user = await this.prismaService.users.findUnique({
-        select: { emailVerified: true, isConnected: true, uid: true },
+        select: { isConnected: true, isEmailVerified: true, uid: true },
         where: { uid: userUid },
       });
 

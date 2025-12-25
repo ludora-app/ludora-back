@@ -222,7 +222,7 @@ describe('AuthB2CGuard', () => {
 
       mockUsersService.findOne.mockResolvedValue({
         uid: 'user123',
-        emailVerified: true,
+        isEmailVerified: true,
         isConnected: true,
       });
 
@@ -315,7 +315,7 @@ describe('AuthB2CGuard', () => {
 
       mockUsersService.findOne.mockResolvedValue({
         uid: 'user789',
-        emailVerified: true,
+        isEmailVerified: true,
         isConnected: true,
       });
 

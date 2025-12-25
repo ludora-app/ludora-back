@@ -256,7 +256,7 @@ describe('AuthB2BGuard', () => {
       });
       mockPrismaService.users.findUnique.mockResolvedValue({
         uid: 'user123',
-        emailVerified: true,
+        isEmailVerified: true,
         isConnected: false,
       });
 
@@ -286,7 +286,7 @@ describe('AuthB2BGuard', () => {
       });
       mockPrismaService.users.findUnique.mockResolvedValue({
         uid: 'user123',
-        emailVerified: true,
+        isEmailVerified: true,
         isConnected: true,
       });
       mockPrismaService.partners.findUnique.mockResolvedValue(null);
@@ -321,7 +321,7 @@ describe('AuthB2BGuard', () => {
 
       mockPrismaService.users.findUnique.mockResolvedValue({
         uid: 'user123',
-        emailVerified: true,
+        isEmailVerified: true,
         isConnected: true,
       });
 
@@ -343,7 +343,7 @@ describe('AuthB2BGuard', () => {
         },
       });
       expect(mockPrismaService.users.findUnique).toHaveBeenCalledWith({
-        select: { emailVerified: true, uid: true, isConnected: true },
+        select: { isEmailVerified: true, uid: true, isConnected: true },
         where: { uid: 'user123' },
       });
       expect(mockPrismaService.partners.findUnique).toHaveBeenCalledWith({
@@ -427,7 +427,7 @@ describe('AuthB2BGuard', () => {
 
       mockPrismaService.users.findUnique.mockResolvedValue({
         uid: 'user789',
-        emailVerified: true,
+        isEmailVerified: true,
         isConnected: true,
       });
 
