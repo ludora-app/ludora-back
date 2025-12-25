@@ -75,7 +75,7 @@ export class AuthB2CController {
     @Body() registerDto: RegisterB2CWithFileDto,
     @UploadedFilesCustom() files?: { buffer: Buffer; originalname: string }[],
   ): Promise<RegisterResponseDto> {
-    if (files) {
+    if (files && files.length > 0) {
       const createImageDto: CreateImageDto = {
         file: files[0].buffer,
         name: files[0].originalname,
