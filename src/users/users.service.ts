@@ -2,6 +2,7 @@ import * as argon2 from 'argon2';
 import { PinoLogger } from 'nestjs-pino';
 import { Users } from 'generated/prisma/client';
 import { CreateImageDto } from 'src/auth-b2c/dto';
+import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma, Provider } from 'generated/prisma/browser';
 import { EmailsService } from 'src/shared/emails/emails.service';
@@ -169,8 +170,9 @@ export class UsersService {
    * @description This method is used in the auth service to find a user by email
    * @returns The user
    */
-  async findOneByEmail(email: string): Promise<Users> {
+  async findOneByEmail(email: string, select?: Prisma.UsersSelect): Promise<Users> {
     const user = await this.prismaService.users.findUnique({
+      select: select ?? USERSELECT.checkIfUserExistsByEmail,
       where: { email },
     });
 
@@ -312,8 +314,8 @@ export class UsersService {
    * @memberof UsersService & AuthService
    */
   async sendVerificationEmail(userUid: string, email: string) {
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const verificationCode = VerificationCodeUtil.generateVerificationCode();
+    const expiresAt = new Date(Date.now() + DateUtils.FIFTEEN_MINUTES); // 15 minutes
 
     // Utiliser une transaction pour garantir l'atomicité
     await this.prismaService.$transaction(async (tx) => {
@@ -336,7 +338,7 @@ export class UsersService {
     await this.emailsService.sendEmail({
       data: { code: verificationCode },
       recipients: [email],
-      template: 'verificationCode',
+      template: 'verificationLink',
     });
   }
 
@@ -357,10 +359,15 @@ export class UsersService {
   /**   * @param user - The user
    * @description This method is used to send a verification code for password reset to the user
    */
-  async sendCodeForPasswordReset(user: Users): Promise<void> {
+  async sendCodeForPasswordReset(
+    user: Pick<
+      Users,
+      'uid' | 'email' | 'firstname' | 'lastname' | 'imageUrl' | 'provider' | 'emailVerified'
+    >,
+  ): Promise<void> {
     const verificationCode = VerificationCodeUtil.generateVerificationCode();
     this.logger.debug('verificationCode', verificationCode);
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const expiresAt = new Date(Date.now() + DateUtils.FIFTEEN_MINUTES);
 
     await this.prismaService.$transaction(async (tx) => {
       // Delete old verification codes
@@ -390,7 +397,7 @@ export class UsersService {
    * @description This method is used to send a verification code for password reset to the user email
    */
   async sendCodeForPasswordResetRequest(email: string): Promise<void> {
-    const user = await this.findOneByEmail(email);
+    const user = await this.findOneByEmail(email, USERSELECT.findOneByEmail);
 
     if (!user) {
       this.logger.error(`User not found for email: ${email}`);

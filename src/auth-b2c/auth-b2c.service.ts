@@ -2,12 +2,16 @@ import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { PinoLogger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
+import { Users } from 'generated/prisma/browser';
 import { UserType } from 'generated/prisma/client';
 import { UsersService } from 'src/users/users.service';
+import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TokenType } from 'src/shared/constants/constants';
+import { USERSELECT } from 'src/shared/constants/select-user';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
+import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
 import {
   BadRequestException,
   Injectable,
@@ -96,7 +100,7 @@ export class AuthB2CService {
       await tx.refreshTokens.create({
         data: {
           deviceUid,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+          expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
           token: refreshToken,
           userUid: newUser.uid,
         },
@@ -116,7 +120,7 @@ export class AuthB2CService {
     const { email, firstname, imageUrl, lastname, provider } = createGoogleUserDto;
 
     try {
-      const existingUser = await this.userService.findOneByEmail(email);
+      const existingUser = await this.userService.findOneByEmail(email, USERSELECT.findOneByEmail);
 
       // if the user exists, connect the Google account to the user
       if (existingUser) {
@@ -139,7 +143,7 @@ export class AuthB2CService {
 
         await this.prismaService.refreshTokens.create({
           data: {
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+            expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
             token: refreshToken,
             userUid: existingUser.uid,
           },
@@ -179,7 +183,7 @@ export class AuthB2CService {
 
       await this.prismaService.refreshTokens.create({
         data: {
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+          expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
           token: refreshToken,
           userUid: newUser.uid,
         },
@@ -199,7 +203,7 @@ export class AuthB2CService {
       const { deviceUid, email, password } = loginDto;
       const formattedEmail = email.toLowerCase();
 
-      const user = await this.userService.findOneByEmail(formattedEmail);
+      const user = await this.userService.findOneByEmail(formattedEmail, USERSELECT.login);
       if (!user) {
         throw new NotFoundException('User not found');
       }
@@ -290,7 +294,7 @@ export class AuthB2CService {
             // Update existing refresh token with deviceUid
             await prisma.refreshTokens.update({
               data: {
-                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
                 token: refreshToken,
               },
               where: { uid: refreshTokenWithDeviceUid.uid },
@@ -300,7 +304,7 @@ export class AuthB2CService {
             await prisma.refreshTokens.create({
               data: {
                 deviceUid,
-                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
                 token: refreshToken,
                 userUid: user.uid,
               },
@@ -325,7 +329,7 @@ export class AuthB2CService {
           // Create new refresh token without deviceUid
           await prisma.refreshTokens.create({
             data: {
-              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+              expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
               token: refreshToken,
               userUid: user.uid,
             },
@@ -342,7 +346,7 @@ export class AuthB2CService {
   async verifyEmail(emailDto: VerifyMailDto): Promise<boolean> {
     const { email } = emailDto;
     const formattedEmail = email.toLowerCase();
-    const user = await this.userService.findOneByEmail(formattedEmail);
+    const user = await this.userService.findOneByEmail(formattedEmail, USERSELECT.findOneByEmail);
     if (!user) {
       return true;
     }
@@ -405,8 +409,8 @@ export class AuthB2CService {
    * @memberof UsersService & AuthService
    */
   async sendVerificationEmail(userUid: string, email: string) {
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const verificationCode = VerificationCodeUtil.generateVerificationCode();
+    const expiresAt = new Date(Date.now() + DateUtils.FIFTEEN_MINUTES);
 
     // Use a transaction to ensure atomicity
     await this.prismaService.$transaction(async (tx) => {
@@ -425,44 +429,43 @@ export class AuthB2CService {
       });
     });
 
+    //! set this property in vault
+    const baseUrl = this.configService.get('BASE_URL') ?? 'http://localhost:2424';
+    const payload = { code: verificationCode, email };
+    const token = this.jwt.sign(payload, { expiresIn: '24h' });
+    const link = `${baseUrl}/auth-b2c/verify-email-link?token=${token}`;
+
     // Send the email outside the transaction
     await this.emailsService.sendEmail({
-      data: { code: verificationCode },
+      data: { link },
       recipients: [email],
-      template: 'verificationCode',
+      template: 'verificationLink',
     });
   }
 
   /**
    * Verify the email of the user with the verification code
+   * Updates the user entity to set the emailVerified flag to true
    * @param code - The code of the user
    */
-  async verifyEmailCode(userUid: string, code: string): Promise<void> {
-    const verification = await this.prismaService.emailVerification.findFirst({
-      where: {
-        code,
-        expiresAt: {
-          gt: new Date(), // Check that the code is not expired
-        },
-        userUid: userUid,
-      },
-    });
-
-    if (!verification) {
-      throw new BadRequestException('Invalid or expired code');
-    }
-
+  async verifyEmailLink(user: Users): Promise<void> {
     // Update user verification status
     await this.prismaService.$transaction([
       this.prismaService.users.update({
         data: { emailVerified: true },
-        where: { uid: userUid },
+        where: { uid: user.uid },
       }),
       // Delete all user verification codes
       this.prismaService.emailVerification.deleteMany({
-        where: { userUid: userUid },
+        where: { userUid: user.uid },
       }),
     ]);
+
+    await this.emailsService.sendEmail({
+      data: { name: user.firstname },
+      recipients: [user.email],
+      template: 'emailVerified',
+    });
   }
 
   async resendVerificationCode(userUid: string): Promise<void> {
@@ -551,7 +554,7 @@ export class AuthB2CService {
         await tx.refreshTokens.create({
           data: {
             deviceUid,
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
             token: newRefreshToken,
             userUid: userUid,
           },
@@ -629,7 +632,7 @@ export class AuthB2CService {
    */
   async generateAccessTokenFromCode(code: string, email: string): Promise<string> {
     const formattedEmail = email.toLowerCase();
-    const user = await this.userService.findOneByEmail(formattedEmail);
+    const user = await this.userService.findOneByEmail(formattedEmail, USERSELECT.findOneByEmail);
     if (!user) {
       this.logger.error(`User not found for email: ${email}`);
       throw new NotFoundException(`User ${email} not found`);
@@ -714,7 +717,7 @@ export class AuthB2CService {
 
       await tx.refreshTokens.create({
         data: {
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
           token: refreshToken,
           userUid: userUid,
         },
