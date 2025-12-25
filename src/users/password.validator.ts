@@ -10,8 +10,7 @@ export class IsStrongPassword implements ValidatorConstraintInterface {
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumber = /\d/.test(password);
-    const hasSpecialCharacter = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
+    const hasSpecialCharacter = /[^a-zA-Z0-9\s]/.test(password);
     const isValid = hasUpperCase && hasLowerCase && hasNumber && hasSpecialCharacter;
     return isValid;
   }
