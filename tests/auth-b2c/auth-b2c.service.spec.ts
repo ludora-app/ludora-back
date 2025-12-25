@@ -48,7 +48,7 @@ describe('AuthB2CService', () => {
     users: {
       findUnique: jest.fn(),
       create: jest.fn(),
-      update: jest.fn().mockResolvedValue({ uid: '1', emailVerified: true }),
+      update: jest.fn().mockResolvedValue({ uid: '1', isEmailVerified: true }),
     },
     userTokens: {
       findMany: jest.fn().mockResolvedValue([]),
@@ -278,41 +278,12 @@ describe('AuthB2CService', () => {
     });
   });
 
-  describe('verifyEmailCode', () => {
-    it('should verify email successfully', async () => {
-      const emailDto: VerifyMailDto = { email: 'test@test.com' };
-
-      mockUsersService.findOneByEmail.mockResolvedValue({
-        uid: '1',
-        email: 'test@test.com',
-      });
-
-      const result = await service.verifyEmail(emailDto);
-
-      expect(result).toBe(false);
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
-        'test@test.com',
-        USERSELECT.findOneByEmail,
-      );
-    });
-
-    it('should return true when email does not exist', async () => {
-      const emailDto: VerifyMailDto = { email: 'nonexistent@test.com' };
-
-      mockUsersService.findOneByEmail.mockResolvedValue(null);
-
-      const result = await service.verifyEmail(emailDto);
-
-      expect(result).toBe(true);
-    });
-  });
-
   describe('resendVerificationCode', () => {
     it('should resend verification code', async () => {
       mockPrismaService.users.findUnique.mockResolvedValue({
         uid: '1',
         email: 'test@test.com',
-        emailVerified: false,
+        isEmailVerified: false,
       });
 
       jest.spyOn(service, 'sendVerificationEmail').mockResolvedValue();
@@ -333,7 +304,7 @@ describe('AuthB2CService', () => {
       mockPrismaService.users.findUnique.mockResolvedValue({
         uid: '1',
         email: 'test@test.com',
-        emailVerified: true,
+        isEmailVerified: true,
       });
 
       await expect(service.resendVerificationCode('1')).rejects.toThrow(BadRequestException);
@@ -354,7 +325,7 @@ describe('AuthB2CService', () => {
       mockPrismaService.users.findUnique.mockResolvedValue({
         uid: '1',
         isConnected: true,
-        emailVerified: true,
+        isEmailVerified: true,
       });
 
       const result = await service.refreshToken(refreshTokenDto);

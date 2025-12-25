@@ -362,7 +362,7 @@ export class UsersService {
   async sendCodeForPasswordReset(
     user: Pick<
       Users,
-      'uid' | 'email' | 'firstname' | 'lastname' | 'imageUrl' | 'provider' | 'emailVerified'
+      'uid' | 'email' | 'firstname' | 'lastname' | 'imageUrl' | 'provider' | 'isEmailVerified'
     >,
   ): Promise<void> {
     const verificationCode = VerificationCodeUtil.generateVerificationCode();

@@ -436,7 +436,7 @@ describe('UsersService', () => {
       expect(mockPrismaService.users.findUnique).toHaveBeenCalledWith({
         select: {
           email: true,
-          emailVerified: true,
+          isEmailVerified: true,
           firstname: true,
           imageUrl: true,
           lastname: true,

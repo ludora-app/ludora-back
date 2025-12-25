@@ -445,14 +445,14 @@ export class AuthB2CService {
 
   /**
    * Verify the email of the user with the verification code
-   * Updates the user entity to set the emailVerified flag to true
+   * Updates the user entity to set the isEmailVerified flag to true
    * @param code - The code of the user
    */
   async verifyEmailLink(user: Users): Promise<void> {
     // Update user verification status
     await this.prismaService.$transaction([
       this.prismaService.users.update({
-        data: { emailVerified: true },
+        data: { isEmailVerified: true },
         where: { uid: user.uid },
       }),
       // Delete all user verification codes
@@ -477,7 +477,7 @@ export class AuthB2CService {
       throw new NotFoundException('User not found');
     }
 
-    if (user.emailVerified) {
+    if (user.isEmailVerified) {
       throw new BadRequestException('Email already verified');
     }
 
@@ -524,7 +524,7 @@ export class AuthB2CService {
 
       // Verify that the user is still active
       const user = await this.prismaService.users.findUnique({
-        select: { emailVerified: true, isConnected: true, uid: true },
+        select: { isConnected: true, isEmailVerified: true, uid: true },
         where: { uid: userUid },
       });
 

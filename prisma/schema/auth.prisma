@@ -41,7 +41,7 @@ model Users {
   stripeAccountId String?   @unique @map("stripe_account_id")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
-  emailVerified   Boolean   @default(false) @map("email_verified")
+  isEmailVerified Boolean   @default(false) @map("is_email_verified")
   type            UserType  @default(USER)
 
   messages            Messages[]

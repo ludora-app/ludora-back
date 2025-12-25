@@ -67,6 +67,9 @@ export class FindMeUserResponseDataDto {
 
   @ApiProperty({ example: [{ sport: 'BASKETBALL' }], nullable: true, readOnly: true })
   readonly userSports?: { sport: string }[];
+
+  @ApiProperty({ example: true, nullable: false, readOnly: true, required: false })
+  readonly isEmailVerified?: boolean;
 }
 
 export class FindMeUserResponseDto extends ResponseTypeDto<FindMeUserResponseDataDto> {
