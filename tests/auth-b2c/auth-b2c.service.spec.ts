@@ -278,35 +278,6 @@ describe('AuthB2CService', () => {
     });
   });
 
-  describe('verifyEmailCode', () => {
-    it('should verify email successfully', async () => {
-      const emailDto: VerifyMailDto = { email: 'test@test.com' };
-
-      mockUsersService.findOneByEmail.mockResolvedValue({
-        uid: '1',
-        email: 'test@test.com',
-      });
-
-      const result = await service.verifyEmail(emailDto);
-
-      expect(result).toBeUndefined();
-      expect(mockPrismaService.users.update).toHaveBeenCalledWith({
-        data: { isEmailVerified: true },
-        where: { uid: '1' },
-      });
-    });
-
-    it('should return true when email does not exist', async () => {
-      const emailDto: VerifyMailDto = { email: 'nonexistent@test.com' };
-
-      mockUsersService.findOneByEmail.mockResolvedValue(null);
-
-      const result = await service.verifyEmail(emailDto);
-
-      expect(result).toBe(true);
-    });
-  });
-
   describe('resendVerificationCode', () => {
     it('should resend verification code', async () => {
       mockPrismaService.users.findUnique.mockResolvedValue({

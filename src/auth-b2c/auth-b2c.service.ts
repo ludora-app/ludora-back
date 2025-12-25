@@ -445,7 +445,7 @@ export class AuthB2CService {
 
   /**
    * Verify the email of the user with the verification code
-   * Updates the user entity to set the emailVerified flag to true
+   * Updates the user entity to set the isEmailVerified flag to true
    * @param code - The code of the user
    */
   async verifyEmailLink(user: Users): Promise<void> {
@@ -453,7 +453,7 @@ export class AuthB2CService {
     await this.prismaService.$transaction([
       this.prismaService.users.update({
         data: { isEmailVerified: true },
-        where: { uid: userUid },
+        where: { uid: user.uid },
       }),
       // Delete all user verification codes
       this.prismaService.emailVerification.deleteMany({

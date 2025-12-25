@@ -66,9 +66,9 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
   },
   findOneByEmail: {
     email: true,
-    emailVerified: true,
     firstname: true,
     imageUrl: true,
+    isEmailVerified: true,
     lastname: true,
     provider: true,
     uid: true,
