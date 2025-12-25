@@ -116,14 +116,16 @@ export class AuthB2CService {
 
   async createOrConnectGoogleUser(
     createGoogleUserDto: CreateGoogleUserDto,
-  ): Promise<{ accessToken: string; refreshToken: string; message: string }> {
+  ): Promise<{ accessToken: string; isNewUser: boolean; refreshToken: string; message: string }> {
     const { email, firstname, imageUrl, lastname, provider } = createGoogleUserDto;
+    let isNewUser = true;
 
     try {
       const existingUser = await this.userService.findOneByEmail(email, USERSELECT.findOneByEmail);
 
       // if the user exists, connect the Google account to the user
       if (existingUser) {
+        isNewUser = false;
         const payload = { uid: existingUser.uid };
         const accessToken = this.jwt.sign(
           { ...payload, type: TokenType.ACCESS },
@@ -151,12 +153,13 @@ export class AuthB2CService {
         this.logger.debug(`User ${existingUser.uid} connected to Google account`);
         const message = 'User already exists, successfully connected to Google account';
 
-        return { accessToken, message, refreshToken };
+        return { accessToken, isNewUser, message, refreshToken };
       }
 
       const newUser = await this.prismaService.users.create({
         data: {
           email,
+          emailVerified: true,
           firstname,
           imageUrl,
           lastname,
@@ -192,7 +195,7 @@ export class AuthB2CService {
       this.logger.debug(`User ${newUser.uid} created and connected to Google account`);
       const message = 'New user created and connected to Google account';
 
-      return { accessToken, message, refreshToken };
+      return { accessToken, isNewUser, message, refreshToken };
     } catch (error) {
       throw new BadRequestException(`Error creating or connecting Google user: ${error.message}`);
     }

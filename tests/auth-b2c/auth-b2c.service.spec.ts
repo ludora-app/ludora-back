@@ -518,6 +518,7 @@ describe('AuthB2CService', () => {
 
       expect(result).toEqual({
         accessToken: 'mock_token',
+        isNewUser: false,
         message: 'User already exists, successfully connected to Google account',
         refreshToken: 'mock_token',
       });
@@ -575,6 +576,7 @@ describe('AuthB2CService', () => {
 
       expect(result).toEqual({
         accessToken: 'mock_token',
+        isNewUser: true,
         message: 'New user created and connected to Google account',
         refreshToken: 'mock_token',
       });
@@ -585,6 +587,7 @@ describe('AuthB2CService', () => {
       expect(mockPrismaService.users.create).toHaveBeenCalledWith({
         data: {
           email: createGoogleUserDto.email,
+          emailVerified: true,
           firstname: createGoogleUserDto.firstname,
           imageUrl: createGoogleUserDto.imageUrl,
           lastname: createGoogleUserDto.lastname,

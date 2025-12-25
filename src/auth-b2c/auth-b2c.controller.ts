@@ -115,7 +115,11 @@ export class AuthB2CController {
     createGoogleUserDto.provider = provider;
     const data = await this.authService.createOrConnectGoogleUser(createGoogleUserDto);
     return {
-      data: { accessToken: data.accessToken, refreshToken: data.refreshToken },
+      data: {
+        accessToken: data.accessToken,
+        isNewUser: data.isNewUser,
+        refreshToken: data.refreshToken,
+      },
       message: data.message,
     };
   }
