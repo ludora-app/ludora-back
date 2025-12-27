@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 import { AppService } from './app.service';
+import { ChatModule } from './chat/chat.module';
 import { AppController } from './app.controller';
 import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -16,6 +18,7 @@ import { AuthB2CModule } from './auth-b2c/auth-b2c.module';
 import { AuthB2BModule } from './auth-b2b/auth-b2b.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { PartnersModule } from './partners/partners.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { UserHourPreferencesModule } from './user-hour-preferences/user-hour-preferences.module';
 import { UserSportPreferencesModule } from './user-sport-preferences/user-sport-preferences.module';
@@ -26,6 +29,7 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
   controllers: [AppController],
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    EventEmitterModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         // Default configuration - applied globally if not overridden
@@ -99,9 +103,11 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
     PrismaModule,
     AuthB2BModule,
     AuthB2CModule,
+    ChatModule,
     FieldsModule,
     ConversationsModule,
     MetricsModule,
+    NotificationsModule,
     PartnersModule,
     PaymentModule,
     SessionsModule,

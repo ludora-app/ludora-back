@@ -45,3 +45,17 @@ export enum SessionSportLevel {
   INTERMEDIATE = 2,
   ADVANCED = 3,
 }
+
+/**
+ * @description Every notification type that can be sent to the user via the notifications gateway
+ */
+export enum NotificationType {
+  FRIEND_REQUEST = 'FRIEND_REQUEST',
+  FRIEND_ACCEPTED = 'FRIEND_ACCEPTED',
+  SESSION_INVITATION = 'SESSION_INVITATION',
+  SESSION_UPDATED = 'SESSION_UPDATED',
+  SESSION_CANCELLED = 'SESSION_CANCELLED',
+  SESSION_REMINDER = 'SESSION_REMINDER',
+  NEW_MESSAGE = 'NEW_MESSAGE',
+  GENERAL = 'GENERAL',
+}
