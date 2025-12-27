@@ -1,5 +1,6 @@
-import { NotificationType } from 'src/shared/constants/constants';
 import { IsEnum, IsNotEmpty, IsObject, IsOptional, IsString, IsUUID } from 'class-validator';
+
+import { NotificationType } from '../constants/notification.types';
 
 export class NotificationEventDto {
   @IsUUID()

@@ -5,9 +5,9 @@ import { Socket } from 'socket.io';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
 import { NotificationsGateway } from 'src/notifications/notifications.gateway';
-import { NotificationType } from 'src/shared/constants/constants';
 import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
 import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
+import { NotificationType } from 'src/notifications/constants/notification.types';
 
 describe('NotificationsGateway', () => {
   let gateway: NotificationsGateway;
@@ -136,7 +136,7 @@ describe('NotificationsGateway', () => {
   describe('handleNotificationBroadcast', () => {
     it('should broadcast notification to all users', () => {
       const payload = {
-        type: 'GENERAL',
+        type: NotificationType.GENERAL,
         title: 'System Maintenance',
         message: 'Maintenance in 10 minutes',
       };
@@ -163,7 +163,7 @@ describe('NotificationsGateway', () => {
     it('should send notification to multiple users', () => {
       const payload = {
         userIds: ['user-1', 'user-2', 'user-3'],
-        type: 'SESSION_REMINDER',
+        type: NotificationType.SESSION_REMINDER,
         title: 'Session Starting Soon',
         message: 'Your session starts in 30 minutes',
         data: { sessionId: 'session-123' },

@@ -13,6 +13,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 
+import { EventTypes } from './constants/event.types';
+import { NotificationType } from './constants/notification.types';
 import { NotificationEventDto } from './dto/notification-event.dto';
 
 /**
@@ -126,7 +128,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
    *   data: { requestId: 'req-456' }
    * });
    */
-  @OnEvent('notification.send')
+  @OnEvent(EventTypes.NOTIFICATION_SEND)
   handleNotificationSend(payload: NotificationEventDto): void {
     try {
       const { data, message, title, type, userId } = payload;
@@ -159,9 +161,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
    *   message: 'The system will be under maintenance in 10 minutes',
    * });
    */
-  @OnEvent('notification.broadcast')
+  @OnEvent(EventTypes.NOTIFICATION_BROADCAST)
   handleNotificationBroadcast(payload: {
-    type: string;
+    type: NotificationType;
     title: string;
     message: string;
     data?: Record<string, any>;
@@ -197,10 +199,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
    *   data: { sessionId: 'session-123' }
    * });
    */
-  @OnEvent('notification.sendToMultiple')
+  @OnEvent(EventTypes.NOTIFICATION_SEND_TO_MULTIPLE)
   handleNotificationSendToMultiple(payload: {
     userIds: string[];
-    type: string;
+    type: NotificationType;
     title: string;
     message: string;
     data?: Record<string, any>;
@@ -232,7 +234,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
    * Event listener for friend request notifications
    * Specific event handler for friend requests
    */
-  @OnEvent('friend.request.sent')
+  @OnEvent(EventTypes.FRIEND_REQUEST)
   handleFriendRequestNotification(payload: {
     recipientId: string;
     senderId: string;
@@ -248,7 +250,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         message: `${senderName} sent you a friend request`,
         timestamp: new Date().toISOString(),
         title: 'New Friend Request',
-        type: 'FRIEND_REQUEST',
+        type: NotificationType.FRIEND_REQUEST,
       });
 
       this.logger.debug(`Friend request notification sent to user ${recipientId}`);
@@ -260,7 +262,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   /**
    * Event listener for session invitation notifications
    */
-  @OnEvent('session.invitation.sent')
+  @OnEvent(EventTypes.SESSION_INVITATION)
   handleSessionInvitationNotification(payload: {
     recipientId: string;
     sessionName: string;
@@ -276,7 +278,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         message: `${invitedBy} invited you to join "${sessionName}"`,
         timestamp: new Date().toISOString(),
         title: 'New Session Invitation',
-        type: 'SESSION_INVITATION',
+        type: NotificationType.SESSION_INVITATION,
       });
 
       this.logger.debug(`Session invitation notification sent to user ${recipientId}`);
@@ -285,17 +287,18 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     }
   }
 
-  @OnEvent('email.verified')
+  @OnEvent(EventTypes.EMAIL_VERIFIED)
   handleEmailVerified(payload: { userUid: string }): void {
     try {
       const { userUid } = payload;
-      this.logger.debug(`Received email.verified event for user ${userUid}`);
+      this.logger.debug(`Received ${EventTypes.EMAIL_VERIFIED} event for user ${userUid}`);
 
       const userRoom = `user:${userUid}`;
-      this.server.to(userRoom).emit('email.verified', {
+      this.server.to(userRoom).emit('notification', {
         message: 'Your email has been verified',
         timestamp: new Date().toISOString(),
-        type: 'EMAIL_VERIFIED',
+        title: 'Email Verified',
+        type: NotificationType.EMAIL_VERIFIED,
       });
 
       this.logger.info(`Email verified notification sent to user ${userUid} (room: ${userRoom})`);
