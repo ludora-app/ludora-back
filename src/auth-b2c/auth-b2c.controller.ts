@@ -149,7 +149,8 @@ export class AuthB2CController {
   @Public()
   @Post('verify-mail')
   @ApiOperation({
-    summary: 'Allow to verify the email, unprotected route',
+    summary:
+      'Allows to verify if an email is available or not, unprotected route used during the registration process',
   })
   @ApiBadRequestResponse({
     description: 'Error during email verification',

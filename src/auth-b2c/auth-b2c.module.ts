@@ -8,10 +8,11 @@ import { SharedModule } from 'src/shared/shared.module';
 import { AuthB2CService } from './auth-b2c.service';
 import { AuthB2CGuard } from './guards/auth-b2c.guard';
 import { AuthB2CController } from './auth-b2c.controller';
+import { WebSocketAuthService } from './websocket-auth.service';
 
 @Module({
   controllers: [AuthB2CController],
-  exports: [AuthB2CService],
+  exports: [AuthB2CService, WebSocketAuthService],
   imports: [
     JwtModule.registerAsync({
       global: true,
@@ -30,6 +31,7 @@ import { AuthB2CController } from './auth-b2c.controller';
       provide: APP_GUARD,
       useClass: AuthB2CGuard,
     },
+    WebSocketAuthService,
   ],
 })
 export class AuthB2CModule {}

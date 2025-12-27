@@ -4,6 +4,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
 import { Users } from 'generated/prisma/browser';
 import { UserType } from 'generated/prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UsersService } from 'src/users/users.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -37,6 +38,7 @@ export class AuthB2CService {
     private readonly emailsService: EmailsService,
     private readonly configService: ConfigService,
     private readonly logger: PinoLogger,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     this.logger.setContext(AuthB2CService.name);
   }
@@ -463,6 +465,9 @@ export class AuthB2CService {
         where: { userUid: user.uid },
       }),
     ]);
+
+    this.logger.debug(`Emitting email.verified event for user ${user.uid}`);
+    this.eventEmitter.emit('email.verified', { userUid: user.uid });
 
     await this.emailsService.sendEmail({
       data: { name: user.firstname },
