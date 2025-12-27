@@ -3,7 +3,7 @@ import { UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { MessageType } from 'generated/prisma/enums';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { WsAuthGuard } from 'src/auth-b2c/guards/ws-auth.guard';
+import { WebSocketAuthGuard } from 'src/auth-b2c/guards/websocket-auth.guard';
 import {
   ConnectedSocket,
   MessageBody,
@@ -31,7 +31,7 @@ import { TypingIndicatorDto } from './dto/input/typing-indicator.dto';
   },
   namespace: '/chat',
 })
-@UseGuards(WsAuthGuard)
+@UseGuards(WebSocketAuthGuard)
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;

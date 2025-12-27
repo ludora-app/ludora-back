@@ -5,6 +5,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Provider, Sex, UserType } from 'generated/prisma/client';
 import * as argon2 from 'argon2';
 import { PinoLogger } from 'nestjs-pino';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AuthB2CService } from 'src/auth-b2c/auth-b2c.service';
 import { RefreshTokenDto, VerifyMailDto } from 'src/auth-b2c/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -102,6 +103,11 @@ describe('AuthB2CService', () => {
     info: jest.fn(),
   };
 
+  const mockEventEmitter = {
+    emit: jest.fn(),
+    emitAsync: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -129,6 +135,10 @@ describe('AuthB2CService', () => {
         {
           provide: PinoLogger,
           useValue: mockPinoLogger,
+        },
+        {
+          provide: EventEmitter2,
+          useValue: mockEventEmitter,
         },
       ],
     }).compile();

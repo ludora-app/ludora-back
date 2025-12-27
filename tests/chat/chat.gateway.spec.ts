@@ -7,6 +7,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
 import { ChatGateway } from 'src/chat/chat.gateway';
 import { MessagesService } from 'src/conversations/messages.service';
+import { WebSocketAuthGuard } from 'src/auth-b2c/guards/websocket-auth.guard';
+import { WebSocketAuthService } from 'src/auth-b2c/websocket-auth.service';
 
 describe('ChatGateway', () => {
   let gateway: ChatGateway;
@@ -59,6 +61,14 @@ describe('ChatGateway', () => {
     error: jest.fn(),
   };
 
+  const mockWebSocketAuthService = {
+    authenticateSocket: jest.fn(),
+  };
+
+  const mockWebSocketAuthGuard = {
+    canActivate: jest.fn(() => true),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -83,8 +93,15 @@ describe('ChatGateway', () => {
           provide: PinoLogger,
           useValue: mockLogger,
         },
+        {
+          provide: WebSocketAuthService,
+          useValue: mockWebSocketAuthService,
+        },
       ],
-    }).compile();
+    })
+      .overrideGuard(WebSocketAuthGuard)
+      .useValue(mockWebSocketAuthGuard)
+      .compile();
 
     gateway = module.get<ChatGateway>(ChatGateway);
     messagesService = module.get<MessagesService>(MessagesService);

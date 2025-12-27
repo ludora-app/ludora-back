@@ -6,6 +6,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
 import { NotificationsGateway } from 'src/notifications/notifications.gateway';
 import { NotificationType } from 'src/shared/constants/constants';
+import { WebSocketAuthService } from 'src/auth-b2c/websocket-auth.service';
+import { WebSocketAuthGuard } from 'src/auth-b2c/guards/websocket-auth.guard';
 
 describe('NotificationsGateway', () => {
   let gateway: NotificationsGateway;
@@ -19,6 +21,14 @@ describe('NotificationsGateway', () => {
     debug: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
+  };
+
+  const mockWebSocketAuthService = {
+    authenticateSocket: jest.fn(),
+  };
+
+  const mockWebSocketAuthGuard = {
+    canActivate: jest.fn(() => true),
   };
 
   beforeEach(async () => {
@@ -41,8 +51,15 @@ describe('NotificationsGateway', () => {
           provide: PinoLogger,
           useValue: mockLogger,
         },
+        {
+          provide: WebSocketAuthService,
+          useValue: mockWebSocketAuthService,
+        },
       ],
-    }).compile();
+    })
+      .overrideGuard(WebSocketAuthGuard)
+      .useValue(mockWebSocketAuthGuard)
+      .compile();
 
     gateway = module.get<NotificationsGateway>(NotificationsGateway);
 

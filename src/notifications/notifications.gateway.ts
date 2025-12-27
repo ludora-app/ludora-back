@@ -3,7 +3,8 @@ import { UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { WsAuthGuard } from 'src/auth-b2c/guards/ws-auth.guard';
+import { WebSocketAuthService } from 'src/auth-b2c/websocket-auth.service';
+import { WebSocketAuthGuard } from 'src/auth-b2c/guards/websocket-auth.guard';
 import {
   ConnectedSocket,
   OnGatewayConnection,
@@ -26,7 +27,7 @@ import { NotificationEventDto } from './dto/notification-event.dto';
   },
   namespace: '/notifications',
 })
-@UseGuards(WsAuthGuard)
+@UseGuards(WebSocketAuthGuard)
 export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
@@ -34,21 +35,43 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   constructor(
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
+    private readonly webSocketAuthService: WebSocketAuthService,
   ) {
     this.logger.setContext(NotificationsGateway.name);
   }
 
   /**
    * Handle new WebSocket connection
-   * - Authentication is handled by WsAuthGuard (called before this method)
-   * - This method is called ONLY after successful authentication
+   * - Authentication is handled by WsAuthGuard (if guard executes) or manually here
    * - Joins user to their personal notification room (user:{userId})
    */
   async handleConnection(@ConnectedSocket() client: Socket): Promise<void> {
     try {
-      // User is already authenticated by WsAuthGuard
-      // client.data.userUid is set by the guard
-      const userUid = client.data.userUid;
+      // If guard didn't execute (common issue with OnGatewayConnection), authenticate manually
+      let userUid = client.data.userUid;
+      if (!userUid) {
+        this.logger.debug(
+          `Guard didn't set userUid, authenticating manually for client ${client.id}`,
+        );
+        try {
+          await this.webSocketAuthService.authenticateSocket(client);
+          userUid = client.data.userUid;
+          if (!userUid) {
+            throw new Error('Authentication succeeded but userUid not set');
+          }
+          this.logger.debug(`Manual authentication successful for user ${userUid}`);
+        } catch (authError) {
+          this.logger.error(`Authentication failed: ${authError.message}`, {
+            clientId: client.id,
+          });
+          client.emit('error', {
+            code: 'AUTH_FAILED',
+            message: authError.message || 'Authentication failed',
+          });
+          client.disconnect();
+          return;
+        }
+      }
 
       this.logger.debug(`Notification connection for authenticated user ${userUid}`);
 
@@ -64,7 +87,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         userUid,
       });
     } catch (error) {
-      this.logger.error(`Notification connection error: ${error.message}`);
+      this.logger.error(`Notification connection error: ${error.message}`, {
+        error: error.stack,
+      });
       client.emit('error', {
         code: 'CONNECTION_FAILED',
         message: 'Connection failed',
@@ -257,6 +282,28 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       this.logger.debug(`Session invitation notification sent to user ${recipientId}`);
     } catch (error) {
       this.logger.error(`Error sending session invitation notification: ${error.message}`);
+    }
+  }
+
+  @OnEvent('email.verified')
+  handleEmailVerified(payload: { userUid: string }): void {
+    try {
+      const { userUid } = payload;
+      this.logger.debug(`Received email.verified event for user ${userUid}`);
+
+      const userRoom = `user:${userUid}`;
+      this.server.to(userRoom).emit('email.verified', {
+        message: 'Your email has been verified',
+        timestamp: new Date().toISOString(),
+        type: 'EMAIL_VERIFIED',
+      });
+
+      this.logger.info(`Email verified notification sent to user ${userUid} (room: ${userRoom})`);
+    } catch (error) {
+      this.logger.error(`Error sending email verified notification: ${error.message}`, {
+        error: error.stack,
+        payload,
+      });
     }
   }
 }
