@@ -1,27 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
-export class LoginResponseDataDto {
-  @ApiProperty({
-    example:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-    readOnly: true,
-    type: String,
-  })
-  readonly accessToken: string;
+import { BasicLoginResponseDto } from './basic-login-response.dto';
 
+export class LoginResponseDto extends ResponseTypeDto<BasicLoginResponseDto> {
   @ApiProperty({
-    example:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-    readOnly: true,
-    type: String,
+    type: BasicLoginResponseDto,
   })
-  readonly refreshToken: string;
-}
-
-export class LoginResponseDto extends ResponseTypeDto<LoginResponseDataDto> {
-  @ApiProperty({
-    type: LoginResponseDataDto,
-  })
-  data: LoginResponseDataDto;
+  data: BasicLoginResponseDto;
 }
