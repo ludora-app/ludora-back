@@ -1,27 +1,14 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
+import { UsersModule } from 'src/users/users.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { WsAuthGuard } from 'src/auth-b2c/guards/ws-auth.guard';
 
 import { NotificationsGateway } from './notifications.gateway';
 
 @Module({
   exports: [NotificationsGateway],
-  imports: [
-    PrismaModule,
-    EventEmitterModule.forRoot(),
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.getOrThrow('JWT_SECRET'),
-        signOptions: {
-          expiresIn: configService.get('JWT_EXPIRATION', '1d'),
-        },
-      }),
-    }),
-  ],
-  providers: [NotificationsGateway],
+  imports: [PrismaModule, UsersModule, EventEmitterModule.forRoot()],
+  providers: [NotificationsGateway, WsAuthGuard],
 })
 export class NotificationsModule {}

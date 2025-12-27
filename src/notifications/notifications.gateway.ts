@@ -1,9 +1,9 @@
-import { JwtService } from '@nestjs/jwt';
 import { PinoLogger } from 'nestjs-pino';
+import { UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { OnEvent } from '@nestjs/event-emitter';
-import { UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { WsAuthGuard } from 'src/auth-b2c/guards/ws-auth.guard';
 import {
   ConnectedSocket,
   OnGatewayConnection,
@@ -16,7 +16,7 @@ import { NotificationEventDto } from './dto/notification-event.dto';
 
 /**
  * NotificationsGateway handles real-time notifications using Socket.io
- * - Uses JWT authentication for secure connections
+ * - Uses JWT authentication for secure connections (via WsAuthGuard)
  * - Implements event-driven architecture with @nestjs/event-emitter
  */
 @WebSocketGateway({
@@ -26,13 +26,13 @@ import { NotificationEventDto } from './dto/notification-event.dto';
   },
   namespace: '/notifications',
 })
+@UseGuards(WsAuthGuard)
 export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly jwtService: JwtService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(NotificationsGateway.name);
@@ -40,47 +40,17 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
   /**
    * Handle new WebSocket connection
-   * - Authenticates the user via JWT token
+   * - Authentication is handled by WsAuthGuard (called before this method)
+   * - This method is called ONLY after successful authentication
    * - Joins user to their personal notification room (user:{userId})
    */
   async handleConnection(@ConnectedSocket() client: Socket): Promise<void> {
     try {
-      this.logger.info('client', client);
-      this.logger.debug(`Notification connection attempt from client ${client.id}`);
-      const token = client.handshake.auth.token as string;
+      // User is already authenticated by WsAuthGuard
+      // client.data.userUid is set by the guard
+      const userUid = client.data.userUid;
 
-      if (!token) {
-        this.logger.warn(`Notification connection rejected: No token provided`);
-        client.emit('error', {
-          code: 'AUTH_REQUIRED',
-          message: 'Authentication required',
-        });
-        client.disconnect();
-        return;
-      }
-
-      // Verify JWT token
-      const payload = await this.jwtService.verifyAsync(token);
-      const userUid = payload.uid;
-
-      if (!userUid) {
-        throw new UnauthorizedException('Invalid token: user uid missing');
-      }
-
-      // Verify token exists in database
-      const tokenRecord = await this.prisma.userTokens.findFirst({
-        where: {
-          token,
-          userUid,
-        },
-      });
-
-      if (!tokenRecord) {
-        throw new UnauthorizedException('Token expired or invalid');
-      }
-
-      // Attach user information to socket
-      client.data.userUid = userUid;
+      this.logger.debug(`Notification connection for authenticated user ${userUid}`);
 
       // Join personal notification room
       const userRoom = `user:${userUid}`;
@@ -96,8 +66,8 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     } catch (error) {
       this.logger.error(`Notification connection error: ${error.message}`);
       client.emit('error', {
-        code: 'AUTH_FAILED',
-        message: 'Authentication failed',
+        code: 'CONNECTION_FAILED',
+        message: 'Connection failed',
       });
       client.disconnect();
     }

@@ -1,9 +1,9 @@
-import { JwtService } from '@nestjs/jwt';
 import { PinoLogger } from 'nestjs-pino';
+import { UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { MessageType } from 'generated/prisma/enums';
-import { UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { WsAuthGuard } from 'src/auth-b2c/guards/ws-auth.guard';
 import {
   ConnectedSocket,
   MessageBody,
@@ -20,7 +20,7 @@ import { TypingIndicatorDto } from './dto/input/typing-indicator.dto';
 
 /**
  * ChatGateway handles real-time chat messaging using Socket.io
- * - Uses JWT authentication for secure connections
+ * - Uses JWT authentication for secure connections (via WsAuthGuard)
  * - Implements stateless design with Socket.io rooms (no Maps)
  * - Compatible with Redis Adapter for horizontal scaling
  */
@@ -31,6 +31,7 @@ import { TypingIndicatorDto } from './dto/input/typing-indicator.dto';
   },
   namespace: '/chat',
 })
+@UseGuards(WsAuthGuard)
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
@@ -38,7 +39,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly messagesService: MessagesService,
     private readonly prisma: PrismaService,
-    private readonly jwtService: JwtService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(ChatGateway.name);
@@ -46,46 +46,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   /**
    * Handle new WebSocket connection
-   * - Authenticates the user via JWT token
+   * - Authentication is handled by WsAuthGuard (called before this method)
+   * - This method is called ONLY after successful authentication
    * - Joins user to their personal room (user:{userId})
    * - Joins user to all their conversation rooms (conversation:{conversationId})
    */
   async handleConnection(client: Socket): Promise<void> {
     try {
-      const token = client.handshake.auth.token as string;
+      // client.data.userUid is set by the guard
+      const userUid = client.data.userUid;
 
-      if (!token) {
-        this.logger.warn(`Connection rejected: No token provided`);
-        client.emit('error', {
-          code: 'AUTH_REQUIRED',
-          message: 'Authentication required',
-        });
-        client.disconnect();
-        return;
-      }
-
-      // Verify JWT token
-      const payload = await this.jwtService.verifyAsync(token);
-      const userUid = payload.uid;
-
-      if (!userUid) {
-        throw new UnauthorizedException('Invalid token: user uid missing');
-      }
-
-      // Verify token exists in database
-      const tokenRecord = await this.prisma.userTokens.findFirst({
-        where: {
-          token,
-          userUid,
-        },
-      });
-
-      if (!tokenRecord) {
-        throw new UnauthorizedException('Token expired or invalid');
-      }
-
-      // Attach user information to socket
-      client.data.userUid = userUid;
+      this.logger.debug(`Chat connection for authenticated user ${userUid}`);
 
       // Join personal room for direct messaging
       const userRoom = `user:${userUid}`;
@@ -119,8 +90,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     } catch (error) {
       this.logger.error(`Connection error: ${error.message}`);
       client.emit('error', {
-        code: 'AUTH_FAILED',
-        message: 'Authentication failed',
+        code: 'CONNECTION_FAILED',
+        message: 'Connection failed',
       });
       client.disconnect();
     }
