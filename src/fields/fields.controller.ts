@@ -1,5 +1,5 @@
-import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
-import { AuthB2BGuard } from 'src/auth-b2b/guards/auth-b2b.guard';
+import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';

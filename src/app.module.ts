@@ -7,6 +7,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 import { AppService } from './app.service';
 import { ChatModule } from './chat/chat.module';
+import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -14,8 +15,6 @@ import { SharedModule } from './shared/shared.module';
 import { FieldsModule } from './fields/fields.module';
 import { PaymentModule } from './payment/payment.module';
 import { MetricsModule } from './metrics/metrics.module';
-import { AuthB2CModule } from './auth-b2c/auth-b2c.module';
-import { AuthB2BModule } from './auth-b2b/auth-b2b.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { PartnersModule } from './partners/partners.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -101,8 +100,6 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
     }),
     SharedModule,
     PrismaModule,
-    AuthB2BModule,
-    AuthB2CModule,
     ChatModule,
     FieldsModule,
     ConversationsModule,
@@ -114,6 +111,7 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
     UserHourPreferencesModule,
     UserSportPreferencesModule,
     UsersModule,
+    AuthModule,
   ],
   providers: [
     AppService,

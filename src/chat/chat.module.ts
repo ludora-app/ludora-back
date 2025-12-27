@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { UsersModule } from 'src/users/users.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
-import { WebSocketAuthService } from 'src/auth-b2c/websocket-auth.service';
 import { ConversationsModule } from 'src/conversations/conversations.module';
+import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
 
 import { ChatGateway } from './chat.gateway';
 

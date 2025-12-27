@@ -3,8 +3,8 @@ import { NotFoundException } from '@nestjs/common';
 
 import { FieldsController } from '../../src/fields/fields.controller';
 import { FieldsService } from '../../src/fields/fields.service';
-import { AuthB2CGuard } from '../../src/auth-b2c/guards/auth-b2c.guard';
-import { AuthB2BGuard } from '../../src/auth-b2b/guards/auth-b2b.guard';
+import { AuthB2CGuard } from '../../src/auth/guards/auth-b2c.guard';
+import { AuthB2BGuard } from '../../src/auth/guards/auth-b2b.guard';
 import { Sport } from '../../src/shared/constants/constants';
 import { CreatePublicFieldDto } from '../../src/fields/dto/input/create-public-field.dto';
 import { UpdateFieldDto } from '../../src/fields/dto/input/update-field.dto';

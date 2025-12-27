@@ -1,7 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { GameModes } from 'generated/prisma/client';
-import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
 import {
   CreateSessionDto,

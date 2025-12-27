@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from 'src/app.controller';
 import { AppService } from 'src/app.service';
-import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 
 describe('AppController', () => {
   let appController: AppController;

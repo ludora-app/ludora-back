@@ -14,20 +14,20 @@ import { EmailsService } from 'src/shared/emails/emails.service';
 import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
 import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
 import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
-import {
   CreateImageDto,
   LoginDto,
   RefreshTokenDto,
   RegisterB2CDto,
   VerifyMailDto,
-} from 'src/auth-b2c/dto';
+} from 'src/auth/dto';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 
-import { CreateGoogleUserDto } from './dto/input/create-google-user.dto';
+import { CreateGoogleUserDto } from '../dto/input/create-google-user.dto';
 
 @Injectable()
 export class AuthB2CService {

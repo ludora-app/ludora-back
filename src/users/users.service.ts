@@ -1,7 +1,7 @@
 import * as argon2 from 'argon2';
 import { PinoLogger } from 'nestjs-pino';
+import { CreateImageDto } from 'src/auth/dto';
 import { Users } from 'generated/prisma/client';
-import { CreateImageDto } from 'src/auth-b2c/dto';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma, Provider } from 'generated/prisma/browser';

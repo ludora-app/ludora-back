@@ -3,7 +3,7 @@ import { UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { MessageType } from 'generated/prisma/enums';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { WebSocketAuthGuard } from 'src/auth-b2c/guards/websocket-auth.guard';
+import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
 import {
   ConnectedSocket,
   MessageBody,

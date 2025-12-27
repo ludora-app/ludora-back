@@ -4,7 +4,7 @@ import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dt
 import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
-import { CreateImageDto, LoginDto, LoginResponseDto, RegisterResponseDto } from 'src/auth-b2c/dto';
+import { CreateImageDto, LoginDto, LoginResponseDto, RegisterResponseDto } from 'src/auth/dto';
 import {
   Body,
   Controller,
@@ -25,9 +25,9 @@ import {
   ApiOperation,
 } from '@nestjs/swagger';
 
-import { AuthB2BService } from './auth-b2b.service';
-import { AuthB2BGuard } from './guards/auth-b2b.guard';
-import { RegisterB2BWithFileDto } from './dto/input/register-b2b.dto';
+import { AuthB2BGuard } from '../guards/auth-b2b.guard';
+import { AuthB2BService } from '../services/auth-b2b.service';
+import { RegisterB2BWithFileDto } from '../dto/input/register-b2b.dto';
 
 @Controller('auth-b2b')
 @UseGuards(AuthB2BGuard)

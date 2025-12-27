@@ -1,7 +1,7 @@
 import { Socket } from 'socket.io';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 
-import { WebSocketAuthService } from '../websocket-auth.service';
+import { WebSocketAuthService } from '../services/websocket-auth.service';
 
 /**
  * WebSocket Authentication Guard

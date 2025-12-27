@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthB2BController } from '../../src/auth-b2b/auth-b2b.controller';
-import { AuthB2BService } from '../../src/auth-b2b/auth-b2b.service';
-import { AuthB2BGuard } from '../../src/auth-b2b/guards/auth-b2b.guard';
+import { AuthB2BService } from '../../../src/auth/services/auth-b2b.service';
+import { AuthB2BGuard } from '../../../src/auth/guards/auth-b2b.guard';
+import { AuthB2BController } from 'src/auth/controllers/auth-b2b.controller';
 
 describe('AuthB2BController', () => {
   let controller: AuthB2BController;

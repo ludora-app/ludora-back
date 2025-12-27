@@ -3,22 +3,26 @@ import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
+import { PartnersService } from 'src/partners/partners.service';
+import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
 
-describe('AuthB2CGuard', () => {
-  let guard: AuthB2CGuard;
+describe('AuthB2BGuard', () => {
+  let guard: AuthB2BGuard;
   let jwtService: JwtService;
   let reflector: Reflector;
   let prismaService: PrismaService;
-  let usersService: UsersService;
 
   const mockJwtService = {
     verifyAsync: jest.fn(),
   };
 
   const mockUsersService = {
+    findOne: jest.fn(),
+  };
+
+  const mockPartnersService = {
     findOne: jest.fn(),
   };
 
@@ -35,6 +39,9 @@ describe('AuthB2CGuard', () => {
       findFirst: jest.fn(),
     },
     users: {
+      findUnique: jest.fn(),
+    },
+    partners: {
       findUnique: jest.fn(),
     },
   };
@@ -57,7 +64,7 @@ describe('AuthB2CGuard', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AuthB2CGuard,
+        AuthB2BGuard,
         {
           provide: JwtService,
           useValue: mockJwtService,
@@ -78,10 +85,14 @@ describe('AuthB2CGuard', () => {
           provide: UsersService,
           useValue: mockUsersService,
         },
+        {
+          provide: PartnersService,
+          useValue: mockPartnersService,
+        },
       ],
     }).compile();
 
-    guard = module.get<AuthB2CGuard>(AuthB2CGuard);
+    guard = module.get<AuthB2BGuard>(AuthB2BGuard);
     jwtService = module.get<JwtService>(JwtService);
     reflector = module.get<Reflector>(Reflector);
     prismaService = module.get<PrismaService>(PrismaService);
@@ -155,10 +166,26 @@ describe('AuthB2CGuard', () => {
         },
       };
       mockGetRequest.mockReturnValue(mockRequest);
-      mockJwtService.verifyAsync.mockResolvedValue({});
+      mockJwtService.verifyAsync.mockResolvedValue({ organisationUid: 'org123' });
 
       await expect(guard.canActivate(context)).rejects.toThrow(
-        new UnauthorizedException('Token invalid: user missing'),
+        new UnauthorizedException('Token invalid: user or organisation missing'),
+      );
+    });
+
+    it('should throw UnauthorizedException when token payload is missing organisationUid', async () => {
+      const { context, mockGetRequest } = createMockExecutionContext();
+      mockReflector.getAllAndOverride.mockReturnValue(false);
+      const mockRequest = {
+        headers: {
+          authorization: 'Bearer valid_token',
+        },
+      };
+      mockGetRequest.mockReturnValue(mockRequest);
+      mockJwtService.verifyAsync.mockResolvedValue({ uid: 'user123' });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        new UnauthorizedException('Token invalid: user or organisation missing'),
       );
     });
 
@@ -171,7 +198,10 @@ describe('AuthB2CGuard', () => {
         },
       };
       mockGetRequest.mockReturnValue(mockRequest);
-      mockJwtService.verifyAsync.mockResolvedValue({ uid: 'user123' });
+      mockJwtService.verifyAsync.mockResolvedValue({
+        uid: 'user123',
+        organisationUid: 'org123',
+      });
       mockPrismaService.userTokens.findFirst.mockResolvedValue(null);
 
       await expect(guard.canActivate(context)).rejects.toThrow(
@@ -188,16 +218,81 @@ describe('AuthB2CGuard', () => {
         },
       };
       mockGetRequest.mockReturnValue(mockRequest);
-      mockJwtService.verifyAsync.mockResolvedValue({ uid: 'user123' });
+      mockJwtService.verifyAsync.mockResolvedValue({
+        uid: 'user123',
+        organisationUid: 'org123',
+      });
       mockPrismaService.userTokens.findFirst.mockResolvedValue({
         uid: 'token123',
         token: 'valid_token',
         userUid: 'user123',
+        organisationUid: 'org123',
       });
       mockPrismaService.users.findUnique.mockResolvedValue(null);
 
       await expect(guard.canActivate(context)).rejects.toThrow(
         new UnauthorizedException('User not found'),
+      );
+    });
+
+    it('should throw UnauthorizedException when user account is disabled', async () => {
+      const { context, mockGetRequest } = createMockExecutionContext();
+      mockReflector.getAllAndOverride.mockReturnValue(false);
+      const mockRequest = {
+        headers: {
+          authorization: 'Bearer valid_token',
+        },
+      };
+      mockGetRequest.mockReturnValue(mockRequest);
+      mockJwtService.verifyAsync.mockResolvedValue({
+        uid: 'user123',
+        organisationUid: 'org123',
+      });
+      mockPrismaService.userTokens.findFirst.mockResolvedValue({
+        uid: 'token123',
+        token: 'valid_token',
+        userUid: 'user123',
+        organisationUid: 'org123',
+      });
+      mockPrismaService.users.findUnique.mockResolvedValue({
+        uid: 'user123',
+        isEmailVerified: true,
+        isConnected: false,
+      });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        new UnauthorizedException('User account disabled'),
+      );
+    });
+
+    it('should throw UnauthorizedException when partner is not found', async () => {
+      const { context, mockGetRequest } = createMockExecutionContext();
+      mockReflector.getAllAndOverride.mockReturnValue(false);
+      const mockRequest = {
+        headers: {
+          authorization: 'Bearer valid_token',
+        },
+      };
+      mockGetRequest.mockReturnValue(mockRequest);
+      mockJwtService.verifyAsync.mockResolvedValue({
+        uid: 'user123',
+        organisationUid: 'org123',
+      });
+      mockPrismaService.userTokens.findFirst.mockResolvedValue({
+        uid: 'token123',
+        token: 'valid_token',
+        userUid: 'user123',
+        organisationUid: 'org123',
+      });
+      mockPrismaService.users.findUnique.mockResolvedValue({
+        uid: 'user123',
+        isEmailVerified: true,
+        isConnected: true,
+      });
+      mockPrismaService.partners.findUnique.mockResolvedValue(null);
+
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        new UnauthorizedException('Partner not found'),
       );
     });
 
@@ -211,19 +306,28 @@ describe('AuthB2CGuard', () => {
       };
       mockGetRequest.mockReturnValue(mockRequest);
 
-      const mockPayload = { uid: 'user123', deviceUid: 'device456' };
+      const mockPayload = {
+        uid: 'user123',
+        organisationUid: 'org123',
+      };
       mockJwtService.verifyAsync.mockResolvedValue(mockPayload);
 
       mockPrismaService.userTokens.findFirst.mockResolvedValue({
         uid: 'token123',
         token: 'valid_token',
         userUid: 'user123',
+        organisationUid: 'org123',
       });
 
-      mockUsersService.findOne.mockResolvedValue({
+      mockPrismaService.users.findUnique.mockResolvedValue({
         uid: 'user123',
         isEmailVerified: true,
         isConnected: true,
+      });
+
+      mockPrismaService.partners.findUnique.mockResolvedValue({
+        uid: 'org123',
+        name: 'Test Partner',
       });
 
       const result = await guard.canActivate(context);
@@ -235,9 +339,16 @@ describe('AuthB2CGuard', () => {
         where: {
           token: 'valid_token',
           userUid: 'user123',
+          organisationUid: 'org123',
         },
       });
-      expect(mockUsersService.findOne).toHaveBeenCalled();
+      expect(mockPrismaService.users.findUnique).toHaveBeenCalledWith({
+        select: { isEmailVerified: true, uid: true, isConnected: true },
+        where: { uid: 'user123' },
+      });
+      expect(mockPrismaService.partners.findUnique).toHaveBeenCalledWith({
+        where: { uid: 'org123' },
+      });
     });
 
     it('should handle different token types correctly (only Bearer)', async () => {
@@ -271,7 +382,7 @@ describe('AuthB2CGuard', () => {
       await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Auth B2C Guard Error:',
+        'Auth B2B Guard Error:',
         expect.objectContaining({
           message: 'Token expired',
           timestamp: expect.any(String),
@@ -294,7 +405,7 @@ describe('AuthB2CGuard', () => {
       );
     });
 
-    it('should verify token with correct userUid from payload', async () => {
+    it('should verify token with correct userUid and organisationUid from payload', async () => {
       const { context, mockGetRequest } = createMockExecutionContext();
       mockReflector.getAllAndOverride.mockReturnValue(false);
       const mockRequest = {
@@ -304,19 +415,25 @@ describe('AuthB2CGuard', () => {
       };
       mockGetRequest.mockReturnValue(mockRequest);
 
-      const mockPayload = { uid: 'user789' };
+      const mockPayload = { uid: 'user789', organisationUid: 'org789' };
       mockJwtService.verifyAsync.mockResolvedValue(mockPayload);
 
       mockPrismaService.userTokens.findFirst.mockResolvedValue({
         uid: 'token789',
         token: 'valid_token',
         userUid: 'user789',
+        organisationUid: 'org789',
       });
 
-      mockUsersService.findOne.mockResolvedValue({
+      mockPrismaService.users.findUnique.mockResolvedValue({
         uid: 'user789',
         isEmailVerified: true,
         isConnected: true,
+      });
+
+      mockPrismaService.partners.findUnique.mockResolvedValue({
+        uid: 'org789',
+        name: 'Test Partner',
       });
 
       await guard.canActivate(context);
@@ -325,7 +442,11 @@ describe('AuthB2CGuard', () => {
         where: {
           token: 'valid_token',
           userUid: 'user789',
+          organisationUid: 'org789',
         },
+      });
+      expect(mockPrismaService.partners.findUnique).toHaveBeenCalledWith({
+        where: { uid: 'org789' },
       });
     });
   });
