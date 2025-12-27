@@ -1,4 +1,4 @@
-import { AuthB2BGuard } from 'src/auth-b2b/guards/auth-b2b.guard';
+import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 

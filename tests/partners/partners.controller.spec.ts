@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthB2BGuard } from 'src/auth-b2b/guards/auth-b2b.guard';
+import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
 import { PartnersController } from 'src/partners/partners.controller';
 import { PartnersService } from 'src/partners/partners.service';
 

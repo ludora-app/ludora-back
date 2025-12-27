@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CreateImageDto } from 'src/auth-b2c/dto';
+import { CreateImageDto } from 'src/auth/dto';
 import { Sport } from 'src/shared/constants/constants';
 import { ArrayMaxSize, IsArray, IsEnum, IsNotEmpty, IsString } from 'class-validator';
 

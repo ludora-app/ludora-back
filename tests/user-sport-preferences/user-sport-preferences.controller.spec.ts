@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { UserSports } from 'generated/prisma/client';
-import { AuthB2CGuard } from '../../src/auth-b2c/guards/auth-b2c.guard';
+import { AuthB2CGuard } from '../../src/auth/guards/auth-b2c.guard';
 import { UserSportPreferencesController } from '../../src/user-sport-preferences/user-sport-preferences.controller';
 import { UserSportPreferencesService } from '../../src/user-sport-preferences/user-sport-preferences.service';
 import { CreateUserSportPreferenceDto } from '../../src/user-sport-preferences/dto/input/create-user-sport-preference.dto';

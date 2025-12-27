@@ -6,8 +6,8 @@ import { ConfigService } from '@nestjs/config';
 import { UserType } from 'generated/prisma/client';
 import { UsersService } from 'src/users/users.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
+import { CreateImageDto, LoginDto } from 'src/auth/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateImageDto, LoginDto } from 'src/auth-b2c/dto';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { PartnersService } from 'src/partners/partners.service';
 import { CreatePartnerDto } from 'src/partners/dto/create-partner.dto';
@@ -19,7 +19,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { RegisterB2BDto } from './dto/input/register-b2b.dto';
+import { RegisterB2BDto } from '../dto/input/register-b2b.dto';
 
 @Injectable()
 export class AuthB2BService {

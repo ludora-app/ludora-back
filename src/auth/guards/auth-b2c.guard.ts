@@ -9,7 +9,7 @@ import { USERSELECT } from 'src/shared/constants/select-user';
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 
 import { IS_PUBLIC_KEY } from '../../shared/decorators/public.decorator';
-import { RESET_PASSWORD_KEY } from '../decorators/reset-password.decorator';
+import { RESET_PASSWORD_KEY } from '../../auth/decorators/reset-password.decorator';
 
 @Injectable()
 export class AuthB2CGuard implements CanActivate {

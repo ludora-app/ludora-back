@@ -7,8 +7,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
 import { ChatGateway } from 'src/chat/chat.gateway';
 import { MessagesService } from 'src/conversations/messages.service';
-import { WebSocketAuthGuard } from 'src/auth-b2c/guards/websocket-auth.guard';
-import { WebSocketAuthService } from 'src/auth-b2c/websocket-auth.service';
+import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
+import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
 
 describe('ChatGateway', () => {
   let gateway: ChatGateway;

@@ -3,8 +3,8 @@ import { UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { WebSocketAuthService } from 'src/auth-b2c/websocket-auth.service';
-import { WebSocketAuthGuard } from 'src/auth-b2c/guards/websocket-auth.guard';
+import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
+import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
 import {
   ConnectedSocket,
   OnGatewayConnection,

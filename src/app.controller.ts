@@ -2,8 +2,8 @@ import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 
 import { AppService } from './app.service';
+import { AuthB2CGuard } from './auth/guards/auth-b2c.guard';
 import { Public } from './shared/decorators/public.decorator';
-import { AuthB2CGuard } from './auth-b2c/guards/auth-b2c.guard';
 
 @Controller()
 @UseGuards(AuthB2CGuard)

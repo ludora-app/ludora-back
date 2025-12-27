@@ -2,14 +2,14 @@ import * as argon2 from 'argon2';
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { UserType } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
-import { AuthB2BService } from '../../src/auth-b2b/auth-b2b.service';
-import { PrismaService } from '../../src/prisma/prisma.service';
-import { UsersService } from '../../src/users/users.service';
-import { PartnersService } from '../../src/partners/partners.service';
-import { GeolocalisationService } from '../../src/shared/geolocalisation/geolocalisation.service';
+import { AuthB2BService } from 'src/auth/services/auth-b2b.service';
+import { UsersService } from 'src/users/users.service';
+import { PartnersService } from 'src/partners/partners.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 
 describe('AuthB2BService', () => {
   let service: AuthB2BService;

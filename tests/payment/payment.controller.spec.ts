@@ -5,7 +5,7 @@ import { PaymentService } from 'src/payment/payment.service';
 import { PaymentIntentDto } from 'src/payment/dto/input/payment-intent.dto';
 import { BankDetailsDto, UpdateBankDetailsDto } from 'src/payment/dto/input/bank-details.dto';
 import { CreateStripeAccountDto } from 'src/payment/dto/input/create-stripe-account.dto';
-import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 
 describe('PaymentController', () => {

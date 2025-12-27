@@ -1,5 +1,5 @@
 import { SessionPlayers } from 'generated/prisma/browser';
-import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';

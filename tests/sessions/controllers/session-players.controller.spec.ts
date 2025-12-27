@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthB2CGuard } from 'src/auth-b2c/guards/auth-b2c.guard';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { JoinSessionDto } from 'src/sessions/dto/input/create-session-player.dto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SessionPlayersController } from 'src/sessions/controllers/session-players.controller';

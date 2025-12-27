@@ -46,17 +46,17 @@ import {
   VerifyEmailResponseDto,
   VerifyMailDto,
   VerifyTokenResponseDto,
-} from 'src/auth-b2c/dto';
+} from 'src/auth/dto';
 
-import { AuthB2CService } from './auth-b2c.service';
-import { AuthB2CGuard } from './guards/auth-b2c.guard';
-import { Public } from '../shared/decorators/public.decorator';
-import { VerifyEmailGuard } from './guards/verify-email.guard';
-import { Protected } from '../shared/decorators/protected.decorator';
-import { ResetPassword } from './decorators/reset-password.decorator';
-import { CreateGoogleUserDto } from './dto/input/create-google-user.dto';
-import { CreateOrConnectGoogleResponseDto } from './dto/output/create-or-connect-google.response';
-import { GenerateAccessTokenFromCodeDto } from './dto/output/generate-access-token-from-code.dto';
+import { AuthB2CGuard } from '../guards/auth-b2c.guard';
+import { AuthB2CService } from '../services/auth-b2c.service';
+import { VerifyEmailGuard } from '../guards/verify-email.guard';
+import { Public } from '../../shared/decorators/public.decorator';
+import { ResetPassword } from '../decorators/reset-password.decorator';
+import { Protected } from '../../shared/decorators/protected.decorator';
+import { CreateGoogleUserDto } from '../dto/input/create-google-user.dto';
+import { CreateOrConnectGoogleResponseDto } from '../dto/output/create-or-connect-google.response';
+import { GenerateAccessTokenFromCodeDto } from '../dto/output/generate-access-token-from-code.dto';
 
 @Controller('auth-b2c')
 @UseGuards(AuthB2CGuard)
