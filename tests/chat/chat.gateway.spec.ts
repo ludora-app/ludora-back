@@ -4,6 +4,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { Socket } from 'socket.io';
 import { MessageType } from 'generated/prisma/enums';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { UsersService } from 'src/users/users.service';
 import { ChatGateway } from 'src/chat/chat.gateway';
 import { MessagesService } from 'src/conversations/messages.service';
 
@@ -48,6 +49,8 @@ describe('ChatGateway', () => {
     verifyAsync: jest.fn(),
   };
 
+  const mockUsersService = {};
+
   const mockLogger = {
     setContext: jest.fn(),
     info: jest.fn(),
@@ -73,6 +76,10 @@ describe('ChatGateway', () => {
           useValue: mockJwtService,
         },
         {
+          provide: UsersService,
+          useValue: mockUsersService,
+        },
+        {
           provide: PinoLogger,
           useValue: mockLogger,
         },
@@ -93,62 +100,56 @@ describe('ChatGateway', () => {
   });
 
   describe('handleConnection', () => {
-    it('should authenticate user and join rooms', async () => {
+    it('should join authenticated user to rooms and emit connected event', async () => {
       const userUid = 'user-123';
       const conversationUid = 'conv-456';
+      const mockAuthenticatedSocket = {
+        id: 'socket-123',
+        data: { userUid },
+        join: jest.fn(),
+        emit: jest.fn(),
+      } as unknown as Socket;
 
-      mockJwtService.verifyAsync.mockResolvedValue({ uid: userUid });
-      mockPrismaService.userTokens.findFirst.mockResolvedValue({
-        uid: 'token-uid',
-        token: 'valid-token',
-        userUid,
-      });
       mockPrismaService.conversationMembers.findMany.mockResolvedValue([{ conversationUid }]);
 
-      await gateway.handleConnection(mockSocket);
+      await gateway.handleConnection(mockAuthenticatedSocket);
 
-      expect(jwtService.verifyAsync).toHaveBeenCalledWith('valid-token');
-      expect(prismaService.userTokens.findFirst).toHaveBeenCalledWith({
+      expect(prismaService.conversationMembers.findMany).toHaveBeenCalledWith({
+        select: {
+          conversationUid: true,
+        },
         where: {
-          token: 'valid-token',
           userUid,
         },
       });
-      expect(mockSocket.data.userUid).toBe(userUid);
-      expect(mockSocket.join).toHaveBeenCalledWith(`user:${userUid}`);
-      expect(mockSocket.join).toHaveBeenCalledWith(`conversation:${conversationUid}`);
-      expect(mockSocket.emit).toHaveBeenCalledWith('connected', {
+      expect(mockAuthenticatedSocket.join).toHaveBeenCalledWith(`user:${userUid}`);
+      expect(mockAuthenticatedSocket.join).toHaveBeenCalledWith(`conversation:${conversationUid}`);
+      expect(mockAuthenticatedSocket.emit).toHaveBeenCalledWith('connected', {
         message: 'Successfully connected to chat',
         userUid,
         conversations: [conversationUid],
       });
     });
 
-    it('should disconnect if no token provided', async () => {
-      const socketWithoutToken = {
-        ...mockSocket,
-        handshake: { auth: {} },
+    it('should handle connection errors gracefully', async () => {
+      const userUid = 'user-123';
+      const mockErrorSocket = {
+        id: 'socket-123',
+        data: { userUid },
+        join: jest.fn(),
+        emit: jest.fn(),
+        disconnect: jest.fn(),
       } as unknown as Socket;
 
-      await gateway.handleConnection(socketWithoutToken);
+      mockPrismaService.conversationMembers.findMany.mockRejectedValue(new Error('Database error'));
 
-      expect(socketWithoutToken.emit).toHaveBeenCalledWith('error', {
-        message: 'Authentication required',
-        code: 'AUTH_REQUIRED',
+      await gateway.handleConnection(mockErrorSocket);
+
+      expect(mockErrorSocket.emit).toHaveBeenCalledWith('error', {
+        code: 'CONNECTION_FAILED',
+        message: 'Connection failed',
       });
-      expect(socketWithoutToken.disconnect).toHaveBeenCalled();
-    });
-
-    it('should disconnect if token is invalid', async () => {
-      mockJwtService.verifyAsync.mockRejectedValue(new Error('Invalid token'));
-
-      await gateway.handleConnection(mockSocket);
-
-      expect(mockSocket.emit).toHaveBeenCalledWith('error', {
-        message: 'Authentication failed',
-        code: 'AUTH_FAILED',
-      });
-      expect(mockSocket.disconnect).toHaveBeenCalled();
+      expect(mockErrorSocket.disconnect).toHaveBeenCalled();
     });
   });
 
