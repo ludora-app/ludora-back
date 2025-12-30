@@ -12,6 +12,7 @@ import { TokenType } from 'src/shared/constants/constants';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
+import { EventTypes } from 'src/notifications/constants/event.types';
 import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
 import {
   CreateImageDto,
@@ -467,7 +468,7 @@ export class AuthB2CService {
     ]);
 
     this.logger.debug(`Emitting email.verified event for user ${user.uid}`);
-    this.eventEmitter.emit('email.verified', { userUid: user.uid });
+    this.eventEmitter.emit(EventTypes.EMAIL_VERIFIED, { userUid: user.uid });
 
     await this.emailsService.sendEmail({
       data: { name: user.firstname },

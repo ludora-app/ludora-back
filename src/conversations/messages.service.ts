@@ -1,91 +1,159 @@
 import { PinoLogger } from 'nestjs-pino';
-import { Injectable } from '@nestjs/common';
 import { Messages } from 'generated/prisma/browser';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { StorageFolderName } from 'src/shared/constants/constants';
 import { MessageStatus, MessageType } from 'generated/prisma/enums';
+import { StorageService } from 'src/shared/storage/storage.service';
+import { EventTypes } from 'src/notifications/constants/event.types';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class MessagesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
+    private readonly eventEmitter: EventEmitter2,
+    private readonly storageService: StorageService,
   ) {
     this.logger.setContext(MessagesService.name);
   }
 
   /**
-   * Create a message in a conversation
+   * Create a text message in a conversation
    * @param senderUid - The sender's user uid
    * @param content - The content of the message
    * @param conversationUid - The conversation uid
    * @param type - The type of the message
-   * @returns The created message
+   * @returns void
    */
-  async createMessage(
+  async createTextMessage(
     senderUid: string,
     content: string,
     conversationUid: string,
-    type: MessageType,
-  ): Promise<Messages> {
-    return this.prisma.$transaction(async (tx) => {
-      // Verify conversation exists
-      const conversation = await tx.conversations.findUnique({
-        where: { uid: conversationUid },
-      });
+    sessionUid: string | null,
+  ): Promise<void> {
+    // Mark messages as read for the sender
+    await this.markMessagesAsRead(conversationUid, senderUid);
 
-      if (!conversation) {
-        throw new Error(`Conversation with uid ${conversationUid} not found`);
-      }
-
-      // Verify sender is a member of the conversation
-      const isMember = await tx.conversationMembers.findFirst({
-        where: {
-          conversationUid,
-          userUid: senderUid,
+    // Create the message
+    const message = await this.prisma.messages.create({
+      data: {
+        content,
+        conversation: {
+          connect: { uid: conversationUid },
         },
-      });
-
-      if (!isMember) {
-        throw new Error(`User ${senderUid} is not a member of conversation ${conversationUid}`);
-      }
-
-      // Create the message
-      const message = await tx.messages.create({
-        data: {
-          content,
-          conversation: {
-            connect: { uid: conversationUid },
-          },
-          globalStatus: MessageStatus.SENT,
-          sender: {
-            connect: { uid: senderUid },
-          },
-          type,
+        globalStatus: MessageStatus.SENT,
+        sender: {
+          connect: { uid: senderUid },
         },
-        include: {
-          sender: {
-            select: {
-              firstname: true,
-              imageUrl: true,
-              lastname: true,
-              uid: true,
-            },
+        type: MessageType.TEXT,
+      },
+      include: {
+        sender: {
+          select: {
+            firstname: true,
+            imageUrl: true,
+            lastname: true,
+            uid: true,
           },
         },
-      });
-
-      // Update conversation's updatedAt to sort by most recent activity
-      await tx.conversations.update({
-        data: { updatedAt: new Date() },
-        where: { uid: conversationUid },
-      });
-
-      this.logger.debug(
-        `Message ${message.uid} created in conversation ${conversationUid} by user ${senderUid}`,
-      );
-
-      return message;
+      },
     });
+
+    this.logger.debug(
+      `Message ${message.uid} created in conversation ${conversationUid} by user ${senderUid}`,
+    );
+
+    const senderName = `${message.sender.firstname ?? ''} ${message.sender.lastname ?? ''}`.trim();
+
+    //? default notification title for a private conversation
+    let notificationTitle = `${senderName} sent you a message`;
+
+    //? if the conversation is a Session Conversation, add the sessionUid to the notification title
+    if (sessionUid) notificationTitle = `Session ${sessionUid} - ${senderName} sent you a message`;
+
+    this.eventEmitter.emit(EventTypes.NEW_MESSAGE, {
+      content,
+      conversationUid,
+      notificationTitle,
+      senderUid,
+    });
+
+    return;
+  }
+
+  /**
+   * Create a media message in a conversation
+   * @param senderUid - The sender's user uid
+   * @param conversationUid - The conversation uid
+   * @param type - The type of the message
+   * @param file - The file to upload
+   * @param sessionUid - The session uid
+   * @returns void
+   */
+  async createMediaMessage(
+    senderUid: string,
+    conversationUid: string,
+    type: MessageType,
+    file: any,
+    sessionUid: string | null,
+  ): Promise<void> {
+    // Mark messages as read for the sender
+    await this.markMessagesAsRead(conversationUid, senderUid);
+    const folderName = `${StorageFolderName.CONVERSATIONS}/${conversationUid}`;
+
+    if (!file || !file.buffer || !file.originalname) {
+      throw new BadRequestException('File is required for media messages');
+    }
+
+    const uploadedFile = await this.storageService.upload(
+      folderName,
+      file.originalname,
+      file.buffer,
+    );
+    const message = await this.prisma.messages.create({
+      data: {
+        content: uploadedFile.data,
+        conversation: {
+          connect: { uid: conversationUid },
+        },
+        sender: {
+          connect: { uid: senderUid },
+        },
+        type,
+      },
+      include: {
+        sender: {
+          select: {
+            firstname: true,
+            imageUrl: true,
+            lastname: true,
+            uid: true,
+          },
+        },
+      },
+    });
+    this.logger.debug(
+      `Message ${message.uid} created in conversation ${conversationUid} by user ${senderUid}`,
+    );
+
+    const senderName = `${message.sender.firstname ?? ''} ${message.sender.lastname ?? ''}`.trim();
+
+    //? default notification title for a private conversation
+    let notificationTitle = `${senderName} sent you a message`;
+
+    //? if the conversation is a Session Conversation, add the sessionUid to the notification title
+    if (sessionUid) notificationTitle = `Session ${sessionUid} - ${senderName} sent you a message`;
+
+    this.eventEmitter.emit(EventTypes.NEW_MESSAGE, {
+      content: uploadedFile.data,
+      conversationUid,
+      notificationTitle,
+      senderUid,
+    });
+
+    return;
   }
 
   /**
@@ -160,7 +228,9 @@ export class MessagesService {
     });
 
     if (!isMember) {
-      throw new Error(`User ${userUid} is not a member of conversation ${conversationUid}`);
+      throw new ForbiddenException(
+        `User ${userUid} is not a member of conversation ${conversationUid}`,
+      );
     }
 
     const result = await this.prisma.messages.updateMany({

@@ -1,10 +1,16 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Prisma } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Conversations, ConversationType } from 'generated/prisma/browser';
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+import { Conversations, ConversationType, MessageType } from 'generated/prisma/browser';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
+import { MessagesService } from './messages.service';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
 import { CreateSessionConversationDto } from './dto/input/create-session-conversation.dto';
 import { CreatePrivateConversationDto } from './dto/input/create-private-conversation.dto';
@@ -14,6 +20,7 @@ export class ConversationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
+    private readonly messagesService: MessagesService,
   ) {
     this.logger.setContext(ConversationsService.name);
   }
@@ -182,6 +189,9 @@ export class ConversationsService {
         uid: conversationUid,
       },
     });
+    if (!existingConversation) {
+      throw new NotFoundException(`Conversation with uid ${conversationUid} not found`);
+    }
 
     const isMember = await this.prisma.conversationMembers.findFirst({
       where: {
@@ -253,5 +263,29 @@ export class ConversationsService {
         `Created ${privateConversations.length + groupConversations.length + sessionConversations.length} mock conversations for user ${userUid}`,
       );
     });
+  }
+
+  async createMessage(
+    userUid: string,
+    content: string,
+    conversationUid: string,
+    type: MessageType,
+    file?: any,
+  ): Promise<void> {
+    const existingConversation = await this.findOne(conversationUid, userUid);
+
+    const sessionUid = existingConversation.sessionUid ?? null;
+
+    if (type === MessageType.TEXT) {
+      return this.messagesService.createTextMessage(userUid, content, conversationUid, sessionUid);
+    } else {
+      return this.messagesService.createMediaMessage(
+        userUid,
+        conversationUid,
+        type,
+        file,
+        sessionUid,
+      );
+    }
   }
 }

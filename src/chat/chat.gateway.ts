@@ -1,7 +1,6 @@
 import { PinoLogger } from 'nestjs-pino';
 import { UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { MessageType } from 'generated/prisma/enums';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
 import {
@@ -14,7 +13,6 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 
-import { SendMessageDto } from './dto/input/send-message.dto';
 import { MessagesService } from '../conversations/messages.service';
 import { TypingIndicatorDto } from './dto/input/typing-indicator.dto';
 
@@ -117,50 +115,50 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * - Creates message in database
    * - Broadcasts to all users in the conversation room
    */
-  @SubscribeMessage('sendMessage')
-  async handleSendMessage(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: SendMessageDto,
-  ): Promise<void> {
-    try {
-      const userUid = client.data.userUid;
+  // @SubscribeMessage('sendMessage')
+  // async handleSendMessage(
+  //   @ConnectedSocket() client: Socket,
+  //   @MessageBody() data: SendMessageDto,
+  // ): Promise<void> {
+  //   try {
+  //     const userUid = client.data.userUid;
 
-      if (!userUid) {
-        client.emit('error', {
-          code: 'UNAUTHORIZED',
-          message: 'Unauthorized',
-        });
-        return;
-      }
+  //     if (!userUid) {
+  //       client.emit('error', {
+  //         code: 'UNAUTHORIZED',
+  //         message: 'Unauthorized',
+  //       });
+  //       return;
+  //     }
 
-      const { content, conversationUid, type } = data;
+  //     const { content, conversationUid, type } = data;
 
-      // Create message in database
-      const message = await this.messagesService.createMessage(
-        userUid,
-        content,
-        conversationUid,
-        type || MessageType.TEXT,
-      );
+  //     // Create message in database
+  //     const message = await this.messagesService.createTextMessage(
+  //       userUid,
+  //       content,
+  //       conversationUid,
+  //       type || MessageType.TEXT,
+  //     );
 
-      // Broadcast to all users in the conversation room
-      const conversationRoom = `conversation:${conversationUid}`;
-      this.server.to(conversationRoom).emit('newMessage', {
-        conversationUid,
-        message,
-      });
+  //     // Broadcast to all users in the conversation room
+  //     const conversationRoom = `conversation:${conversationUid}`;
+  //     this.server.to(conversationRoom).emit('newMessage', {
+  //       conversationUid,
+  //       message,
+  //     });
 
-      this.logger.debug(
-        `Message ${message.uid} sent to conversation ${conversationUid} by user ${userUid}`,
-      );
-    } catch (error) {
-      this.logger.error(`Error sending message: ${error.message}`);
-      client.emit('error', {
-        code: 'MESSAGE_SEND_FAILED',
-        message: error.message || 'Failed to send message',
-      });
-    }
-  }
+  //     this.logger.debug(
+  //       `Message ${message.uid} sent to conversation ${conversationUid} by user ${userUid}`,
+  //     );
+  //   } catch (error) {
+  //     this.logger.error(`Error sending message: ${error.message}`);
+  //     client.emit('error', {
+  //       code: 'MESSAGE_SEND_FAILED',
+  //       message: error.message || 'Failed to send message',
+  //     });
+  //   }
+  // }
 
   /**
    * Handle joining a new conversation room
