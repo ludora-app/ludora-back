@@ -16,6 +16,7 @@ import {
   Post,
   UseGuards,
   NotFoundException,
+  Body,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -26,7 +27,9 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
+import { MessagesService } from './messages.service';
 import { ConversationsService } from './conversations.service';
+import { CreateMessageDto } from './dto/input/create-message.dto';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
 import {
   ConversationResponse,
@@ -35,7 +38,10 @@ import {
 
 @Controller('conversations')
 export class ConversationsController {
-  constructor(private readonly conversationsService: ConversationsService) {}
+  constructor(
+    private readonly conversationsService: ConversationsService,
+    private readonly messagesService: MessagesService,
+  ) {}
 
   // @Post()
   // create(@Body() createConversationDto: CreateConversationDto) {
@@ -95,6 +101,18 @@ export class ConversationsController {
       data: conversation,
       message: 'Conversation fetched successfully',
     };
+  }
+
+  @Post(':conversationUid/messages')
+  @Protected()
+  async createMessage(
+    @Req() request: Request,
+    @Body() dto: CreateMessageDto,
+    @Param('conversationUid') conversationUid: string,
+  ) {
+    const userUid = request['user'].uid;
+    const { content, file, type } = dto;
+    return this.messagesService.createMessage(userUid, content, conversationUid, type, file);
   }
 
   // @Patch(':id')

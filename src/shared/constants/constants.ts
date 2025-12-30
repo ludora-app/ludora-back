@@ -19,6 +19,7 @@ export enum StorageFolderName {
   USERS = 'users',
   PARTNERS = 'partners',
   FIELDS = 'fields',
+  CONVERSATIONS = 'conversations',
 }
 
 export enum TokenType {

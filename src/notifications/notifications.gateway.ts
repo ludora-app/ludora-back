@@ -309,4 +309,48 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       });
     }
   }
+
+  @OnEvent(EventTypes.NEW_MESSAGE)
+  async handleNewMessage(payload: {
+    content: string;
+    conversationUid: string;
+    senderUid: string;
+    notificationTitle: string;
+  }): Promise<void> {
+    try {
+      const { content, conversationUid, notificationTitle, senderUid } = payload;
+      console.log('event emitted', payload);
+
+      //? Get all members of the conversation except the sender
+      //* No need to check for the conversation existence as it is already verified in the messages service
+      const receiverUids = await this.prisma.conversationMembers.findMany({
+        select: {
+          userUid: true,
+        },
+        where: {
+          conversationUid,
+          userUid: {
+            not: senderUid,
+          },
+        },
+      });
+      console.log('receiverUids', receiverUids);
+      for (const receiverUid of receiverUids) {
+        const userRoom = `user:${receiverUid.userUid}`;
+        this.server.to(userRoom).emit('notification', {
+          data: {
+            content,
+            timestamp: new Date().toISOString(),
+            title: notificationTitle,
+            type: NotificationType.NEW_MESSAGE,
+          },
+        });
+      }
+    } catch (error) {
+      this.logger.error(`Error sending new message notification: ${error.message}`, {
+        error: error.stack,
+        payload,
+      });
+    }
+  }
 }
