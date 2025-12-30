@@ -15,6 +15,7 @@ import { SharedModule } from './shared/shared.module';
 import { FieldsModule } from './fields/fields.module';
 import { PaymentModule } from './payment/payment.module';
 import { MetricsModule } from './metrics/metrics.module';
+import { FriendsModule } from './friends/friends.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { PartnersModule } from './partners/partners.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -102,6 +103,7 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
     ChatModule,
     ConversationsModule,
     FieldsModule,
+    FriendsModule,
     MetricsModule,
     NotificationsModule,
     PartnersModule,
