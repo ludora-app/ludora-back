@@ -3,7 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { ConversationsController } from 'src/conversations/conversations.controller';
 import { ConversationsService } from 'src/conversations/conversations.service';
-import { ConversationType } from 'generated/prisma/enums';
+import { ConversationType, MessageType } from 'generated/prisma/enums';
 
 describe('ConversationsController', () => {
   let controller: ConversationsController;
@@ -12,6 +12,7 @@ describe('ConversationsController', () => {
   beforeEach(async () => {
     mockConversationsService = {
       createMockConversation: jest.fn(),
+      createMessage: jest.fn(),
       createPrivateConversation: jest.fn(),
       createSessionConversation: jest.fn(),
       findAllByUserUid: jest.fn(),
@@ -191,6 +192,152 @@ describe('ConversationsController', () => {
       await controller.createMockConversation(mockRequest);
 
       expect(mockConversationsService.createMockConversation).toHaveBeenCalledWith('user-999');
+    });
+  });
+
+  describe('createMessage', () => {
+    const mockRequest = {
+      user: { uid: 'user-123' },
+    } as any;
+
+    const conversationUid = 'conv-123';
+    const content = 'Hello, this is a test message';
+
+    it('should create a text message successfully', async () => {
+      const dto = {
+        content,
+        type: MessageType.TEXT,
+      };
+      const files: any[] = [];
+
+      mockConversationsService.createMessage.mockResolvedValue(undefined);
+
+      await controller.createMessage(mockRequest, dto, conversationUid, files);
+
+      expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
+        'user-123',
+        content,
+        conversationUid,
+        MessageType.TEXT,
+        undefined,
+      );
+    });
+
+    it('should create a media message with file', async () => {
+      const dto = {
+        type: MessageType.IMAGE,
+      };
+      const mockFile = {
+        buffer: Buffer.from('fake-image-data'),
+        originalname: 'test-image.jpg',
+        mimetype: 'image/jpeg',
+      };
+      const files = [mockFile];
+
+      mockConversationsService.createMessage.mockResolvedValue(undefined);
+
+      await controller.createMessage(mockRequest, dto, conversationUid, files);
+
+      expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
+        'user-123',
+        undefined,
+        conversationUid,
+        MessageType.IMAGE,
+        mockFile,
+      );
+    });
+
+    it('should handle empty files array for media message', async () => {
+      const dto = {
+        type: MessageType.IMAGE,
+      };
+      const files: any[] = [];
+
+      mockConversationsService.createMessage.mockResolvedValue(undefined);
+
+      await controller.createMessage(mockRequest, dto, conversationUid, files);
+
+      expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
+        'user-123',
+        undefined,
+        conversationUid,
+        MessageType.IMAGE,
+        undefined,
+      );
+    });
+
+    it('should extract user uid from request', async () => {
+      const differentUserRequest = {
+        user: { uid: 'user-456' },
+      } as any;
+      const dto = {
+        content: 'Test message',
+        type: MessageType.TEXT,
+      };
+      const files: any[] = [];
+
+      mockConversationsService.createMessage.mockResolvedValue(undefined);
+
+      await controller.createMessage(differentUserRequest, dto, conversationUid, files);
+
+      expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
+        'user-456',
+        'Test message',
+        conversationUid,
+        MessageType.TEXT,
+        undefined,
+      );
+    });
+
+    it('should handle video message type', async () => {
+      const dto = {
+        type: MessageType.VIDEO,
+      };
+      const mockFile = {
+        buffer: Buffer.from('fake-video-data'),
+        originalname: 'test-video.mp4',
+        mimetype: 'video/mp4',
+      };
+      const files = [mockFile];
+
+      mockConversationsService.createMessage.mockResolvedValue(undefined);
+
+      await controller.createMessage(mockRequest, dto, conversationUid, files);
+
+      expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
+        'user-123',
+        undefined,
+        conversationUid,
+        MessageType.VIDEO,
+        mockFile,
+      );
+    });
+
+    it('should use first file when multiple files are provided', async () => {
+      const dto = {
+        type: MessageType.IMAGE,
+      };
+      const mockFile1 = {
+        buffer: Buffer.from('fake-image-1'),
+        originalname: 'image1.jpg',
+      };
+      const mockFile2 = {
+        buffer: Buffer.from('fake-image-2'),
+        originalname: 'image2.jpg',
+      };
+      const files = [mockFile1, mockFile2];
+
+      mockConversationsService.createMessage.mockResolvedValue(undefined);
+
+      await controller.createMessage(mockRequest, dto, conversationUid, files);
+
+      expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
+        'user-123',
+        undefined,
+        conversationUid,
+        MessageType.IMAGE,
+        mockFile1,
+      );
     });
   });
 });

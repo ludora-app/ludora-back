@@ -1,13 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ConversationsService } from 'src/conversations/conversations.service';
+import { MessagesService } from 'src/conversations/messages.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ConversationType } from 'generated/prisma/enums';
+import { ConversationType, MessageType } from 'generated/prisma/enums';
 
 describe('ConversationsService', () => {
   let service: ConversationsService;
   let mockPrismaService: any;
+  let mockMessagesService: any;
 
   const mockPinoLogger = {
     debug: jest.fn(),
@@ -31,6 +33,11 @@ describe('ConversationsService', () => {
       },
     };
 
+    mockMessagesService = {
+      createTextMessage: jest.fn(),
+      createMediaMessage: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ConversationsService,
@@ -41,6 +48,10 @@ describe('ConversationsService', () => {
         {
           provide: PinoLogger,
           useValue: mockPinoLogger,
+        },
+        {
+          provide: MessagesService,
+          useValue: mockMessagesService,
         },
       ],
     }).compile();
@@ -492,6 +503,142 @@ describe('ConversationsService', () => {
       expect(mockPinoLogger.info).toHaveBeenCalledWith(
         expect.stringContaining('Created 15 mock conversations'),
       );
+    });
+  });
+
+  describe('createMessage', () => {
+    const userUid = 'user-123';
+    const conversationUid = 'conv-123';
+    const content = 'Hello, this is a test message';
+
+    const mockConversation = {
+      messages: [],
+      name: 'Test Conversation',
+      sessionUid: null,
+      type: ConversationType.PRIVATE,
+      uid: conversationUid,
+    };
+
+    beforeEach(() => {
+      mockPrismaService.conversations.findUnique.mockResolvedValue(mockConversation);
+      mockPrismaService.conversationMembers.findFirst.mockResolvedValue({
+        conversationUid,
+        userUid,
+      });
+    });
+
+    it('should create a text message when type is TEXT', async () => {
+      mockMessagesService.createTextMessage.mockResolvedValue(undefined);
+
+      await service.createMessage(userUid, content, conversationUid, MessageType.TEXT);
+
+      expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
+        userUid,
+        content,
+        conversationUid,
+        null,
+      );
+      expect(mockMessagesService.createMediaMessage).not.toHaveBeenCalled();
+    });
+
+    it('should create a media message when type is IMAGE', async () => {
+      const mockFile = {
+        buffer: Buffer.from('fake-image-data'),
+        originalname: 'test-image.jpg',
+      };
+      mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
+
+      await service.createMessage(userUid, content, conversationUid, MessageType.IMAGE, mockFile);
+
+      expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
+        userUid,
+        conversationUid,
+        MessageType.IMAGE,
+        mockFile,
+        null,
+      );
+      expect(mockMessagesService.createTextMessage).not.toHaveBeenCalled();
+    });
+
+    it('should create a media message when type is VIDEO', async () => {
+      const mockFile = {
+        buffer: Buffer.from('fake-video-data'),
+        originalname: 'test-video.mp4',
+      };
+      mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
+
+      await service.createMessage(userUid, content, conversationUid, MessageType.VIDEO, mockFile);
+
+      expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
+        userUid,
+        conversationUid,
+        MessageType.VIDEO,
+        mockFile,
+        null,
+      );
+    });
+
+    it('should pass sessionUid when conversation has a session', async () => {
+      const sessionUid = 'session-456';
+      const conversationWithSession = {
+        ...mockConversation,
+        sessionUid,
+      };
+      mockPrismaService.conversations.findUnique.mockResolvedValue(conversationWithSession);
+      mockMessagesService.createTextMessage.mockResolvedValue(undefined);
+
+      await service.createMessage(userUid, content, conversationUid, MessageType.TEXT);
+
+      expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
+        userUid,
+        content,
+        conversationUid,
+        sessionUid,
+      );
+    });
+
+    it('should verify user is a member before creating message', async () => {
+      mockMessagesService.createTextMessage.mockResolvedValue(undefined);
+
+      await service.createMessage(userUid, content, conversationUid, MessageType.TEXT);
+
+      expect(mockPrismaService.conversations.findUnique).toHaveBeenCalledWith({
+        include: {
+          messages: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+            take: 10,
+          },
+        },
+        where: {
+          uid: conversationUid,
+        },
+      });
+      expect(mockPrismaService.conversationMembers.findFirst).toHaveBeenCalledWith({
+        where: {
+          conversationUid,
+          userUid,
+        },
+      });
+    });
+
+    it('should throw ForbiddenException if user is not a member', async () => {
+      mockPrismaService.conversationMembers.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.createMessage(userUid, content, conversationUid, MessageType.TEXT),
+      ).rejects.toThrow(ForbiddenException);
+      expect(mockMessagesService.createTextMessage).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if conversation does not exist', async () => {
+      mockPrismaService.conversations.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.createMessage(userUid, content, conversationUid, MessageType.TEXT),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockMessagesService.createTextMessage).not.toHaveBeenCalled();
     });
   });
 });
