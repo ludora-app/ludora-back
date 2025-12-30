@@ -1,12 +1,15 @@
+import { UserFilterDto } from 'src/users/dto';
+import { Friends } from 'generated/prisma/browser';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
+import { HttpCode, HttpStatus, Query, UseGuards } from '@nestjs/common';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
-import { HttpCode, HttpStatus, NotFoundException, UseGuards } from '@nestjs/common';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
@@ -20,7 +23,7 @@ import {
 import { FriendsService } from './friends.service';
 import { UpdateFriendDto } from './dto/input/update-friend.dto';
 import { CreateFriendDto } from './dto/input/create-friend.dto';
-import { FriendResponseDto } from './dto/output/friend-response.dto';
+import { FriendResponseDto, PaginatedFriendResponse } from './dto/output/friend-response.dto';
 
 @Controller('friends')
 @UseGuards(AuthB2CGuard)
@@ -30,7 +33,7 @@ export class FriendsController {
   @Post()
   @Protected()
   @ApiOperation({ summary: 'Create a new friend request at the PENDING status' })
-  @ApiCreatedResponse({ type: ResponseTypeDto<FriendResponseDto> })
+  @ApiCreatedResponse({ type: ResponseTypeDto<Friends> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
@@ -39,7 +42,7 @@ export class FriendsController {
   async create(
     @Body() createFriendDto: CreateFriendDto,
     @Req() req: Request,
-  ): Promise<ResponseTypeDto<FriendResponseDto>> {
+  ): Promise<ResponseTypeDto<Friends>> {
     const senderUid = req['user'].uid;
     const friendRequest = await this.friendsService.create(senderUid, createFriendDto.receiverUid);
     return {
@@ -48,9 +51,23 @@ export class FriendsController {
     };
   }
 
-  @Get()
-  findAll() {
-    return this.friendsService.findAll();
+  @Get('my-collection')
+  @Protected()
+  @ApiOperation({ summary: 'Get all friends of the connected user' })
+  @ApiOkResponse({ type: PaginatedFriendResponse })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.OK)
+  async findAll(
+    @Query() filters: UserFilterDto,
+    @Req() req: Request,
+  ): Promise<PaginationResponseTypeDto<FriendResponseDto>> {
+    const userUid = req['user'].uid;
+    const friends = await this.friendsService.findAll(filters, userUid);
+    return {
+      data: friends,
+      message: 'Friends fetched successfully',
+    };
   }
 
   @Get('my-friend-request/:receiverUid')
@@ -67,11 +84,7 @@ export class FriendsController {
   ): Promise<ResponseTypeDto<FriendResponseDto>> {
     const senderUid = req['user'].uid;
     const friendRequest = await this.friendsService.findOne(senderUid, receiverUid);
-    if (!friendRequest) {
-      throw new NotFoundException(
-        `Friend request between ${senderUid} and ${receiverUid} not found`,
-      );
-    }
+
     return {
       data: friendRequest,
       message: 'Friend request fetched successfully',

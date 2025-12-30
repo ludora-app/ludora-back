@@ -25,18 +25,26 @@ export class FriendResponseDto {
   status: InvitationStatus;
 
   @ApiProperty({
-    description: 'Friend request sender uid',
+    description: 'User uid of the friend',
     example: 'cmajhjkjf000bq77q4b5ugn8b',
     readOnly: true,
   })
-  userUid1: string;
+  friendUid: string;
 
   @ApiProperty({
-    description: 'Friend request receiver uid',
-    example: 'cmajhjkjf000bq77q4b5ugn8b',
+    description: 'Concatenated firstname and lastname of the friend',
+    example: 'John Doe',
     readOnly: true,
   })
-  userUid2: string;
+  userName: string;
+
+  @ApiProperty({
+    description: 'Friend request user profile picture',
+    example: 'https://example.com/image.jpg',
+    nullable: true,
+    readOnly: true,
+  })
+  userProfilePicture: string;
 }
 
 export const PaginatedFriendResponse = toPaginationResponseType(FriendResponseDto);
