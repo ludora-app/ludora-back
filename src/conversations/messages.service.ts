@@ -2,11 +2,11 @@ import { PinoLogger } from 'nestjs-pino';
 import { Messages } from 'generated/prisma/browser';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ForbiddenException, Injectable } from '@nestjs/common';
 import { StorageFolderName } from 'src/shared/constants/constants';
 import { MessageStatus, MessageType } from 'generated/prisma/enums';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { EventTypes } from 'src/notifications/constants/event.types';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class MessagesService {
@@ -103,7 +103,15 @@ export class MessagesService {
     await this.markMessagesAsRead(conversationUid, senderUid);
     const folderName = `${StorageFolderName.CONVERSATIONS}/${conversationUid}`;
 
-    const uploadedFile = await this.storageService.upload(folderName, file.filename, file.buffer);
+    if (!file || !file.buffer || !file.originalname) {
+      throw new BadRequestException('File is required for media messages');
+    }
+
+    const uploadedFile = await this.storageService.upload(
+      folderName,
+      file.originalname,
+      file.buffer,
+    );
     const message = await this.prisma.messages.create({
       data: {
         content: uploadedFile.data,

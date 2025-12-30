@@ -2,6 +2,7 @@ import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { ForbiddenResponseDto } from 'src/shared/dto/errors/forbidden-response.dto';
+import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
@@ -110,9 +111,11 @@ export class ConversationsController {
     @Req() request: Request,
     @Body() dto: CreateMessageDto,
     @Param('conversationUid') conversationUid: string,
+    @UploadedFilesCustom() files: { buffer: Buffer; originalname: string }[],
   ) {
     const userUid = request['user'].uid;
-    const { content, file, type } = dto;
+    const { content, type } = dto;
+    const file = files && files.length > 0 ? files[0] : undefined;
     return this.conversationsService.createMessage(userUid, content, conversationUid, type, file);
   }
 
