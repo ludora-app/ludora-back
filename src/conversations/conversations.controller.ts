@@ -4,6 +4,7 @@ import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dt
 import { ForbiddenResponseDto } from 'src/shared/dto/errors/forbidden-response.dto';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   Controller,
@@ -17,9 +18,11 @@ import {
   UseGuards,
   NotFoundException,
   Body,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiConsumes,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -27,7 +30,6 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { MessagesService } from './messages.service';
 import { ConversationsService } from './conversations.service';
 import { CreateMessageDto } from './dto/input/create-message.dto';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
@@ -38,10 +40,7 @@ import {
 
 @Controller('conversations')
 export class ConversationsController {
-  constructor(
-    private readonly conversationsService: ConversationsService,
-    private readonly messagesService: MessagesService,
-  ) {}
+  constructor(private readonly conversationsService: ConversationsService) {}
 
   // @Post()
   // create(@Body() createConversationDto: CreateConversationDto) {
@@ -105,6 +104,8 @@ export class ConversationsController {
 
   @Post(':conversationUid/messages')
   @Protected()
+  @UseInterceptors(new FastifyFilesInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
   async createMessage(
     @Req() request: Request,
     @Body() dto: CreateMessageDto,
@@ -112,7 +113,7 @@ export class ConversationsController {
   ) {
     const userUid = request['user'].uid;
     const { content, file, type } = dto;
-    return this.messagesService.createMessage(userUid, content, conversationUid, type, file);
+    return this.conversationsService.createMessage(userUid, content, conversationUid, type, file);
   }
 
   // @Patch(':id')
