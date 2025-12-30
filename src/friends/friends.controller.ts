@@ -1,9 +1,9 @@
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
-import { HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { HttpCode, HttpStatus, NotFoundException, UseGuards } from '@nestjs/common';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
@@ -12,6 +12,7 @@ import {
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -28,7 +29,7 @@ export class FriendsController {
 
   @Post()
   @Protected()
-  @ApiOperation({ summary: 'Create a new friend request' })
+  @ApiOperation({ summary: 'Create a new friend request at the PENDING status' })
   @ApiCreatedResponse({ type: ResponseTypeDto<FriendResponseDto> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
@@ -52,9 +53,29 @@ export class FriendsController {
     return this.friendsService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.friendsService.findOne(+id);
+  @Get('my-friend-request/:receiverUid')
+  @Protected()
+  @ApiOperation({ summary: 'Get a friend request between the connected user and the receiver' })
+  @ApiOkResponse({ type: ResponseTypeDto<FriendResponseDto> })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @HttpCode(HttpStatus.OK)
+  async findMyFriendRequest(
+    @Param('receiverUid') receiverUid: string,
+    @Req() req: Request,
+  ): Promise<ResponseTypeDto<FriendResponseDto>> {
+    const senderUid = req['user'].uid;
+    const friendRequest = await this.friendsService.findOne(senderUid, receiverUid);
+    if (!friendRequest) {
+      throw new NotFoundException(
+        `Friend request between ${senderUid} and ${receiverUid} not found`,
+      );
+    }
+    return {
+      data: friendRequest,
+      message: 'Friend request fetched successfully',
+    };
   }
 
   @Patch(':id')

@@ -61,6 +61,8 @@ export class FriendsService {
         userUid2: receiverUid,
       },
     });
+
+    // todo: send a notification to the receiver
     return newFriendRequest;
   }
 
@@ -68,8 +70,20 @@ export class FriendsService {
     return `This action returns all friends`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} friend`;
+  async findOne(senderUid: string, receiverUid: string): Promise<FriendResponseDto> {
+    const existingFriend = await this.prisma.friends.findFirst({
+      where: {
+        AND: [
+          {
+            OR: [
+              { userUid1: senderUid, userUid2: receiverUid },
+              { userUid1: receiverUid, userUid2: senderUid },
+            ],
+          },
+        ],
+      },
+    });
+    return existingFriend;
   }
 
   update(id: number, _updateFriendDto: UpdateFriendDto) {
