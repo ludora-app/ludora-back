@@ -134,7 +134,7 @@ export class FriendsService {
           {
             OR: [{ userUid1: userUid }, { userUid2: userUid }],
           },
-          // { status: InvitationStatus.ACCEPTED },
+          { status: InvitationStatus.ACCEPTED },
         ],
       },
     };
@@ -178,7 +178,7 @@ export class FriendsService {
     };
   }
 
-  async findOne(senderUid: string, receiverUid: string): Promise<FriendResponseDto> {
+  async findOne(connectedUserUid: string, otherUserUid: string): Promise<FriendResponseDto> {
     const existingFriend = await this.prisma.friends.findFirst({
       include: {
         user1: {
@@ -200,8 +200,8 @@ export class FriendsService {
         AND: [
           {
             OR: [
-              { userUid1: senderUid, userUid2: receiverUid },
-              { userUid1: receiverUid, userUid2: senderUid },
+              { userUid1: connectedUserUid, userUid2: otherUserUid },
+              { userUid1: otherUserUid, userUid2: connectedUserUid },
             ],
           },
         ],
@@ -210,10 +210,10 @@ export class FriendsService {
 
     if (!existingFriend) {
       throw new NotFoundException(
-        `Friend request between ${senderUid} and ${receiverUid} not found`,
+        `Friend request between ${connectedUserUid} and ${otherUserUid} not found`,
       );
     }
-    const friendDto = FriendMapper.toDto(existingFriend, senderUid);
+    const friendDto = FriendMapper.toDto(existingFriend, connectedUserUid);
     if (!friendDto.userProfilePicture) {
       return friendDto;
     }
@@ -366,7 +366,34 @@ export class FriendsService {
     return;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} friend`;
+  async remove(connectedUserUid: string, receiverUid: string): Promise<void> {
+    const existingFriend = await this.prisma.friends.findFirst({
+      where: {
+        AND: [
+          {
+            OR: [
+              { userUid1: connectedUserUid, userUid2: receiverUid },
+              { userUid1: receiverUid, userUid2: connectedUserUid },
+            ],
+          },
+          { status: InvitationStatus.ACCEPTED },
+        ],
+      },
+    });
+    if (!existingFriend) {
+      throw new NotFoundException(
+        `Friend request between ${connectedUserUid} and ${receiverUid} not found`,
+      );
+    }
+    await this.prisma.friends.delete({
+      where: {
+        userUid1_userUid2: {
+          userUid1: existingFriend.userUid1,
+          userUid2: existingFriend.userUid2,
+        },
+      },
+    });
+    this.logger.info(`Friend request between ${connectedUserUid} and ${receiverUid} removed`);
+    return;
   }
 }

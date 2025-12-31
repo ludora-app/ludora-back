@@ -14,6 +14,7 @@ import {
   ApiBadRequestResponse,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -70,7 +71,7 @@ export class FriendsController {
     };
   }
 
-  @Get('my-friend-request/:receiverUid')
+  @Get('my-friend-request/:otherUserUid')
   @Protected()
   @ApiOperation({ summary: 'Get a friend request between the connected user and the receiver' })
   @ApiOkResponse({ type: ResponseTypeDto<FriendResponseDto> })
@@ -79,11 +80,11 @@ export class FriendsController {
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.OK)
   async findMyFriendRequest(
-    @Param('receiverUid') receiverUid: string,
+    @Param('otherUserUid') otherUserUid: string,
     @Req() req: Request,
   ): Promise<ResponseTypeDto<FriendResponseDto>> {
-    const senderUid = req['user'].uid;
-    const friendRequest = await this.friendsService.findOne(senderUid, receiverUid);
+    const connectedUserUid = req['user'].uid;
+    const friendRequest = await this.friendsService.findOne(connectedUserUid, otherUserUid);
 
     return {
       data: friendRequest,
@@ -92,17 +93,32 @@ export class FriendsController {
   }
 
   @Patch(':userUid')
+  @Protected()
+  @ApiOperation({ summary: 'Update a friend request between the connected user and the receiver' })
+  @ApiNoContentResponse({ description: 'Friend request updated successfully' })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @HttpCode(HttpStatus.NO_CONTENT)
   update(
     @Param('userUid') userUid: string,
     @Body() updateFriendDto: UpdateFriendDto,
     @Req() req: Request,
-  ) {
+  ): Promise<void> {
     const connectedUserUid = req['user'].uid;
     return this.friendsService.update(connectedUserUid, userUid, updateFriendDto.status);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.friendsService.remove(+id);
+  @Delete(':otherUserUid')
+  @Protected()
+  @ApiOperation({ summary: 'Remove an existing friend (ACCEPTED status)' })
+  @ApiNoContentResponse({ description: 'Friend removed successfully' })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('otherUserUid') otherUserUid: string, @Req() req: Request): Promise<void> {
+    const connectedUserUid = req['user'].uid;
+    return this.friendsService.remove(connectedUserUid, otherUserUid);
   }
 }
