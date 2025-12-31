@@ -239,14 +239,12 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     recipientId: string;
     senderId: string;
     senderName: string;
-    requestId: string;
   }): void {
     try {
-      const { recipientId, requestId, senderName } = payload;
+      const { recipientId, senderName } = payload;
 
       const userRoom = `user:${recipientId}`;
       this.server.to(userRoom).emit('notification', {
-        data: { requestId },
         message: `${senderName} sent you a friend request`,
         timestamp: new Date().toISOString(),
         title: 'New Friend Request',
@@ -256,6 +254,29 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       this.logger.debug(`Friend request notification sent to user ${recipientId}`);
     } catch (error) {
       this.logger.error(`Error sending friend request notification: ${error.message}`);
+    }
+  }
+
+  @OnEvent(EventTypes.FRIEND_ACCEPTED)
+  handleFriendAcceptedNotification(payload: {
+    recipientUid: string;
+    senderUid: string;
+    senderName: string;
+  }): void {
+    try {
+      const { recipientUid, senderName } = payload;
+
+      const userRoom = `user:${recipientUid}`;
+      this.server.to(userRoom).emit('notification', {
+        message: `${senderName} accepted your friend request`,
+        timestamp: new Date().toISOString(),
+        title: `${senderName} accepted your friend request`,
+        type: NotificationType.FRIEND_ACCEPTED,
+      });
+
+      this.logger.debug(`Accepted friend request notification sent to user ${recipientUid}`);
+    } catch (error) {
+      this.logger.error(`Error sending friend accepted notification: ${error.message}`);
     }
   }
 

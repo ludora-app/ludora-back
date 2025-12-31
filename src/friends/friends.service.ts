@@ -1,12 +1,14 @@
 import { PinoLogger } from 'nestjs-pino';
 import { UserFilterDto } from 'src/users/dto';
 import { Friends } from 'generated/prisma/browser';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { InvitationStatus } from 'generated/prisma/enums';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { StorageFolderName } from 'src/shared/constants/constants';
 import { StorageService } from 'src/shared/storage/storage.service';
+import { EventTypes } from 'src/notifications/constants/event.types';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   BadRequestException,
@@ -15,9 +17,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { FriendMapper } from './mappers/friend.mapper';
-import { UpdateFriendDto } from './dto/input/update-friend.dto';
 import { FriendResponseDto } from './dto/output/friend-response.dto';
+import { FriendMapper, FriendWithUsers } from './mappers/friend.mapper';
 
 @Injectable()
 export class FriendsService {
@@ -26,6 +27,7 @@ export class FriendsService {
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
     private readonly storageService: StorageService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     this.logger.setContext(FriendsService.name);
   }
@@ -72,6 +74,32 @@ export class FriendsService {
         userUid1: senderUid,
         userUid2: receiverUid,
       },
+      include: {
+        user1: {
+          select: {
+            firstname: true,
+            imageUrl: true,
+            lastname: true,
+          },
+        },
+        user2: {
+          select: {
+            firstname: true,
+            imageUrl: true,
+            lastname: true,
+          },
+        },
+      },
+    });
+
+    const friendDto = FriendMapper.toDto(newFriendRequest, receiverUid);
+
+    this.logger.debug(`Friend request sent to ${receiverUid} by ${senderUid}`);
+
+    this.eventEmitter.emit(EventTypes.FRIEND_REQUEST, {
+      recipientId: receiverUid,
+      senderId: senderUid,
+      senderName: friendDto.userName,
     });
 
     // todo: send a notification to the receiver
@@ -106,7 +134,7 @@ export class FriendsService {
           {
             OR: [{ userUid1: userUid }, { userUid2: userUid }],
           },
-          { status: InvitationStatus.ACCEPTED },
+          // { status: InvitationStatus.ACCEPTED },
         ],
       },
     };
@@ -196,8 +224,146 @@ export class FriendsService {
     return { ...friendDto, userProfilePicture: friendImageUrl };
   }
 
-  update(id: number, _updateFriendDto: UpdateFriendDto) {
-    return `This action updates a #${id} friend`;
+  async update(
+    connectedUserUid: string,
+    receiverUid: string,
+    status: InvitationStatus,
+  ): Promise<void> {
+    let connectedUserIsSender = false;
+    let otherUserIsSender = false;
+    const existingReceiver = await this.usersService.findOne(
+      receiverUid,
+      USERSELECT.checkIfUserExists,
+    );
+    if (!existingReceiver) {
+      throw new NotFoundException(`Receiver ${receiverUid} not found`);
+    }
+    const existingFriend = await this.prisma.friends.findFirst({
+      where: {
+        AND: [
+          {
+            OR: [
+              { userUid1: connectedUserUid, userUid2: receiverUid },
+              { userUid1: receiverUid, userUid2: connectedUserUid },
+            ],
+          },
+          { status: InvitationStatus.PENDING },
+        ],
+      },
+    });
+    if (!existingFriend) {
+      throw new NotFoundException(
+        `Friend request between ${connectedUserUid} and ${receiverUid} not found`,
+      );
+    }
+    if (existingFriend.userUid1 === connectedUserUid) {
+      this.logger.debug(`Connected user is the sender of the friend request`);
+      connectedUserIsSender = true;
+    }
+    if (existingFriend.userUid2 === connectedUserUid) {
+      this.logger.debug(`Other user is the sender of the friend request`);
+      otherUserIsSender = true;
+    }
+
+    this.checkUpdateAuthorization(connectedUserIsSender, otherUserIsSender, status);
+
+    const updatedFriend = await this.prisma.friends.update({
+      data: { status },
+      include: {
+        user1: {
+          select: {
+            firstname: true,
+            imageUrl: true,
+            lastname: true,
+          },
+        },
+        user2: {
+          select: {
+            firstname: true,
+            imageUrl: true,
+            lastname: true,
+          },
+        },
+      },
+      where: {
+        userUid1_userUid2: {
+          userUid1: existingFriend.userUid1,
+          userUid2: existingFriend.userUid2,
+        },
+      },
+    });
+
+    //? The invitation sender (userUid1) is the one to receive the event
+    this.emitFriendRequestUpdateEvent(
+      existingFriend.userUid1,
+      existingFriend.userUid2,
+      updatedFriend,
+    );
+
+    if (status === InvitationStatus.CANCELED) {
+      await this.prisma.friends.delete({
+        where: {
+          userUid1_userUid2: {
+            userUid1: existingFriend.userUid1,
+            userUid2: existingFriend.userUid2,
+          },
+        },
+      });
+      this.logger.info(`Friend request between ${connectedUserUid} and ${receiverUid} canceled`);
+    }
+
+    return;
+  }
+
+  checkUpdateAuthorization(
+    connectedUserIsSender: boolean,
+    otherUserIsSender: boolean,
+    status: InvitationStatus,
+  ): void {
+    // ? Cannot update the status to pending
+    if (status === InvitationStatus.PENDING) {
+      throw new BadRequestException(`The invitation is already pending`);
+    }
+    // ? If somehow both conditions are true or both are false, we throw an error
+    if (
+      (connectedUserIsSender && otherUserIsSender) ||
+      (!connectedUserIsSender && !otherUserIsSender)
+    ) {
+      throw new BadRequestException(`You are not authorized to update this invitation`);
+    }
+    // ? The sender can only cancel the invitation
+    if (connectedUserIsSender && status !== InvitationStatus.CANCELED) {
+      throw new BadRequestException(`The invitation sender cannot update the status to ${status}`);
+    }
+
+    // ? The receiver can only accept or reject the invitation
+    if (otherUserIsSender && status === InvitationStatus.CANCELED) {
+      throw new BadRequestException(`The invitation receiver cannot cancel the invitation`);
+    }
+    return;
+  }
+
+  emitFriendRequestUpdateEvent(
+    eventReceiverUserUid: string,
+    requestAccepterUserUid: string,
+    friendRequest: FriendWithUsers,
+  ): void {
+    let friendDto: FriendResponseDto;
+    /**
+     * If the friend request is accepted, we send the event to the receiver with the connectedUser info
+     * If the friend request is rejected, we send the event to the connectedUser with the receiver info
+     */
+    if (friendRequest.status === InvitationStatus.ACCEPTED) {
+      friendDto = FriendMapper.toDto(friendRequest, eventReceiverUserUid);
+
+      this.eventEmitter.emit(EventTypes.FRIEND_ACCEPTED, {
+        recipientUid: eventReceiverUserUid,
+        senderName: friendDto.userName,
+        senderUid: requestAccepterUserUid,
+      });
+    }
+
+    return;
   }
 
   remove(id: number) {

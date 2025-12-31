@@ -2,7 +2,7 @@ import { Friends } from 'generated/prisma/browser';
 
 import { FriendResponseDto } from '../dto/output/friend-response.dto';
 
-type FriendWithUsers = Friends & {
+export type FriendWithUsers = Friends & {
   user1: {
     firstname: string;
     lastname: string;
@@ -16,6 +16,12 @@ type FriendWithUsers = Friends & {
 };
 
 export class FriendMapper {
+  /**
+   * Maps the friend request to a friend response dto with the current user uid
+   * @param friend - The friend request
+   * @param currentUserUid - uid of the user to exclude from the response
+   * @returns The friend response dto
+   */
   static toDto(friend: FriendWithUsers, currentUserUid: string): FriendResponseDto {
     // Select the other user based on the current user uid
     const otherUser = friend.userUid1 === currentUserUid ? friend.user2 : friend.user1;

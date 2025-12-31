@@ -91,9 +91,14 @@ export class FriendsController {
     };
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateFriendDto: UpdateFriendDto) {
-    return this.friendsService.update(+id, updateFriendDto);
+  @Patch(':userUid')
+  update(
+    @Param('userUid') userUid: string,
+    @Body() updateFriendDto: UpdateFriendDto,
+    @Req() req: Request,
+  ) {
+    const connectedUserUid = req['user'].uid;
+    return this.friendsService.update(connectedUserUid, userUid, updateFriendDto.status);
   }
 
   @Delete(':id')
