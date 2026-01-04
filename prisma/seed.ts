@@ -1,4 +1,12 @@
-import { GameModes, PrismaClient, Sex, TeamLabel, UserType } from '../generated/prisma/client';
+import {
+  FieldType,
+  GameModes,
+  PrismaClient,
+  Sex,
+  TeamLabel,
+  UserType,
+  VerificationStatus,
+} from '../generated/prisma/client';
 import * as argon2 from 'argon2';
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -149,321 +157,605 @@ async function seed() {
   }
   console.log('Partner sports relations populated');
 
+  // Création des terrains PRIVÉS (avec partenaire) et PUBLICS (sans partenaire)
   const fields = [
-    // ? HOOPFACTORY
+    // ? HOOPFACTORY - Terrains PRIVÉS
     {
+      type: FieldType.PRIVATE,
       partnerUid: createdPartners[0].uid,
       sport: createdSports[1].name,
+      name: 'Hoopsfactory - Court 1',
       address: '3 Rue Pierre Larousse, 93300 Aubervilliers',
       latitude: 48.9047454,
       longitude: 2.3789354,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
+      status: VerificationStatus.APPROVED,
     },
     {
+      type: FieldType.PRIVATE,
       partnerUid: createdPartners[0].uid,
       sport: createdSports[1].name,
+      name: 'Hoopsfactory - Court 2',
       address: '3 Rue Pierre Larousse, 93300 Aubervilliers',
       latitude: 48.9047454,
       longitude: 2.3789354,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
+      status: VerificationStatus.APPROVED,
     },
+    // ? THE ONE BALL - Terrains PRIVÉS
     {
-      partnerUid: createdPartners[0].uid,
-      sport: createdSports[1].name,
-      address: '3 Rue Pierre Larousse, 93300 Aubervilliers',
-      latitude: 48.9047454,
-      longitude: 2.3789354,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
-      partnerUid: createdPartners[0].uid,
-      sport: createdSports[1].name,
-      address: '3 Rue Pierre Larousse, 93300 Aubervilliers',
-      latitude: 48.9047454,
-      longitude: 2.3789354,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
-      partnerUid: createdPartners[0].uid,
-      sport: createdSports[1].name,
-      address: '3 Rue Pierre Larousse, 93300 Aubervilliers',
-      latitude: 48.9047454,
-      longitude: 2.3789354,
-      gameMode: 'THREE_V_THREE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
-      partnerUid: createdPartners[0].uid,
-      sport: createdSports[1].name,
-      address: '3 Rue Pierre Larousse, 93300 Aubervilliers',
-      latitude: 48.9047454,
-      longitude: 2.3789354,
-      gameMode: 'THREE_V_THREE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    // ? THE ONE BALL
-    {
+      type: FieldType.PRIVATE,
       partnerUid: createdPartners[1].uid,
       sport: createdSports[1].name,
+      name: 'The One Ball - Court 1',
       address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
       latitude: 48.83436030000001,
       longitude: 2.5689833,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
+      status: VerificationStatus.APPROVED,
     },
     {
+      type: FieldType.PRIVATE,
       partnerUid: createdPartners[1].uid,
       sport: createdSports[1].name,
+      name: 'The One Ball - Court 2',
       address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
       latitude: 48.83436030000001,
       longitude: 2.5689833,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
+      status: VerificationStatus.APPROVED,
     },
+    // ? STADIUM THIAS ORLY - Terrains PRIVÉS
     {
-      partnerUid: createdPartners[1].uid,
-      sport: createdSports[1].name,
-      address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
-      latitude: 48.83436030000001,
-      longitude: 2.5689833,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
-      partnerUid: createdPartners[1].uid,
-      sport: createdSports[1].name,
-      address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
-      latitude: 48.83436030000001,
-      longitude: 2.5689833,
-      gameMode: 'THREE_V_THREE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
-      partnerUid: createdPartners[1].uid,
-      sport: createdSports[1].name,
-      address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
-      latitude: 48.83436030000001,
-      longitude: 2.5689833,
-      gameMode: 'THREE_V_THREE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
-      partnerUid: createdPartners[1].uid,
-      sport: createdSports[1].name,
-      address: '38 Rue du Ballon, 93160 Noisy-le-Grand',
-      latitude: 48.83436030000001,
-      longitude: 2.5689833,
-      gameMode: 'THREE_V_THREE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    // ? STADIUM THIAS ORLY
-    {
-      partnerUid: createdPartners[2].uid,
-      sport: createdSports[1].name,
-      address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.75098440000001,
-      longitude: 2.3718412,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
-      partnerUid: createdPartners[2].uid,
-      sport: createdSports[1].name,
-      address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.75098440000001,
-      longitude: 2.3718412,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
-      partnerUid: createdPartners[2].uid,
-      sport: createdSports[1].name,
-      address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.75098440000001,
-      longitude: 2.3718412,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
-      partnerUid: createdPartners[2].uid,
-      sport: createdSports[4].name,
-      address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.75098440000001,
-      longitude: 2.3718412,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
-      partnerUid: createdPartners[2].uid,
-      sport: createdSports[4].name,
-      address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.75098440000001,
-      longitude: 2.3718412,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
-      partnerUid: createdPartners[2].uid,
-      sport: createdSports[4].name,
-      address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.75098440000001,
-      longitude: 2.3718412,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
-      partnerUid: createdPartners[2].uid,
-      sport: createdSports[4].name,
-      address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.75098440000001,
-      longitude: 2.3718412,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
-      partnerUid: createdPartners[2].uid,
-      sport: createdSports[4].name,
-      address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.75098440000001,
-      longitude: 2.3718412,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    // here
-    {
+      type: FieldType.PRIVATE,
       partnerUid: createdPartners[2].uid,
       sport: createdSports[0].name,
+      name: 'Stadium Thiais - Terrain Football 1',
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
       latitude: 48.75098440000001,
       longitude: 2.3718412,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
+      status: VerificationStatus.APPROVED,
     },
     {
+      type: FieldType.PRIVATE,
       partnerUid: createdPartners[2].uid,
-      sport: createdSports[0].name,
+      sport: createdSports[1].name,
+      name: 'Stadium Thiais - Court Basket',
       address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
       latitude: 48.75098440000001,
       longitude: 2.3718412,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
+      status: VerificationStatus.APPROVED,
     },
+    // ? FOREST HILL - Terrains PRIVÉS
     {
-      partnerUid: createdPartners[2].uid,
-      sport: createdSports[0].name,
-      address: 'ZI SENIA, 2 rue du Courson, Thiais 94320, France',
-      latitude: 48.75098440000001,
-      longitude: 2.3718412,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
-      partnerUid: createdPartners[3].uid,
-      sport: createdSports[4].name,
-      address: '19 avenue de la Liberté, 92000 Nanterre',
-      latitude: 48.88837789999999,
-      longitude: 2.2083152,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
-      partnerUid: createdPartners[3].uid,
-      sport: createdSports[4].name,
-      address: '19 avenue de la Liberté, 92000 Nanterre',
-      latitude: 48.88837789999999,
-      longitude: 2.2083152,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
-      partnerUid: createdPartners[3].uid,
-      sport: createdSports[4].name,
-      address: '19 avenue de la Liberté, 92000 Nanterre',
-      latitude: 48.88837789999999,
-      longitude: 2.2083152,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
-    },
-    {
+      type: FieldType.PRIVATE,
       partnerUid: createdPartners[3].uid,
       sport: createdSports[2].name,
+      name: 'Forest Hill - Court Tennis 1',
       address: '19 avenue de la Liberté, 92000 Nanterre',
       latitude: 48.88837789999999,
       longitude: 2.2083152,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
+      status: VerificationStatus.APPROVED,
     },
     {
+      type: FieldType.PRIVATE,
       partnerUid: createdPartners[3].uid,
-      sport: createdSports[2].name,
+      sport: createdSports[4].name,
+      name: 'Forest Hill - Court Padel 1',
       address: '19 avenue de la Liberté, 92000 Nanterre',
       latitude: 48.88837789999999,
       longitude: 2.2083152,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
+      status: VerificationStatus.APPROVED,
+    },
+    // ? Terrains PUBLICS (sans partenaire) - 50 terrains
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Terrain Public - Parc des Buttes-Chaumont',
+      address: '1 Rue Botzaris, 75019 Paris',
+      latitude: 48.8806,
+      longitude: 2.3844,
+      status: VerificationStatus.APPROVED,
     },
     {
-      partnerUid: createdPartners[3].uid,
-      sport: createdSports[5].name,
-      address: '19 avenue de la Liberté, 92000 Nanterre',
-      latitude: 48.88837789999999,
-      longitude: 2.2083152,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: 'Playground Public - Jardin du Luxembourg',
+      address: '6 Rue de Médicis, 75006 Paris',
+      latitude: 48.8462,
+      longitude: 2.3372,
+      status: VerificationStatus.APPROVED,
     },
     {
-      partnerUid: createdPartners[3].uid,
-      sport: createdSports[5].name,
-      address: '19 avenue de la Liberté, 92000 Nanterre',
-      latitude: 48.88837789999999,
-      longitude: 2.2083152,
-      gameMode: 'FIVE_V_FIVE',
-      entryFee: 0,
-      isVerified: true,
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Stade Municipal Bagnolet',
+      address: '15 Avenue du Stade, 93170 Bagnolet',
+      latitude: 48.8645,
+      longitude: 2.4164,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: 'Terrain Basket - Parc de la Villette',
+      address: '211 Avenue Jean Jaurès, 75019 Paris',
+      latitude: 48.8938,
+      longitude: 2.39,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Stade Georges Carpentier',
+      address: '81 Boulevard Kellermann, 75013 Paris',
+      latitude: 48.8213,
+      longitude: 2.3502,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[3].name, // VOLLEYBALL
+      name: 'Terrain Volley - Berges de Seine',
+      address: 'Quai de la Seine, 75019 Paris',
+      latitude: 48.8841,
+      longitude: 2.3797,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Terrain Synthétique Montreuil',
+      address: 'Rue Gaston Monmousseau, 93100 Montreuil',
+      latitude: 48.8636,
+      longitude: 2.4434,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: 'City Stade République',
+      address: 'Place de la République, 75011 Paris',
+      latitude: 48.8677,
+      longitude: 2.3638,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Stade Léo Lagrange Vincennes',
+      address: 'Route de la Pyramide, 94300 Vincennes',
+      latitude: 48.8386,
+      longitude: 2.4276,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: 'Terrain Basket - Parc Montsouris',
+      address: 'Avenue Reille, 75014 Paris',
+      latitude: 48.8225,
+      longitude: 2.3372,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Stade Jules Ladoumègue',
+      address: '28 Boulevard Mortier, 75020 Paris',
+      latitude: 48.8677,
+      longitude: 2.4068,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[2].name, // TENNIS
+      name: 'Courts Tennis - Jardin du Ranelagh',
+      address: 'Avenue Ingres, 75016 Paris',
+      latitude: 48.8568,
+      longitude: 2.2715,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Terrain Football Pantin',
+      address: 'Avenue Édouard Vaillant, 93500 Pantin',
+      latitude: 48.8973,
+      longitude: 2.4013,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: 'Playground Stalingrad',
+      address: 'Place de la Bataille de Stalingrad, 75019 Paris',
+      latitude: 48.8838,
+      longitude: 2.3694,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Stade Municipal Aubervilliers',
+      address: 'Rue du Moutier, 93300 Aubervilliers',
+      latitude: 48.9119,
+      longitude: 2.3822,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[3].name, // VOLLEYBALL
+      name: 'Terrain Volley - Parc des Princes',
+      address: '24 Rue du Commandant Guilbaud, 75016 Paris',
+      latitude: 48.8414,
+      longitude: 2.2531,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'City Stade Bobigny',
+      address: 'Avenue Paul Vaillant-Couturier, 93000 Bobigny',
+      latitude: 48.9078,
+      longitude: 2.4389,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: "Terrain Basket - Canal de l'Ourcq",
+      address: 'Quai de la Marne, 75019 Paris',
+      latitude: 48.8876,
+      longitude: 2.3842,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Stade Émile Anthoine',
+      address: '9 Rue Jean Rey, 75015 Paris',
+      latitude: 48.8535,
+      longitude: 2.2917,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: 'Playground Belleville',
+      address: 'Rue de Belleville, 75020 Paris',
+      latitude: 48.8722,
+      longitude: 2.3894,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Terrain Synthétique Saint-Denis',
+      address: 'Rue de la République, 93200 Saint-Denis',
+      latitude: 48.9362,
+      longitude: 2.3574,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[2].name, // TENNIS
+      name: 'Tennis Municipal Issy',
+      address: 'Rue du Général Leclerc, 92130 Issy-les-Moulineaux',
+      latitude: 48.8241,
+      longitude: 2.2699,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Stade Pershing Vincennes',
+      address: 'Bois de Vincennes, 75012 Paris',
+      latitude: 48.8284,
+      longitude: 2.4451,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: 'City Stade Ménilmontant',
+      address: 'Rue de Ménilmontant, 75020 Paris',
+      latitude: 48.8692,
+      longitude: 2.3869,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Terrain Football Clichy',
+      address: 'Boulevard Jean Jaurès, 92110 Clichy',
+      latitude: 48.9044,
+      longitude: 2.3059,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: 'Playground Jaurès',
+      address: 'Place de la Bataille de Stalingrad, 75010 Paris',
+      latitude: 48.8813,
+      longitude: 2.3699,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Stade Municipal Levallois',
+      address: 'Rue Aristide Briand, 92300 Levallois-Perret',
+      latitude: 48.8938,
+      longitude: 2.2877,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[3].name, // VOLLEYBALL
+      name: 'Terrain Volley - Parc Monceau',
+      address: 'Boulevard de Courcelles, 75008 Paris',
+      latitude: 48.8799,
+      longitude: 2.3089,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'City Stade Ivry',
+      address: 'Avenue Georges Gosnat, 94200 Ivry-sur-Seine',
+      latitude: 48.8136,
+      longitude: 2.3854,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: 'Terrain Basket - Parc de Bercy',
+      address: 'Rue de Bercy, 75012 Paris',
+      latitude: 48.837,
+      longitude: 2.3806,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Stade Roger Le Gall',
+      address: "Avenue Maurice d'Ocagne, 75014 Paris",
+      latitude: 48.8252,
+      longitude: 2.3153,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: 'Playground Oberkampf',
+      address: 'Rue Oberkampf, 75011 Paris',
+      latitude: 48.8651,
+      longitude: 2.3762,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Terrain Football Villejuif',
+      address: 'Avenue de Stalingrad, 94800 Villejuif',
+      latitude: 48.789,
+      longitude: 2.3662,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[2].name, // TENNIS
+      name: 'Tennis Public Boulogne',
+      address: 'Route de la Reine, 92100 Boulogne-Billancourt',
+      latitude: 48.8352,
+      longitude: 2.2428,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'City Stade Créteil',
+      address: 'Avenue du Général de Gaulle, 94000 Créteil',
+      latitude: 48.7791,
+      longitude: 2.4597,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: 'Terrain Basket - Parc Floral',
+      address: 'Route de la Pyramide, 75012 Paris',
+      latitude: 48.8375,
+      longitude: 2.4447,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Stade Pierre de Coubertin',
+      address: '82 Avenue Georges Lafont, 75016 Paris',
+      latitude: 48.8452,
+      longitude: 2.2708,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: 'Playground Crimée',
+      address: 'Avenue de Flandre, 75019 Paris',
+      latitude: 48.8913,
+      longitude: 2.376,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Terrain Synthétique Champigny',
+      address: 'Rue du Général Leclerc, 94500 Champigny-sur-Marne',
+      latitude: 48.817,
+      longitude: 2.495,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[3].name, // VOLLEYBALL
+      name: 'Terrain Volley - Bois de Boulogne',
+      address: 'Allée de Longchamp, 75016 Paris',
+      latitude: 48.8626,
+      longitude: 2.2444,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'City Stade Maisons-Alfort',
+      address: 'Avenue du Général Leclerc, 94700 Maisons-Alfort',
+      latitude: 48.8033,
+      longitude: 2.4368,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: 'Terrain Basket - Parc Kellermann',
+      address: 'Boulevard Kellermann, 75013 Paris',
+      latitude: 48.8195,
+      longitude: 2.3533,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Stade Sébastien Charléty',
+      address: '99 Boulevard Kellermann, 75013 Paris',
+      latitude: 48.8182,
+      longitude: 2.3461,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: 'Playground Bastille',
+      address: 'Place de la Bastille, 75011 Paris',
+      latitude: 48.8532,
+      longitude: 2.3693,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Terrain Football Colombes',
+      address: "Avenue de l'Agent Sarre, 92700 Colombes",
+      latitude: 48.9223,
+      longitude: 2.2531,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[2].name, // TENNIS
+      name: 'Tennis Municipal Vanves',
+      address: 'Rue de la République, 92170 Vanves',
+      latitude: 48.8219,
+      longitude: 2.2906,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'City Stade Vitry',
+      address: 'Avenue Paul Vaillant-Couturier, 94400 Vitry-sur-Seine',
+      latitude: 48.7879,
+      longitude: 2.3939,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: 'Terrain Basket - Parc André Citroën',
+      address: 'Rue Balard, 75015 Paris',
+      latitude: 48.8429,
+      longitude: 2.275,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[0].name, // FOOTBALL
+      name: 'Stade Municipal Neuilly',
+      address: "Boulevard d'Inkermann, 92200 Neuilly-sur-Seine",
+      latitude: 48.8869,
+      longitude: 2.2676,
+      status: VerificationStatus.APPROVED,
+    },
+    {
+      type: FieldType.PUBLIC,
+      partnerUid: null,
+      sport: createdSports[1].name, // BASKETBALL
+      name: 'Playground Gambetta',
+      address: 'Place Gambetta, 75020 Paris',
+      latitude: 48.8644,
+      longitude: 2.3989,
+      status: VerificationStatus.APPROVED,
     },
   ];
 
-  const createdFields: { uid: string; sport: string; partnerUid: string; gameMode: string }[] = [];
-  
-  // Check if fields already exist for partners
-  const existingFields = await prisma.fields.findMany({
-    where: {
-      partnerUid: { in: createdPartners.map((p) => p.uid) },
-    },
-  });
+  const createdFields: {
+    uid: string;
+    sport: string;
+    partnerUid: string | null;
+    type: FieldType;
+    name: string | null;
+  }[] = [];
+
+  // Check if fields already exist
+  const existingFields = await prisma.fields.findMany();
 
   if (existingFields.length > 0) {
     console.log(`Found ${existingFields.length} existing fields, skipping field creation`);
@@ -472,216 +764,72 @@ async function seed() {
     for (const field of fields) {
       const createdField = await prisma.fields.create({
         data: {
-          partner: { connect: { uid: field.partnerUid } },
+          type: field.type,
+          partner: field.partnerUid ? { connect: { uid: field.partnerUid } } : undefined,
           sportRelation: { connect: { name: field.sport } },
+          name: field.name,
           address: field.address,
           shortAddress: field.address,
           latitude: field.latitude,
           longitude: field.longitude,
-          gameMode: field.gameMode as GameModes,
-          entryFee: field.entryFee,
-          isVerified: field.isVerified,
+          status: field.status,
         },
       });
-      console.log(`Field ${createdField.uid} has been created`);
+      console.log(`Field ${createdField.name} (${createdField.type}) has been created`);
       createdFields.push(createdField);
     }
   }
 
-  const partners_openingHours = [
-    // ? HOOPFACTORY
-    {
-      partnerUid: createdPartners[0].uid,
-      dayOfWeek: 1,
-      opening_time: '10:00',
-      closing_time: '12:00',
-    },
-    {
-      partnerUid: createdPartners[0].uid,
-      dayOfWeek: 2,
-      opening_time: '10:00',
-      closing_time: '12:00',
-    },
-    {
-      partnerUid: createdPartners[0].uid,
-      dayOfWeek: 3,
-      opening_time: '10:00',
-      closing_time: '12:00',
-    },
-    {
-      partnerUid: createdPartners[0].uid,
-      dayOfWeek: 4,
-      opening_time: '10:00',
-      closing_time: '12:00',
-    },
-    {
-      partnerUid: createdPartners[0].uid,
-      dayOfWeek: 5,
-      opening_time: '10:00',
-      closing_time: '12:00',
-    },
-    {
-      partnerUid: createdPartners[0].uid,
-      dayOfWeek: 6,
-      opening_time: '10:00',
-      closing_time: '22:00',
-    },
-    {
-      partnerUid: createdPartners[0].uid,
-      dayOfWeek: 0,
-      opening_time: '10:00',
-      closing_time: '22:00',
-    },
-    // ? THE ONE BALL
-    {
-      partnerUid: createdPartners[1].uid,
-      dayOfWeek: 1,
-      opening_time: '11:00',
-      closing_time: '23:00',
-    },
-    {
-      partnerUid: createdPartners[1].uid,
-      dayOfWeek: 2,
-      opening_time: '11:00',
-      closing_time: '23:00',
-    },
-    {
-      partnerUid: createdPartners[1].uid,
-      dayOfWeek: 3,
-      opening_time: '11:00',
-      closing_time: '23:00',
-    },
-    {
-      partnerUid: createdPartners[1].uid,
-      dayOfWeek: 4,
-      opening_time: '11:00',
-      closing_time: '23:00',
-    },
-    {
-      partnerUid: createdPartners[1].uid,
-      dayOfWeek: 5,
-      opening_time: '11:00',
-      closing_time: '23:00',
-    },
-    {
-      partnerUid: createdPartners[1].uid,
-      dayOfWeek: 6,
-      opening_time: '09:00',
-      closing_time: '20:00',
-    },
-    {
-      partnerUid: createdPartners[1].uid,
-      dayOfWeek: 0,
-      opening_time: '09:00',
-      closing_time: '23:00',
-    },
-    // ? STADIUM THIAS ORLY
-    {
-      partnerUid: createdPartners[2].uid,
-      dayOfWeek: 1,
-      opening_time: '10:00',
-      closing_time: '22:00',
-    },
-    {
-      partnerUid: createdPartners[2].uid,
-      dayOfWeek: 2,
-      opening_time: '10:00',
-      closing_time: '22:00',
-    },
-    {
-      partnerUid: createdPartners[2].uid,
-      dayOfWeek: 3,
-      opening_time: '10:00',
-      closing_time: '22:00',
-    },
-    {
-      partnerUid: createdPartners[2].uid,
-      dayOfWeek: 4,
-      opening_time: '10:00',
-      closing_time: '22:00',
-    },
+  // Création des créneaux (FieldSlots) pour les terrains PRIVÉS
+  console.log('Creating field slots for PRIVATE fields...');
+  const privateFields = createdFields.filter((f) => f.type === FieldType.PRIVATE);
 
-    {
-      partnerUid: createdPartners[2].uid,
-      dayOfWeek: 5,
-      opening_time: '10:00',
-      closing_time: '22:00',
-    },
-    {
-      partnerUid: createdPartners[2].uid,
-      dayOfWeek: 6,
-      opening_time: '10:00',
-      closing_time: '22:00',
-    },
-    {
-      partnerUid: createdPartners[2].uid,
-      dayOfWeek: 0,
-      opening_time: '10:00',
-      closing_time: '22:00',
-    },
-    // ? FOREST HILL LA DEFENSE
-    {
-      partnerUid: createdPartners[3].uid,
-      dayOfWeek: 1,
-      opening_time: '07:00',
-      closing_time: '23:00',
-    },
-    {
-      partnerUid: createdPartners[3].uid,
-      dayOfWeek: 2,
-      opening_time: '07:00',
-      closing_time: '23:00',
-    },
-    {
-      partnerUid: createdPartners[3].uid,
-      dayOfWeek: 3,
-      opening_time: '07:00',
-      closing_time: '23:00',
-    },
-    {
-      partnerUid: createdPartners[3].uid,
-      dayOfWeek: 4,
-      opening_time: '07:00',
-      closing_time: '23:00',
-    },
-    {
-      partnerUid: createdPartners[3].uid,
-      dayOfWeek: 5,
-      opening_time: '07:00',
-      closing_time: '23:00',
-    },
-    {
-      partnerUid: createdPartners[3].uid,
-      dayOfWeek: 6,
-      opening_time: '07:00',
-      closing_time: '22:00',
-    },
-    {
-      partnerUid: createdPartners[3].uid,
-      dayOfWeek: 0,
-      opening_time: '07:00',
-      closing_time: '22:00',
-    },
-  ];
+  const existingSlots = await prisma.fieldSlots.findMany({
+    take: 1,
+  });
 
-  for (const hours of partners_openingHours) {
-    await prisma.partnerOpeningHours.upsert({
-      where: {
-        partnerUid_dayOfWeek: {
-          partnerUid: hours.partnerUid,
-          dayOfWeek: hours.dayOfWeek,
-        },
-      },
-      update: {},
-      create: {
-        partner: { connect: { uid: hours.partnerUid } },
-        dayOfWeek: hours.dayOfWeek,
-        openTime: hours.opening_time,
-        closeTime: hours.closing_time,
-      },
-    });
+  if (existingSlots.length === 0) {
+    const today = new Date();
+    const createdSlots = [];
+
+    for (const field of privateFields) {
+      // Créer des créneaux pour les 30 prochains jours
+      for (let day = 0; day < 30; day++) {
+        const slotDate = new Date(today);
+        slotDate.setDate(today.getDate() + day);
+
+        // Créneaux de 10h à 22h, avec durées variées (60, 90 ou 120 minutes)
+        for (let hour = 10; hour < 22; hour++) {
+          const startTime = new Date(slotDate);
+          startTime.setHours(hour, 0, 0, 0);
+
+          const endTime = new Date(startTime);
+          const durationHours = [1, 1.5, 2][Math.floor(Math.random() * 3)]; // 60, 90 ou 120 minutes
+          endTime.setHours(startTime.getHours() + Math.floor(durationHours));
+          endTime.setMinutes(startTime.getMinutes() + (durationHours % 1) * 60);
+
+          // Varier les gameModes
+          const gameModes = [GameModes.FIVE_V_FIVE, GameModes.THREE_V_THREE, GameModes.FOUR_V_FOUR];
+          const gameMode = gameModes[hour % gameModes.length];
+
+          const slot = await prisma.fieldSlots.create({
+            data: {
+              fieldUid: field.uid,
+              startTime: startTime,
+              endTime: endTime,
+              gameMode: gameMode,
+              price: Math.random() > 0.5 ? 20.0 : 25.0, // Prix variable
+              isReserved: false,
+            },
+          });
+          createdSlots.push(slot);
+        }
+      }
+    }
+    console.log(`${createdSlots.length} field slots created for private fields`);
+  } else {
+    console.log('Field slots already exist, skipping creation');
   }
-  console.log('Opening hours populated');
 
   const users = [
     {
@@ -746,7 +894,7 @@ async function seed() {
       lastname: 'Fushiguro',
       birthdate: new Date('2001-07-22T00:00:00Z'),
       sex: Sex.MALE,
-      bio: 'Maître des shikigamis et élève de l’école d’exorcisme',
+      bio: "Maitre des shikigamis et eleve de l'ecole d'exorcisme",
       phone: '+33609032664',
       imageUrl: '1738433236109explore2.png',
     },
@@ -768,7 +916,7 @@ async function seed() {
       lastname: 'Gojo',
       birthdate: new Date('1989-12-07T00:00:00Z'),
       sex: Sex.MALE,
-      bio: 'L’exorciste le plus puissant avec les Six Yeux',
+      bio: "L'exorciste le plus puissant avec les Six Yeux",
       phone: '+33609032666',
       imageUrl: '1738433236109explore2.png',
     },
@@ -884,7 +1032,7 @@ async function seed() {
     console.log(`Created user: ${user.email}`);
   }
 
-  // Generate 150 sessions: 30 past + 120 upcoming
+  // Generate sessions with startTime and duration
   const allGameModes = [
     GameModes.TWO_V_TWO,
     GameModes.THREE_V_THREE,
@@ -910,55 +1058,72 @@ async function seed() {
     const allSessions = await prisma.sessions.findMany();
     createdSessions.push(...allSessions);
   } else {
-    // Generate 30 past sessions
-    console.log('Creating 30 past sessions...');
-    for (let i = 0; i < 30; i++) {
-      const daysAgo = Math.floor(Math.random() * 30) + 1; // 1-30 days ago
-      const startDate = new Date(today);
-      startDate.setDate(today.getDate() - daysAgo);
-      startDate.setHours(10 + Math.floor(Math.random() * 10), 0, 0, 0); // 10h-20h
+    console.log('Creating sessions...');
 
-      const endDate = new Date(startDate);
-      endDate.setHours(startDate.getHours() + 1 + Math.floor(Math.random() * 2)); // +1 to +3 hours
+    // Récupérer quelques slots disponibles pour les terrains privés
+    const availableSlots = await prisma.fieldSlots.findMany({
+      where: {
+        isReserved: false,
+      },
+      take: 50, // Augmenté pour plus de diversité
+    });
 
-      const createdAt = new Date(startDate);
-      createdAt.setDate(startDate.getDate() - Math.floor(Math.random() * 7) - 1); // created 1-7 days before
+    const publicFields = createdFields.filter((f) => f.type === FieldType.PUBLIC);
 
-      const field = createdFields[i % createdFields.length];
+    // Créer 50 sessions pour terrains PRIVÉS (avec réservation de slot, payant)
+    console.log('Creating 50 sessions for PRIVATE fields (paid) with slots...');
+    for (let i = 0; i < 50 && i < availableSlots.length; i++) {
+      const slot = availableSlots[i];
+      const field = privateFields.find((f) => f.uid === slot.fieldUid);
+      if (!field) continue;
+
       const creator = createdUsers[i % createdUsers.length];
       const gameMode = allGameModes[i % allGameModes.length];
+
+      const startDate = slot.startTime;
+      const endDate = slot.endTime;
 
       const createdSession = await prisma.sessions.create({
         data: {
           creatorUid: creator.uid,
           fieldUid: field.uid,
+          slotUid: slot.uid,
           sport: field.sport,
           gameMode: gameMode,
           startDate: startDate,
           endDate: endDate,
-          title: `Session passée ${i + 1}`,
+          title: `Session ${field.sport} - ${field.name}`,
           maxPlayersPerTeam: 5,
           minPlayersPerTeam: 3,
           teamsPerGame: 2,
-          description: `Session de ${field.sport} terminée`,
-          createdAt: createdAt,
+          description: `Session de ${field.sport} sur terrain privé`,
         },
       });
+
+      // Marquer le slot comme réservé
+      await prisma.fieldSlots.update({
+        where: { uid: slot.uid },
+        data: { isReserved: true },
+      });
+
       createdSessions.push(createdSession);
     }
 
-    // Generate 120 upcoming sessions
-    console.log('Creating 120 upcoming sessions...');
-    for (let i = 0; i < 120; i++) {
-      const daysAhead = Math.floor(Math.random() * 90) + 1; // 1-90 days ahead
+    // Créer 100 sessions pour terrains PUBLICS (sans slot, gratuit)
+    console.log('Creating 100 sessions for PUBLIC fields (free) without slots...');
+
+    for (let i = 0; i < 100; i++) {
+      const daysAhead = Math.floor(Math.random() * 30) + 1; // 1-30 jours
       const startDate = new Date(today);
       startDate.setDate(today.getDate() + daysAhead);
       startDate.setHours(10 + Math.floor(Math.random() * 10), 0, 0, 0); // 10h-20h
 
       const endDate = new Date(startDate);
-      endDate.setHours(startDate.getHours() + 1 + Math.floor(Math.random() * 2)); // +1 to +3 hours
+      const durationHours = [1, 1.5, 2][Math.floor(Math.random() * 3)]; // 1, 1.5 ou 2 heures
+      endDate.setHours(startDate.getHours() + Math.floor(durationHours));
+      endDate.setMinutes(startDate.getMinutes() + (durationHours % 1) * 60);
 
-      const field = createdFields[i % createdFields.length];
+      const field = publicFields[i % publicFields.length];
       const creator = createdUsers[i % createdUsers.length];
       const gameMode = allGameModes[i % allGameModes.length];
 
@@ -966,20 +1131,78 @@ async function seed() {
         data: {
           creatorUid: creator.uid,
           fieldUid: field.uid,
+          slotUid: null, // Pas de slot pour les terrains publics
           sport: field.sport,
           gameMode: gameMode,
           startDate: startDate,
           endDate: endDate,
-          title: `Session à venir ${i + 1}`,
+          title: `Session ${field.sport} - ${field.name || 'Terrain public'}`,
           maxPlayersPerTeam: 5,
           minPlayersPerTeam: 3,
           teamsPerGame: 2,
-          description: `Session de ${field.sport} prévue`,
+          description: `Session gratuite de ${field.sport} sur terrain public`,
         },
       });
       createdSessions.push(createdSession);
     }
-    console.log(`${createdSessions.length} sessions created (30 past + 120 upcoming)`);
+
+    console.log(`${createdSessions.length} sessions created (50 paid private + 100 free public)`);
+
+    // Créer des sessions spécifiques pour les terrains publics cmjpyq9ok000j57po1wk8y0mi et cmjpyq9om000l57pohqm85tqy
+    // avec des horaires et durées variées
+    console.log('Creating specific sessions for public fields with varied times and durations...');
+    const specificFieldUids = ['cmjpyq9ok000j57po1wk8y0mi', 'cmjpyq9om000l57pohqm85tqy'];
+    const days = [0, 1]; // 0 = aujourd'hui, 1 = demain
+
+    for (const fieldUid of specificFieldUids) {
+      const field = createdFields.find((f) => f.uid === fieldUid);
+      if (!field) {
+        console.log(`Field ${fieldUid} not found, skipping...`);
+        continue;
+      }
+
+      for (const dayOffset of days) {
+        for (let j = 0; j < 4; j++) {
+          const startDate = new Date(today);
+          startDate.setDate(today.getDate() + dayOffset);
+          const randomHour = 10 + Math.floor(Math.random() * 10); // 10h-20h
+          startDate.setHours(randomHour, 0, 0, 0);
+
+          const endDate = new Date(startDate);
+          const durationHours = [1, 1.5, 2][Math.floor(Math.random() * 3)]; // 60, 90 ou 120 minutes
+          endDate.setHours(startDate.getHours() + Math.floor(durationHours));
+          endDate.setMinutes(startDate.getMinutes() + (durationHours % 1) * 60);
+
+          const creator = createdUsers[j % createdUsers.length];
+          const gameMode = allGameModes[j % allGameModes.length];
+
+          const dayLabel = dayOffset === 0 ? "aujourd'hui" : 'demain';
+
+          const createdSession = await prisma.sessions.create({
+            data: {
+              creatorUid: creator.uid,
+              fieldUid: field.uid,
+              slotUid: null,
+              sport: field.sport,
+              gameMode: gameMode,
+              startDate: startDate,
+              endDate: endDate,
+              title: `Session ${field.sport} ${dayLabel} à ${randomHour}h - ${field.name || 'Terrain public'}`,
+              maxPlayersPerTeam: 5,
+              minPlayersPerTeam: 3,
+              teamsPerGame: 2,
+              description: `Session gratuite de ${field.sport} sur terrain public ${dayLabel} à ${randomHour}h`,
+            },
+          });
+          createdSessions.push(createdSession);
+          console.log(`Created session for field ${fieldUid} on ${dayLabel} at ${randomHour}h`);
+        }
+      }
+    }
+
+    console.log(
+      `Total: ${createdSessions.length} sessions created (including specific time slots)`,
+    );
   }
 
   const partnerUsers = [
@@ -1080,19 +1303,17 @@ async function seed() {
       console.log(`Created teams for ${i + 1}/${createdSessions.length} sessions`);
     }
   }
-  console.log(`${createdTeams.length} teams created `);
+  console.log(`${createdTeams.length} teams created`);
 
-  // Add some players to random teams (optional, just for demo purposes)
+  // Add some players to random teams
   console.log('Adding sample players to some teams...');
   const createdPlayers: { sessionUid: string; teamUid: string; userUid: string }[] = [];
 
-  // Add a few players to the first 20 sessions
+  // Add players to the first 20 sessions
   for (let i = 0; i < 20; i++) {
     const session = createdSessions[i];
-    // Get teams for this session
     const sessionTeams = createdTeams.filter((t) => t.sessionUid === session.uid);
 
-    // Add 2-3 random users to each team
     for (const team of sessionTeams) {
       const numPlayers = 2 + Math.floor(Math.random() * 2); // 2-3 players
       for (let j = 0; j < numPlayers; j++) {
@@ -1100,9 +1321,8 @@ async function seed() {
         try {
           const createdPlayer = await prisma.sessionPlayers.upsert({
             where: {
-              sessionUid_teamUid_userUid: {
+              sessionUid_userUid: {
                 sessionUid: session.uid,
-                teamUid: team.uid,
                 userUid: user.uid,
               },
             },
@@ -1126,6 +1346,7 @@ async function seed() {
   }
 
   console.log(`${createdPlayers.length} players added to sessions`);
+  console.log('✅ Seed completed successfully!');
 }
 
 seed()

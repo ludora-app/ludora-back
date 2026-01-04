@@ -9,6 +9,7 @@ enum TeamLabel {
 }
 
 enum GameModes {
+  ONE_V_ONE
   TWO_V_TWO
   THREE_V_THREE
   FOUR_V_FOUR
@@ -26,37 +27,39 @@ enum GameModes {
 model Sessions {
   uid               String    @id @default(cuid())
   fieldUid          String    @map("field_uid")
+  slotUid           String?   @unique @map("slot_uid")
   title             String?
+  
+
   startDate         DateTime  @map("start_date")
   endDate           DateTime  @map("end_date")
+  
   sport             String    @map("sport")
-  sportRelation     Sports    @relation(fields: [sport], references: [name])
   gameMode          GameModes @map("game_mode")
   level             Int       @default(0)
-  // visibility        Visibility
   creatorUid        String    @map("creator_uid")
   maxPlayersPerTeam Int       @map("max_players_per_team")
   teamsPerGame      Int       @map("teams_per_game")
   minPlayersPerTeam Int       @map("min_players_per_team")
   description       String?
+  
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
+
+  creator           Users              @relation(fields: [creatorUid], references: [uid])
+  field             Fields             @relation(fields: [fieldUid], references: [uid])
+  slot              FieldSlots?        @relation(fields: [slotUid], references: [uid])
+  sportRelation     Sports             @relation(fields: [sport], references: [name])
+  
   sessionInvitations SessionInvitations[]
+  sessionImages      SessionImages[]
+  sessionTeams       SessionTeams[]
+  sessionPlayers     SessionPlayers[]
 
-  sessionImages SessionImages[]
 
-  sessionTeams SessionTeams[]
-
-  sessionPlayers SessionPlayers[]
-
-  creator Users  @relation(fields: [creatorUid], references: [uid])
-  field   Fields @relation(fields: [fieldUid], references: [uid])
-
-  @@index([fieldUid])
-  @@index([startDate, endDate])
-  @@index([sport])
-  @@index([createdAt])
+  @@index([fieldUid, startDate, endDate]) 
+  
   @@schema("sessions")
 }
 
@@ -121,7 +124,7 @@ model SessionPlayers {
   team    SessionTeams @relation(fields: [teamUid], references: [uid])
   user    Users        @relation(fields: [userUid], references: [uid])
 
-  @@unique([sessionUid, teamUid, userUid])
+  @@unique([sessionUid, userUid])
   @@index([sessionUid])
   @@index([userUid])
   @@map("Session_players")

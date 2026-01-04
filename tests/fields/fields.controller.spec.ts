@@ -8,7 +8,6 @@ import { AuthB2BGuard } from '../../src/auth/guards/auth-b2b.guard';
 import { Sport } from '../../src/shared/constants/constants';
 import { CreatePublicFieldDto } from '../../src/fields/dto/input/create-public-field.dto';
 import { UpdateFieldDto } from '../../src/fields/dto/input/update-field.dto';
-import { UpdatePrivateFieldDto } from '../../src/fields/dto/input/update-private-field.dto';
 import { FieldFilterDto } from '../../src/fields/dto/input/field-filter.dto';
 
 describe('FieldsController', () => {
@@ -17,11 +16,8 @@ describe('FieldsController', () => {
 
   const mockFieldsService = {
     create: jest.fn(),
-    findAllVerified: jest.fn(),
-    findAllByPartnerUid: jest.fn(),
+    fieldAll: jest.fn(),
     findOne: jest.fn(),
-    updatePublicField: jest.fn(),
-    updatePartnerField: jest.fn(),
   };
 
   const mockAuthB2CGuard = {
@@ -203,7 +199,7 @@ describe('FieldsController', () => {
         totalCount: 1,
       };
 
-      mockFieldsService.findAllVerified.mockResolvedValue(mockResponse);
+      mockFieldsService.fieldAll.mockResolvedValue(mockResponse);
 
       const result = await controller.findAllVerified(filter);
 
@@ -211,7 +207,7 @@ describe('FieldsController', () => {
         data: mockResponse,
         message: 'Fields fetched successfully',
       });
-      expect(mockFieldsService.findAllVerified).toHaveBeenCalledWith(filter);
+      expect(mockFieldsService.fieldAll).toHaveBeenCalledWith(filter);
     });
 
     it('should handle empty results', async () => {
@@ -225,7 +221,7 @@ describe('FieldsController', () => {
         totalCount: 0,
       };
 
-      mockFieldsService.findAllVerified.mockResolvedValue(mockResponse);
+      mockFieldsService.fieldAll.mockResolvedValue(mockResponse);
 
       const result = await controller.findAllVerified(filter);
 
@@ -258,81 +254,12 @@ describe('FieldsController', () => {
         totalCount: 1,
       };
 
-      mockFieldsService.findAllVerified.mockResolvedValue(mockResponse);
+      mockFieldsService.fieldAll.mockResolvedValue(mockResponse);
 
       const result = await controller.findAllVerified(filter);
 
       expect(result.data.nextCursor).toBe('field-3');
-      expect(mockFieldsService.findAllVerified).toHaveBeenCalledWith(filter);
-    });
-  });
-
-  describe('findAllByPartnerUid', () => {
-    it('should return fields for a specific partner', async () => {
-      const partnerUid = 'partner-uid-1';
-      const filter: FieldFilterDto = {
-        limit: 10,
-      };
-
-      const mockRequest = {
-        user: {
-          organisationUid: partnerUid,
-        },
-      } as any;
-
-      const mockResponse = {
-        items: [
-          {
-            uid: 'field-1',
-            name: 'Partner Field',
-            address: 'Partner Address',
-            sport: Sport.FOOTBALL,
-            latitude: 48.8566,
-            longitude: 2.3522,
-            gameMode: null,
-            fieldImages: [],
-          },
-        ],
-        nextCursor: null,
-        totalCount: 1,
-      };
-
-      mockFieldsService.findAllByPartnerUid.mockResolvedValue(mockResponse);
-
-      const result = await controller.findAllByPartnerUid(mockRequest, filter);
-
-      expect(result).toEqual({
-        data: mockResponse,
-        message: 'Fields fetched successfully',
-      });
-      expect(mockFieldsService.findAllByPartnerUid).toHaveBeenCalledWith(partnerUid, filter);
-    });
-
-    it('should handle filters for partner fields', async () => {
-      const partnerUid = 'partner-uid-1';
-      const filter: FieldFilterDto = {
-        limit: 5,
-        sports: [Sport.BASKETBALL],
-        name: 'Court',
-      };
-
-      const mockRequest = {
-        user: {
-          organisationUid: partnerUid,
-        },
-      } as any;
-
-      const mockResponse = {
-        items: [],
-        nextCursor: null,
-        totalCount: 0,
-      };
-
-      mockFieldsService.findAllByPartnerUid.mockResolvedValue(mockResponse);
-
-      await controller.findAllByPartnerUid(mockRequest, filter);
-
-      expect(mockFieldsService.findAllByPartnerUid).toHaveBeenCalledWith(partnerUid, filter);
+      expect(mockFieldsService.fieldAll).toHaveBeenCalledWith(filter);
     });
   });
 
@@ -371,134 +298,6 @@ describe('FieldsController', () => {
 
       await expect(controller.findOne(uid)).rejects.toThrow(NotFoundException);
       expect(mockFieldsService.findOne).toHaveBeenCalledWith(uid);
-    });
-  });
-
-  describe('updatePublicField', () => {
-    it('should update a public field', async () => {
-      const uid = 'field-uid-1';
-      const updateDto: UpdateFieldDto = {
-        name: 'Updated Field Name',
-        address: '456 New St',
-      };
-
-      mockFieldsService.updatePublicField.mockResolvedValue(undefined);
-
-      const result = await controller.updatePublicField(uid, updateDto);
-
-      expect(result).toBeUndefined();
-      expect(mockFieldsService.updatePublicField).toHaveBeenCalledWith(uid, updateDto);
-    });
-
-    it('should update only name', async () => {
-      const uid = 'field-uid-1';
-      const updateDto: UpdateFieldDto = {
-        name: 'Just Name Update',
-      };
-
-      mockFieldsService.updatePublicField.mockResolvedValue(undefined);
-
-      await controller.updatePublicField(uid, updateDto);
-
-      expect(mockFieldsService.updatePublicField).toHaveBeenCalledWith(uid, updateDto);
-    });
-
-    it('should update verification status', async () => {
-      const uid = 'field-uid-1';
-      const updateDto: UpdateFieldDto = {
-        isVerified: true,
-      };
-
-      mockFieldsService.updatePublicField.mockResolvedValue(undefined);
-
-      await controller.updatePublicField(uid, updateDto);
-
-      expect(mockFieldsService.updatePublicField).toHaveBeenCalledWith(uid, updateDto);
-    });
-  });
-
-  describe('updatePartnerField', () => {
-    it('should update a partner field', async () => {
-      const uid = 'field-uid-1';
-      const partnerUid = 'partner-uid-1';
-      const updateDto: UpdatePrivateFieldDto = {
-        name: 'Updated Partner Field',
-        entryFee: 50,
-      };
-
-      const mockRequest = {
-        user: {
-          organisationUid: partnerUid,
-        },
-      } as any;
-
-      mockFieldsService.updatePartnerField.mockResolvedValue(undefined);
-
-      const result = await controller.updatePartnerField(mockRequest, uid, updateDto);
-
-      expect(result).toBeUndefined();
-      expect(mockFieldsService.updatePartnerField).toHaveBeenCalledWith(uid, partnerUid, updateDto);
-    });
-
-    it('should update entry fee and game mode', async () => {
-      const uid = 'field-uid-1';
-      const partnerUid = 'partner-uid-1';
-      const updateDto: UpdatePrivateFieldDto = {
-        entryFee: 100,
-        gameMode: 'COMPETITIVE' as any,
-      };
-
-      const mockRequest = {
-        user: {
-          organisationUid: partnerUid,
-        },
-      } as any;
-
-      mockFieldsService.updatePartnerField.mockResolvedValue(undefined);
-
-      await controller.updatePartnerField(mockRequest, uid, updateDto);
-
-      expect(mockFieldsService.updatePartnerField).toHaveBeenCalledWith(uid, partnerUid, updateDto);
-    });
-
-    it('should update address for partner field', async () => {
-      const uid = 'field-uid-1';
-      const partnerUid = 'partner-uid-1';
-      const updateDto: UpdatePrivateFieldDto = {
-        address: '789 Partner St',
-      };
-
-      const mockRequest = {
-        user: {
-          organisationUid: partnerUid,
-        },
-      } as any;
-
-      mockFieldsService.updatePartnerField.mockResolvedValue(undefined);
-
-      await controller.updatePartnerField(mockRequest, uid, updateDto);
-
-      expect(mockFieldsService.updatePartnerField).toHaveBeenCalledWith(uid, partnerUid, updateDto);
-    });
-
-    it('should update verification status for partner field', async () => {
-      const uid = 'field-uid-1';
-      const partnerUid = 'partner-uid-1';
-      const updateDto: UpdatePrivateFieldDto = {
-        isVerified: true,
-      };
-
-      const mockRequest = {
-        user: {
-          organisationUid: partnerUid,
-        },
-      } as any;
-
-      mockFieldsService.updatePartnerField.mockResolvedValue(undefined);
-
-      await controller.updatePartnerField(mockRequest, uid, updateDto);
-
-      expect(mockFieldsService.updatePartnerField).toHaveBeenCalledWith(uid, partnerUid, updateDto);
     });
   });
 });

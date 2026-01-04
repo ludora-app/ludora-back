@@ -1,41 +1,92 @@
 // infrastructure.prisma
 
+enum FieldType {
+  PUBLIC
+  PRIVATE
+
+  @@map("FieldType")
+  @@schema("infrastructure")
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@map("VerificationStatus")
+  @@schema("infrastructure")
+}
+
+
 model Partners {
-  uid                 String                @id @default(cuid())
-  name                String                @unique
-  imageUrl            String?               @map("image_url")
-  address             String
-  latitude            Float
-  longitude           Float
-  phone               String
-  email               String                @unique
-  createdAt           DateTime              @default(now()) @map("created_at")
-  updatedAt           DateTime              @updatedAt @map("updated_at")
-  //todo: add stripe account uid
-  fields              Fields[]
-  partnerSports       PartnerSports[]
-  partnerOpeningHours PartnerOpeningHours[]
-  UserTokens          UserTokens[]
-  RefreshTokens       RefreshTokens[]
+  uid       String   @id @default(cuid())
+  name      String   @unique
+  imageUrl  String?  @map("image_url")
+  address   String
+  latitude  Float
+  longitude Float
+  phone     String
+  email     String   @unique
+  
+
+  rank      Int      @default(0) @map("rank") 
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userTokens    UserTokens[]
+  refreshTokens RefreshTokens[]
+  
+  fields        Fields[]
+  partnerSports PartnerSports[]
 
   @@schema("infrastructure")
 }
 
-model PartnerOpeningHours {
-  uid        String   @id @default(cuid())
-  partnerUid String   @map("partner_uid")
-  dayOfWeek  Int      @map("day_of_week")
-  openTime   String   @map("open_time")
-  closeTime  String   @map("close_time")
-  isClosed   Boolean  @default(false) @map("is_closed")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+model Fields {
+  uid          String             @id @default(cuid())
+  type         FieldType          @default(PUBLIC)
+  status       VerificationStatus @default(PENDING) @map("status")
+  sport        String             @map("sport")
+  partnerUid   String?            @map("partner_uid")
+  name         String?
+  address      String
+  shortAddress String             @map("short_address")
+  latitude     Float
+  longitude    Float
 
-  partner Partners @relation(fields: [partnerUid], references: [uid], onDelete: Cascade)
+  // Relations
+  fieldImages   FieldImages[]
+  fieldSlots    FieldSlots[]
+  partner       Partners?     @relation(fields: [partnerUid], references: [uid])
+  sportRelation Sports        @relation(fields: [sport], references: [name])
+  sessions      Sessions[]    
 
-  @@unique([partnerUid, dayOfWeek])
   @@index([partnerUid])
-  @@map("Partner_opening_hours")
+  @@index([longitude, latitude])
+  @@index([sport])
+  @@index([type])
+  @@index([status])
+  @@schema("infrastructure")
+}
+
+model FieldSlots {
+  uid        String    @id @default(cuid())
+  fieldUid   String    @map("field_uid")
+  startTime  DateTime  @map("start_time")
+  endTime    DateTime  @map("end_time")
+  gameMode   GameModes @default(FIVE_V_FIVE) @map("game_mode")
+  price      Float
+  isReserved Boolean   @default(false) @map("is_reserved")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  field   Fields    @relation(fields: [fieldUid], references: [uid], onDelete: Cascade)
+  session Sessions? 
+
+  @@index([fieldUid])
+  @@index([startTime, endTime])
+  @@map("Field_slots")
   @@schema("infrastructure")
 }
 
@@ -69,30 +120,6 @@ model Sports {
   userSports        UserSports[]
   sessions          Sessions[]
 
-  @@schema("infrastructure")
-}
-
-model Fields {
-  uid          String     @id @default(cuid())
-  sport        String     @map("sport")
-  partnerUid   String?    @map("partner_uid")
-  name         String?
-  address      String
-  shortAddress String     @map("short_address")
-  latitude     Float
-  longitude    Float
-  entryFee     Float?     @map("entry_fee")
-  gameMode     GameModes? @map("game_mode")
-  isVerified   Boolean    @map("is_verified")
-
-  fieldImages   FieldImages[]
-  partner       Partners?     @relation(fields: [partnerUid], references: [uid])
-  sportRelation Sports        @relation(fields: [sport], references: [name])
-  sessions      Sessions[]
-
-  @@index([partnerUid])
-  @@index([longitude, latitude])
-  @@index([sport])
   @@schema("infrastructure")
 }
 

@@ -11,7 +11,7 @@ import {
   IsString,
 } from 'class-validator';
 
-export class CreatePublicFieldDto {
+export class CreatePrivateFieldDto {
   @IsEnum(Sport)
   @IsNotEmpty()
   @ApiProperty({
@@ -24,27 +24,18 @@ export class CreatePublicFieldDto {
   @IsString()
   @IsNotEmpty()
   @ApiProperty({
+    description: 'The name of the field',
+    example: 'My Basketball Court',
+  })
+  name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
     description: 'The address of the field',
     example: '123 Main St, Anytown, USA',
   })
   address: string;
-
-  @IsString()
-  @IsOptional()
-  @ApiProperty({
-    description: 'The name of the field',
-    example: 'My Basketball Court',
-  })
-  name?: string;
-
-  @IsArray()
-  @IsNotEmpty()
-  @ArrayMaxSize(5)
-  @ApiProperty({
-    description: 'The images of the field',
-    type: [CreateImageDto],
-  })
-  images: CreateImageDto[];
 
   @IsNumber()
   @IsOptional()
@@ -69,4 +60,21 @@ export class CreatePublicFieldDto {
     example: '123 Main St, Anytown, USA',
   })
   shortAddress?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: 'The uid of the partner',
+    example: 'cmjzyy8j300084jt3dc8pswsu',
+  })
+  partnerUid: string;
+
+  @IsArray()
+  @IsOptional()
+  @ArrayMaxSize(5)
+  @ApiProperty({
+    description: 'The images of the field',
+    type: [CreateImageDto],
+  })
+  images?: CreateImageDto[];
 }

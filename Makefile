@@ -10,6 +10,19 @@ dev-up:
 dev-down:
 	docker compose -f compose.dev.yml --env-file .env.dev down
 
+# Reset PostgreSQL (remove volume and rebuild)
+dev-postgres-reset:
+	docker compose -f compose.dev.yml --env-file .env.dev down -v
+	docker compose -f compose.dev.yml --env-file .env.dev up --build ludora-db
+
+# Stop PostgreSQL only
+dev-postgres-down:
+	docker compose -f compose.dev.yml --env-file .env.dev down ludora-db
+
+# Start PostgreSQL only
+dev-postgres-up:
+	docker compose -f compose.dev.yml --env-file .env.dev up ludora-db
+
 # Run load tests
 dev-k6:
 	docker compose -f compose.dev.yml run --rm ludora-k6 run /scripts/auth/auth-load-test.js

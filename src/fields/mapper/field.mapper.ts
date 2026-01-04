@@ -1,63 +1,90 @@
-import { GameModes } from 'generated/prisma/browser';
+import { FieldType } from 'generated/prisma/client';
 import { Sport } from 'src/shared/constants/constants';
 
 import { FieldResponseDto } from '../dto/output/field-response';
+import { GAME_MODE_PLAYERS_COUNT } from '../constants/fields.constants';
 
-/**
- * @description Raw field structure with relations queried from the database
- */
-interface FieldWithRelations {
+interface FieldInput {
   uid: string;
-  name: string;
-  address: string;
+  name?: string;
+  type: FieldType;
   latitude: number;
-  entryFee?: number;
   longitude: number;
-  gameMode: GameModes;
-  isVerified?: boolean;
+  distance?: number;
   shortAddress: string;
   sport: Sport | string;
-  fieldImages: { order: number; url: string }[];
-  partner?: {
+  fieldImages?: Array<{ order: number; url: string }>;
+  fieldSlots?: Array<{
     uid: string;
-    partnerOpeningHours: {
-      dayOfWeek: number;
-      openTime: string;
-      closeTime: string;
-    }[];
-  } | null;
+    startTime: Date;
+    endTime: Date;
+    price: number;
+    gameMode: string;
+  }>;
+  sessions?: Array<{
+    uid: string;
+    startDate: Date;
+    endDate: Date;
+    maxPlayersPerTeam?: number;
+    teamsPerGame?: number;
+    sessionPlayers?: Array<any>;
+  }>;
 }
 
-/**
- * @description Mapper for the Field entity
- * Allows the response to be more friendly for the client by returning a more readable structure
- */
 export class FieldMapper {
-  static toDto(field: FieldWithRelations): FieldResponseDto {
+  static toDto(field: FieldInput, requestedDuration?: number): FieldResponseDto {
+    const calculateDuration = (start: Date, end: Date) =>
+      Math.round((end.getTime() - start.getTime()) / 60000);
+
     return {
-      address: field.address,
-      entryFee: field.entryFee ?? undefined,
-      fieldImages: field.fieldImages.map((image) => ({
-        url: image.url,
+      availabilities:
+        field.type === 'PRIVATE'
+          ? field.fieldSlots
+              ?.filter(
+                (slot) =>
+                  !requestedDuration ||
+                  calculateDuration(slot.startTime, slot.endTime) === requestedDuration,
+              )
+              .map((slot) => ({
+                endTime: slot.endTime,
+                price: slot.price,
+                pricePerPlayer: Number(
+                  (slot.price / GAME_MODE_PLAYERS_COUNT[slot.gameMode] || 1).toFixed(2),
+                ),
+                startTime: slot.startTime,
+                type: 'RESERVATION',
+                uid: slot.uid,
+              }))
+          : field.sessions
+              ?.filter(
+                (session) =>
+                  !requestedDuration ||
+                  calculateDuration(session.startDate, session.endDate) === requestedDuration,
+              )
+              .map((session) => ({
+                endTime: session.endDate,
+                startTime: session.startDate,
+                type: 'MATCH_TO_JOIN' as const,
+                uid: session.uid,
+              })),
+      fieldImages: field.fieldImages?.map((img) => ({
+        order: img.order,
+        url: img.url,
       })),
-      gameMode: field.gameMode,
-      isVerified: field.isVerified ?? undefined,
       latitude: field.latitude,
       longitude: field.longitude,
       name: field.name,
-      openingHours: field.partner?.partnerOpeningHours.map((hour) => ({
-        closeTime: hour.closeTime,
-        dayOfWeek: hour.dayOfWeek,
-        openTime: hour.openTime,
-      })),
-      partnerUid: field.partner?.uid,
       shortAddress: field.shortAddress,
       sport: field.sport as Sport,
+      type: field.type,
+
       uid: field.uid,
+
+      userDistance: field.distance ? Math.round(Number(field.distance)) : undefined,
     };
   }
 
-  static toCollectionDto(fields: FieldWithRelations[]): FieldResponseDto[] {
-    return fields.map(FieldMapper.toDto);
+  static toCollectionDto(fields: any[], duration?: number): FieldResponseDto[] {
+    return fields.map((f) => FieldMapper.toDto(f, duration));
   }
 }

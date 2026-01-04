@@ -74,9 +74,6 @@ describe('SessionsService', () => {
             fields: {
               findUnique: jest.fn(),
             },
-            partnerOpeningHours: {
-              findUnique: jest.fn(),
-            },
             sessions: {
               create: jest.fn(),
               findFirst: jest.fn(),
@@ -197,9 +194,6 @@ describe('SessionsService', () => {
     it('should create a session successfully', async () => {
       // Arrange
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue(
-        mockOpeningHours,
-      );
       (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
       (prismaService.sessions.create as jest.Mock).mockResolvedValue(mockCreatedSession);
       // mock transaction to use same session mocks
@@ -252,9 +246,6 @@ describe('SessionsService', () => {
       // Arrange
       const dtoWithoutTitle = { ...createSessionDto, title: undefined };
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue(
-        mockOpeningHours,
-      );
       (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
       (prismaService.sessions.create as jest.Mock).mockResolvedValue({
         ...mockCreatedSession,
@@ -305,35 +296,6 @@ describe('SessionsService', () => {
       );
     });
 
-    it('should throw BadRequestException if field is closed on the date', async () => {
-      // Arrange
-      (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue({
-        ...mockOpeningHours,
-        isClosed: true,
-      });
-
-      // Act & Assert
-      await expect(service.create(createSessionDto)).rejects.toThrow(
-        new BadRequestException('The field is closed on this date'),
-      );
-    });
-
-    it('should throw BadRequestException if session is outside opening hours', async () => {
-      // Arrange
-      (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue({
-        ...mockOpeningHours,
-        openTime: '16:00:00', // After session start time
-      });
-      (DateUtils.timeStringToMinutes as jest.Mock).mockReturnValueOnce(960); // 16 * 60
-
-      // Act & Assert
-      await expect(service.create(createSessionDto)).rejects.toThrow(
-        new BadRequestException('The session is outside the opening hours of the field'),
-      );
-    });
-
     it('should throw BadRequestException if session is in the past', async () => {
       // Arrange
       const pastStartDate = new Date('2022-01-01T12:00:00Z');
@@ -345,9 +307,6 @@ describe('SessionsService', () => {
       };
 
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue(
-        mockOpeningHours,
-      );
 
       // Act & Assert
       await expect(service.create(pastSessionDto)).rejects.toThrow(
@@ -363,9 +322,6 @@ describe('SessionsService', () => {
       };
 
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue(
-        mockOpeningHours,
-      );
 
       // Act & Assert
       await expect(service.create(invalidDateSessionDto)).rejects.toThrow(
@@ -376,9 +332,6 @@ describe('SessionsService', () => {
     it('should throw BadRequestException if there is a session conflict', async () => {
       // Arrange
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue(
-        mockOpeningHours,
-      );
       (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue({
         uid: 'existing-session-uid',
       });
@@ -687,9 +640,6 @@ describe('SessionsService', () => {
       // Arrange
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue(
-        mockOpeningHours,
-      );
       (prismaService.sessions.update as jest.Mock).mockResolvedValue(mockUpdatedSession);
 
       // Act
@@ -728,37 +678,6 @@ describe('SessionsService', () => {
       // Act & Assert
       await expect(service.update('session-uid-1', updateSessionDto)).rejects.toThrow(
         new NotFoundException('Field not found'),
-      );
-    });
-
-    it('should throw BadRequestException if field is closed on the date', async () => {
-      // Arrange
-      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
-      (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue({
-        ...mockOpeningHours,
-        isClosed: true,
-      });
-
-      // Act & Assert
-      await expect(service.update('session-uid-1', updateSessionDto)).rejects.toThrow(
-        new BadRequestException('The field is closed on this date'),
-      );
-    });
-
-    it('should throw BadRequestException if session is outside opening hours', async () => {
-      // Arrange
-      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
-      (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
-      (prismaService.partnerOpeningHours.findUnique as jest.Mock).mockResolvedValue({
-        ...mockOpeningHours,
-        openTime: '16:00:00', // After session start time
-      });
-      (DateUtils.timeStringToMinutes as jest.Mock).mockReturnValueOnce(960); // 16 * 60
-
-      // Act & Assert
-      await expect(service.update('session-uid-1', updateSessionDto)).rejects.toThrow(
-        new BadRequestException('The session is outside the opening hours of the field'),
       );
     });
   });
