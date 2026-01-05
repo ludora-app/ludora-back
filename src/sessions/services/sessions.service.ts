@@ -21,7 +21,7 @@ import { CreateSessionDto } from '../dto/input/create-session.dto';
 import { FindAllSessionsDto } from '../dto/input/session-filter.dto';
 import { SESSION_SUGGESTION_CONFIG } from '../constants/session.constants';
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
-import { SessionCollectionItem } from '../dto/output/session-collection.response';
+import { SessionCollectionItem } from '../dto/output/session-collection.response.dto';
 import { MySessionFilterDto, SessionOwnnership } from '../dto/input/my-session-filter.dto';
 
 /**

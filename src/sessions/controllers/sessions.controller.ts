@@ -34,15 +34,15 @@ import {
 
 import { SessionMapper } from '../mappers/session.mapper';
 import { SessionsService } from '../services/sessions.service';
-import { SessionResponse } from '../dto/output/session.response';
 import { UpdateSessionDto } from '../dto/input/update-session.dto';
 import { SessionFilterDto } from '../dto/input/session-filter.dto';
+import { SessionResponse } from '../dto/output/session.response.dto';
 import { MySessionFilterDto } from '../dto/input/my-session-filter.dto';
 import { CreateSessionFromRequestDto } from '../dto/input/create-session.dto';
 import {
   PaginatedSessionCollectionResponse,
   SessionCollectionItem,
-} from '../dto/output/session-collection.response';
+} from '../dto/output/session-collection.response.dto';
 
 @Controller('sessions')
 @UseGuards(AuthB2CGuard)

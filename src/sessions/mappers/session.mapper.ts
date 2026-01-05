@@ -1,8 +1,8 @@
 import { GameModes, Sessions } from 'generated/prisma/client';
 import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
 
-import { SessionResponse } from '../dto/output/session.response';
-import { SessionCollectionItem } from '../dto/output/session-collection.response';
+import { SessionResponse } from '../dto/output/session.response.dto';
+import { SessionCollectionItem } from '../dto/output/session-collection.response.dto';
 
 export interface RawSession {
   uid: string;

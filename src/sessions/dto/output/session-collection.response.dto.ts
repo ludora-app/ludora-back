@@ -2,9 +2,9 @@ import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { SessionSportLevel } from 'src/shared/constants/constants';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
-import { SessionResponse } from './session.response';
+import { SessionResponseDto } from './session.response.dto';
 
-export class TeamFromSessionCollectionItem {
+export class TeamFromSessionCollectionItemDto {
   @ApiProperty({
     description: 'Team name',
     example: 'Team A',
@@ -18,7 +18,7 @@ export class TeamFromSessionCollectionItem {
   numberOfPlayers: number;
 }
 
-export class SessionCollectionItem extends OmitType(SessionResponse, [
+export class SessionCollectionItemDto extends OmitType(SessionResponseDto, [
   'title',
   'description',
   'updatedAt',
@@ -43,9 +43,9 @@ export class SessionCollectionItem extends OmitType(SessionResponse, [
     description: 'Session teams',
     example: [{ numberOfPlayers: 2, teamName: 'Team A' }],
     readOnly: true,
-    type: [TeamFromSessionCollectionItem],
+    type: [TeamFromSessionCollectionItemDto],
   })
-  sessionTeams: TeamFromSessionCollectionItem[];
+  sessionTeams: TeamFromSessionCollectionItemDto[];
 
   @ApiProperty({
     description: 'Field latitude',
@@ -79,4 +79,5 @@ export class SessionCollectionItem extends OmitType(SessionResponse, [
 /**
  * @description standard response for a paginated session suggestion, used to type swagger return
  */
-export const PaginatedSessionCollectionResponse = toPaginationResponseType(SessionCollectionItem);
+export const PaginatedSessionCollectionResponseDto =
+  toPaginationResponseType(SessionCollectionItemDto);

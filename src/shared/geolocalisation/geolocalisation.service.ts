@@ -5,9 +5,9 @@ import { AddressComponentsTypes } from './dto/input/address-components-types';
 import {
   AddressResult,
   Coordinates,
-  GeolocalisationDetailsResponse,
+  GeolocalisationDetailsResponseDto,
   ShortAddressLocation,
-} from './dto/output/geolocalisation-details.response';
+} from './dto/output/geolocalisation-details.response.dto';
 
 @Injectable()
 export class GeolocalisationService {
@@ -106,7 +106,7 @@ export class GeolocalisationService {
   async getDetailedAddressFromCoordinates(
     lat: number,
     lng: number,
-  ): Promise<GeolocalisationDetailsResponse> {
+  ): Promise<GeolocalisationDetailsResponseDto> {
     if (!this.isValidCoordinate(lat, lng)) {
       throw new BadRequestException('Invalid GPS coordinates');
     }

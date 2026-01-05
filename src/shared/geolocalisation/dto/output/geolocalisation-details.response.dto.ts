@@ -1,4 +1,4 @@
-export interface GeolocalisationDetailsResponse {
+export interface GeolocalisationDetailsResponseDto {
   types: string[];
   place_id: string;
   geometry: Geometry;
