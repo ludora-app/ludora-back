@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
 
-import { FieldsService } from '../../src/fields/fields.service';
 import { PrismaService } from '../../src/prisma/prisma.service';
 import { StorageService } from '../../src/shared/storage/storage.service';
 import { GeolocalisationService } from '../../src/shared/geolocalisation/geolocalisation.service';
@@ -10,6 +9,7 @@ import { PartnersService } from '../../src/partners/partners.service';
 import { Sport, StorageFolderName } from '../../src/shared/constants/constants';
 import { CreatePublicFieldDto } from '../../src/fields/dto/input/create-public-field.dto';
 import { UpdateFieldDto } from '../../src/fields/dto/input/update-field.dto';
+import { FieldsService } from 'src/fields/services/fields.service';
 
 describe('FieldsService', () => {
   let service: FieldsService;

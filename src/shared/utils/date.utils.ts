@@ -1,4 +1,5 @@
 import * as dayjs from 'dayjs';
+import { BadRequestException } from '@nestjs/common';
 import 'dayjs/locale/fr';
 
 export class DateUtils {
@@ -100,6 +101,27 @@ export class DateUtils {
         return { max: 22, min: 17 };
       default:
         return { max: 24, min: 0 }; // Fallback
+    }
+  }
+
+  /**
+   * Check if the start and end dates are valid for the creation of a timed entity (session, field slot, etc.)
+   * @param earlierDate - The earlier date (Ex: start date)
+   * @param laterDate - The later date (Ex: end date)
+   * @returns
+   */
+  static checkValidityForCreation(earlierDate: string, laterDate: string): void {
+    const earlier = new Date(earlierDate);
+    const later = new Date(laterDate);
+    if (earlier < new Date()) {
+      throw new BadRequestException('The earlier date is in the past');
+    }
+
+    if (later < earlier) {
+      throw new BadRequestException('The later date must be after the earlier date');
+    }
+    if (earlier.getDay() !== later.getDay()) {
+      throw new BadRequestException('The earlier and later dates must be on the same day');
     }
   }
 }

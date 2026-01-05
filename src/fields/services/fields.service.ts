@@ -2,7 +2,6 @@ import { DateTime } from 'luxon';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ConflictException, Injectable } from '@nestjs/common';
-import { PartnersService } from 'src/partners/partners.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { Sport, StorageFolderName } from 'src/shared/constants/constants';
 import { RankedFieldResult } from 'src/sessions/interfaces/session-interface';
@@ -24,7 +23,6 @@ export class FieldsService {
     private readonly prisma: PrismaService,
     private readonly storageService: StorageService,
     private readonly geolocalisationService: GeolocalisationService,
-    private readonly partnersService: PartnersService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(FieldsService.name);

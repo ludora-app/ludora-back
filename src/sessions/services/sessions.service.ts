@@ -4,13 +4,14 @@ import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, Sessions } from 'generated/prisma/client';
+import { FieldSlotsService } from 'src/fields/services/field-slots.service';
 import { ConversationsService } from 'src/conversations/conversations.service';
-import { FieldType, SessionPlayers, SessionTeams } from 'generated/prisma/browser';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
 import { SessionScope, Sport, StorageFolderName } from 'src/shared/constants/constants';
+import { FieldSlots, FieldType, SessionPlayers, SessionTeams } from 'generated/prisma/browser';
 import { UserHourPreferencesService } from 'src/user-hour-preferences/user-hour-preferences.service';
 import { UserSportPreferencesService } from 'src/user-sport-preferences/user-sport-preferences.service';
 
@@ -39,6 +40,7 @@ export class SessionsService {
     private readonly conversationsService: ConversationsService,
     private readonly userHourPreferencesService: UserHourPreferencesService,
     private readonly userSportPreferencesService: UserSportPreferencesService,
+    private readonly fieldSlotsService: FieldSlotsService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(SessionsService.name);
@@ -62,16 +64,27 @@ export class SessionsService {
       throw new BadRequestException('Private fields require a field slot');
     }
 
-    //todo: add field slot validation
+    DateUtils.checkValidityForCreation(startDate, endDate);
 
-    // ? check if the session is in the past
-    if (start < new Date()) {
-      throw new BadRequestException('The session is in the past');
-    }
+    let existingSlot: FieldSlots | null = null;
+    //* PRIVATE FIELD VERIFICATIONS
+    if (field.type === FieldType.PRIVATE) {
+      existingSlot = await this.fieldSlotsService.findOne(slotUid);
+      if (!existingSlot) {
+        throw new BadRequestException('Field slot not found');
+      }
 
-    // ? check if the end date is after the start date
-    if (end < start) {
-      throw new BadRequestException('The end date must be after the start date');
+      if (existingSlot.isReserved) {
+        throw new BadRequestException('The slot is already reserved');
+      }
+      if (
+        !(
+          existingSlot.startTime.getTime() === start.getTime() &&
+          existingSlot.endTime.getTime() === end.getTime()
+        )
+      ) {
+        throw new BadRequestException('The slot is not available at this time');
+      }
     }
 
     // ? check if there is no session at this time
@@ -106,6 +119,7 @@ export class SessionsService {
           level,
           maxPlayersPerTeam: createSessionDto.maxPlayersPerTeam,
           minPlayersPerTeam: createSessionDto.minPlayersPerTeam,
+          slotUid: existingSlot?.uid,
           sport: field.sport as Sport,
           startDate: startDate,
           teamsPerGame: createSessionDto.teamsPerGame,
@@ -138,6 +152,10 @@ export class SessionsService {
       );
       return createdSession;
     });
+
+    if (field.type === FieldType.PRIVATE) {
+      await this.fieldSlotsService.markAsReserved(existingSlot.uid);
+    }
 
     return newSession;
   }
