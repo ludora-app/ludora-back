@@ -85,6 +85,7 @@ describe('FieldsService', () => {
       const createDto: CreatePublicFieldDto = {
         address: '123 Main St',
         sport: Sport.FOOTBALL,
+        name: 'Test Field',
         images: [
           { file: Buffer.from('test'), name: 'image1.jpg', order: 0 },
           { file: Buffer.from('test2'), name: 'image2.jpg', order: 1 },
@@ -150,6 +151,7 @@ describe('FieldsService', () => {
       const createDto: CreatePublicFieldDto = {
         address: '123 Main St',
         sport: Sport.FOOTBALL,
+        name: 'Test Field',
         images: [],
       };
 

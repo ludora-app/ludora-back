@@ -16,7 +16,7 @@ describe('FieldsController', () => {
 
   const mockFieldsService = {
     create: jest.fn(),
-    fieldAll: jest.fn(),
+    findAll: jest.fn(),
     findOne: jest.fn(),
   };
 
@@ -59,6 +59,7 @@ describe('FieldsController', () => {
       const createFieldDto: Omit<CreatePublicFieldDto, 'images'> = {
         address: '123 Main St',
         sport: Sport.FOOTBALL,
+        name: 'Test Field',
       };
 
       const mockImages = [
@@ -94,6 +95,7 @@ describe('FieldsController', () => {
       const createFieldDto: Omit<CreatePublicFieldDto, 'images'> = {
         address: '123 Main St',
         sport: Sport.FOOTBALL,
+        name: 'Test Field',
       };
 
       const mockResponse = {
@@ -122,6 +124,7 @@ describe('FieldsController', () => {
       const createFieldDto: Omit<CreatePublicFieldDto, 'images'> = {
         address: '123 Main St',
         sport: Sport.FOOTBALL,
+        name: 'Test Field',
       };
 
       const mockResponse = {
@@ -150,6 +153,7 @@ describe('FieldsController', () => {
       const createFieldDto: Omit<CreatePublicFieldDto, 'images'> = {
         address: '123 Main St',
         sport: Sport.FOOTBALL,
+        name: 'Test Field',
       };
 
       const mockResponse = {
@@ -199,7 +203,7 @@ describe('FieldsController', () => {
         totalCount: 1,
       };
 
-      mockFieldsService.fieldAll.mockResolvedValue(mockResponse);
+      mockFieldsService.findAll.mockResolvedValue(mockResponse);
 
       const result = await controller.findAllVerified(filter);
 
@@ -207,7 +211,7 @@ describe('FieldsController', () => {
         data: mockResponse,
         message: 'Fields fetched successfully',
       });
-      expect(mockFieldsService.fieldAll).toHaveBeenCalledWith(filter);
+      expect(mockFieldsService.findAll).toHaveBeenCalledWith(filter);
     });
 
     it('should handle empty results', async () => {
@@ -221,7 +225,7 @@ describe('FieldsController', () => {
         totalCount: 0,
       };
 
-      mockFieldsService.fieldAll.mockResolvedValue(mockResponse);
+      mockFieldsService.findAll.mockResolvedValue(mockResponse);
 
       const result = await controller.findAllVerified(filter);
 
@@ -254,12 +258,12 @@ describe('FieldsController', () => {
         totalCount: 1,
       };
 
-      mockFieldsService.fieldAll.mockResolvedValue(mockResponse);
+      mockFieldsService.findAll.mockResolvedValue(mockResponse);
 
       const result = await controller.findAllVerified(filter);
 
       expect(result.data.nextCursor).toBe('field-3');
-      expect(mockFieldsService.fieldAll).toHaveBeenCalledWith(filter);
+      expect(mockFieldsService.findAll).toHaveBeenCalledWith(filter);
     });
   });
 

@@ -93,7 +93,7 @@ export class FieldsController {
   async findAllVerified(
     @Query() filter: FieldFilterDto,
   ): Promise<PaginationResponseTypeDto<FieldResponseDto>> {
-    const data = await this.fieldsService.fieldAll(filter);
+    const data = await this.fieldsService.findAll(filter);
 
     return {
       data,

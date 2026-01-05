@@ -5,6 +5,7 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { PartnersService } from 'src/partners/partners.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { Sport, StorageFolderName } from 'src/shared/constants/constants';
+import { RankedFieldResult } from 'src/sessions/interfaces/session-interface';
 import { FieldType, Prisma, VerificationStatus } from 'generated/prisma/client';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
@@ -364,7 +365,7 @@ export class FieldsService {
     });
   }
 
-  async fieldAll(filter: FieldFilterDto): Promise<PaginatedDataDto<FieldResponseDto>> {
+  async findAll(filter: FieldFilterDto): Promise<PaginatedDataDto<FieldResponseDto>> {
     const {
       cursor,
       date,
@@ -446,11 +447,11 @@ export class FieldsService {
 
     // --- 5. SQL : FILTRE TYPE & SCORING FINAL ---
     const typeFilterSql =
-      type === 'PUBLIC'
-        ? Prisma.sql`AND f.type = 'PUBLIC'`
-        : type === 'PRIVATE'
-          ? Prisma.sql`AND f.type = 'PRIVATE' AND ${hasActiveSlotsSql}`
-          : Prisma.sql`AND ( (f.type = 'PRIVATE' AND ${hasActiveSlotsSql}) OR (f.type = 'PUBLIC') )`;
+      type === FieldType.PUBLIC
+        ? Prisma.sql`AND f.type = ${FieldType.PUBLIC}`
+        : type === FieldType.PRIVATE
+          ? Prisma.sql`AND f.type = ${FieldType.PRIVATE} AND ${hasActiveSlotsSql}`
+          : Prisma.sql`AND ( (f.type = ${FieldType.PRIVATE} AND ${hasActiveSlotsSql}) OR (f.type = ${FieldType.PUBLIC}) )`;
 
     const availabilityScoreSql = Prisma.sql`CASE WHEN ${hasActiveSlotsSql} THEN ${SCORES.AVAILABILITY_BONUS} ELSE 0 END`;
     const partnerScoreSql = Prisma.sql`CASE WHEN f.partner_uid IS NOT NULL THEN ${SCORES.PARTNER_BONUS} + (COALESCE(p.rank, 0) * ${SCORES.RANK_MULTIPLIER}) ELSE 0 END`;
@@ -463,7 +464,7 @@ export class FieldsService {
       `SET pg_trgm.word_similarity_threshold = ${FIELD_SUGGESTION_CONFIG.THRESHOLDS.WORD_SIMILARITY_THRESHOLD};`,
     );
 
-    const rankedResults = await this.prisma.$queryRaw<any[]>`
+    const rankedResults = await this.prisma.$queryRaw<RankedFieldResult[]>`
 
     SELECT 
       f.uid, (${distanceValueSql}) as distance_val, 
@@ -479,7 +480,8 @@ export class FieldsService {
 
     // --- 7. HYDRATATION & MAPPING ---
     const uids = rankedResults.map((r) => r.uid);
-    const fields = await this.prisma.fields.findMany({
+
+    const fieldsFromDb = await this.prisma.fields.findMany({
       include: {
         fieldImages: { select: { order: true, url: true }, take: 1 },
         fieldSlots: {
@@ -494,11 +496,12 @@ export class FieldsService {
       where: { uid: { in: uids } },
     });
 
+    const fieldMap = new Map(fieldsFromDb.map((f) => [f.uid, f]));
+
     const items = await Promise.all(
-      uids.map(async (uid) => {
-        const field = fields.find((f) => f.uid === uid);
-        const rawData = rankedResults.find((r) => r.uid === uid);
-        if (!field || !rawData) return null;
+      rankedResults.map(async (rawData) => {
+        const field = fieldMap.get(rawData.uid);
+        if (!field) return null;
 
         if (field.fieldImages?.[0]?.url) {
           field.fieldImages[0].url = await this.storageService.getSignedUrl(

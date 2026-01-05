@@ -35,7 +35,7 @@ export class FieldAvailabilityDto {
   })
   readonly type: 'RESERVATION' | 'MATCH_TO_JOIN';
 
-  @ApiPropertyOptional({ description: 'price of the availability', example: 25 })
+  @ApiPropertyOptional({ description: 'price of the field slot', example: 25 })
   readonly price?: number;
 
   @ApiPropertyOptional({ description: 'price per player of the availability', example: 10 })
@@ -80,7 +80,7 @@ export class FieldResponseDto {
   readonly availabilities?: FieldAvailabilityDto[];
 
   @ApiPropertyOptional({
-    description: 'distance to the field in meters',
+    description: 'distance (in meters) between the user and the field',
     example: 1200,
   })
   readonly userDistance?: number;

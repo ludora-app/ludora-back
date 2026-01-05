@@ -4,7 +4,7 @@ enum FieldType {
   PUBLIC
   PRIVATE
 
-  @@map("FieldType")
+  @@map("field_type")
   @@schema("infrastructure")
 }
 
@@ -13,7 +13,7 @@ enum VerificationStatus {
   APPROVED
   REJECTED
 
-  @@map("VerificationStatus")
+  @@map("verification_status")
   @@schema("infrastructure")
 }
 

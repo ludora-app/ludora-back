@@ -84,7 +84,7 @@ export class FieldMapper {
     };
   }
 
-  static toCollectionDto(fields: any[], duration?: number): FieldResponseDto[] {
+  static toCollectionDto(fields: FieldInput[], duration?: number): FieldResponseDto[] {
     return fields.map((f) => FieldMapper.toDto(f, duration));
   }
 }
