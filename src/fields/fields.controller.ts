@@ -36,7 +36,7 @@ import { FieldsService } from './fields.service';
 import { FieldFilterDto } from './dto/input/field-filter.dto';
 import { CreatePublicFieldDto } from './dto/input/create-public-field.dto';
 import { CreatePrivateFieldDto } from './dto/input/create-private-field.dto';
-import { FieldResponseDto, PaginatedFieldResponse } from './dto/output/field-response';
+import { FieldResponseDto, PaginatedFieldResponse } from './dto/output/field-response.dto';
 
 // ? Guards at endpoint level for the whole controller because some routes will be accessible by both B2C and B2B users.
 @Controller('fields')

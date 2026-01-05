@@ -10,7 +10,7 @@ import { CreateImageDto, LoginDto } from 'src/auth/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { PartnersService } from 'src/partners/partners.service';
-import { CreatePartnerDto } from 'src/partners/dto/create-partner.dto';
+import { CreatePartnerDto } from 'src/partners/dto/input/create-partner.dto';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import {
   BadRequestException,

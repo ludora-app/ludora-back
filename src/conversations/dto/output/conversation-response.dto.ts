@@ -3,7 +3,7 @@ import { ConversationType } from 'generated/prisma/enums';
 import { ConversationMembers, Messages } from 'generated/prisma/browser';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
-export class ConversationResponse {
+export class ConversationResponseDto {
   @ApiProperty({
     description: 'Conversation creation date',
     example: '2025-01-01T00:00:00.000Z',
@@ -70,4 +70,4 @@ export class ConversationResponse {
   messages?: Messages[];
 }
 
-export const PaginatedConversationResponse = toPaginationResponseType(ConversationResponse);
+export const PaginatedConversationResponseDto = toPaginationResponseType(ConversationResponseDto);

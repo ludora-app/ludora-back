@@ -5,7 +5,7 @@ import { Sport } from 'src/shared/constants/constants';
 /**
  * @description standard response for a Session resource
  */
-export class SessionResponse {
+export class SessionResponseDto {
   @ApiProperty({
     description: 'Session creation date',
     example: '2025-05-10T22:30:32.525Z',

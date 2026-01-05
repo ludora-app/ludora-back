@@ -22,7 +22,7 @@ export class FlattenedSessionPlayer {
   readonly imageUrl: string | null;
 }
 
-export class SessionTeamResponse {
+export class SessionTeamResponseDto {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
   readonly uid: string;
 
@@ -54,4 +54,4 @@ export class SessionTeamResponse {
   readonly Session_players?: FlattenedSessionPlayer[];
 }
 
-export const PaginatedSessionTeamResponse = toPaginationResponseType(SessionTeamResponse);
+export const PaginatedSessionTeamResponseDto = toPaginationResponseType(SessionTeamResponseDto);

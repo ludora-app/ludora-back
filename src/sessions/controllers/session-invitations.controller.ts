@@ -38,8 +38,8 @@ import { UpdateSessionInvitationDto } from '../dto/input/update-session-invitati
 import { SessionInvitationFilterDto } from '../dto/input/session-invitation-filter.dto';
 import { CreateSessionInvitationDto } from '../dto/input/create-session-invitation.dto';
 import {
-  PaginatedSessionInvitationResponse,
-  SessionInvitationResponse,
+  PaginatedSessionInvitationResponseDto,
+  SessionInvitationResponseDto,
 } from '../dto/output/session-invitation-response';
 
 @Controller('session-invitations')
@@ -51,7 +51,7 @@ export class SessionInvitationsController {
   @Protected()
   @UseGuards(AuthB2CGuard)
   @ApiOperation({ summary: 'Create a new session invitation' })
-  @ApiCreatedResponse({ type: ResponseTypeDto<SessionInvitationResponse> })
+  @ApiCreatedResponse({ type: ResponseTypeDto<SessionInvitationResponseDto> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiConflictResponse({ type: ConflictResponseDto })
@@ -59,7 +59,7 @@ export class SessionInvitationsController {
   async create(
     @Req() request: Request,
     @Body() createSessionInvitationDto: CreateSessionInvitationDto,
-  ): Promise<ResponseTypeDto<SessionInvitationResponse>> {
+  ): Promise<ResponseTypeDto<SessionInvitationResponseDto>> {
     const senderUid = request['user'].uid;
 
     const invitation = await this.sessionInvitationsService.create(
@@ -80,14 +80,14 @@ export class SessionInvitationsController {
   @Get('list-by-user/collection/:userUid')
   @Protected()
   @ApiOperation({ summary: 'Get all session invitations by user ID' })
-  @ApiOkResponse({ type: PaginatedSessionInvitationResponse })
+  @ApiOkResponse({ type: PaginatedSessionInvitationResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findAllByUserId(
     @Param('userUid') userUid: string,
     @Query() sessionInvitationFilterDto: SessionInvitationFilterDto,
-  ): Promise<PaginationResponseTypeDto<SessionInvitationResponse>> {
+  ): Promise<PaginationResponseTypeDto<SessionInvitationResponseDto>> {
     const sessionInvitations = await this.sessionInvitationsService.findAllByReceiverId(
       userUid,
       sessionInvitationFilterDto,
@@ -102,14 +102,14 @@ export class SessionInvitationsController {
   @Get('list-by-session/collection/:sessionUid')
   @Protected()
   @ApiOperation({ summary: 'Get all session invitations by session ID' })
-  @ApiOkResponse({ type: PaginatedSessionInvitationResponse })
+  @ApiOkResponse({ type: PaginatedSessionInvitationResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findAllBySessionId(
     @Param('sessionUid') sessionUid: string,
     @Query() sessionInvitationFilterDto: SessionInvitationFilterDto,
-  ): Promise<PaginationResponseTypeDto<SessionInvitationResponse>> {
+  ): Promise<PaginationResponseTypeDto<SessionInvitationResponseDto>> {
     const sessionInvitations = await this.sessionInvitationsService.findAllBySessionId(
       sessionUid,
       sessionInvitationFilterDto,
@@ -124,14 +124,14 @@ export class SessionInvitationsController {
   @Get(':sessionUid/:receiverUid')
   @Protected()
   @ApiOperation({ summary: 'Get a session invitation by session ID and receiver ID' })
-  @ApiOkResponse({ type: ResponseTypeDto<SessionInvitationResponse> })
+  @ApiOkResponse({ type: ResponseTypeDto<SessionInvitationResponseDto> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   async findOne(
     @Param('sessionUid') sessionUid: string,
     @Param('receiverUid') receiverUid: string,
-  ): Promise<ResponseTypeDto<SessionInvitationResponse>> {
+  ): Promise<ResponseTypeDto<SessionInvitationResponseDto>> {
     const invitation = await this.sessionInvitationsService.findOne(sessionUid, receiverUid);
 
     if (!invitation) {

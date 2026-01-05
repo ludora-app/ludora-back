@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { InvitationStatus } from 'generated/prisma/client';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
-export class SessionInvitationResponse {
+export class SessionInvitationResponseDto {
   @ApiProperty({
     description: "Session invitation's session ID",
     example: 'cmajhjkjf000bq77q4b5ugn8b',
@@ -54,5 +54,6 @@ export class SessionInvitationResponse {
 /**
  * @description standard response for a paginated session invitation, used to type swagger return
  */
-export const PaginatedSessionInvitationResponse =
-  toPaginationResponseType(SessionInvitationResponse);
+export const PaginatedSessionInvitationResponseDto = toPaginationResponseType(
+  SessionInvitationResponseDto,
+);

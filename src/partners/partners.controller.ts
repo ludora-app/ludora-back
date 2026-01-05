@@ -3,7 +3,7 @@ import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 
 import { PartnersService } from './partners.service';
-import { CreatePartnerDto } from './dto/create-partner.dto';
+import { CreatePartnerDto } from './dto/input/create-partner.dto';
 
 @Controller('partners')
 export class PartnersController {

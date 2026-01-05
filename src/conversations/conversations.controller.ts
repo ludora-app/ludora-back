@@ -35,8 +35,8 @@ import { ConversationsService } from './conversations.service';
 import { CreateMessageDto } from './dto/input/create-message.dto';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
 import {
-  ConversationResponse,
-  PaginatedConversationResponse,
+  ConversationResponseDto,
+  PaginatedConversationResponseDto,
 } from './dto/output/conversation-response.dto';
 
 @Controller('conversations')
@@ -52,7 +52,7 @@ export class ConversationsController {
   @UseGuards(DevOnlyGuard)
   @Protected()
   @ApiOperation({ summary: 'DEV ONLY:Create mock conversations' })
-  @ApiOkResponse({ type: ConversationResponse })
+  @ApiOkResponse({ type: ConversationResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
@@ -64,14 +64,14 @@ export class ConversationsController {
   @Get('/list/collection')
   @Protected()
   @ApiOperation({ summary: 'Get all conversations' })
-  @ApiOkResponse({ type: PaginatedConversationResponse })
+  @ApiOkResponse({ type: PaginatedConversationResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findAllByUserUid(
     @Query() filters: ConversationFilterDto,
     @Req() request: Request,
-  ): Promise<PaginationResponseTypeDto<ConversationResponse>> {
+  ): Promise<PaginationResponseTypeDto<ConversationResponseDto>> {
     const userUid = request['user'].uid;
     const conversations = await this.conversationsService.findAllByUserUid(filters, userUid);
     return {
@@ -83,7 +83,7 @@ export class ConversationsController {
   @Get(':uid')
   @Protected()
   @ApiOperation({ summary: 'Get a conversation by uid' })
-  @ApiOkResponse({ type: ConversationResponse })
+  @ApiOkResponse({ type: ConversationResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiForbiddenResponse({ type: ForbiddenResponseDto })

@@ -5,7 +5,7 @@ import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-re
 /**
  * @description standard response for a userHourPreference resource
  */
-export class UserHourPreferenceResponse {
+export class UserHourPreferenceResponseDto {
   @ApiProperty({
     description: "Entity's creation date",
     example: '2025-05-10T22:30:32.525Z',
@@ -48,6 +48,6 @@ export class UserHourPreferenceResponse {
 /**
  * @description standard response for a paginated userHourPreference resource, used to type swagger return
  */
-export const PaginatedUserHourPreferenceResponse = toPaginationResponseType(
-  UserHourPreferenceResponse,
+export const PaginatedUserHourPreferenceResponseDto = toPaginationResponseType(
+  UserHourPreferenceResponseDto,
 );

@@ -1,8 +1,8 @@
 import { GameModes, Sessions } from 'generated/prisma/client';
 import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
 
-import { SessionResponse } from '../dto/output/session.response';
-import { SessionCollectionItem } from '../dto/output/session-collection.response';
+import { SessionResponseDto } from '../dto/output/session.response.dto';
+import { SessionCollectionItemDto } from '../dto/output/session-collection.response.dto';
 
 export interface RawSession {
   uid: string;
@@ -33,14 +33,14 @@ export interface RawSession {
  * without having to cast it in the controller nor change the prisma schemas
  */
 export class SessionMapper {
-  static toDto(session: Sessions): SessionResponse {
+  static toDto(session: Sessions): SessionResponseDto {
     return {
       ...session,
       sport: session.sport as Sport,
     };
   }
 
-  static toSessionResponses(sessions: Sessions[]): SessionResponse[] {
+  static toSessionResponses(sessions: Sessions[]): SessionResponseDto[] {
     return sessions.map(SessionMapper.toDto);
   }
 
@@ -52,7 +52,7 @@ export class SessionMapper {
   static fromRawToCollectionItem(
     session: RawSession,
     distanceMap: Map<string, { distance: number | null; index: number }>,
-  ): SessionCollectionItem {
+  ): SessionCollectionItemDto {
     const { field, sessionTeams, ...sessionData } = session;
     const distData = distanceMap.get(session.uid);
 
@@ -90,7 +90,7 @@ export class SessionMapper {
   static fromRawToSessionResponses(
     sessions: RawSession[],
     distanceMap: Map<string, { distance: number | null; index: number }>,
-  ): SessionCollectionItem[] {
+  ): SessionCollectionItemDto[] {
     return sessions.map((session) => SessionMapper.fromRawToCollectionItem(session, distanceMap));
   }
 }
