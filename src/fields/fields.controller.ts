@@ -32,7 +32,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { FieldsService } from './fields.service';
+import { FieldsService } from './services/fields.service';
 import { FieldFilterDto } from './dto/input/field-filter.dto';
 import { CreatePublicFieldDto } from './dto/input/create-public-field.dto';
 import { CreatePrivateFieldDto } from './dto/input/create-private-field.dto';

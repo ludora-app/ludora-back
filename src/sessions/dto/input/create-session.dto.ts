@@ -36,6 +36,15 @@ export class CreateSessionDto {
   })
   fieldUid: string;
 
+  @IsString()
+  @IsOptional()
+  @ApiProperty({
+    description: 'The uid of the field slot',
+    example: 'cmajhjkjf000bq77q4b5ugn8b',
+    required: false,
+  })
+  slotUid?: string;
+
   @IsEnum(GameModes)
   @IsNotEmpty()
   @ApiProperty({

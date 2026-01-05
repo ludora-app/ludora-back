@@ -4,8 +4,8 @@ import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, Sessions } from 'generated/prisma/client';
-import { SessionPlayers, SessionTeams } from 'generated/prisma/browser';
 import { ConversationsService } from 'src/conversations/conversations.service';
+import { FieldType, SessionPlayers, SessionTeams } from 'generated/prisma/browser';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
@@ -45,7 +45,7 @@ export class SessionsService {
   }
 
   async create(createSessionDto: CreateSessionDto): Promise<Sessions> {
-    const { endDate, fieldUid, level, startDate, userUid } = createSessionDto;
+    const { endDate, fieldUid, level, slotUid, startDate, userUid } = createSessionDto;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -57,6 +57,12 @@ export class SessionsService {
     if (!field) {
       throw new BadRequestException('Field not found');
     }
+
+    if (field.type === FieldType.PRIVATE && !slotUid) {
+      throw new BadRequestException('Private fields require a field slot');
+    }
+
+    //todo: add field slot validation
 
     // ? check if the session is in the past
     if (start < new Date()) {
