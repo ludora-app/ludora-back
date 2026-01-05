@@ -119,7 +119,7 @@ export class AuthB2BService {
     const { deviceUid, email, password } = loginDto;
     const formattedEmail = email.toLowerCase();
 
-    const user = await this.userService.findOneByEmail(formattedEmail);
+    const user = await this.userService.findOneByEmail(formattedEmail, USERSELECT.login);
     if (!user) {
       this.logger.error(`User not found with email ${email}`);
       throw new NotFoundException('User not found');
