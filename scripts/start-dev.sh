@@ -6,9 +6,7 @@ set -e
 
 pnpm prisma generate
 
-envconsul -config=/etc/envconsul/config.hcl -once -- pnpm exec prisma migrate deploy
-
-envconsul -config=/etc/envconsul/config.hcl -once -- pnpm exec prisma db push
+envconsul -config=/etc/envconsul/config.hcl -once -- pnpm exec prisma db push --force-reset
 
 envconsul -config=/etc/envconsul/config.hcl -once -- pnpm run seed
 

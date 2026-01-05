@@ -1,4 +1,3 @@
-import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
@@ -17,10 +16,8 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
-  Patch,
   Post,
   Query,
-  Req,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -29,7 +26,6 @@ import {
   ApiConflictResponse,
   ApiConsumes,
   ApiCreatedResponse,
-  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -38,9 +34,8 @@ import {
 
 import { FieldsService } from './fields.service';
 import { FieldFilterDto } from './dto/input/field-filter.dto';
-import { UpdateFieldDto } from './dto/input/update-field.dto';
 import { CreatePublicFieldDto } from './dto/input/create-public-field.dto';
-import { UpdatePrivateFieldDto } from './dto/input/update-private-field.dto';
+import { CreatePrivateFieldDto } from './dto/input/create-private-field.dto';
 import { FieldResponseDto, PaginatedFieldResponse } from './dto/output/field-response';
 
 // ? Guards at endpoint level for the whole controller because some routes will be accessible by both B2C and B2B users.
@@ -98,7 +93,7 @@ export class FieldsController {
   async findAllVerified(
     @Query() filter: FieldFilterDto,
   ): Promise<PaginationResponseTypeDto<FieldResponseDto>> {
-    const data = await this.fieldsService.findAllVerified(filter);
+    const data = await this.fieldsService.findAll(filter);
 
     return {
       data,
@@ -106,20 +101,36 @@ export class FieldsController {
     };
   }
 
-  @Get('list-by-partner/collection')
-  @UseGuards(AuthB2BGuard)
+  @Post('private')
+  @UseGuards(AuthB2CGuard)
   @Protected()
-  @ApiOkResponse({ type: PaginatedFieldResponse })
+  @UseInterceptors(new FastifyFilesInterceptor('images'))
+  @ApiConsumes('multipart/form-data')
+  @ApiCreatedResponse({ type: ResponseTypeDto<FieldResponseDto> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get all fields by partner uid' })
-  async findAllByPartnerUid(@Req() request: Request, @Query() filter: FieldFilterDto) {
-    const partnerUid = request['user'].organisationUid;
-    const data = await this.fieldsService.findAllByPartnerUid(partnerUid, filter);
+  @ApiOperation({ summary: 'Create a private field' })
+  @HttpCode(HttpStatus.CREATED)
+  async createPrivateField(
+    @Body() createFieldDto: CreatePrivateFieldDto,
+    @UploadedFilesCustom() images: { buffer: Buffer; originalname: string }[],
+  ) {
+    const imagesDto = Array.isArray(images)
+      ? images.map((image, index) => ({
+          file: image.buffer,
+          name: image.originalname,
+          order: index,
+        }))
+      : [];
+
+    const response = await this.fieldsService.createPrivateField({
+      ...createFieldDto,
+      images: imagesDto,
+    });
+
     return {
-      data,
-      message: 'Fields fetched successfully',
+      data: response,
+      message: 'Private field created successfully',
     };
   }
 
@@ -145,36 +156,36 @@ export class FieldsController {
     };
   }
 
-  @Patch('update-public/:uid')
-  @UseGuards(AuthB2CGuard)
-  @Protected()
-  @ApiNoContentResponse({ description: 'Field updated successfully' })
-  @ApiBadRequestResponse({ type: BadRequestResponseDto })
-  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  @ApiNotFoundResponse({ type: NotFoundResponseDto })
-  @ApiOperation({ summary: 'Update a public field' })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async updatePublicField(@Param('uid') uid: string, @Body() updateFieldDto: UpdateFieldDto) {
-    return this.fieldsService.updatePublicField(uid, updateFieldDto);
-  }
+  // @Patch('update-public/:uid')
+  // @UseGuards(AuthB2CGuard)
+  // @Protected()
+  // @ApiNoContentResponse({ description: 'Field updated successfully' })
+  // @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  // @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  // @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  // @ApiOperation({ summary: 'Update a public field' })
+  // @HttpCode(HttpStatus.NO_CONTENT)
+  // async updatePublicField(@Param('uid') uid: string, @Body() updateFieldDto: UpdateFieldDto) {
+  //   return this.fieldsService.updatePublicField(uid, updateFieldDto);
+  // }
 
-  @Patch('update-private/:uid')
-  @UseGuards(AuthB2BGuard)
-  @Protected()
-  @ApiNoContentResponse({ description: 'Field updated successfully' })
-  @ApiBadRequestResponse({ type: BadRequestResponseDto })
-  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  @ApiNotFoundResponse({ type: NotFoundResponseDto })
-  @ApiOperation({ summary: 'Update a partner field' })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async updatePartnerField(
-    @Req() request: Request,
-    @Param('uid') uid: string,
-    @Body() updatePrivateFieldDto: UpdatePrivateFieldDto,
-  ) {
-    const partnerUid = request['user'].organisationUid;
-    return this.fieldsService.updatePartnerField(uid, partnerUid, updatePrivateFieldDto);
-  }
+  // @Patch('update-private/:uid')
+  // @UseGuards(AuthB2BGuard)
+  // @Protected()
+  // @ApiNoContentResponse({ description: 'Field updated successfully' })
+  // @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  // @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  // @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  // @ApiOperation({ summary: 'Update a partner field' })
+  // @HttpCode(HttpStatus.NO_CONTENT)
+  // async updatePartnerField(
+  //   @Req() request: Request,
+  //   @Param('uid') uid: string,
+  //   @Body() updatePrivateFieldDto: UpdatePrivateFieldDto,
+  // ) {
+  //   const partnerUid = request['user'].organisationUid;
+  //   return this.fieldsService.updatePartnerField(uid, partnerUid, updatePrivateFieldDto);
+  // }
 
   // @Delete(':id')
   // remove(@Param('id') id: string) {

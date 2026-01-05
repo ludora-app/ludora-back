@@ -19,7 +19,7 @@ import { SessionTeamsService } from './session-teams.service';
 import { UpdateSessionDto } from '../dto/input/update-session.dto';
 import { CreateSessionDto } from '../dto/input/create-session.dto';
 import { FindAllSessionsDto } from '../dto/input/session-filter.dto';
-import { SESSION_SUGGESTION_CONFIG } from '../constants/session-constants';
+import { SESSION_SUGGESTION_CONFIG } from '../constants/session.constants';
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
 import { SessionCollectionItem } from '../dto/output/session-collection.response';
 import { MySessionFilterDto, SessionOwnnership } from '../dto/input/my-session-filter.dto';
@@ -49,7 +49,6 @@ export class SessionsService {
 
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const dayOfWeek = start.getUTCDay(); // 0 (sunday) to 6 (saturday)
 
     const field = await this.prisma.fields.findUnique({
       where: { uid: fieldUid },
@@ -57,29 +56,6 @@ export class SessionsService {
 
     if (!field) {
       throw new BadRequestException('Field not found');
-    }
-
-    const openingHours = await this.prisma.partnerOpeningHours.findUnique({
-      where: {
-        partnerUid_dayOfWeek: {
-          dayOfWeek: dayOfWeek,
-          partnerUid: field.partnerUid,
-        },
-      },
-    });
-
-    if (!openingHours || openingHours.isClosed) {
-      throw new BadRequestException('The field is closed on this date');
-    }
-
-    // ? convert start and end to minutes
-    const sessionStartMinutes = start.getUTCHours() * 60 + start.getUTCMinutes();
-    const sessionEndMinutes = end.getUTCHours() * 60 + end.getUTCMinutes();
-    const openMinutes = DateUtils.timeStringToMinutes(openingHours.openTime);
-    const closeMinutes = DateUtils.timeStringToMinutes(openingHours.closeTime);
-
-    if (sessionStartMinutes < openMinutes || sessionEndMinutes > closeMinutes) {
-      throw new BadRequestException('The session is outside the opening hours of the field');
     }
 
     // ? check if the session is in the past
@@ -120,7 +96,7 @@ export class SessionsService {
           description: createSessionDto.description,
           endDate: endDate,
           fieldUid: field.uid,
-          gameMode: field.gameMode,
+          gameMode: createSessionDto.gameMode,
           level,
           maxPlayersPerTeam: createSessionDto.maxPlayersPerTeam,
           minPlayersPerTeam: createSessionDto.minPlayersPerTeam,
@@ -568,10 +544,6 @@ export class SessionsService {
   async update(uid: string, updateSessionDto: UpdateSessionDto): Promise<Sessions> {
     const { endDate, startDate } = updateSessionDto;
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const dayOfWeek = start.getUTCDay(); // 0 (sunday) to 6 (saturday)
-
     const session = await this.findOne(uid);
 
     if (!session) {
@@ -584,27 +556,6 @@ export class SessionsService {
     });
     if (!field) {
       throw new NotFoundException('Field not found');
-    }
-
-    const openingHours = await this.prisma.partnerOpeningHours.findUnique({
-      where: {
-        partnerUid_dayOfWeek: {
-          dayOfWeek: dayOfWeek,
-          partnerUid: field.partnerUid,
-        },
-      },
-    });
-    if (!openingHours || openingHours.isClosed) {
-      throw new BadRequestException('The field is closed on this date');
-    }
-
-    const sessionStartMinutes = start.getUTCHours() * 60 + start.getUTCMinutes();
-    const sessionEndMinutes = end.getUTCHours() * 60 + end.getUTCMinutes();
-    const openMinutes = DateUtils.timeStringToMinutes(openingHours.openTime);
-    const closeMinutes = DateUtils.timeStringToMinutes(openingHours.closeTime);
-
-    if (sessionStartMinutes < openMinutes || sessionEndMinutes > closeMinutes) {
-      throw new BadRequestException('The session is outside the opening hours of the field');
     }
 
     const updatedSession = await this.prisma.sessions.update({

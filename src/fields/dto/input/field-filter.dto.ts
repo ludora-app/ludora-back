@@ -1,33 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { GameModes } from 'generated/prisma/enums';
 import { Transform, Type } from 'class-transformer';
 import { Sport } from 'src/shared/constants/constants';
-import { IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { FieldType, GameModes } from 'generated/prisma/enums';
+import { IsDateString, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class FieldFilterDto {
   @IsOptional()
-  @IsString()
-  @ApiProperty({
-    description: 'The name of the field',
-    example: 'Field 1',
-    required: false,
-  })
-  name?: string;
-
-  @IsOptional()
-  @IsString()
-  @ApiProperty({
-    description: 'The address of the field',
-    example: '123 Main St, Anytown, USA',
-    required: false,
-  })
-  address?: string;
-
-  @IsOptional()
   @Transform(({ value }) => {
-    // ? If it's already an array, return it as is
     if (Array.isArray(value)) return value;
-    // ? If it's a string, put it in an array
     return [value];
   })
   @IsEnum(Sport, { each: true })
@@ -41,10 +21,18 @@ export class FieldFilterDto {
   sports?: Sport[];
 
   @IsOptional()
+  @IsString()
+  @ApiProperty({
+    description: 'Search query',
+    example: 'Basketball',
+    required: false,
+    type: String,
+  })
+  search?: string;
+
+  @IsOptional()
   @Transform(({ value }) => {
-    // ? If it's already an array, return it as is
     if (Array.isArray(value)) return value;
-    // ? If it's a string, put it in an array
     return [value];
   })
   @IsEnum(GameModes, { each: true })
@@ -55,7 +43,45 @@ export class FieldFilterDto {
     isArray: true,
     required: false,
   })
-  gameModes?: GameModes[];
+  gameMode?: GameModes[];
+
+  @IsOptional()
+  @IsDateString()
+  @ApiProperty({
+    description: 'The start date of the field',
+    example: '2025-01-01T00:00:00.000Z',
+    required: false,
+    type: String,
+  })
+  date?: string;
+
+  @IsOptional()
+  @IsEnum(FieldType)
+  @ApiProperty({
+    description: 'Type of the field',
+    enum: FieldType,
+    example: FieldType.PUBLIC,
+    required: false,
+  })
+  type?: FieldType;
+
+  @IsOptional()
+  @ApiProperty({
+    description: 'Duration of the session',
+    example: 60,
+    required: false,
+    type: Number,
+  })
+  duration?: number;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    default: 'UTC',
+    description: 'User TimeZone',
+    example: 'Europe/Paris',
+  })
+  readonly timezone?: string;
 
   @IsOptional()
   @IsString()
@@ -88,7 +114,7 @@ export class FieldFilterDto {
     required: false,
     type: Number,
   })
-  latitude?: number;
+  userLat?: number;
 
   @IsOptional()
   @Type(() => Number)
@@ -99,7 +125,7 @@ export class FieldFilterDto {
     required: false,
     type: Number,
   })
-  longitude?: number;
+  userLon?: number;
 
   @IsOptional()
   @Type(() => Number)

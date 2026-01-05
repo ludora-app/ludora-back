@@ -30,8 +30,8 @@ RUN apt-get update && apt-get install -y \
 # Créer le répertoire pour la config envconsul
 RUN mkdir -p /etc/envconsul
 
-# Copie du script SQL d'initialisation
-COPY ./docker/postgres/enable-postgis.sql /docker-entrypoint-initdb.d/
+# Copie des scripts SQL d'initialisation
+COPY ./docker/postgres/enable-extentions.sql /docker-entrypoint-initdb.d/
 
 # Copie des scripts vault-auth et start-postgres
 COPY ./scripts/vault/vault-auth.sh /usr/local/bin/vault-auth.sh

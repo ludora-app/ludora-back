@@ -10,7 +10,6 @@ import { PartnersService } from '../../src/partners/partners.service';
 import { Sport, StorageFolderName } from '../../src/shared/constants/constants';
 import { CreatePublicFieldDto } from '../../src/fields/dto/input/create-public-field.dto';
 import { UpdateFieldDto } from '../../src/fields/dto/input/update-field.dto';
-import { UpdatePrivateFieldDto } from '../../src/fields/dto/input/update-private-field.dto';
 
 describe('FieldsService', () => {
   let service: FieldsService;
@@ -86,6 +85,7 @@ describe('FieldsService', () => {
       const createDto: CreatePublicFieldDto = {
         address: '123 Main St',
         sport: Sport.FOOTBALL,
+        name: 'Test Field',
         images: [
           { file: Buffer.from('test'), name: 'image1.jpg', order: 0 },
           { file: Buffer.from('test2'), name: 'image2.jpg', order: 1 },
@@ -131,9 +131,8 @@ describe('FieldsService', () => {
       });
       mockStorageService.upload.mockResolvedValue({ data: 'https://storage/image1.jpg' });
 
-      const result = await service.create(createDto);
+      await service.create(createDto);
 
-      expect(result).toEqual({ ...newField, fieldImages: expect.any(Array) });
       expect(
         mockGeolocalisationService.getCoordinatesAndShortAddressFromAddress,
       ).toHaveBeenCalledWith(createDto.address);
@@ -152,6 +151,7 @@ describe('FieldsService', () => {
       const createDto: CreatePublicFieldDto = {
         address: '123 Main St',
         sport: Sport.FOOTBALL,
+        name: 'Test Field',
         images: [],
       };
 
@@ -165,176 +165,6 @@ describe('FieldsService', () => {
 
       await expect(service.create(createDto)).rejects.toThrow(ConflictException);
       expect(mockLogger.error).toHaveBeenCalled();
-    });
-  });
-
-  describe('findAllVerified', () => {
-    it('should return paginated verified fields', async () => {
-      const filter = {
-        limit: 2,
-        sports: [Sport.FOOTBALL],
-      };
-
-      const mockFields = [
-        {
-          uid: 'field-1',
-          name: 'Field 1',
-          address: 'Address 1',
-          sport: Sport.FOOTBALL,
-          latitude: 48.8566,
-          longitude: 2.3522,
-          shortAddress: 'Address 1 Short',
-          gameMode: null,
-          entryFee: null,
-          isVerified: true,
-          fieldImages: [{ url: 'image1.jpg', order: 0 }],
-          partner: null,
-        },
-        {
-          uid: 'field-2',
-          name: 'Field 2',
-          address: 'Address 2',
-          sport: Sport.FOOTBALL,
-          latitude: 48.8567,
-          longitude: 2.3523,
-          shortAddress: 'Address 2 Short',
-          gameMode: null,
-          entryFee: null,
-          isVerified: true,
-          fieldImages: [],
-          partner: null,
-        },
-      ];
-
-      mockPrismaService.fields.findMany.mockResolvedValue(mockFields);
-      mockStorageService.getSignedUrl.mockResolvedValue('https://signed-url.com/image1.jpg');
-
-      const result = await service.findAllVerified(filter);
-
-      expect(result).toEqual({
-        items: expect.arrayContaining([
-          expect.objectContaining({
-            uid: 'field-1',
-            name: 'Field 1',
-            sport: Sport.FOOTBALL,
-          }),
-          expect.objectContaining({
-            uid: 'field-2',
-            name: 'Field 2',
-            sport: Sport.FOOTBALL,
-          }),
-        ]),
-        nextCursor: null,
-        totalCount: 2,
-      });
-      expect(mockPrismaService.fields.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          take: 3,
-          where: expect.objectContaining({
-            isVerified: true,
-            sport: { in: [Sport.FOOTBALL] },
-          }),
-        }),
-      );
-    });
-
-    it('should handle cursor pagination', async () => {
-      const filter = {
-        limit: 10,
-        cursor: 'field-cursor-uid',
-      };
-
-      mockPrismaService.fields.findMany.mockResolvedValue([]);
-
-      await service.findAllVerified(filter);
-
-      expect(mockPrismaService.fields.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          cursor: { uid: 'field-cursor-uid' },
-          skip: 1,
-        }),
-      );
-    });
-
-    it('should filter by location and distance', async () => {
-      const filter = {
-        limit: 10,
-        latitude: 48.8566,
-        longitude: 2.3522,
-        maxDistance: 5,
-      };
-
-      mockPrismaService.fields.findMany.mockResolvedValue([]);
-
-      await service.findAllVerified(filter);
-
-      expect(mockPrismaService.fields.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            AND: expect.any(Array),
-          }),
-        }),
-      );
-    });
-  });
-
-  describe('findAllByPartnerUid', () => {
-    it('should return fields for a specific partner', async () => {
-      const partnerUid = 'partner-uid-1';
-      const filter = { limit: 10 };
-
-      const mockPartner = { uid: partnerUid, name: 'Partner 1' };
-      const mockFields = [
-        {
-          uid: 'field-1',
-          name: 'Partner Field',
-          address: 'Address 1',
-          sport: Sport.FOOTBALL,
-          latitude: 48.8566,
-          longitude: 2.3522,
-          shortAddress: 'Address 1 Short',
-          gameMode: null,
-          entryFee: 25,
-          isVerified: true,
-          fieldImages: [],
-          partner: null,
-        },
-      ];
-
-      mockPartnersService.findOne.mockResolvedValue(mockPartner);
-      mockPrismaService.fields.findMany.mockResolvedValue(mockFields);
-      mockStorageService.getSignedUrl.mockResolvedValue('');
-
-      const result = await service.findAllByPartnerUid(partnerUid, filter);
-
-      expect(result).toEqual({
-        items: expect.arrayContaining([
-          expect.objectContaining({
-            uid: 'field-1',
-            name: 'Partner Field',
-            sport: Sport.FOOTBALL,
-          }),
-        ]),
-        nextCursor: null,
-        totalCount: 1,
-      });
-      expect(mockPartnersService.findOne).toHaveBeenCalledWith(partnerUid);
-      expect(mockPrismaService.fields.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ partnerUid }),
-        }),
-      );
-    });
-
-    it('should throw NotFoundException if partner does not exist', async () => {
-      const partnerUid = 'non-existent';
-      const filter = { limit: 10 };
-
-      mockPartnersService.findOne.mockResolvedValue(null);
-
-      await expect(service.findAllByPartnerUid(partnerUid, filter)).rejects.toThrow(
-        NotFoundException,
-      );
     });
   });
 
@@ -355,18 +185,11 @@ describe('FieldsService', () => {
         fieldImages: [{ url: 'image1.jpg', order: 0, uid: 'img-1' }],
         partner: {
           uid: 'partner-1',
-          partnerOpeningHours: [
-            {
-              dayOfWeek: 1,
-              openTime: '08:00',
-              closeTime: '20:00',
-            },
-          ],
+          rank: 0,
         },
       };
 
       mockPrismaService.fields.findUnique.mockResolvedValue(mockField);
-      mockStorageService.getSignedUrl.mockResolvedValue('https://signed-url.com/image1.jpg');
 
       const result = await service.findOne(uid);
 
@@ -377,7 +200,8 @@ describe('FieldsService', () => {
           sport: Sport.FOOTBALL,
           fieldImages: expect.arrayContaining([
             expect.objectContaining({
-              url: 'https://signed-url.com/image1.jpg',
+              url: 'image1.jpg',
+              order: 0,
             }),
           ]),
         }),
@@ -410,283 +234,6 @@ describe('FieldsService', () => {
       ).rejects.toThrow(ConflictException);
 
       expect(mockLogger.error).toHaveBeenCalled();
-    });
-  });
-
-  describe('updatePublicField', () => {
-    it('should update a public field without address change', async () => {
-      const uid = 'field-uid-1';
-      const updateDto: UpdateFieldDto = {
-        name: 'Updated Field Name',
-      };
-
-      const existingField = {
-        uid,
-        name: 'Old Name',
-        address: '123 Main St',
-        sport: Sport.FOOTBALL,
-        latitude: 48.8566,
-        longitude: 2.3522,
-        isVerified: false,
-        fieldImages: [],
-      };
-
-      mockPrismaService.fields.findUnique.mockResolvedValue(existingField);
-      mockPrismaService.fields.update.mockResolvedValue({ ...existingField, ...updateDto });
-
-      await service.updatePublicField(uid, updateDto);
-
-      expect(mockPrismaService.fields.update).toHaveBeenCalledWith({
-        data: {
-          address: undefined,
-          isVerified: undefined,
-          latitude: existingField.latitude,
-          longitude: existingField.longitude,
-          name: updateDto.name,
-        },
-        where: { uid },
-      });
-      expect(mockLogger.debug).toHaveBeenCalledWith(`Field ${uid} updated successfully`);
-    });
-
-    it('should update a public field with new address', async () => {
-      const uid = 'field-uid-1';
-      const updateDto: UpdateFieldDto = {
-        address: '456 New St',
-        name: 'Updated Field',
-      };
-
-      const existingField = {
-        uid,
-        name: 'Old Name',
-        address: '123 Main St',
-        sport: Sport.FOOTBALL,
-        latitude: 48.8566,
-        longitude: 2.3522,
-        isVerified: false,
-        fieldImages: [],
-      };
-
-      const newCoordinates = { lat: 48.86, lng: 2.36 };
-
-      mockPrismaService.fields.findUnique.mockResolvedValue(existingField);
-      mockGeolocalisationService.getLatitudeAndLongitude.mockResolvedValue(newCoordinates);
-      mockPrismaService.fields.findFirst.mockResolvedValue(null);
-      mockPrismaService.fields.update.mockResolvedValue({ ...existingField, ...updateDto });
-
-      await service.updatePublicField(uid, updateDto);
-
-      expect(mockGeolocalisationService.getLatitudeAndLongitude).toHaveBeenCalledWith(
-        updateDto.address,
-      );
-      expect(mockPrismaService.fields.update).toHaveBeenCalledWith({
-        data: {
-          address: updateDto.address,
-          isVerified: undefined,
-          latitude: newCoordinates.lat,
-          longitude: newCoordinates.lng,
-          name: updateDto.name,
-        },
-        where: { uid },
-      });
-    });
-
-    it('should throw NotFoundException if field does not exist', async () => {
-      const uid = 'non-existent';
-      const updateDto: UpdateFieldDto = { name: 'Test' };
-
-      mockPrismaService.fields.findUnique.mockResolvedValue(null);
-
-      await expect(service.updatePublicField(uid, updateDto)).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw BadRequestException when trying to unverify a verified field', async () => {
-      const uid = 'field-uid-1';
-      const updateDto: UpdateFieldDto = {
-        isVerified: false,
-      };
-
-      const existingField = {
-        uid,
-        name: 'Verified Field',
-        address: '123 Main St',
-        sport: Sport.FOOTBALL,
-        latitude: 48.8566,
-        longitude: 2.3522,
-        isVerified: true,
-        fieldImages: [],
-      };
-
-      mockPrismaService.fields.findUnique.mockResolvedValue(existingField);
-
-      await expect(service.updatePublicField(uid, updateDto)).rejects.toThrow(BadRequestException);
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        'You cannot unverify a field that is already verified',
-      );
-    });
-  });
-
-  describe('updatePartnerField', () => {
-    it('should update a partner field', async () => {
-      const uid = 'field-uid-1';
-      const partnerUid = 'partner-uid-1';
-      const updateDto: UpdatePrivateFieldDto = {
-        name: 'Updated Partner Field',
-        entryFee: 50,
-      };
-
-      const existingField = {
-        uid,
-        partnerUid,
-        name: 'Old Name',
-        address: '123 Partner St',
-        sport: Sport.BASKETBALL,
-        latitude: 48.8566,
-        longitude: 2.3522,
-        shortAddress: '123 Partner St Short',
-        gameMode: null,
-        isVerified: false,
-        entryFee: 30,
-        fieldImages: [],
-        partner: {
-          uid: partnerUid,
-          partnerOpeningHours: [],
-        },
-      };
-
-      const existingPartner = { uid: partnerUid, name: 'Partner 1' };
-
-      mockPrismaService.fields.findUnique.mockResolvedValue(existingField);
-      mockStorageService.getSignedUrl.mockResolvedValue('');
-      mockPartnersService.findOne.mockResolvedValue(existingPartner);
-      mockPrismaService.fields.update.mockResolvedValue({ ...existingField, ...updateDto });
-
-      await service.updatePartnerField(uid, partnerUid, updateDto);
-
-      expect(mockPrismaService.fields.update).toHaveBeenCalledWith({
-        data: {
-          address: undefined,
-          entryFee: updateDto.entryFee,
-          gameMode: undefined,
-          isVerified: undefined,
-          latitude: existingField.latitude,
-          longitude: existingField.longitude,
-          name: updateDto.name,
-        },
-        where: { uid },
-      });
-    });
-
-    it('should throw NotFoundException if field does not exist', async () => {
-      const uid = 'non-existent';
-      const partnerUid = 'partner-uid-1';
-      const updateDto: UpdatePrivateFieldDto = { name: 'Test' };
-
-      mockPrismaService.fields.findUnique.mockResolvedValue(null);
-
-      await expect(service.updatePartnerField(uid, partnerUid, updateDto)).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-
-    it('should throw NotFoundException if partner does not exist', async () => {
-      const uid = 'field-uid-1';
-      const partnerUid = 'non-existent';
-      const updateDto: UpdatePrivateFieldDto = { name: 'Test' };
-
-      const existingField = {
-        uid,
-        partnerUid: 'other-partner',
-        name: 'Field',
-        fieldImages: [],
-      };
-
-      mockPrismaService.fields.findUnique.mockResolvedValue(existingField);
-      mockPartnersService.findOne.mockResolvedValue(null);
-
-      await expect(service.updatePartnerField(uid, partnerUid, updateDto)).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-
-    it('should throw BadRequestException if field is not associated with partner', async () => {
-      const uid = 'field-uid-1';
-      const partnerUid = 'partner-uid-1';
-      const updateDto: UpdatePrivateFieldDto = { name: 'Test' };
-
-      const existingField = {
-        uid,
-        partnerUid: 'different-partner-uid',
-        name: 'Field',
-        fieldImages: [],
-      };
-
-      const existingPartner = { uid: partnerUid, name: 'Partner 1' };
-
-      mockPrismaService.fields.findUnique.mockResolvedValue(existingField);
-      mockPartnersService.findOne.mockResolvedValue(existingPartner);
-
-      await expect(service.updatePartnerField(uid, partnerUid, updateDto)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
-    it('should update partner field with new address', async () => {
-      const uid = 'field-uid-1';
-      const partnerUid = 'partner-uid-1';
-      const updateDto: UpdatePrivateFieldDto = {
-        address: '789 New Partner St',
-      };
-
-      const existingField = {
-        uid,
-        partnerUid,
-        name: 'Partner Field',
-        address: '123 Old St',
-        sport: Sport.BASKETBALL,
-        latitude: 48.8566,
-        longitude: 2.3522,
-        shortAddress: '123 Old St Short',
-        gameMode: null,
-        entryFee: null,
-        isVerified: false,
-        fieldImages: [],
-        partner: {
-          uid: partnerUid,
-          partnerOpeningHours: [],
-        },
-      };
-
-      const existingPartner = { uid: partnerUid, name: 'Partner 1' };
-      const newCoordinates = {
-        lat: 48.87,
-        lng: 2.37,
-      };
-
-      mockPrismaService.fields.findUnique.mockResolvedValue(existingField);
-      mockStorageService.getSignedUrl.mockResolvedValue('');
-      mockPartnersService.findOne.mockResolvedValue(existingPartner);
-      mockGeolocalisationService.getLatitudeAndLongitude.mockResolvedValue(newCoordinates);
-      mockPrismaService.fields.findFirst.mockResolvedValue(null);
-      mockPrismaService.fields.update.mockResolvedValue({ ...existingField, ...updateDto });
-
-      await service.updatePartnerField(uid, partnerUid, updateDto);
-
-      expect(mockGeolocalisationService.getLatitudeAndLongitude).toHaveBeenCalledWith(
-        updateDto.address,
-      );
-      expect(mockPrismaService.fields.update).toHaveBeenCalledWith({
-        data: {
-          address: updateDto.address,
-          entryFee: undefined,
-          gameMode: undefined,
-          isVerified: undefined,
-          latitude: newCoordinates.lat,
-          longitude: newCoordinates.lng,
-          name: undefined,
-        },
-        where: { uid },
-      });
     });
   });
 });

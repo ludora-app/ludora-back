@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { CreateImageDto } from 'src/auth/dto';
+import { ArrayMaxSize, IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class UpdateFieldDto {
   @ApiProperty({ example: 'Field 1', readOnly: true })
@@ -12,8 +13,27 @@ export class UpdateFieldDto {
   @IsOptional()
   readonly address?: string;
 
-  @ApiProperty({ example: true, readOnly: true })
-  @IsBoolean()
+  @ApiProperty({ example: '123 Main St', readOnly: true })
+  @IsString()
   @IsOptional()
-  readonly isVerified?: boolean;
+  readonly shortAddress?: string;
+
+  @ApiProperty({ example: 40.7128, readOnly: true })
+  @IsNumber()
+  @IsOptional()
+  readonly lat?: number;
+
+  @ApiProperty({ example: -74.006, readOnly: true })
+  @IsNumber()
+  @IsOptional()
+  readonly lng?: number;
+
+  @IsArray()
+  @IsOptional()
+  @ArrayMaxSize(5)
+  @ApiProperty({
+    description: 'The images of the field',
+    type: [CreateImageDto],
+  })
+  readonly images?: CreateImageDto[];
 }
