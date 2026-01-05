@@ -1,7 +1,7 @@
 import { GameModes, Sessions } from 'generated/prisma/client';
 import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
 
-import { SessionResponseDto } from '../dto/output/session.response.dto';
+import { SessionResponseData } from '../dto/output/session.response.dto';
 import { SessionCollectionItemDto } from '../dto/output/session-collection.response.dto';
 
 export interface RawSession {
@@ -33,14 +33,14 @@ export interface RawSession {
  * without having to cast it in the controller nor change the prisma schemas
  */
 export class SessionMapper {
-  static toDto(session: Sessions): SessionResponseDto {
+  static toDto(session: Sessions): SessionResponseData {
     return {
       ...session,
       sport: session.sport as Sport,
     };
   }
 
-  static toSessionResponses(sessions: Sessions[]): SessionResponseDto[] {
+  static toSessionResponses(sessions: Sessions[]): SessionResponseData[] {
     return sessions.map(SessionMapper.toDto);
   }
 

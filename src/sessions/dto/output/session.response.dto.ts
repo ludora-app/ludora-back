@@ -1,11 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { GameModes } from 'generated/prisma/enums';
 import { Sport } from 'src/shared/constants/constants';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
 /**
  * @description standard response for a Session resource
  */
-export class SessionResponseDto {
+export class SessionResponseData {
   @ApiProperty({
     description: 'Session creation date',
     example: '2025-05-10T22:30:32.525Z',
@@ -73,4 +74,9 @@ export class SessionResponseDto {
     readOnly: true,
   })
   creatorUid: string;
+}
+
+export class SessionResponseDto extends ResponseTypeDto<SessionResponseData> {
+  @ApiProperty({ type: SessionResponseData })
+  readonly data: SessionResponseData;
 }

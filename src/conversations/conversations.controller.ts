@@ -36,6 +36,7 @@ import { CreateMessageDto } from './dto/input/create-message.dto';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
 import {
   ConversationResponseDto,
+  ConversationResponseData,
   PaginatedConversationResponseDto,
 } from './dto/output/conversation-response.dto';
 
@@ -71,7 +72,7 @@ export class ConversationsController {
   async findAllByUserUid(
     @Query() filters: ConversationFilterDto,
     @Req() request: Request,
-  ): Promise<PaginationResponseTypeDto<ConversationResponseDto>> {
+  ): Promise<PaginationResponseTypeDto<ConversationResponseData>> {
     const userUid = request['user'].uid;
     const conversations = await this.conversationsService.findAllByUserUid(filters, userUid);
     return {

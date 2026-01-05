@@ -36,9 +36,9 @@ import { SessionMapper } from '../mappers/session.mapper';
 import { SessionsService } from '../services/sessions.service';
 import { UpdateSessionDto } from '../dto/input/update-session.dto';
 import { SessionFilterDto } from '../dto/input/session-filter.dto';
-import { SessionResponseDto } from '../dto/output/session.response.dto';
 import { MySessionFilterDto } from '../dto/input/my-session-filter.dto';
 import { CreateSessionFromRequestDto } from '../dto/input/create-session.dto';
+import { SessionResponseData, SessionResponseDto } from '../dto/output/session.response.dto';
 import {
   PaginatedSessionCollectionResponseDto,
   SessionCollectionItemDto,
@@ -60,7 +60,7 @@ export class SessionsController {
   async create(
     @Body() createSessionDto: CreateSessionFromRequestDto,
     @Req() request: Request,
-  ): Promise<ResponseTypeDto<SessionResponseDto>> {
+  ): Promise<ResponseTypeDto<SessionResponseData>> {
     const userUid = request['user'].uid;
     const newSession = await this.sessionsService.create({ ...createSessionDto, userUid });
 
@@ -121,11 +121,11 @@ export class SessionsController {
   @Get(':uid')
   @Protected()
   @ApiOperation({ summary: 'Get a session by uid' })
-  @ApiOkResponse({ type: ResponseTypeDto<Sessions> })
+  @ApiOkResponse({ type: SessionResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
-  async findOne(@Param('uid') uid: string): Promise<ResponseTypeDto<SessionResponseDto>> {
+  async findOne(@Param('uid') uid: string): Promise<ResponseTypeDto<SessionResponseData>> {
     const session = await this.sessionsService.findOne(uid);
 
     if (!session) {

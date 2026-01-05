@@ -52,9 +52,6 @@ export function toPaginationResponseType<T>(itemType: Type<T>) {
 
     @ApiProperty({ readOnly: true, type: () => PaginationData })
     readonly data: InstanceType<typeof PaginationData>;
-
-    @ApiProperty({ example: 200, readOnly: true, required: false, type: Number })
-    readonly status?: number;
   }
 
   Object.defineProperty(PaginationResponseDtoClass, 'name', {

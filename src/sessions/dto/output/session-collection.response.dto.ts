@@ -2,7 +2,7 @@ import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { SessionSportLevel } from 'src/shared/constants/constants';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
-import { SessionResponseDto } from './session.response.dto';
+import { SessionResponseData } from './session.response.dto';
 
 export class TeamFromSessionCollectionItemDto {
   @ApiProperty({
@@ -18,7 +18,7 @@ export class TeamFromSessionCollectionItemDto {
   numberOfPlayers: number;
 }
 
-export class SessionCollectionItemDto extends OmitType(SessionResponseDto, [
+export class SessionCollectionItemDto extends OmitType(SessionResponseData, [
   'title',
   'description',
   'updatedAt',

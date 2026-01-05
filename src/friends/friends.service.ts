@@ -17,7 +17,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { FriendResponseDto } from './dto/output/friend-response.dto';
+import { FriendResponseData } from './dto/output/friend-response.dto';
 import { FriendMapper, FriendWithUsers } from './mappers/friend.mapper';
 
 @Injectable()
@@ -109,7 +109,7 @@ export class FriendsService {
   async findAll(
     filters: UserFilterDto,
     userUid: string,
-  ): Promise<PaginatedDataDto<FriendResponseDto>> {
+  ): Promise<PaginatedDataDto<FriendResponseData>> {
     const { cursor, limit, name } = filters;
 
     const query: any = {
@@ -178,7 +178,10 @@ export class FriendsService {
     };
   }
 
-  async findOne(connectedUserUid: string, otherUserUid: string): Promise<FriendResponseDto> {
+  async findOne(
+    connectedUserUid: string,
+    otherUserUid: string,
+  ): Promise<FriendResponseData | null> {
     const existingFriend = await this.prisma.friends.findFirst({
       include: {
         user1: {
@@ -348,7 +351,7 @@ export class FriendsService {
     requestAccepterUserUid: string,
     friendRequest: FriendWithUsers,
   ): void {
-    let friendDto: FriendResponseDto;
+    let friendDto: FriendResponseData;
     /**
      * If the friend request is accepted, we send the event to the receiver with the connectedUser info
      * If the friend request is rejected, we send the event to the connectedUser with the receiver info
