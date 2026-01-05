@@ -51,6 +51,10 @@ export class StorageService {
    * @returns
    */
   async getSignedUrl(folder: string, filename: string, expiresIn = 7200): Promise<string> {
+    if (!filename) {
+      return '';
+    }
+
     try {
       const key = `${folder}/${filename}`;
 
