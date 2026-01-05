@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Partners, Prisma } from 'generated/prisma/client';
 
-import { CreatePartnerDto } from './dto/create-partner.dto';
-import { UpdatePartnerDto } from './dto/update-partner.dto';
+import { UpdatePartnerDto } from './dto/input/update-partner.dto';
+import { CreatePartnerDto } from './dto/input/create-partner.dto';
 
 @Injectable()
 export class PartnersService {
