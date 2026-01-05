@@ -16,7 +16,7 @@ import { UpdateFieldDto } from './dto/input/update-field.dto';
 import { FIELD_SUGGESTION_CONFIG } from './constants/fields.constants';
 import { CreatePublicFieldDto } from './dto/input/create-public-field.dto';
 import { CreatePrivateFieldDto } from './dto/input/create-private-field.dto';
-import { FieldResponseDto, FindOneFieldResponseDto } from './dto/output/field-response';
+import { FieldResponseDto, FindOneFieldResponseDto } from './dto/output/field-response.dto';
 
 @Injectable()
 export class FieldsService {

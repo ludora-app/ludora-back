@@ -1,7 +1,7 @@
 import { FieldType } from 'generated/prisma/client';
 import { Sport } from 'src/shared/constants/constants';
 
-import { FieldResponseDto } from '../dto/output/field-response';
+import { FieldResponseDto } from '../dto/output/field-response.dto';
 import { GAME_MODE_PLAYERS_COUNT } from '../constants/fields.constants';
 
 interface FieldInput {
