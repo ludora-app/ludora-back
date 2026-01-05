@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { UsersModule } from 'src/users/users.module';
 import { SharedModule } from 'src/shared/shared.module';
+import { FieldsModule } from 'src/fields/fields.module';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { FieldSlotsService } from 'src/fields/services/field-slots.service';
 import { ConversationsModule } from 'src/conversations/conversations.module';
@@ -31,6 +32,7 @@ import { SessionInvitationsController } from './controllers/session-invitations.
     SharedModule,
     UserHourPreferencesModule,
     UserSportPreferencesModule,
+    FieldsModule,
   ],
   providers: [
     SessionsService,
