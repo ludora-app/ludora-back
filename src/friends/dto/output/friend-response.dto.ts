@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { InvitationStatus } from 'generated/prisma/enums';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
-export class FriendResponseDto {
+export class FriendResponseData {
   @ApiProperty({
     description: 'Friend request creation date',
     example: '2025-01-01T10:00:00.000Z',
@@ -47,4 +48,9 @@ export class FriendResponseDto {
   userProfilePicture: string;
 }
 
-export const PaginatedFriendResponse = toPaginationResponseType(FriendResponseDto);
+export class FriendResponseDto extends ResponseTypeDto<FriendResponseData> {
+  @ApiProperty({ type: FriendResponseData })
+  readonly data: FriendResponseData;
+}
+
+export const PaginatedFriendResponse = toPaginationResponseType(FriendResponseData);

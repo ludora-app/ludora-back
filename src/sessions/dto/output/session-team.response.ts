@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { TeamLabel } from 'generated/prisma/client';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 /**
@@ -22,7 +23,7 @@ export class FlattenedSessionPlayer {
   readonly imageUrl: string | null;
 }
 
-export class SessionTeamResponseDto {
+export class SessionTeamResponseData {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
   readonly uid: string;
 
@@ -54,4 +55,9 @@ export class SessionTeamResponseDto {
   readonly Session_players?: FlattenedSessionPlayer[];
 }
 
-export const PaginatedSessionTeamResponseDto = toPaginationResponseType(SessionTeamResponseDto);
+export class SessionTeamResponseDto extends ResponseTypeDto<SessionTeamResponseData> {
+  @ApiProperty({ type: SessionTeamResponseData })
+  readonly data: SessionTeamResponseData;
+}
+
+export const PaginatedSessionTeamResponseDto = toPaginationResponseType(SessionTeamResponseData);

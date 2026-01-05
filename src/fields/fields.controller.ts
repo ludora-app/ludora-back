@@ -36,7 +36,12 @@ import { FieldsService } from './fields.service';
 import { FieldFilterDto } from './dto/input/field-filter.dto';
 import { CreatePublicFieldDto } from './dto/input/create-public-field.dto';
 import { CreatePrivateFieldDto } from './dto/input/create-private-field.dto';
-import { FieldResponseDto, PaginatedFieldResponse } from './dto/output/field-response.dto';
+import {
+  FieldResponseDto,
+  FindOneFieldResponseData,
+  FindOneFieldResponseDto,
+  PaginatedFieldResponse,
+} from './dto/output/field-response.dto';
 
 // ? Guards at endpoint level for the whole controller because some routes will be accessible by both B2C and B2B users.
 @Controller('fields')
@@ -137,13 +142,13 @@ export class FieldsController {
   @Get(':uid')
   @UseGuards(AuthB2CGuard)
   @Protected()
-  @ApiOkResponse({ type: ResponseTypeDto<FieldResponseDto> })
+  @ApiOkResponse({ type: FindOneFieldResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get a field by uid' })
-  async findOne(@Param('uid') uid: string) {
+  async findOne(@Param('uid') uid: string): Promise<ResponseTypeDto<FindOneFieldResponseData>> {
     const field = await this.fieldsService.findOne(uid);
 
     if (!field) {

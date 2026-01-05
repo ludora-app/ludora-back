@@ -1,6 +1,7 @@
 import { Sport } from 'src/shared/constants/constants';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { FieldType, VerificationStatus } from 'generated/prisma/client';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 export class FieldImageResponseDto {
@@ -86,7 +87,7 @@ export class FieldResponseDto {
   readonly userDistance?: number;
 }
 
-export class FindOneFieldResponseDto {
+export class FindOneFieldResponseData {
   @ApiProperty({ description: 'uid of the field', example: 'cmjzyy8k1000e4jt31vpr30yv' })
   readonly uid: string;
 
@@ -138,6 +139,11 @@ export class FindOneFieldResponseDto {
     type: () => PartnerDto,
   })
   readonly partner?: PartnerDto;
+}
+
+export class FindOneFieldResponseDto extends ResponseTypeDto<FindOneFieldResponseData> {
+  @ApiProperty({ type: FindOneFieldResponseData })
+  readonly data: FindOneFieldResponseData;
 }
 
 export const PaginatedFieldResponse = toPaginationResponseType(FieldResponseDto);

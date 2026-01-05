@@ -1,6 +1,6 @@
 import { Friends } from 'generated/prisma/browser';
 
-import { FriendResponseDto } from '../dto/output/friend-response.dto';
+import { FriendResponseData } from '../dto/output/friend-response.dto';
 
 export type FriendWithUsers = Friends & {
   user1: {
@@ -22,7 +22,7 @@ export class FriendMapper {
    * @param currentUserUid - uid of the user to exclude from the response
    * @returns The friend response dto
    */
-  static toDto(friend: FriendWithUsers, currentUserUid: string): FriendResponseDto {
+  static toDto(friend: FriendWithUsers, currentUserUid: string): FriendResponseData {
     // Select the other user based on the current user uid
     const otherUser = friend.userUid1 === currentUserUid ? friend.user2 : friend.user1;
     const friendUid = friend.userUid1 === currentUserUid ? friend.userUid2 : friend.userUid1;
@@ -37,7 +37,7 @@ export class FriendMapper {
     };
   }
 
-  static toCollectionDto(friends: FriendWithUsers[], currentUserUid: string): FriendResponseDto[] {
+  static toCollectionDto(friends: FriendWithUsers[], currentUserUid: string): FriendResponseData[] {
     return friends.map((friend) => this.toDto(friend, currentUserUid));
   }
 }

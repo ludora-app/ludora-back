@@ -24,7 +24,11 @@ import {
 import { FriendsService } from './friends.service';
 import { UpdateFriendDto } from './dto/input/update-friend.dto';
 import { CreateFriendDto } from './dto/input/create-friend.dto';
-import { FriendResponseDto, PaginatedFriendResponse } from './dto/output/friend-response.dto';
+import {
+  FriendResponseData,
+  FriendResponseDto,
+  PaginatedFriendResponse,
+} from './dto/output/friend-response.dto';
 
 @Controller('friends')
 @UseGuards(AuthB2CGuard)
@@ -62,7 +66,7 @@ export class FriendsController {
   async findAll(
     @Query() filters: UserFilterDto,
     @Req() req: Request,
-  ): Promise<PaginationResponseTypeDto<FriendResponseDto>> {
+  ): Promise<PaginationResponseTypeDto<FriendResponseData>> {
     const userUid = req['user'].uid;
     const friends = await this.friendsService.findAll(filters, userUid);
     return {
@@ -74,7 +78,7 @@ export class FriendsController {
   @Get('my-friend-request/:otherUserUid')
   @Protected()
   @ApiOperation({ summary: 'Get a friend request between the connected user and the receiver' })
-  @ApiOkResponse({ type: ResponseTypeDto<FriendResponseDto> })
+  @ApiOkResponse({ type: FriendResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
@@ -82,7 +86,7 @@ export class FriendsController {
   async findMyFriendRequest(
     @Param('otherUserUid') otherUserUid: string,
     @Req() req: Request,
-  ): Promise<ResponseTypeDto<FriendResponseDto>> {
+  ): Promise<ResponseTypeDto<FriendResponseData>> {
     const connectedUserUid = req['user'].uid;
     const friendRequest = await this.friendsService.findOne(connectedUserUid, otherUserUid);
 

@@ -39,6 +39,7 @@ import { SessionInvitationFilterDto } from '../dto/input/session-invitation-filt
 import { CreateSessionInvitationDto } from '../dto/input/create-session-invitation.dto';
 import {
   PaginatedSessionInvitationResponseDto,
+  SessionInvitationResponseData,
   SessionInvitationResponseDto,
 } from '../dto/output/session-invitation-response';
 
@@ -51,7 +52,7 @@ export class SessionInvitationsController {
   @Protected()
   @UseGuards(AuthB2CGuard)
   @ApiOperation({ summary: 'Create a new session invitation' })
-  @ApiCreatedResponse({ type: ResponseTypeDto<SessionInvitationResponseDto> })
+  @ApiCreatedResponse({ type: ResponseTypeDto<SessionInvitationResponseData> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiConflictResponse({ type: ConflictResponseDto })
@@ -59,7 +60,7 @@ export class SessionInvitationsController {
   async create(
     @Req() request: Request,
     @Body() createSessionInvitationDto: CreateSessionInvitationDto,
-  ): Promise<ResponseTypeDto<SessionInvitationResponseDto>> {
+  ): Promise<ResponseTypeDto<SessionInvitationResponseData>> {
     const senderUid = request['user'].uid;
 
     const invitation = await this.sessionInvitationsService.create(
@@ -87,7 +88,7 @@ export class SessionInvitationsController {
   async findAllByUserId(
     @Param('userUid') userUid: string,
     @Query() sessionInvitationFilterDto: SessionInvitationFilterDto,
-  ): Promise<PaginationResponseTypeDto<SessionInvitationResponseDto>> {
+  ): Promise<PaginationResponseTypeDto<SessionInvitationResponseData>> {
     const sessionInvitations = await this.sessionInvitationsService.findAllByReceiverId(
       userUid,
       sessionInvitationFilterDto,
@@ -109,7 +110,7 @@ export class SessionInvitationsController {
   async findAllBySessionId(
     @Param('sessionUid') sessionUid: string,
     @Query() sessionInvitationFilterDto: SessionInvitationFilterDto,
-  ): Promise<PaginationResponseTypeDto<SessionInvitationResponseDto>> {
+  ): Promise<PaginationResponseTypeDto<SessionInvitationResponseData>> {
     const sessionInvitations = await this.sessionInvitationsService.findAllBySessionId(
       sessionUid,
       sessionInvitationFilterDto,
@@ -124,14 +125,14 @@ export class SessionInvitationsController {
   @Get(':sessionUid/:receiverUid')
   @Protected()
   @ApiOperation({ summary: 'Get a session invitation by session ID and receiver ID' })
-  @ApiOkResponse({ type: ResponseTypeDto<SessionInvitationResponseDto> })
+  @ApiOkResponse({ type: SessionInvitationResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   async findOne(
     @Param('sessionUid') sessionUid: string,
     @Param('receiverUid') receiverUid: string,
-  ): Promise<ResponseTypeDto<SessionInvitationResponseDto>> {
+  ): Promise<ResponseTypeDto<SessionInvitationResponseData>> {
     const invitation = await this.sessionInvitationsService.findOne(sessionUid, receiverUid);
 
     if (!invitation) {

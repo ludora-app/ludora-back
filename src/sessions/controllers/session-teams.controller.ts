@@ -18,6 +18,7 @@ import { SessionsService } from '../services/sessions.service';
 import { SessionTeamsService } from '../services/session-teams.service';
 import {
   PaginatedSessionTeamResponseDto,
+  SessionTeamResponseData,
   SessionTeamResponseDto,
 } from '../dto/output/session-team.response';
 
@@ -38,7 +39,7 @@ export class SessionTeamsController {
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   async findTeamsBySessionUid(
     @Param('sessionUid') sessionUid: string,
-  ): Promise<PaginationResponseTypeDto<SessionTeamResponseDto>> {
+  ): Promise<PaginationResponseTypeDto<SessionTeamResponseData>> {
     const teams = await this.sessionsService.findTeamsBySessionUid(sessionUid);
 
     if (teams.items.length === 0) {
@@ -54,13 +55,13 @@ export class SessionTeamsController {
   @Get('/teams/:uid')
   @Protected()
   @ApiOperation({ summary: 'Get a team by its uid' })
-  @ApiOkResponse({ type: ResponseTypeDto<SessionTeamResponseDto> })
+  @ApiOkResponse({ type: SessionTeamResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   async findOneTeamByUid(
     @Param('uid') uid: string,
-  ): Promise<ResponseTypeDto<SessionTeamResponseDto>> {
+  ): Promise<ResponseTypeDto<SessionTeamResponseData>> {
     const team = await this.teamsService.findOneByUid(uid);
 
     if (!team) {

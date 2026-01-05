@@ -1,9 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ConversationType } from 'generated/prisma/enums';
 import { ConversationMembers, Messages } from 'generated/prisma/browser';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
-export class ConversationResponseDto {
+export class ConversationResponseData {
   @ApiProperty({
     description: 'Conversation creation date',
     example: '2025-01-01T00:00:00.000Z',
@@ -64,10 +65,26 @@ export class ConversationResponseDto {
 
   @ApiProperty({
     description: 'Conversation messages',
-    example: ['cmajhjkjf000bq77q4b5ugn8b', 'cmajhjkjf000bq77q4b5ugn8b'],
+    example: [
+      {
+        content: 'Hello',
+        conversationUid: 'cmajhjkjf000bq77q4b5ugn8b',
+        createdAt: '2025-01-01T00:00:00.000Z',
+        globalStatus: MessageStatus.SENT,
+        senderUid: 'cmajhjkjf000bq77q4b5ugn8b',
+        type: MessageType.TEXT,
+        uid: 'cmajhjkjf000bq77q4b5ugn8b',
+        updatedAt: '2025-01-01T00:00:00.000Z',
+      },
+    ],
     readOnly: true,
   })
   messages?: Messages[];
 }
 
-export const PaginatedConversationResponseDto = toPaginationResponseType(ConversationResponseDto);
+export class ConversationResponseDto extends ResponseTypeDto<ConversationResponseData> {
+  @ApiProperty({ type: ConversationResponseData })
+  readonly data: ConversationResponseData;
+}
+
+export const PaginatedConversationResponseDto = toPaginationResponseType(ConversationResponseData);

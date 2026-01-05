@@ -16,7 +16,7 @@ import { UpdateFieldDto } from './dto/input/update-field.dto';
 import { FIELD_SUGGESTION_CONFIG } from './constants/fields.constants';
 import { CreatePublicFieldDto } from './dto/input/create-public-field.dto';
 import { CreatePrivateFieldDto } from './dto/input/create-private-field.dto';
-import { FieldResponseDto, FindOneFieldResponseDto } from './dto/output/field-response.dto';
+import { FieldResponseDto, FindOneFieldResponseData } from './dto/output/field-response.dto';
 
 @Injectable()
 export class FieldsService {
@@ -159,7 +159,7 @@ export class FieldsService {
     });
   }
 
-  async findOne(uid: string): Promise<FindOneFieldResponseDto> {
+  async findOne(uid: string): Promise<FindOneFieldResponseData | null> {
     const field = await this.prisma.fields.findUnique({
       include: {
         fieldImages: {
@@ -182,9 +182,28 @@ export class FieldsService {
     if (!field) return null;
 
     return {
-      ...field,
+      address: field.address,
+      fieldImages: field.fieldImages.map((image) => ({
+        order: image.order,
+        uid: image.uid,
+        url: image.url,
+      })),
+      latitude: field.latitude,
+      longitude: field.longitude,
+      name: field.name ?? undefined,
+      partner: field.partner
+        ? {
+            rank: field.partner.rank,
+            uid: field.partner.uid,
+          }
+        : undefined,
+      partnerUid: field.partnerUid,
+      shortAddress: field.shortAddress,
       sport: field.sport as Sport,
-    };
+      status: field.status,
+      type: field.type,
+      uid: field.uid,
+    } as FindOneFieldResponseData;
   }
 
   /**
