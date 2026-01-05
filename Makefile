@@ -2,6 +2,10 @@
 dev-sh:
 		docker compose -f compose.dev.yml exec ludora-api /bin/sh
 
+# Open a shell in the dev container with vault injection
+dev-sh-vault:
+	docker compose -f compose.dev.yml exec ludora-api sh -c '. /usr/local/bin/vault-auth.sh && envconsul -config=/etc/envconsul/config.hcl -once -- sh'
+
 # Start containers in dev mode
 dev-up:
 	docker compose -f compose.dev.yml --env-file .env.dev up --build
