@@ -5,7 +5,7 @@ import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-re
 /**
  * @description standard response for a userSportPreference resource
  */
-export class UserSportPreferenceResponse {
+export class UserSportPreferenceResponseDto {
   @ApiProperty({ description: 'The unique identifier of the user sport preference' })
   uid: string;
 
@@ -29,6 +29,6 @@ export class UserSportPreferenceResponse {
 /**
  * @description standard response for a paginated userSportPreference resource, used to type swagger return
  */
-export const PaginatedUserSportPreferenceResponse = toPaginationResponseType(
-  UserSportPreferenceResponse,
+export const PaginatedUserSportPreferenceResponseDto = toPaginationResponseType(
+  UserSportPreferenceResponseDto,
 );

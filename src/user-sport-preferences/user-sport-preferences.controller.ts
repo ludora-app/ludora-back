@@ -29,9 +29,9 @@ import {
 import { UserSportPreferencesService } from './user-sport-preferences.service';
 import { CreateUserSportPreferenceDtoFromRequest } from './dto/input/create-user-sport-preference.dto';
 import {
-  PaginatedUserSportPreferenceResponse,
-  UserSportPreferenceResponse,
-} from './dto/output/user-sport-preference.response';
+  PaginatedUserSportPreferenceResponseDto,
+  UserSportPreferenceResponseDto,
+} from './dto/output/user-sport-preference.response.dto';
 
 @Controller('user-sport-preferences')
 @UseGuards(AuthB2CGuard)
@@ -41,7 +41,7 @@ export class UserSportPreferencesController {
   @Post()
   @Protected()
   @ApiOperation({ summary: 'Create a user sport preference' })
-  @ApiCreatedResponse({ type: ResponseTypeDto<UserSportPreferenceResponse> })
+  @ApiCreatedResponse({ type: ResponseTypeDto<UserSportPreferenceResponseDto> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
@@ -49,7 +49,7 @@ export class UserSportPreferencesController {
   async create(
     @Body() dto: CreateUserSportPreferenceDtoFromRequest,
     @Req() request: Request,
-  ): Promise<ResponseTypeDto<UserSportPreferenceResponse>> {
+  ): Promise<ResponseTypeDto<UserSportPreferenceResponseDto>> {
     const userUid = request['user'].uid;
     const data = await this.userSportPreferencesService.create({
       ...dto,
@@ -64,7 +64,7 @@ export class UserSportPreferencesController {
   @Get('list-by-user/:userUid')
   @Protected()
   @ApiOperation({ summary: 'Get all user sport preferences by user ID' })
-  @ApiOkResponse({ type: PaginatedUserSportPreferenceResponse })
+  @ApiOkResponse({ type: PaginatedUserSportPreferenceResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
@@ -80,7 +80,7 @@ export class UserSportPreferencesController {
   @Get('my-list')
   @Protected()
   @ApiOperation({ summary: 'Get the sport preferences of the connected user' })
-  @ApiOkResponse({ type: PaginatedUserSportPreferenceResponse })
+  @ApiOkResponse({ type: PaginatedUserSportPreferenceResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })

@@ -6,8 +6,8 @@ import { USERSELECT } from 'src/shared/constants/select-user';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
-import { UserSportPreferenceResponse } from './dto/output/user-sport-preference.response';
 import { CreateUserSportPreferenceDto } from './dto/input/create-user-sport-preference.dto';
+import { UserSportPreferenceResponseDto } from './dto/output/user-sport-preference.response.dto';
 
 @Injectable()
 export class UserSportPreferencesService {
@@ -43,7 +43,9 @@ export class UserSportPreferencesService {
     return newSportPreference;
   }
 
-  async findAllByUserUid(userUid: string): Promise<PaginatedDataDto<UserSportPreferenceResponse>> {
+  async findAllByUserUid(
+    userUid: string,
+  ): Promise<PaginatedDataDto<UserSportPreferenceResponseDto>> {
     const existingUser = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
     if (!existingUser) {
       this.logger.error(`User not found: ${userUid}`);

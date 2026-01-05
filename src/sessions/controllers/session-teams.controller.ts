@@ -17,8 +17,8 @@ import {
 import { SessionsService } from '../services/sessions.service';
 import { SessionTeamsService } from '../services/session-teams.service';
 import {
-  PaginatedSessionTeamResponse,
-  SessionTeamResponse,
+  PaginatedSessionTeamResponseDto,
+  SessionTeamResponseDto,
 } from '../dto/output/session-team.response';
 
 @Controller('session-teams')
@@ -32,13 +32,13 @@ export class SessionTeamsController {
   @Get('list-by-session/:sessionUid')
   @Protected()
   @ApiOperation({ summary: 'Get all teams linked to a session by session uid' })
-  @ApiOkResponse({ type: PaginatedSessionTeamResponse })
+  @ApiOkResponse({ type: PaginatedSessionTeamResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   async findTeamsBySessionUid(
     @Param('sessionUid') sessionUid: string,
-  ): Promise<PaginationResponseTypeDto<SessionTeamResponse>> {
+  ): Promise<PaginationResponseTypeDto<SessionTeamResponseDto>> {
     const teams = await this.sessionsService.findTeamsBySessionUid(sessionUid);
 
     if (teams.items.length === 0) {
@@ -54,11 +54,13 @@ export class SessionTeamsController {
   @Get('/teams/:uid')
   @Protected()
   @ApiOperation({ summary: 'Get a team by its uid' })
-  @ApiOkResponse({ type: ResponseTypeDto<SessionTeamResponse> })
+  @ApiOkResponse({ type: ResponseTypeDto<SessionTeamResponseDto> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
-  async findOneTeamByUid(@Param('uid') uid: string): Promise<ResponseTypeDto<SessionTeamResponse>> {
+  async findOneTeamByUid(
+    @Param('uid') uid: string,
+  ): Promise<ResponseTypeDto<SessionTeamResponseDto>> {
     const team = await this.teamsService.findOneByUid(uid);
 
     if (!team) {

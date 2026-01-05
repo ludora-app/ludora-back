@@ -21,7 +21,7 @@ import { CreateSessionDto } from '../dto/input/create-session.dto';
 import { FindAllSessionsDto } from '../dto/input/session-filter.dto';
 import { SESSION_SUGGESTION_CONFIG } from '../constants/session.constants';
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
-import { SessionCollectionItem } from '../dto/output/session-collection.response.dto';
+import { SessionCollectionItemDto } from '../dto/output/session-collection.response.dto';
 import { MySessionFilterDto, SessionOwnnership } from '../dto/input/my-session-filter.dto';
 
 /**
@@ -156,7 +156,7 @@ export class SessionsService {
     userLat,
     userLon,
     userUid,
-  }: FindAllSessionsDto): Promise<PaginatedDataDto<SessionCollectionItem>> {
+  }: FindAllSessionsDto): Promise<PaginatedDataDto<SessionCollectionItemDto>> {
     const userSportPreferencesResponse =
       await this.userSportPreferencesService.findAllByUserUid(userUid);
     const userSportPreferences = userSportPreferencesResponse.items || [];
@@ -428,7 +428,7 @@ export class SessionsService {
   async findAllByUserUid(
     userUid: string,
     filters: MySessionFilterDto,
-  ): Promise<PaginatedDataDto<SessionCollectionItem>> {
+  ): Promise<PaginatedDataDto<SessionCollectionItemDto>> {
     const {
       createdAtSortOrder,
       endDate,

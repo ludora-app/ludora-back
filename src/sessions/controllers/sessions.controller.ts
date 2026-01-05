@@ -36,12 +36,12 @@ import { SessionMapper } from '../mappers/session.mapper';
 import { SessionsService } from '../services/sessions.service';
 import { UpdateSessionDto } from '../dto/input/update-session.dto';
 import { SessionFilterDto } from '../dto/input/session-filter.dto';
-import { SessionResponse } from '../dto/output/session.response.dto';
+import { SessionResponseDto } from '../dto/output/session.response.dto';
 import { MySessionFilterDto } from '../dto/input/my-session-filter.dto';
 import { CreateSessionFromRequestDto } from '../dto/input/create-session.dto';
 import {
-  PaginatedSessionCollectionResponse,
-  SessionCollectionItem,
+  PaginatedSessionCollectionResponseDto,
+  SessionCollectionItemDto,
 } from '../dto/output/session-collection.response.dto';
 
 @Controller('sessions')
@@ -60,7 +60,7 @@ export class SessionsController {
   async create(
     @Body() createSessionDto: CreateSessionFromRequestDto,
     @Req() request: Request,
-  ): Promise<ResponseTypeDto<SessionResponse>> {
+  ): Promise<ResponseTypeDto<SessionResponseDto>> {
     const userUid = request['user'].uid;
     const newSession = await this.sessionsService.create({ ...createSessionDto, userUid });
 
@@ -74,14 +74,14 @@ export class SessionsController {
   @Protected()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Get all sessions' })
-  @ApiOkResponse({ type: PaginatedSessionCollectionResponse })
+  @ApiOkResponse({ type: PaginatedSessionCollectionResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findAll(
     @Req() request: Request,
     @Query() filter: SessionFilterDto,
-  ): Promise<PaginationResponseTypeDto<SessionCollectionItem>> {
+  ): Promise<PaginationResponseTypeDto<SessionCollectionItemDto>> {
     const userUid = request['user'].uid;
 
     const sessions = await this.sessionsService.findAll({
@@ -102,14 +102,14 @@ export class SessionsController {
   @Protected()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Get all sessions created or joined by the current user' })
-  @ApiOkResponse({ type: PaginatedSessionCollectionResponse })
+  @ApiOkResponse({ type: PaginatedSessionCollectionResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findAllByUserUid(
     @Req() request: Request,
     @Query() filters: MySessionFilterDto,
-  ): Promise<PaginationResponseTypeDto<SessionCollectionItem>> {
+  ): Promise<PaginationResponseTypeDto<SessionCollectionItemDto>> {
     const userUid = request['user'].uid;
     const sessions = await this.sessionsService.findAllByUserUid(userUid, filters);
     return {
@@ -125,7 +125,7 @@ export class SessionsController {
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
-  async findOne(@Param('uid') uid: string): Promise<ResponseTypeDto<SessionResponse>> {
+  async findOne(@Param('uid') uid: string): Promise<ResponseTypeDto<SessionResponseDto>> {
     const session = await this.sessionsService.findOne(uid);
 
     if (!session) {
