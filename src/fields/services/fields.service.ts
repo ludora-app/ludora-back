@@ -10,13 +10,13 @@ import { FieldType, Prisma, VerificationStatus } from 'generated/prisma/client';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 
-import { FieldMapper } from './mapper/field.mapper';
-import { FieldFilterDto } from './dto/input/field-filter.dto';
-import { UpdateFieldDto } from './dto/input/update-field.dto';
-import { FIELD_SUGGESTION_CONFIG } from './constants/fields.constants';
-import { CreatePublicFieldDto } from './dto/input/create-public-field.dto';
-import { CreatePrivateFieldDto } from './dto/input/create-private-field.dto';
-import { FieldResponseDto, FindOneFieldResponseData } from './dto/output/field-response.dto';
+import { FieldMapper } from '../mappers/field.mapper';
+import { UpdateFieldDto } from '../dto/input/update-field.dto';
+import { FieldFilterDto } from '../dto/input/field-filter.dto';
+import { FIELD_SUGGESTION_CONFIG } from '../constants/fields.constants';
+import { CreatePublicFieldDto } from '../dto/input/create-public-field.dto';
+import { CreatePrivateFieldDto } from '../dto/input/create-private-field.dto';
+import { FieldResponseDto, FindOneFieldResponseData } from '../dto/output/field-response.dto';
 
 @Injectable()
 export class FieldsService {
