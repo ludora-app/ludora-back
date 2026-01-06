@@ -4,6 +4,10 @@ import { Sport } from 'src/shared/constants/constants';
 import { FieldType, GameModes } from 'generated/prisma/enums';
 import { IsDateString, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
+/**
+ * @description DTO for filtering the fields in most use cases (findAll methods)
+ * Used by classic users
+ */
 export class FieldFilterDto {
   @IsOptional()
   @Transform(({ value }) => {
@@ -43,7 +47,7 @@ export class FieldFilterDto {
     isArray: true,
     required: false,
   })
-  gameMode?: GameModes[];
+  gameModes?: GameModes[];
 
   @IsOptional()
   @IsDateString()

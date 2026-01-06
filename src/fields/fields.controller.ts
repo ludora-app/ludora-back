@@ -1,4 +1,6 @@
+import { FastifyRequest } from 'fastify';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
@@ -18,6 +20,7 @@ import {
   Param,
   Post,
   Query,
+  Req,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -34,6 +37,8 @@ import {
 
 import { FieldsService } from './services/fields.service';
 import { FieldFilterDto } from './dto/input/field-filter.dto';
+import { FieldSlotsService } from './services/field-slots.service';
+import { CreateFieldSlotDto } from './dto/input/create-field-slot.dto';
 import { CreatePublicFieldDto } from './dto/input/create-public-field.dto';
 import { CreatePrivateFieldDto } from './dto/input/create-private-field.dto';
 import {
@@ -46,7 +51,18 @@ import {
 // ? Guards at endpoint level for the whole controller because some routes will be accessible by both B2C and B2B users.
 @Controller('fields')
 export class FieldsController {
-  constructor(private readonly fieldsService: FieldsService) {}
+  constructor(
+    private readonly fieldsService: FieldsService,
+    private readonly fieldSlotsService: FieldSlotsService,
+  ) {}
+
+  @Post('field-slots')
+  @UseGuards(AuthB2BGuard)
+  @Protected()
+  async createFieldSlot(@Body() dto: CreateFieldSlotDto, @Req() request: FastifyRequest) {
+    const partnerUid = request['user'].organisationUid;
+    return this.fieldSlotsService.create(dto, partnerUid);
+  }
 
   @Post()
   @UseGuards(AuthB2CGuard)
@@ -87,25 +103,6 @@ export class FieldsController {
     };
   }
 
-  @Get('list-verified/collection')
-  @UseGuards(AuthB2CGuard)
-  @Protected()
-  @ApiOkResponse({ type: PaginatedFieldResponse })
-  @ApiBadRequestResponse({ type: BadRequestResponseDto })
-  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get all verified fields' })
-  async findAllVerified(
-    @Query() filter: FieldFilterDto,
-  ): Promise<PaginationResponseTypeDto<FieldResponseDto>> {
-    const data = await this.fieldsService.findAll(filter);
-
-    return {
-      data,
-      message: 'Fields fetched successfully',
-    };
-  }
-
   @Post('private')
   @UseGuards(AuthB2CGuard)
   @Protected()
@@ -136,6 +133,42 @@ export class FieldsController {
     return {
       data: response,
       message: 'Private field created successfully',
+    };
+  }
+
+  @Get('list-verified/collection')
+  @UseGuards(AuthB2CGuard)
+  @Protected()
+  @ApiOkResponse({ type: PaginatedFieldResponse })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all verified fields' })
+  async findAllVerified(
+    @Query() filter: FieldFilterDto,
+  ): Promise<PaginationResponseTypeDto<FieldResponseDto>> {
+    const data = await this.fieldsService.findAll(filter);
+
+    return {
+      data,
+      message: 'Fields fetched successfully',
+    };
+  }
+
+  @Get('list-by-partner/collection')
+  @UseGuards(AuthB2BGuard)
+  @Protected()
+  @ApiOkResponse({ type: PaginatedFieldResponse })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all fields by partner uid' })
+  async findAllByPartnerUid(@Req() request: Request, @Query() filter: FieldFilterDto) {
+    const partnerUid = request['user'].organisationUid;
+    const data = await this.fieldsService.findAllByPartnerUid(partnerUid, filter);
+    return {
+      data,
+      message: 'Fields fetched successfully',
     };
   }
 

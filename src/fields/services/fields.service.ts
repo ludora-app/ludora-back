@@ -12,6 +12,7 @@ import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisati
 import { FieldMapper } from '../mappers/field.mapper';
 import { UpdateFieldDto } from '../dto/input/update-field.dto';
 import { FieldFilterDto } from '../dto/input/field-filter.dto';
+import { MyFieldsFilterDto } from '../dto/input/my-fields-filter.dto';
 import { FIELD_SUGGESTION_CONFIG } from '../constants/fields.constants';
 import { CreatePublicFieldDto } from '../dto/input/create-public-field.dto';
 import { CreatePrivateFieldDto } from '../dto/input/create-private-field.dto';
@@ -387,7 +388,7 @@ export class FieldsService {
       cursor,
       date,
       duration,
-      gameMode,
+      gameModes,
       limit = 10,
       maxDistance = FIELD_SUGGESTION_CONFIG.THRESHOLDS.MAX_DISTANCE_KM,
       search,
@@ -458,7 +459,7 @@ export class FieldsService {
       SELECT 1 FROM infrastructure."Field_slots" fs 
       WHERE fs.field_uid = f.uid AND fs.start_time >= ${searchStartTime} AND fs.start_time <= ${searchEndTime}
       AND fs.is_reserved = false ${durationConditionSlots}
-      ${gameMode?.length ? Prisma.sql`AND fs.game_mode::text IN (${Prisma.join(gameMode)})` : Prisma.empty}
+      ${gameModes?.length ? Prisma.sql`AND fs.game_mode::text IN (${Prisma.join(gameModes)})` : Prisma.empty}
     )
   `;
 
@@ -538,5 +539,105 @@ export class FieldsService {
     }
 
     return { items, nextCursor, totalCount: Number(rankedResults[0].total_count) };
+  }
+
+  async findAllByPartnerUid(
+    partnerUid: string,
+    filter: MyFieldsFilterDto,
+  ): Promise<PaginatedDataDto<FieldResponseDto>> {
+    const {
+      cursor,
+      date,
+      gameModes,
+      limit = 10,
+      search,
+      sports,
+      timezone = 'Europe/Paris',
+    } = filter;
+
+    const currentOffset = cursor ? parseInt(cursor, 10) : 0;
+    const userNow = DateTime.now().setZone(timezone);
+    const targetDate = date ? DateTime.fromISO(date, { zone: timezone }) : userNow;
+    const localStartOfDay = targetDate.startOf('day');
+    const localEndOfDay = targetDate.endOf('day');
+
+    const searchStartTime =
+      localStartOfDay < userNow ? userNow.toJSDate() : localStartOfDay.toJSDate();
+    const searchEndTime = localEndOfDay.toJSDate();
+
+    const query: {
+      take: number;
+      skip?: number;
+      cursor?: {
+        uid: string;
+      };
+      where: Prisma.FieldsWhereInput;
+    } = {
+      take: limit + 1,
+      where: { partnerUid },
+    };
+
+    if (cursor) {
+      query.cursor = {
+        uid: cursor,
+      };
+      query.skip = 1;
+    }
+
+    if (search) {
+      query.where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { address: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (sports?.length) {
+      query.where.sport = { in: sports };
+    }
+
+    if (gameModes?.length) {
+      query.where.fieldSlots = { some: { gameMode: { in: gameModes } } };
+    }
+
+    const fields = await this.prisma.fields.findMany({
+      ...query,
+      include: {
+        fieldImages: { select: { order: true, url: true }, take: 1 },
+        fieldSlots: {
+          orderBy: { startTime: 'asc' },
+          where: { startTime: { gte: searchStartTime, lte: searchEndTime } },
+        },
+      },
+      skip: currentOffset,
+      where: { partnerUid },
+    });
+
+    let nextCursor: string | null = null;
+    if (fields.length > limit) {
+      const nextItem = fields.pop();
+      nextCursor = nextItem!.uid;
+    }
+
+    const fieldsWithImageUrl = await Promise.all(
+      fields.map(async (field) => {
+        const imageUrl =
+          field.fieldImages.length > 0
+            ? await this.storageService.getSignedUrl(
+                StorageFolderName.FIELDS,
+                field.fieldImages[0].url,
+              )
+            : '';
+        return {
+          ...field,
+          fieldImages: field.fieldImages.map((image) => ({ ...image, url: imageUrl })),
+        };
+      }),
+    );
+
+    return {
+      items: fieldsWithImageUrl.map((f) => FieldMapper.toDto(f)),
+      nextCursor,
+      totalCount: fields.length,
+    };
   }
 }

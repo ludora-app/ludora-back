@@ -97,6 +97,9 @@ export class SessionsService {
     });
 
     if (conflict) {
+      this.logger.error(
+        `Another session is already scheduled at this time on this field: ${conflict.uid}`,
+      );
       throw new BadRequestException(
         'Another session is already scheduled at this time on this field',
       );
