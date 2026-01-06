@@ -9,6 +9,7 @@ import { CreatePublicFieldDto } from '../../src/fields/dto/input/create-public-f
 import { UpdateFieldDto } from '../../src/fields/dto/input/update-field.dto';
 import { FieldFilterDto } from '../../src/fields/dto/input/field-filter.dto';
 import { FieldsService } from 'src/fields/services/fields.service';
+import { FieldSlotsService } from 'src/fields/services/field-slots.service';
 
 describe('FieldsController', () => {
   let controller: FieldsController;
@@ -18,6 +19,10 @@ describe('FieldsController', () => {
     create: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
+  };
+
+  const mockFieldSlotsService = {
+    create: jest.fn(),
   };
 
   const mockAuthB2CGuard = {
@@ -35,6 +40,10 @@ describe('FieldsController', () => {
         {
           provide: FieldsService,
           useValue: mockFieldsService,
+        },
+        {
+          provide: FieldSlotsService,
+          useValue: mockFieldSlotsService,
         },
       ],
     })

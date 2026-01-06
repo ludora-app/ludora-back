@@ -140,7 +140,10 @@ describe('AuthB2BService', () => {
         accessToken: 'mock_access_token',
         refreshToken: 'mock_refresh_token',
       });
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith('partner@test.com');
+      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+        'partner@test.com',
+        expect.any(Object),
+      );
       expect(mockPartnersService.findOneByEmail).toHaveBeenCalledWith('partner@test.com');
       expect(argon2.verify).toHaveBeenCalledWith(mockUser.password, loginDto.password);
       expect(mockJwtService.sign).toHaveBeenCalledTimes(2);
@@ -216,7 +219,10 @@ describe('AuthB2BService', () => {
 
       await service.login(loginDtoUpperCase);
 
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith('partner@test.com');
+      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+        'partner@test.com',
+        expect.any(Object),
+      );
       expect(mockPartnersService.findOneByEmail).toHaveBeenCalledWith('PARTNER@TEST.COM');
     });
 
@@ -226,7 +232,10 @@ describe('AuthB2BService', () => {
       await expect(service.login(loginDto)).rejects.toThrow(
         new NotFoundException('User not found'),
       );
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith('partner@test.com');
+      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+        'partner@test.com',
+        expect.any(Object),
+      );
       expect(mockPartnersService.findOneByEmail).not.toHaveBeenCalled();
     });
 
@@ -241,7 +250,10 @@ describe('AuthB2BService', () => {
       await expect(service.login(loginDto)).rejects.toThrow(
         new NotFoundException('User not found'),
       );
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith('partner@test.com');
+      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+        'partner@test.com',
+        expect.any(Object),
+      );
       expect(mockPartnersService.findOneByEmail).not.toHaveBeenCalled();
     });
 
@@ -252,7 +264,10 @@ describe('AuthB2BService', () => {
       await expect(service.login(loginDto)).rejects.toThrow(
         new NotFoundException('User not found'),
       );
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith('partner@test.com');
+      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+        'partner@test.com',
+        expect.any(Object),
+      );
       expect(mockPartnersService.findOneByEmail).toHaveBeenCalledWith('partner@test.com');
     });
 
