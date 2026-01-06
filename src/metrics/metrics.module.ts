@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { UsersModule } from 'src/users/users.module';
 import { UsersService } from 'src/users/users.service';
 import { SharedModule } from 'src/shared/shared.module';
+import { FieldsModule } from 'src/fields/fields.module';
 import { SessionsModule } from 'src/sessions/sessions.module';
 import { SessionsService } from 'src/sessions/services/sessions.service';
 import { ConversationsModule } from 'src/conversations/conversations.module';
@@ -40,6 +41,7 @@ import { HttpMetricsInterceptor } from './http-metrics.interceptor';
     UserHourPreferencesModule,
     UserSportPreferencesModule,
     ConversationsModule,
+    FieldsModule,
   ],
   providers: [
     MetricsService,

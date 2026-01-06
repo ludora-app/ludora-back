@@ -4,13 +4,14 @@ import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, Sessions } from 'generated/prisma/client';
-import { SessionPlayers, SessionTeams } from 'generated/prisma/browser';
+import { FieldSlotsService } from 'src/fields/services/field-slots.service';
 import { ConversationsService } from 'src/conversations/conversations.service';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
 import { SessionScope, Sport, StorageFolderName } from 'src/shared/constants/constants';
+import { FieldSlots, FieldType, SessionPlayers, SessionTeams } from 'generated/prisma/browser';
 import { UserHourPreferencesService } from 'src/user-hour-preferences/user-hour-preferences.service';
 import { UserSportPreferencesService } from 'src/user-sport-preferences/user-sport-preferences.service';
 
@@ -39,13 +40,14 @@ export class SessionsService {
     private readonly conversationsService: ConversationsService,
     private readonly userHourPreferencesService: UserHourPreferencesService,
     private readonly userSportPreferencesService: UserSportPreferencesService,
+    private readonly fieldSlotsService: FieldSlotsService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(SessionsService.name);
   }
 
   async create(createSessionDto: CreateSessionDto): Promise<Sessions> {
-    const { endDate, fieldUid, level, startDate, userUid } = createSessionDto;
+    const { endDate, fieldUid, level, slotUid, startDate, userUid } = createSessionDto;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -58,14 +60,31 @@ export class SessionsService {
       throw new BadRequestException('Field not found');
     }
 
-    // ? check if the session is in the past
-    if (start < new Date()) {
-      throw new BadRequestException('The session is in the past');
+    if (field.type === FieldType.PRIVATE && !slotUid) {
+      throw new BadRequestException('Private fields require a field slot');
     }
 
-    // ? check if the end date is after the start date
-    if (end < start) {
-      throw new BadRequestException('The end date must be after the start date');
+    DateUtils.checkValidityForCreation(startDate, endDate);
+
+    let existingSlot: FieldSlots | null = null;
+    //* PRIVATE FIELD VERIFICATIONS
+    if (field.type === FieldType.PRIVATE) {
+      existingSlot = await this.fieldSlotsService.findOne(slotUid);
+      if (!existingSlot) {
+        throw new BadRequestException('Field slot not found');
+      }
+
+      if (existingSlot.isReserved) {
+        throw new BadRequestException('The slot is already reserved');
+      }
+      if (
+        !(
+          existingSlot.startTime.getTime() === start.getTime() &&
+          existingSlot.endTime.getTime() === end.getTime()
+        )
+      ) {
+        throw new BadRequestException('The slot is not available at this time');
+      }
     }
 
     // ? check if there is no session at this time
@@ -78,6 +97,9 @@ export class SessionsService {
     });
 
     if (conflict) {
+      this.logger.error(
+        `Another session is already scheduled at this time on this field: ${conflict.uid}`,
+      );
       throw new BadRequestException(
         'Another session is already scheduled at this time on this field',
       );
@@ -100,6 +122,7 @@ export class SessionsService {
           level,
           maxPlayersPerTeam: createSessionDto.maxPlayersPerTeam,
           minPlayersPerTeam: createSessionDto.minPlayersPerTeam,
+          slotUid: existingSlot?.uid,
           sport: field.sport as Sport,
           startDate: startDate,
           teamsPerGame: createSessionDto.teamsPerGame,
@@ -132,6 +155,10 @@ export class SessionsService {
       );
       return createdSession;
     });
+
+    if (field.type === FieldType.PRIVATE) {
+      await this.fieldSlotsService.markAsReserved(existingSlot.uid);
+    }
 
     return newSession;
   }

@@ -2,13 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 
 import { FieldsController } from '../../src/fields/fields.controller';
-import { FieldsService } from '../../src/fields/fields.service';
 import { AuthB2CGuard } from '../../src/auth/guards/auth-b2c.guard';
 import { AuthB2BGuard } from '../../src/auth/guards/auth-b2b.guard';
 import { Sport } from '../../src/shared/constants/constants';
 import { CreatePublicFieldDto } from '../../src/fields/dto/input/create-public-field.dto';
 import { UpdateFieldDto } from '../../src/fields/dto/input/update-field.dto';
 import { FieldFilterDto } from '../../src/fields/dto/input/field-filter.dto';
+import { FieldsService } from 'src/fields/services/fields.service';
+import { FieldSlotsService } from 'src/fields/services/field-slots.service';
 
 describe('FieldsController', () => {
   let controller: FieldsController;
@@ -18,6 +19,10 @@ describe('FieldsController', () => {
     create: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
+  };
+
+  const mockFieldSlotsService = {
+    create: jest.fn(),
   };
 
   const mockAuthB2CGuard = {
@@ -35,6 +40,10 @@ describe('FieldsController', () => {
         {
           provide: FieldsService,
           useValue: mockFieldsService,
+        },
+        {
+          provide: FieldSlotsService,
+          useValue: mockFieldSlotsService,
         },
       ],
     })
