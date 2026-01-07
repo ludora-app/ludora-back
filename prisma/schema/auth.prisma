@@ -70,7 +70,7 @@ model Users {
   userHourPreferences UserHourPreferences[]
   messageReceipts     MessageReceipts[]
   notifications       Notifications[]
-  userPushTokens      UserPushTokens[]
+  devices             Devices[]
 
   @@index([createdAt])
   @@index([isConnected])
