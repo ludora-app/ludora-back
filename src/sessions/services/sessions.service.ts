@@ -53,7 +53,7 @@ export class SessionsService {
   }
 
   async create(createSessionDto: CreateSessionDto): Promise<Sessions> {
-    const { endDate, fieldUid, level, slotUid, startDate, userUid } = createSessionDto;
+    const { endDate, fieldUid, level, slotUid, startDate, userUid, visibility } = createSessionDto;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -136,6 +136,7 @@ export class SessionsService {
           startDate: startDate,
           teamsPerGame,
           title: createSessionDto.title ? createSessionDto.title : autoTitle,
+          visibility,
         },
       });
       // create default teams in transaction and fetch them back

@@ -3,7 +3,7 @@ import {
   GameModes,
   PrismaClient,
   Sex,
-  TeamLabel,
+  TeamLabels,
   UserType,
   VerificationStatus,
 } from '../generated/prisma/client';
@@ -1261,7 +1261,7 @@ async function seed() {
 
   // 2 teams for each session (Team A and Team B)
   console.log('Creating teams for all sessions...');
-  const createdTeams: { uid: string; sessionUid: string; teamLabel: TeamLabel }[] = [];
+  const createdTeams: { uid: string; sessionUid: string; teamLabel: TeamLabels }[] = [];
   for (let i = 0; i < createdSessions.length; i++) {
     const session = createdSessions[i];
 
@@ -1270,34 +1270,34 @@ async function seed() {
       where: {
         sessionUid_teamLabel: {
           sessionUid: session.uid,
-          teamLabel: TeamLabel.A,
+          teamLabel: TeamLabels.A,
         },
       },
       update: {},
       create: {
         sessionUid: session.uid,
-        teamLabel: TeamLabel.A,
+        teamLabel: TeamLabels.A,
         teamName: 'Team A',
       },
     });
-    createdTeams.push({ uid: teamA.uid, sessionUid: session.uid, teamLabel: TeamLabel.A });
+    createdTeams.push({ uid: teamA.uid, sessionUid: session.uid, teamLabel: TeamLabels.A });
 
     // Team B
     const teamB = await prisma.sessionTeams.upsert({
       where: {
         sessionUid_teamLabel: {
           sessionUid: session.uid,
-          teamLabel: TeamLabel.B,
+          teamLabel: TeamLabels.B,
         },
       },
       update: {},
       create: {
         sessionUid: session.uid,
-        teamLabel: TeamLabel.B,
+        teamLabel: TeamLabels.B,
         teamName: 'Team B',
       },
     });
-    createdTeams.push({ uid: teamB.uid, sessionUid: session.uid, teamLabel: TeamLabel.B });
+    createdTeams.push({ uid: teamB.uid, sessionUid: session.uid, teamLabel: TeamLabels.B });
 
     if ((i + 1) % 30 === 0) {
       console.log(`Created teams for ${i + 1}/${createdSessions.length} sessions`);
