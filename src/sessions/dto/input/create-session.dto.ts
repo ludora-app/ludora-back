@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
-import { GameModes } from 'generated/prisma/client';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { SessionSportLevel } from 'src/shared/constants/constants';
+import { GameModes, SessionVisibility } from 'generated/prisma/client';
 import { IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 /**
@@ -92,6 +92,17 @@ export class CreateSessionDto {
     required: false,
   })
   level?: SessionSportLevel;
+
+  @IsEnum(SessionVisibility)
+  @IsOptional()
+  @ApiProperty({
+    default: SessionVisibility.PUBLIC,
+    description: 'The visibility of the session',
+    enum: SessionVisibility,
+    example: SessionVisibility.PUBLIC,
+    required: false,
+  })
+  visibility?: SessionVisibility;
 }
 
 export class CreateSessionFromRequestDto extends OmitType(CreateSessionDto, ['userUid']) {}

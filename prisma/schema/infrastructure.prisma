@@ -17,26 +17,24 @@ enum VerificationStatus {
   @@schema("infrastructure")
 }
 
-
 model Partners {
-  uid       String   @id @default(cuid())
-  name      String   @unique
-  imageUrl  String?  @map("image_url")
+  uid       String  @id @default(cuid())
+  name      String  @unique
+  imageUrl  String? @map("image_url")
   address   String
   latitude  Float
   longitude Float
   phone     String
-  email     String   @unique
-  
+  email     String  @unique
 
-  rank      Int      @default(0) @map("rank") 
-  
+  rank Int @default(0) @map("rank")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   userTokens    UserTokens[]
   refreshTokens RefreshTokens[]
-  
+
   fields        Fields[]
   partnerSports PartnerSports[]
 
@@ -60,7 +58,7 @@ model Fields {
   fieldSlots    FieldSlots[]
   partner       Partners?     @relation(fields: [partnerUid], references: [uid])
   sportRelation Sports        @relation(fields: [sport], references: [name])
-  sessions      Sessions[]    
+  sessions      Sessions[]
 
   @@index([partnerUid])
   @@index([longitude, latitude])
@@ -82,7 +80,7 @@ model FieldSlots {
   updatedAt  DateTime  @updatedAt @map("updated_at")
 
   field   Fields    @relation(fields: [fieldUid], references: [uid], onDelete: Cascade)
-  session Sessions? 
+  session Sessions?
 
   @@index([fieldUid])
   @@index([startTime, endTime])

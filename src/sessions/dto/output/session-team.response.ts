@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TeamLabel } from 'generated/prisma/client';
+import { TeamLabels } from 'generated/prisma/client';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
@@ -30,8 +30,8 @@ export class SessionTeamResponseData {
   @ApiProperty({ example: 'Team A', readOnly: true })
   readonly teamName: string;
 
-  @ApiProperty({ example: TeamLabel.A, readOnly: true })
-  readonly teamLabel: TeamLabel;
+  @ApiProperty({ example: TeamLabels.A, readOnly: true })
+  readonly teamLabel: TeamLabels;
 
   @ApiProperty({
     description: 'Session update date',

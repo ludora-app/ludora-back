@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { SessionTeams, TeamLabel } from 'generated/prisma/client';
+import { SessionTeams, TeamLabels } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
@@ -74,12 +74,12 @@ describe('SessionTeamsService', () => {
         data: [
           {
             sessionUid: sessionUid,
-            teamLabel: TeamLabel.A,
+            teamLabel: TeamLabels.A,
             teamName: 'Team A',
           },
           {
             sessionUid: sessionUid,
-            teamLabel: TeamLabel.B,
+            teamLabel: TeamLabels.B,
             teamName: 'Team B',
           },
         ],
@@ -98,12 +98,12 @@ describe('SessionTeamsService', () => {
         data: [
           {
             sessionUid: sessionUid,
-            teamLabel: TeamLabel.A,
+            teamLabel: TeamLabels.A,
             teamName: 'Team A',
           },
           {
             sessionUid: sessionUid,
-            teamLabel: TeamLabel.B,
+            teamLabel: TeamLabels.B,
             teamName: 'Team B',
           },
         ],
@@ -125,12 +125,12 @@ describe('SessionTeamsService', () => {
       expect(createCall.data).toHaveLength(2);
       expect(createCall.data[0]).toMatchObject({
         sessionUid: sessionUid,
-        teamLabel: TeamLabel.A,
+        teamLabel: TeamLabels.A,
         teamName: 'Team A',
       });
       expect(createCall.data[1]).toMatchObject({
         sessionUid: sessionUid,
-        teamLabel: TeamLabel.B,
+        teamLabel: TeamLabels.B,
         teamName: 'Team B',
       });
     });
@@ -142,7 +142,7 @@ describe('SessionTeamsService', () => {
       {
         uid: 'team-uid-1',
         sessionUid: sessionUid,
-        teamLabel: TeamLabel.A,
+        teamLabel: TeamLabels.A,
         teamName: 'Team A',
         createdAt: new Date('2023-01-01T12:00:00Z'),
         updatedAt: new Date('2023-01-01T12:00:00Z'),
@@ -151,7 +151,7 @@ describe('SessionTeamsService', () => {
       {
         uid: 'team-uid-2',
         sessionUid: sessionUid,
-        teamLabel: TeamLabel.B,
+        teamLabel: TeamLabels.B,
         teamName: 'Team B',
         createdAt: new Date('2023-01-01T12:00:00Z'),
         updatedAt: new Date('2023-01-01T12:00:00Z'),
@@ -299,7 +299,7 @@ describe('SessionTeamsService', () => {
     const mockTeam: SessionTeams & { _count: { sessionPlayers: number } } = {
       uid: teamUid,
       sessionUid: 'session-uid-123',
-      teamLabel: TeamLabel.A,
+      teamLabel: TeamLabels.A,
       teamName: 'Team A',
       createdAt: new Date('2023-01-01T12:00:00Z'),
       updatedAt: new Date('2023-01-01T12:00:00Z'),
@@ -405,7 +405,7 @@ describe('SessionTeamsService', () => {
       expect(result).toMatchObject({
         uid: teamUid,
         sessionUid: 'session-uid-123',
-        teamLabel: TeamLabel.A,
+        teamLabel: TeamLabels.A,
         teamName: 'Team A',
       });
       expect(result?.createdAt).toBeInstanceOf(Date);
@@ -442,7 +442,7 @@ describe('SessionTeamsService', () => {
         {
           uid: 'team-1',
           sessionUid: sessionUid,
-          teamLabel: TeamLabel.A,
+          teamLabel: TeamLabels.A,
           teamName: 'Team A',
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -451,7 +451,7 @@ describe('SessionTeamsService', () => {
         {
           uid: 'team-2',
           sessionUid: sessionUid,
-          teamLabel: TeamLabel.B,
+          teamLabel: TeamLabels.B,
           teamName: 'Team B',
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -480,7 +480,7 @@ describe('SessionTeamsService', () => {
       const mockTeam: SessionTeams & { _count: { sessionPlayers: number } } = {
         uid: teamUid,
         sessionUid: sessionUid,
-        teamLabel: TeamLabel.A,
+        teamLabel: TeamLabels.A,
         teamName: 'Team A',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -492,7 +492,7 @@ describe('SessionTeamsService', () => {
       const mockTeamWithPlayers = {
         uid: teamUid,
         sessionUid: sessionUid,
-        teamLabel: TeamLabel.A,
+        teamLabel: TeamLabels.A,
         teamName: 'Team A',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -511,7 +511,7 @@ describe('SessionTeamsService', () => {
       expect(singleTeam).toMatchObject({
         uid: teamUid,
         sessionUid: sessionUid,
-        teamLabel: TeamLabel.A,
+        teamLabel: TeamLabels.A,
         teamName: 'Team A',
       });
       expect(singleTeam?._count.sessionPlayers).toBe(3);
