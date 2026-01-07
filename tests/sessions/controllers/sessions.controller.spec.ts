@@ -76,9 +76,6 @@ describe('SessionsController', () => {
       fieldUid: 'field-uid-1',
       startDate: '2023-02-15T14:00:00Z',
       description: 'Test session',
-      maxPlayersPerTeam: 5,
-      minPlayersPerTeam: 3,
-      teamsPerGame: 2,
       title: 'Test Session Title',
       gameMode: GameModes.FIVE_V_FIVE,
     };
