@@ -73,33 +73,6 @@ export class CreateSessionDto {
   })
   endDate: string;
 
-  @IsNumber()
-  @IsNotEmpty()
-  @ApiProperty({
-    description: 'The maximum number of players per team',
-    example: 5,
-    required: true,
-  })
-  maxPlayersPerTeam: number;
-
-  @IsNumber()
-  @IsNotEmpty()
-  @ApiProperty({
-    description: 'The number of teams per game',
-    example: 2,
-    required: true,
-  })
-  teamsPerGame: number;
-
-  @IsNumber()
-  @IsNotEmpty()
-  @ApiProperty({
-    description: 'The minimum number of players per team',
-    example: 3,
-    required: true,
-  })
-  minPlayersPerTeam: number;
-
   @IsString()
   @IsNotEmpty()
   @ApiProperty({

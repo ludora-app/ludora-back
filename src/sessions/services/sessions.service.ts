@@ -11,9 +11,15 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
 import { SessionScope, Sport, StorageFolderName } from 'src/shared/constants/constants';
-import { FieldSlots, FieldType, SessionPlayers, SessionTeams } from 'generated/prisma/browser';
 import { UserHourPreferencesService } from 'src/user-hour-preferences/user-hour-preferences.service';
 import { UserSportPreferencesService } from 'src/user-sport-preferences/user-sport-preferences.service';
+import {
+  FieldSlots,
+  FieldType,
+  GameModes,
+  SessionPlayers,
+  SessionTeams,
+} from 'generated/prisma/browser';
 
 import { SessionMapper } from '../mappers/session.mapper';
 import { SessionTeamsService } from './session-teams.service';
@@ -110,6 +116,9 @@ export class SessionsService {
     if (!createSessionDto.title) {
       autoTitle = `Session de ${field.sport} le ${DateUtils.formatDate(startDate)}`;
     }
+    const { maxPlayersPerTeam, minPlayersPerTeam, teamsPerGame } = this.getPlayersPerTeamData(
+      createSessionDto.gameMode,
+    );
 
     const newSession = await this.prisma.$transaction(async (tx) => {
       const createdSession = await tx.sessions.create({
@@ -120,12 +129,12 @@ export class SessionsService {
           fieldUid: field.uid,
           gameMode: createSessionDto.gameMode,
           level,
-          maxPlayersPerTeam: createSessionDto.maxPlayersPerTeam,
-          minPlayersPerTeam: createSessionDto.minPlayersPerTeam,
+          maxPlayersPerTeam,
+          minPlayersPerTeam,
           slotUid: existingSlot?.uid,
           sport: field.sport as Sport,
           startDate: startDate,
-          teamsPerGame: createSessionDto.teamsPerGame,
+          teamsPerGame,
           title: createSessionDto.title ? createSessionDto.title : autoTitle,
         },
       });
@@ -644,6 +653,38 @@ export class SessionsService {
     const url = await this.storageService.getSignedUrl(StorageFolderName.SESSIONS, image.url);
 
     return { order: image.order, url };
+  }
+
+  /**
+   * Calculates the players per team data based on the game mode
+   * @param mode - The game mode
+   * @returns The players per team data
+   */
+  getPlayersPerTeamData(
+    mode: GameModes,
+  ): Required<Pick<Sessions, 'maxPlayersPerTeam' | 'minPlayersPerTeam' | 'teamsPerGame'>> {
+    switch (mode) {
+      case GameModes.ONE_V_ONE:
+        return { maxPlayersPerTeam: 1, minPlayersPerTeam: 1, teamsPerGame: 1 };
+      case GameModes.TWO_V_TWO:
+        return { maxPlayersPerTeam: 2, minPlayersPerTeam: 2, teamsPerGame: 1 };
+      case GameModes.THREE_V_THREE:
+        return { maxPlayersPerTeam: 3, minPlayersPerTeam: 3, teamsPerGame: 1 };
+      case GameModes.FOUR_V_FOUR:
+        return { maxPlayersPerTeam: 4, minPlayersPerTeam: 3, teamsPerGame: 1 };
+      case GameModes.FIVE_V_FIVE:
+        return { maxPlayersPerTeam: 5, minPlayersPerTeam: 3, teamsPerGame: 1 };
+      case GameModes.SIX_V_SIX:
+        return { maxPlayersPerTeam: 6, minPlayersPerTeam: 4, teamsPerGame: 1 };
+      case GameModes.SEVEN_V_SEVEN:
+        return { maxPlayersPerTeam: 7, minPlayersPerTeam: 5, teamsPerGame: 1 };
+      case GameModes.EIGHT_V_EIGHT:
+        return { maxPlayersPerTeam: 8, minPlayersPerTeam: 5, teamsPerGame: 1 };
+      case GameModes.TEN_V_TEN:
+        return { maxPlayersPerTeam: 10, minPlayersPerTeam: 7, teamsPerGame: 1 };
+      case GameModes.ELEVEN_V_ELEVEN:
+        return { maxPlayersPerTeam: 11, minPlayersPerTeam: 8, teamsPerGame: 1 };
+    }
   }
 
   /**
