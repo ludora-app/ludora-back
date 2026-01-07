@@ -7,7 +7,7 @@ import { UsersService } from 'src/users/users.service';
 import { NotificationsGateway } from 'src/notifications/notifications.gateway';
 import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
 import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
-import { NotificationType } from 'src/notifications/constants/notification.types';
+import { NotificationType } from 'generated/prisma/enums';
 
 describe('NotificationsGateway', () => {
   let gateway: NotificationsGateway;

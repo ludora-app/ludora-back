@@ -3,6 +3,7 @@ import { UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { NotificationType } from 'generated/prisma/enums';
 import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
 import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
 import {
@@ -14,7 +15,6 @@ import {
 } from '@nestjs/websockets';
 
 import { EventTypes } from './constants/event.types';
-import { NotificationType } from './constants/notification.types';
 import { NotificationEventDto } from './dto/notification-event.dto';
 
 /**
