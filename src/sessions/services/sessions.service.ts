@@ -19,6 +19,7 @@ import {
   GameModes,
   SessionPlayers,
   SessionTeams,
+  SessionVisibility,
 } from 'generated/prisma/browser';
 
 import { SessionMapper } from '../mappers/session.mapper';
@@ -179,7 +180,7 @@ export class SessionsService {
    * then scores them based on user preferences and proximity
    *
    * @param params - Filtering and pagination parameters
-   * @returns Paginated list of session suggestions with scores
+   * @returns Paginated list of PUBLIC sessions suggestions with scores
    */
   async findAll({
     cursor,
@@ -391,6 +392,7 @@ export class SessionsService {
           ${dateWhereSql}
           ${sportWhereSql} -- HERE: Strict filter only if filterSports is filled
           ${levelWhereSql}
+          AND s.visibility = ${SessionVisibility.PUBLIC}
       ) as ranked_sessions
       
       WHERE 1=1
@@ -440,6 +442,7 @@ export class SessionsService {
         sport: true,
         startDate: true,
         uid: true,
+        visibility: true,
       },
       where: { uid: { in: sessionUids } },
     });
@@ -476,6 +479,7 @@ export class SessionsService {
       scope,
       sports,
       startDateSortOrder,
+      visibility,
     } = filters;
 
     const where: Prisma.SessionsWhereInput = {};
@@ -532,6 +536,11 @@ export class SessionsService {
       where.level = level;
     }
 
+    // Handle visibility filter
+    if (visibility) {
+      where.visibility = visibility;
+    }
+
     // Build orderBy
     const orderBy: Prisma.SessionsOrderByWithRelationInput[] = [];
     if (startDateSortOrder) {
@@ -561,6 +570,7 @@ export class SessionsService {
         sport: true,
         startDate: true,
         uid: true,
+        visibility: true,
       },
       where,
     });

@@ -1,5 +1,5 @@
-import { GameModes, Sessions } from 'generated/prisma/client';
 import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
+import { GameModes, Sessions, SessionVisibility } from 'generated/prisma/client';
 
 import { SessionResponseData } from '../dto/output/session.response.dto';
 import { SessionCollectionItemDto } from '../dto/output/session-collection.response.dto';
@@ -13,6 +13,7 @@ export interface RawSession {
   gameMode: string;
   creatorUid: string;
   maxPlayersPerTeam: number;
+  visibility?: SessionVisibility;
   sessionTeams: {
     teamName: string;
     _count: {
@@ -72,6 +73,7 @@ export class SessionMapper {
       sport: sessionData.sport as Sport,
       startDate: sessionData.startDate,
       uid: sessionData.uid,
+      visibility: sessionData.visibility as SessionVisibility,
 
       // Teams
       sessionTeams: sessionTeams.map((team) => ({

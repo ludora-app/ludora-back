@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { GameModes } from 'generated/prisma/enums';
 import { Sport } from 'src/shared/constants/constants';
+import { GameModes, SessionVisibility } from 'generated/prisma/enums';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
 /**
@@ -74,6 +74,13 @@ export class SessionResponseData {
     readOnly: true,
   })
   creatorUid: string;
+
+  @ApiProperty({
+    description: 'Session visibility',
+    example: SessionVisibility.PUBLIC,
+    readOnly: true,
+  })
+  visibility?: SessionVisibility;
 }
 
 export class SessionResponseDto extends ResponseTypeDto<SessionResponseData> {
