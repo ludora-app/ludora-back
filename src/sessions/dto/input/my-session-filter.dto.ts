@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
+import { SessionVisibility } from 'generated/prisma/enums';
 import { SortOrder } from 'generated/prisma/internal/prismaNamespace';
 import { IsDate, IsEnum, IsNumber, IsOptional } from 'class-validator';
 import { SessionScope, SessionSportLevel, Sport } from 'src/shared/constants/constants';
@@ -112,4 +113,14 @@ export class MySessionFilterDto {
     required: false,
   })
   level?: SessionSportLevel;
+
+  @IsOptional()
+  @IsEnum(SessionVisibility)
+  @ApiProperty({
+    description: 'Visibility for filtering sessions',
+    enum: SessionVisibility,
+    example: SessionVisibility.PUBLIC,
+    required: false,
+  })
+  visibility?: SessionVisibility;
 }
