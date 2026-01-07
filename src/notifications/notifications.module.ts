@@ -4,10 +4,11 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
 
 import { NotificationsGateway } from './notifications.gateway';
+import { NotificationsService } from './notifications.service';
 
 @Module({
   exports: [NotificationsGateway],
   imports: [PrismaModule, UsersModule],
-  providers: [NotificationsGateway, WebSocketAuthService],
+  providers: [NotificationsGateway, WebSocketAuthService, NotificationsService],
 })
 export class NotificationsModule {}

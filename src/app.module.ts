@@ -23,6 +23,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { UserHourPreferencesModule } from './user-hour-preferences/user-hour-preferences.module';
 import { UserSportPreferencesModule } from './user-sport-preferences/user-sport-preferences.module';
+import { DevicesModule } from './devices/devices.module';
 
 const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV === 'development';
 
@@ -116,6 +117,7 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
     UserSportPreferencesModule,
     UsersModule,
     FirebaseModule,
+    DevicesModule,
   ],
   providers: [
     AppService,
