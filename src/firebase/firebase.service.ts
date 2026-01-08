@@ -17,17 +17,35 @@ export class FirebaseService implements OnModuleInit {
 
   async onModuleInit() {
     try {
-      this.app = admin.initializeApp({
-        credential: admin.credential.cert({
-          clientEmail: this.configService.get<string>('FIREBASE_CLIENT_EMAIL'),
-          privateKey: this.configService.get<string>('FIREBASE_PRIVATE_KEY')?.replace(/\\n/g, '\n'),
-          projectId: this.configService.get<string>('FIREBASE_PROJECT_ID'),
-        }),
-      });
+      if (admin.apps.length > 0) {
+        this.app = admin.app();
+        this.logger.info('Firebase Admin already initialized');
+        return;
+      }
 
-      this.logger.info('Firebase app initialized');
+      const serviceAccountPath = this.configService.get<string>('FIREBASE_SERVICE_ACCOUNT_PATH');
+
+      if (serviceAccountPath) {
+        const serviceAccount = require(`../../${serviceAccountPath}`);
+
+        this.app = admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+        });
+      } else {
+        this.app = admin.initializeApp({
+          credential: admin.credential.cert({
+            clientEmail: this.configService.get<string>('FIREBASE_CLIENT_EMAIL'),
+            privateKey: this.configService
+              .get<string>('FIREBASE_PRIVATE_KEY')
+              ?.replace(/\\n/g, '\n'),
+            projectId: this.configService.get<string>('FIREBASE_PROJECT_ID'),
+          }),
+        });
+      }
+
+      this.logger.info('Firebase Admin initialized successfully');
     } catch (error) {
-      this.logger.error(error, 'Error initializing Firebase app');
+      this.logger.error('Firebase initialization failed', error);
       throw error;
     }
   }

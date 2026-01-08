@@ -23,15 +23,16 @@ enum Platform {
 }
 
 model Notifications {
-  uid       String           @id @default(cuid())
-  userUid   String           @map("user_uid")
-  type      NotificationType
-  title     String
-  body      String
-  data      Json?
-  isRead    Boolean          @default(false) @map("is_read")
-  createdAt DateTime         @default(now()) @map("created_at")
-  readAt    DateTime?        @map("read_at")
+  uid         String           @id @default(cuid())
+  userUid     String           @map("user_uid")
+  type        NotificationType
+  title       String
+  body        String
+  data        Json?
+  sentViaPush Boolean          @default(false) @map("sent_via_push")
+  isRead      Boolean          @default(false) @map("is_read")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  readAt      DateTime?        @map("read_at")
 
   user Users @relation(fields: [userUid], references: [uid], onDelete: Cascade)
 

@@ -54,11 +54,11 @@ export class DevicesService {
   }
 
   /**
-   * Get all tokens for a user
+   * Get all active FCM tokens for a user
    * @param userUid
    * @returns
    */
-  async getUserTokens(userUid: string): Promise<string[]> {
+  async getUserFcmTokens(userUid: string): Promise<string[]> {
     const devices = await this.prisma.devices.findMany({
       select: {
         fcmToken: true,
