@@ -28,7 +28,6 @@ import { NotificationEventDto } from './dto/notification-event.dto';
     credentials: true,
     origin: '*',
   },
-  namespace: '/notifications',
 })
 @UseGuards(WebSocketAuthGuard)
 export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
