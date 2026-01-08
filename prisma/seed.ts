@@ -1,6 +1,7 @@
 import {
   FieldType,
   GameModes,
+  InvitationStatus,
   PrismaClient,
   Sex,
   TeamLabels,
@@ -1021,6 +1022,332 @@ async function seed() {
     },
   ];
 
+  // Generate 100+ additional users
+  const additionalUsers = [];
+  const firstNames = [
+    'Alex',
+    'Jordan',
+    'Taylor',
+    'Morgan',
+    'Casey',
+    'Riley',
+    'Avery',
+    'Quinn',
+    'Blake',
+    'Drew',
+    'Cameron',
+    'Dakota',
+    'Skylar',
+    'Phoenix',
+    'River',
+    'Sage',
+    'Storm',
+    'Kai',
+    'Remy',
+    'Finley',
+    'Parker',
+    'Reese',
+    'Rowan',
+    'Sawyer',
+    'Emerson',
+    'Harley',
+    'Peyton',
+    'Hayden',
+    'Darcy',
+    'Lennox',
+    'Presley',
+    'Oakley',
+    'Ashton',
+    'Kendall',
+    'Skyler',
+    'Ariel',
+    'Bryn',
+    'Cody',
+    'Dallas',
+    'Ellis',
+    'Falcon',
+    'Grayson',
+    'Haven',
+    'Indigo',
+    'Jude',
+    'Keenan',
+    'Logan',
+    'Morgan',
+    'Nolan',
+    'Owen',
+    'Parker',
+    'Quinn',
+    'Rory',
+    'Scout',
+    'Tatum',
+    'Ulysses',
+    'Vaughn',
+    'Wyatt',
+    'Xavier',
+    'Yale',
+    'Zephyr',
+    'Adrian',
+    'Brennan',
+    'Colton',
+    'Dalton',
+    'Ethan',
+    'Finch',
+    'Griffin',
+    'Harrison',
+    'Isaac',
+    'Jackson',
+    'Keaton',
+    'Liam',
+    'Mason',
+    'Nathan',
+    'Oliver',
+    'Patrick',
+    'Quincy',
+    'Ryan',
+    'Samuel',
+    'Thomas',
+    'Ulrich',
+    'Victor',
+    'William',
+    'Xavier',
+    'Yuri',
+    'Zachary',
+    'Abe',
+    'Benson',
+    'Cornelius',
+    'Dominic',
+    'Emilio',
+    'Fabio',
+    'Gideon',
+    'Hector',
+    'Igor',
+    'Jasper',
+    'Klaus',
+    'Lucian',
+    'Marcus',
+    'Nicolas',
+    'Oscar',
+    'Paolo',
+  ];
+  const lastNames = [
+    'Martin',
+    'Bernard',
+    'Thomas',
+    'Robert',
+    'Richard',
+    'Petit',
+    'Durand',
+    'Lefevre',
+    'Michel',
+    'Garcia',
+    'David',
+    'Bertrand',
+    'Roux',
+    'Vincent',
+    'Fournier',
+    'Morel',
+    'Girardin',
+    'Andre',
+    'Leroy',
+    'Moreau',
+    'Meunier',
+    'Brun',
+    'Martel',
+    'Blanc',
+    'Bonnet',
+    'Boucher',
+    'Bourgois',
+    'Breton',
+    'Broussard',
+    'Brunet',
+    'Brunette',
+    'Bruyere',
+    'Buchanan',
+    'Buckley',
+    'Buell',
+    'Buford',
+    'Bugbee',
+    'Buhl',
+    'Buhrman',
+    'Bulkley',
+    'Bull',
+    'Bullock',
+    'Bumgarner',
+    'Bunch',
+    'Bundy',
+    'Bunker',
+    'Bunn',
+    'Bunting',
+    'Burbank',
+    'Burchard',
+    'Burch',
+    'Burckhardt',
+    'Burden',
+    'Burford',
+    'Burg',
+    'Burge',
+    'Burger',
+    'Burgess',
+    'Burget',
+    'Burgin',
+    'Burgoyne',
+    'Burgreen',
+    'Burk',
+    'Burke',
+    'Burkett',
+    'Burkhart',
+    'Burkhead',
+    'Burkholder',
+    'Burks',
+    'Burley',
+    'Burleson',
+    'Burley',
+    'Burlingame',
+    'Burman',
+    'Burmeister',
+    'Burn',
+    'Burnaby',
+    'Burnell',
+    'Burner',
+    'Burnes',
+    'Burness',
+    'Burnett',
+    'Burney',
+    'Burnham',
+    'Burnie',
+    'Burnley',
+    'Burns',
+    'Burnsides',
+    'Burnum',
+    'Burpee',
+    'Burr',
+    'Burrage',
+    'Burrell',
+    'Burren',
+    'Burress',
+    'Burrett',
+    'Burridge',
+    'Burris',
+    'Burriss',
+    'Burritt',
+    'Burro',
+    'Burrow',
+    'Burrows',
+    'Burrus',
+    'Bursey',
+    'Burson',
+    'Burt',
+    'Burta',
+    'Burte',
+    'Burton',
+    'Burts',
+    'Burwell',
+    'Bury',
+    'Busby',
+    'Buscemi',
+    'Busch',
+    'Buse',
+    'Busenbark',
+    'Busfield',
+    'Bush',
+    'Bushby',
+    'Bushee',
+    'Busher',
+    'Bushey',
+    'Bushman',
+    'Bushnell',
+    'Bushy',
+    'Busick',
+    'Busk',
+    'Busker',
+    'Buskey',
+    'Buskirk',
+    'Busman',
+    'Buss',
+    'Busse',
+    'Bussey',
+    'Bussinger',
+    'Bussone',
+    'Bust',
+    'Bustamante',
+    'Buster',
+    'Bustin',
+    'Bustle',
+    'Busto',
+    'Busts',
+    'Buswell',
+    'Busy',
+    'Butcher',
+    'Buterbaugh',
+    'Buterbaugh',
+    'Buterbaugh',
+    'Buterfield',
+    'Butfield',
+    'Butke',
+    'Butker',
+    'Butko',
+    'Butland',
+    'Butlar',
+    'Butler',
+    'Butley',
+    'Butlin',
+    'Butner',
+    'Butram',
+    'Butrick',
+    'Butrum',
+    'Butscher',
+    'Butsford',
+    'Butsow',
+    'Butson',
+    'Butt',
+    'Buttacavoli',
+    'Buttafuoco',
+    'Buttafuoco',
+    'Buttafuoco',
+    'Buttafuoco',
+    'Buttafuoco',
+    'Buttafuoco',
+    'Buttafuoco',
+    'Buttafuoco',
+    'Buttafuoco',
+    'Buttafuoco',
+  ];
+  const domains = [
+    'gmail.com',
+    'hotmail.fr',
+    'yahoo.fr',
+    'outlook.com',
+    'protonmail.com',
+    'mail.com',
+  ];
+
+  for (let i = 0; i < 100; i++) {
+    const firstName = firstNames[i % firstNames.length];
+    const lastName = lastNames[i % lastNames.length];
+    const domain = domains[i % domains.length];
+    const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i}@${domain}`;
+
+    additionalUsers.push({
+      email,
+      password: await hashPassword('Password123!'),
+      firstname: firstName,
+      lastname: lastName,
+      birthdate: new Date(
+        1990 + Math.floor(Math.random() * 30),
+        Math.floor(Math.random() * 12),
+        Math.floor(Math.random() * 28),
+      ),
+      sex: Math.random() > 0.5 ? Sex.MALE : Sex.FEMALE,
+      bio: `Passionné de sports et de jeux en équipe`,
+      phone: `+336${Math.floor(Math.random() * 100000000)
+        .toString()
+        .padStart(8, '0')}`,
+      imageUrl: '1738433236109explore2.png',
+    });
+  }
+
+  users.push(...additionalUsers);
+
   const createdUsers: { uid: string }[] = [];
   for (const user of users) {
     const createdUser = await prisma.users.upsert({
@@ -1346,6 +1673,117 @@ async function seed() {
   }
 
   console.log(`${createdPlayers.length} players added to sessions`);
+
+  // Create friend relationships and invitations
+  console.log('Creating friend relationships and invitations...');
+
+  const friendRelationships = [];
+
+  // Main users indices
+  const mainUserIndices = [0, 1, 2, 3, 4]; // Seto, Yugi, Joey, Marik, Yuji
+
+  // For each main user, create at least 20 friends from the additional users
+  for (const mainUserIdx of mainUserIndices) {
+    const mainUserUid = createdUsers[mainUserIdx].uid;
+
+    // Connect to 25 random users from the additional users (indices 17-116)
+    const friendIndices = [];
+    for (let i = 0; i < 25; i++) {
+      const randomIdx = 17 + Math.floor(Math.random() * 100); // Random from additional users
+      if (!friendIndices.includes(randomIdx) && randomIdx !== mainUserIdx) {
+        friendIndices.push(randomIdx);
+      }
+    }
+
+    // Ensure we have at least 20 friends
+    while (friendIndices.length < 20) {
+      const randomIdx = 17 + Math.floor(Math.random() * 100);
+      if (!friendIndices.includes(randomIdx) && randomIdx !== mainUserIdx) {
+        friendIndices.push(randomIdx);
+      }
+    }
+
+    // Create friendships for this main user
+    for (let i = 0; i < friendIndices.length; i++) {
+      const friendUid = createdUsers[friendIndices[i]].uid;
+
+      // Ensure consistent ordering (smaller uid first)
+      const [userUid1, userUid2] =
+        mainUserUid < friendUid ? [mainUserUid, friendUid] : [friendUid, mainUserUid];
+
+      // Vary the status: 80% accepted, 15% pending, 5% rejected
+      let status: InvitationStatus = InvitationStatus.ACCEPTED;
+      const rand = Math.random();
+      if (rand < 0.15) {
+        status = InvitationStatus.PENDING;
+      } else if (rand < 0.2) {
+        status = InvitationStatus.REJECTED;
+      }
+
+      friendRelationships.push({
+        userUid1,
+        userUid2,
+        status,
+      });
+    }
+  }
+
+  // Create friendships between the 5 main users themselves
+  for (let i = 0; i < mainUserIndices.length; i++) {
+    for (let j = i + 1; j < mainUserIndices.length; j++) {
+      const user1Uid = createdUsers[mainUserIndices[i]].uid;
+      const user2Uid = createdUsers[mainUserIndices[j]].uid;
+
+      const [userUid1, userUid2] =
+        user1Uid < user2Uid ? [user1Uid, user2Uid] : [user2Uid, user1Uid];
+
+      friendRelationships.push({
+        userUid1,
+        userUid2,
+        status: InvitationStatus.ACCEPTED,
+      });
+    }
+  }
+
+  // Create some cross-friendships between other original characters
+  const otherCharacterIndices = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+  for (let i = 0; i < otherCharacterIndices.length; i++) {
+    for (let j = i + 1; j < Math.min(i + 4, otherCharacterIndices.length); j++) {
+      const user1Uid = createdUsers[otherCharacterIndices[i]].uid;
+      const user2Uid = createdUsers[otherCharacterIndices[j]].uid;
+
+      const [userUid1, userUid2] =
+        user1Uid < user2Uid ? [user1Uid, user2Uid] : [user2Uid, user1Uid];
+
+      friendRelationships.push({
+        userUid1,
+        userUid2,
+        status: InvitationStatus.ACCEPTED,
+      });
+    }
+  }
+
+  // Upsert all friend relationships
+  let createdCount = 0;
+  for (const relationship of friendRelationships) {
+    try {
+      await prisma.friends.upsert({
+        where: {
+          userUid1_userUid2: {
+            userUid1: relationship.userUid1,
+            userUid2: relationship.userUid2,
+          },
+        },
+        update: { status: relationship.status },
+        create: relationship,
+      });
+      createdCount++;
+    } catch (e) {
+      // Skip duplicates
+    }
+  }
+
+  console.log(`${createdCount} friend relationships created`);
   console.log('✅ Seed completed successfully!');
 }
 
