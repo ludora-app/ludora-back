@@ -66,6 +66,7 @@ COPY --from=builder --chown=nodejs:nodejs /usr/src/app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /usr/src/app/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /usr/src/app/package.json ./
 COPY --from=builder --chown=nodejs:nodejs /usr/src/app/prisma ./prisma
+COPY --from=builder --chown=nodejs:nodejs /usr/src/app/config ./config
 
 # Copy envconsul config, vault-auth and start script
 COPY --chown=nodejs:nodejs scripts/vault/envconsul-docker-prod.hcl /etc/envconsul/config.hcl

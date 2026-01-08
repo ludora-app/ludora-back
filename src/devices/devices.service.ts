@@ -4,6 +4,7 @@ import { FirebaseService } from 'src/firebase/firebase.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { RegisterDeviceDto } from './dto/input/register-device.dto';
+import { DeviceResponseData } from './dto/output/device.response.dto';
 
 @Injectable()
 export class DevicesService {
@@ -20,7 +21,7 @@ export class DevicesService {
    * @param dto
    * @returns
    */
-  async registerDevice(userUid: string, dto: RegisterDeviceDto) {
+  async registerDevice(userUid: string, dto: RegisterDeviceDto): Promise<DeviceResponseData> {
     const isValid = await this.firebaseService.verifyToken(dto.fcmToken);
 
     if (!isValid) {
@@ -36,6 +37,15 @@ export class DevicesService {
         osVersion: dto.osVersion,
         platform: dto.platform,
         userUid,
+      },
+      select: {
+        appVersion: true,
+        deviceId: true,
+        fcmToken: true,
+        isActive: true,
+        osVersion: true,
+        platform: true,
+        uid: true,
       },
       update: {
         appVersion: dto.appVersion,
@@ -77,7 +87,7 @@ export class DevicesService {
    * @param fcmToken
    * @returns
    */
-  async unregisterDevice(fcmToken: string) {
+  async unregisterDevice(fcmToken: string): Promise<void> {
     await this.prisma.devices.update({
       data: { isActive: false },
       where: { fcmToken },

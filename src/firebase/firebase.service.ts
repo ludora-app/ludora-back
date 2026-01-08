@@ -26,21 +26,25 @@ export class FirebaseService implements OnModuleInit {
       const serviceAccountPath = this.configService.get<string>('FIREBASE_SERVICE_ACCOUNT_PATH');
 
       if (serviceAccountPath) {
-        const serviceAccount = require(`../../${serviceAccountPath}`);
+        const fs = require('fs');
+        const path = require('path');
 
-        this.app = admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-        });
+        // Resolve path relative to project root
+        const resolvedPath = path.resolve(process.cwd(), serviceAccountPath);
+
+        if (!fs.existsSync(resolvedPath)) {
+          this.logger.warn(
+            `Service account file not found at ${resolvedPath}, falling back to environment variables`,
+          );
+          this.initializeWithEnvVars();
+        } else {
+          const serviceAccount = require(resolvedPath);
+          this.app = admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+          });
+        }
       } else {
-        this.app = admin.initializeApp({
-          credential: admin.credential.cert({
-            clientEmail: this.configService.get<string>('FIREBASE_CLIENT_EMAIL'),
-            privateKey: this.configService
-              .get<string>('FIREBASE_PRIVATE_KEY')
-              ?.replace(/\\n/g, '\n'),
-            projectId: this.configService.get<string>('FIREBASE_PROJECT_ID'),
-          }),
-        });
+        this.initializeWithEnvVars();
       }
 
       this.logger.info('Firebase Admin initialized successfully');
@@ -48,6 +52,26 @@ export class FirebaseService implements OnModuleInit {
       this.logger.error('Firebase initialization failed', error);
       throw error;
     }
+  }
+
+  private initializeWithEnvVars() {
+    const clientEmail = this.configService.get<string>('FIREBASE_CLIENT_EMAIL');
+    const privateKey = this.configService.get<string>('FIREBASE_PRIVATE_KEY');
+    const projectId = this.configService.get<string>('FIREBASE_PROJECT_ID');
+
+    if (!clientEmail || !privateKey || !projectId) {
+      throw new Error(
+        'Firebase credentials not found. Either provide FIREBASE_SERVICE_ACCOUNT_PATH or set FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, and FIREBASE_PROJECT_ID environment variables.',
+      );
+    }
+
+    this.app = admin.initializeApp({
+      credential: admin.credential.cert({
+        clientEmail,
+        privateKey: privateKey.replace(/\\n/g, '\n'),
+        projectId,
+      }),
+    });
   }
 
   /**
