@@ -4,9 +4,11 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { NotificationType } from 'generated/prisma/enums';
 import { DevicesService } from 'src/devices/devices.service';
 import { FirebaseService } from 'src/firebase/firebase.service';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
 import { NotificationMetadata } from './dto/input/notification-metadata';
 import { CreateNotificationDto } from './dto/input/create-notification.dto';
+import { NotificationResponseData } from './dto/output/notification-response.dto';
 
 @Injectable()
 export class NotificationsService {
@@ -201,37 +203,70 @@ export class NotificationsService {
   }
 
   /**
-   * Récupérer toutes les notifications d'un utilisateur (pour l'app)
+   * Find all notifications for a user
+   * @param userUid
+   * @param limit
+   * @param offset
+   * @returns
    */
-  async getForUser(userUid: string, limit = 20, offset = 0) {
-    return this.prisma.notifications.findMany({
+  async findAllByUserUid(
+    userUid: string,
+    limit = 20,
+    offset = 0,
+  ): Promise<PaginatedDataDto<NotificationResponseData>> {
+    const notifications = await this.prisma.notifications.findMany({
       orderBy: { createdAt: 'desc' },
+      select: {
+        body: true,
+        createdAt: true,
+        data: true,
+        isRead: true,
+        readAt: true,
+        sentViaPush: true,
+        title: true,
+        type: true,
+        uid: true,
+        userUid: true,
+      },
       skip: offset,
       take: limit,
       where: {
         userUid,
       },
     });
+
+    let nextCursor: string | null = null;
+    if (notifications.length > limit) {
+      const nextItem = notifications.pop();
+      nextCursor = nextItem!.uid;
+    }
+
+    return {
+      items: notifications,
+      nextCursor,
+      totalCount: notifications.length,
+    };
   }
 
   /**
-   * Marquer une notification comme lue
+   * Mark a notification as read
    */
-  async markAsRead(uid: string, userUid: string) {
-    return this.prisma.notifications.update({
+  async markAsRead(uid: string, userUid: string): Promise<void> {
+    await this.prisma.notifications.update({
       data: {
         isRead: true,
         readAt: new Date(),
       },
       where: { uid, userUid },
     });
+    this.logger.debug(`Notification marked as read: ${uid} for user ${userUid}`);
   }
 
   /**
-   * Marquer toutes les notifications comme lues
+   * Mark all notifications as read
    */
-  async markAllAsRead(userUid: string) {
-    return this.prisma.notifications.updateMany({
+  async markAllAsRead(userUid: string): Promise<void> {
+    await this.prisma.notifications.updateMany({
       data: {
         isRead: true,
         readAt: new Date(),
@@ -241,10 +276,11 @@ export class NotificationsService {
         userUid,
       },
     });
+    this.logger.debug(`All notifications marked as read for user ${userUid}`);
   }
 
   /**
-   * Compter les notifications non lues
+   * Count unread notifications
    */
   async getUnreadCount(userUid: string): Promise<number> {
     return this.prisma.notifications.count({
@@ -256,11 +292,12 @@ export class NotificationsService {
   }
 
   /**
-   * Supprimer une notification
+   * Delete a notification
    */
-  async delete(uid: string, userUid: string) {
-    return this.prisma.notifications.delete({
+  async delete(uid: string, userUid: string): Promise<void> {
+    await this.prisma.notifications.delete({
       where: { uid, userUid },
     });
+    this.logger.debug(`Notification deleted: ${uid} for user ${userUid}`);
   }
 }

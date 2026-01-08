@@ -7,8 +7,10 @@ import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
 
 import { NotificationsGateway } from './notifications.gateway';
 import { NotificationsService } from './notifications.service';
+import { NotificationsController } from './notifications.controller';
 
 @Module({
+  controllers: [NotificationsController],
   exports: [NotificationsGateway],
   imports: [PrismaModule, UsersModule, DevicesModule],
   providers: [NotificationsGateway, WebSocketAuthService, NotificationsService, FirebaseService],

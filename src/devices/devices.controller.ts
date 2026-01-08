@@ -26,7 +26,7 @@ import {
 import { DevicesService } from './devices.service';
 import { RegisterDeviceDto } from './dto/input/register-device.dto';
 import { UnregisterDeviceDto } from './dto/input/unregister-device.dto';
-import { DeviceResponseData, DeviceResponseDto } from './dto/output/device.response.dto';
+import { DeviceResponseData, DeviceResponseDto } from './dto/output/device-response.dto';
 
 @UseGuards(AuthB2CGuard)
 @Controller('devices')

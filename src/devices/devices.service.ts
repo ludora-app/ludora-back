@@ -4,7 +4,7 @@ import { FirebaseService } from 'src/firebase/firebase.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { RegisterDeviceDto } from './dto/input/register-device.dto';
-import { DeviceResponseData } from './dto/output/device.response.dto';
+import { DeviceResponseData } from './dto/output/device-response.dto';
 
 @Injectable()
 export class DevicesService {
