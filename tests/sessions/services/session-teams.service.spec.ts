@@ -168,7 +168,20 @@ describe('SessionTeamsService', () => {
 
       // Assert
       expect(result).toEqual({
-        items: mockTeams,
+        items: [
+          {
+            teamName: 'Team A',
+            teamLabel: TeamLabels.A,
+            numberOfPlayers: 0,
+            sessionPlayers: [],
+          },
+          {
+            teamName: 'Team B',
+            teamLabel: TeamLabels.B,
+            numberOfPlayers: 0,
+            sessionPlayers: [],
+          },
+        ],
         totalCount: 2,
         nextCursor: null,
       });
@@ -296,41 +309,68 @@ describe('SessionTeamsService', () => {
 
   describe('findOneByUid', () => {
     const teamUid = 'team-uid-123';
-    const mockTeam: SessionTeams & { _count: { sessionPlayers: number } } = {
-      uid: teamUid,
+    const mockTeamFromDb = {
       sessionUid: 'session-uid-123',
       teamLabel: TeamLabels.A,
       teamName: 'Team A',
-      createdAt: new Date('2023-01-01T12:00:00Z'),
-      updatedAt: new Date('2023-01-01T12:00:00Z'),
-      _count: {
-        sessionPlayers: 5,
-      },
+      sessionPlayers: [
+        {
+          userUid: 'user-1',
+          teamUid: teamUid,
+          user: {
+            firstname: 'John',
+            lastname: 'Doe',
+            imageUrl: 'image1.jpg',
+          },
+        },
+        {
+          userUid: 'user-2',
+          teamUid: teamUid,
+          user: {
+            firstname: 'Jane',
+            lastname: 'Smith',
+            imageUrl: 'image2.jpg',
+          },
+        },
+      ],
     };
 
     const expectedFindUniqueCall = {
       where: {
         uid: teamUid,
       },
-      include: {
-        _count: {
+      select: {
+        sessionPlayers: {
           select: {
-            sessionPlayers: true,
+            teamUid: true,
+            user: {
+              select: {
+                firstname: true,
+                imageUrl: true,
+                lastname: true,
+              },
+            },
+            userUid: true,
           },
         },
+        sessionUid: true,
+        teamLabel: true,
+        teamName: true,
       },
     };
 
-    it('should return a team with player count when found', async () => {
+    it('should return a team with players when found', async () => {
       // Arrange
-      mockPrismaService.sessionTeams.findUnique.mockResolvedValue(mockTeam);
+      mockPrismaService.sessionTeams.findUnique.mockResolvedValue(mockTeamFromDb);
 
       // Act
       const result = await service.findOneByUid(teamUid);
 
       // Assert
-      expect(result).toEqual(mockTeam);
-      expect(result._count.sessionPlayers).toBe(5);
+      expect(result.teamName).toBe('Team A');
+      expect(result.teamLabel).toBe(TeamLabels.A);
+      expect(result.numberOfPlayers).toBe(2);
+      expect(result.sessionPlayers).toHaveLength(2);
       expect(mockPrismaService.sessionTeams.findUnique).toHaveBeenCalledWith(
         expectedFindUniqueCall,
       );
@@ -349,12 +389,23 @@ describe('SessionTeamsService', () => {
         where: {
           uid: 'non-existent-uid',
         },
-        include: {
-          _count: {
+        select: {
+          sessionPlayers: {
             select: {
-              sessionPlayers: true,
+              teamUid: true,
+              user: {
+                select: {
+                  firstname: true,
+                  imageUrl: true,
+                  lastname: true,
+                },
+              },
+              userUid: true,
             },
           },
+          sessionUid: true,
+          teamLabel: true,
+          teamName: true,
         },
       });
     });
@@ -384,42 +435,45 @@ describe('SessionTeamsService', () => {
         where: {
           uid: '',
         },
-        include: {
-          _count: {
+        select: {
+          sessionPlayers: {
             select: {
-              sessionPlayers: true,
+              teamUid: true,
+              user: {
+                select: {
+                  firstname: true,
+                  imageUrl: true,
+                  lastname: true,
+                },
+              },
+              userUid: true,
             },
           },
+          sessionUid: true,
+          teamLabel: true,
+          teamName: true,
         },
       });
     });
 
-    it('should return correct team properties with count', async () => {
+    it('should return correct team properties', async () => {
       // Arrange
-      mockPrismaService.sessionTeams.findUnique.mockResolvedValue(mockTeam);
+      mockPrismaService.sessionTeams.findUnique.mockResolvedValue(mockTeamFromDb);
 
       // Act
       const result = await service.findOneByUid(teamUid);
 
       // Assert
-      expect(result).toMatchObject({
-        uid: teamUid,
-        sessionUid: 'session-uid-123',
-        teamLabel: TeamLabels.A,
-        teamName: 'Team A',
-      });
-      expect(result?.createdAt).toBeInstanceOf(Date);
-      expect(result?.updatedAt).toBeInstanceOf(Date);
-      expect(result?._count).toEqual({ sessionPlayers: 5 });
+      expect(result.teamName).toBe('Team A');
+      expect(result.teamLabel).toBe(TeamLabels.A);
+      expect(result.numberOfPlayers).toBe(2);
     });
 
     it('should return team with zero players when team is empty', async () => {
       // Arrange
       const emptyTeam = {
-        ...mockTeam,
-        _count: {
-          sessionPlayers: 0,
-        },
+        ...mockTeamFromDb,
+        sessionPlayers: [],
       };
       mockPrismaService.sessionTeams.findUnique.mockResolvedValue(emptyTeam);
 
@@ -427,7 +481,8 @@ describe('SessionTeamsService', () => {
       const result = await service.findOneByUid(teamUid);
 
       // Assert
-      expect(result?._count.sessionPlayers).toBe(0);
+      expect(result.numberOfPlayers).toBe(0);
+      expect(result.sessionPlayers).toHaveLength(0);
       expect(mockPrismaService.sessionTeams.findUnique).toHaveBeenCalledWith(
         expectedFindUniqueCall,
       );
@@ -477,45 +532,77 @@ describe('SessionTeamsService', () => {
       const sessionUid = 'consistency-test-session';
       const teamUid = 'consistency-test-team';
 
-      const mockTeam: SessionTeams & { _count: { sessionPlayers: number } } = {
+      const mockTeamFromDbForFindOne = {
+        sessionUid: sessionUid,
+        teamLabel: TeamLabels.A,
+        teamName: 'Team A',
+        sessionPlayers: [
+          {
+            userUid: 'user-1',
+            teamUid: teamUid,
+            user: {
+              firstname: 'John',
+              lastname: 'Doe',
+              imageUrl: null,
+            },
+          },
+          {
+            userUid: 'user-2',
+            teamUid: teamUid,
+            user: {
+              firstname: 'Jane',
+              lastname: 'Smith',
+              imageUrl: null,
+            },
+          },
+        ],
+      };
+
+      const mockTeamWithPlayersForFindMany = {
         uid: teamUid,
         sessionUid: sessionUid,
         teamLabel: TeamLabels.A,
         teamName: 'Team A',
         createdAt: new Date(),
         updatedAt: new Date(),
-        _count: {
-          sessionPlayers: 3,
-        },
+        sessionPlayers: [
+          {
+            userUid: 'user-1',
+            teamUid: teamUid,
+            user: {
+              firstname: 'John',
+              lastname: 'Doe',
+              imageUrl: null,
+            },
+          },
+          {
+            userUid: 'user-2',
+            teamUid: teamUid,
+            user: {
+              firstname: 'Jane',
+              lastname: 'Smith',
+              imageUrl: null,
+            },
+          },
+        ],
       };
 
-      const mockTeamWithPlayers = {
-        uid: teamUid,
-        sessionUid: sessionUid,
-        teamLabel: TeamLabels.A,
-        teamName: 'Team A',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        sessionPlayers: [],
-      };
-
-      mockPrismaService.sessionTeams.findMany.mockResolvedValue([mockTeamWithPlayers]);
-      mockPrismaService.sessionTeams.findUnique.mockResolvedValue(mockTeam);
+      mockPrismaService.sessionTeams.findMany.mockResolvedValue([mockTeamWithPlayersForFindMany]);
+      mockPrismaService.sessionTeams.findUnique.mockResolvedValue(mockTeamFromDbForFindOne);
 
       // Act
       const allTeams = await service.findTeamsBySessionUid(sessionUid);
       const singleTeam = await service.findOneByUid(teamUid);
 
       // Assert
-      expect(allTeams.items[0].uid).toBe(mockTeam.uid);
+      expect(allTeams.items[0].teamName).toBe('Team A');
+      expect(allTeams.items[0].teamLabel).toBe(TeamLabels.A);
       expect(singleTeam).toMatchObject({
-        uid: teamUid,
-        sessionUid: sessionUid,
         teamLabel: TeamLabels.A,
         teamName: 'Team A',
+        numberOfPlayers: 2,
       });
-      expect(singleTeam?._count.sessionPlayers).toBe(3);
-      expect(allTeams.items[0].sessionUid).toBe(singleTeam?.sessionUid);
+      expect(allTeams.items[0].numberOfPlayers).toBe(singleTeam?.numberOfPlayers);
     });
   });
 });

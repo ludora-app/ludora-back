@@ -1,5 +1,4 @@
 import { Throttle } from '@nestjs/throttler';
-import { Sessions } from 'generated/prisma/client';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
@@ -38,11 +37,11 @@ import { UpdateSessionDto } from '../dto/input/update-session.dto';
 import { SessionFilterDto } from '../dto/input/session-filter.dto';
 import { MySessionFilterDto } from '../dto/input/my-session-filter.dto';
 import { CreateSessionFromRequestDto } from '../dto/input/create-session.dto';
-import { SessionResponseData, SessionResponseDto } from '../dto/output/session.response.dto';
+import { SessionResponseData, SessionResponseDto } from '../dto/output/session-response.dto';
 import {
   PaginatedSessionCollectionResponseDto,
   SessionCollectionItemDto,
-} from '../dto/output/session-collection.response.dto';
+} from '../dto/output/session-collection-response.dto';
 
 @Controller('sessions')
 @UseGuards(AuthB2CGuard)
@@ -53,7 +52,7 @@ export class SessionsController {
   @Protected()
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'Create a new session' })
-  @ApiCreatedResponse({ type: ResponseTypeDto<Sessions> })
+  @ApiCreatedResponse({ type: SessionResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.CREATED)

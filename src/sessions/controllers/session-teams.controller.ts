@@ -20,7 +20,7 @@ import {
   PaginatedSessionTeamResponseDto,
   SessionTeamResponseData,
   SessionTeamResponseDto,
-} from '../dto/output/session-team.response';
+} from '../dto/output/session-team-response';
 
 @Controller('session-teams')
 @UseGuards(AuthB2CGuard)

@@ -18,18 +18,18 @@ import {
   FieldType,
   GameModes,
   SessionPlayers,
-  SessionTeams,
   SessionVisibility,
 } from 'generated/prisma/browser';
 
-import { SessionMapper } from '../mappers/session.mapper';
 import { SessionTeamsService } from './session-teams.service';
 import { UpdateSessionDto } from '../dto/input/update-session.dto';
 import { CreateSessionDto } from '../dto/input/create-session.dto';
 import { FindAllSessionsDto } from '../dto/input/session-filter.dto';
 import { SESSION_SUGGESTION_CONFIG } from '../constants/session.constants';
+import { SessionTeamResponseData } from '../dto/output/session-team-response';
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
-import { SessionCollectionItemDto } from '../dto/output/session-collection.response.dto';
+import { RawSessionFindOneItem, SessionMapper } from '../mappers/session.mapper';
+import { SessionCollectionItemDto } from '../dto/output/session-collection-response.dto';
 import { MySessionFilterDto, SessionOwnnership } from '../dto/input/my-session-filter.dto';
 
 /**
@@ -92,24 +92,23 @@ export class SessionsService {
       ) {
         throw new BadRequestException('The slot is not available at this time');
       }
-    }
+      // ? check if there is no session at this time
+      const conflict = await this.prisma.sessions.findFirst({
+        where: {
+          endDate: { gt: start },
+          fieldUid: fieldUid,
+          startDate: { lt: end },
+        },
+      });
 
-    // ? check if there is no session at this time
-    const conflict = await this.prisma.sessions.findFirst({
-      where: {
-        endDate: { gt: start },
-        fieldUid: fieldUid,
-        startDate: { lt: end },
-      },
-    });
-
-    if (conflict) {
-      this.logger.error(
-        `Another session is already scheduled at this time on this field: ${conflict.uid}`,
-      );
-      throw new BadRequestException(
-        'Another session is already scheduled at this time on this field',
-      );
+      if (conflict) {
+        this.logger.error(
+          `Another session is already scheduled at this time on this field: ${conflict.uid}`,
+        );
+        throw new BadRequestException(
+          'Another session is already scheduled at this time on this field',
+        );
+      }
     }
 
     let autoTitle = '';
@@ -584,8 +583,57 @@ export class SessionsService {
     };
   }
 
-  async findOne(uid: string): Promise<Sessions> {
-    return await this.prisma.sessions.findUnique({ where: { uid } });
+  async findOne(uid: string): Promise<any> {
+    const session = await this.prisma.sessions.findUnique({
+      select: {
+        creatorUid: true,
+        endDate: true,
+        field: {
+          select: {
+            fieldImages: { select: { order: true, url: true } },
+            latitude: true,
+            longitude: true,
+            shortAddress: true,
+          },
+        },
+        gameMode: true,
+        level: true,
+        maxPlayersPerTeam: true,
+        sessionTeams: {
+          select: {
+            sessionPlayers: {
+              select: {
+                teamUid: true,
+                user: { select: { firstname: true, imageUrl: true, lastname: true } },
+                userUid: true,
+              },
+            },
+            teamLabel: true,
+            teamName: true,
+          },
+        },
+        sport: true,
+        startDate: true,
+        uid: true,
+        visibility: true,
+      },
+      where: { uid },
+    });
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    const unlockedFieldImages = await Promise.all(
+      session.field.fieldImages.map(async (image) => ({
+        order: image.order,
+        url: await this.storageService.getSignedUrl(StorageFolderName.SESSIONS, image.url),
+      })),
+    );
+
+    session.field.fieldImages = unlockedFieldImages;
+
+    return SessionMapper.toFindOneDto(session as unknown as RawSessionFindOneItem);
   }
 
   async update(uid: string, updateSessionDto: UpdateSessionDto): Promise<Sessions> {
@@ -719,7 +767,9 @@ export class SessionsService {
   //                                 SESSION TEAMS
   // ============================================================================
 
-  async findTeamsBySessionUid(sessionUid: string): Promise<PaginatedDataDto<SessionTeams>> {
+  async findTeamsBySessionUid(
+    sessionUid: string,
+  ): Promise<PaginatedDataDto<SessionTeamResponseData>> {
     const existingSession = await this.findOne(sessionUid);
 
     if (!existingSession) {
@@ -745,7 +795,13 @@ export class SessionsService {
       this.logger.error(`Session ${createSessionPlayerDto.sessionUid} not found`);
       throw new NotFoundException(`Session ${createSessionPlayerDto.sessionUid} not found`);
     }
-    const existingTeam = await this.teamsService.findOneByUid(createSessionPlayerDto.teamUid);
+    const existingTeam = await this.prisma.sessionTeams.findUnique({
+      select: {
+        _count: { select: { sessionPlayers: true } },
+        sessionUid: true,
+      },
+      where: { uid: createSessionPlayerDto.teamUid },
+    });
 
     if (!existingTeam) {
       this.logger.error(`Team ${createSessionPlayerDto.teamUid} not found`);
