@@ -92,24 +92,23 @@ export class SessionsService {
       ) {
         throw new BadRequestException('The slot is not available at this time');
       }
-    }
+      // ? check if there is no session at this time
+      const conflict = await this.prisma.sessions.findFirst({
+        where: {
+          endDate: { gt: start },
+          fieldUid: fieldUid,
+          startDate: { lt: end },
+        },
+      });
 
-    // ? check if there is no session at this time
-    const conflict = await this.prisma.sessions.findFirst({
-      where: {
-        endDate: { gt: start },
-        fieldUid: fieldUid,
-        startDate: { lt: end },
-      },
-    });
-
-    if (conflict) {
-      this.logger.error(
-        `Another session is already scheduled at this time on this field: ${conflict.uid}`,
-      );
-      throw new BadRequestException(
-        'Another session is already scheduled at this time on this field',
-      );
+      if (conflict) {
+        this.logger.error(
+          `Another session is already scheduled at this time on this field: ${conflict.uid}`,
+        );
+        throw new BadRequestException(
+          'Another session is already scheduled at this time on this field',
+        );
+      }
     }
 
     let autoTitle = '';
