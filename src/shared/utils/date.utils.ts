@@ -1,6 +1,5 @@
-import * as dayjs from 'dayjs';
+import { DateTime } from 'luxon';
 import { BadRequestException } from '@nestjs/common';
-import 'dayjs/locale/fr';
 
 export class DateUtils {
   /**
@@ -35,14 +34,14 @@ export class DateUtils {
   /**
    * The method `formatDate` takes a date string as input and returns the date formatted as
    * 'DD/MM/YYYY'.
-   * @param {string} date - The `formatDate` method takes a date string as input and uses the `dayjs`
+   * @param {string} date - The `formatDate` method takes a date string as input and uses the `luxon`
    * library to format it in the 'DD/MM/YYYY' format. You can pass a date string in any valid format to
    * this method, and it will return the date in the specified format.
-   * @returns The method `formatDate` takes a date string as input, formats it using the dayjs library
+   * @returns The method `formatDate` takes a date string as input, formats it using the luxon library
    * to the format 'DD/MM/YYYY', and returns the formatted date string.
    */
   public static formatDate(date: string): string {
-    return dayjs(date).format('DD/MM/YYYY');
+    return DateTime.fromISO(date).toFormat('dd/MM/yyyy');
   }
 
   /**
@@ -51,7 +50,7 @@ export class DateUtils {
    * @returns The formatted hour
    */
   public static formatHour(date: string): string {
-    return dayjs(date).format('HH:mm');
+    return DateTime.fromISO(date).toFormat('HH:mm');
   }
 
   /**
@@ -62,9 +61,9 @@ export class DateUtils {
    * @returns "Hier" if the date is yesterday
    */
   public static getDayOfWeek(date: string): string {
-    return dayjs(date)
-      .locale('fr')
-      .format('dddd DD/MM')
+    return DateTime.fromISO(date)
+      .setLocale('fr')
+      .toFormat('cccc dd/MM')
       .replace(/^\w/, (c) => c.toUpperCase());
   }
 
@@ -74,13 +73,15 @@ export class DateUtils {
    * @returns The day of the week number
    */
   public static getDayOfWeekNumber(date: string): number {
-    return dayjs(date).get('day');
+    // Luxon weekday: 1=Monday, 7=Sunday
+    // Convert to dayjs format: 0=Sunday, 6=Saturday
+    return DateTime.fromISO(date).weekday % 7;
   }
 
   public static getEstimatedTime(startDate: string, endDate: string) {
-    const start = dayjs(startDate);
-    const end = dayjs(endDate);
-    const durationInMinutes = end.diff(start, 'minutes');
+    const start = DateTime.fromISO(startDate);
+    const end = DateTime.fromISO(endDate);
+    const durationInMinutes = Math.floor(end.diff(start, 'minutes').minutes);
     const hours = Math.floor(durationInMinutes / 60);
     const minutes = durationInMinutes % 60;
     return `${hours}h${minutes > 0 ? minutes : ''}`;
