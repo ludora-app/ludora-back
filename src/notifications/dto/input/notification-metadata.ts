@@ -1,25 +1,20 @@
 export interface NotificationMetadata {
-  // Données communes
   imageUrl?: string;
   actionUrl?: string;
 
-  // Pour FRIEND_REQUEST / FRIEND_ACCEPTED
   senderUid?: string;
-  senderAvatar?: string;
+  [key: string]: any;
 
-  // Pour SESSION_*
   sessionUid?: string;
+  senderName?: string;
   sessionDate?: string;
   inviterName?: string;
+
+  senderAvatar?: string;
   sessionTitle?: string;
-
-  // Pour NEW_MESSAGE
-  senderName?: string;
   messagePreview?: string;
-  conversationUid?: string;
 
-  // Extensible for other types
-  [key: string]: any;
+  conversationUid?: string;
 }
 
 export interface FriendNotificationMetaData
