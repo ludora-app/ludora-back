@@ -93,12 +93,17 @@ describe('SessionTeamsController', () => {
     });
 
     it('returns team when found', async () => {
-      mockSessionTeamsService.findOneByUid.mockResolvedValue({ uid: 'team-1', teamName: 'Team A' });
+      mockSessionTeamsService.findOneByUid.mockResolvedValue({
+        teamName: 'Team A',
+        teamLabel: 'A',
+        numberOfPlayers: 3,
+      });
 
       const result = await controller.findOneTeamByUid('team-1');
 
       expect(mockSessionTeamsService.findOneByUid).toHaveBeenCalledWith('team-1');
-      expect(result.data.uid).toBe('team-1');
+      expect(result.data.teamName).toBe('Team A');
+      expect(result.data.numberOfPlayers).toBe(3);
     });
 
     it('throws NotFound if team not found', async () => {

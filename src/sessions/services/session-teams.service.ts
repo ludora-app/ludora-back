@@ -3,7 +3,9 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma, SessionTeams, TeamLabels } from 'generated/prisma/client';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
-import { SessionTeamWithPlayers, SessionUtils } from 'src/sessions/utils/session-utils';
+
+import { SessionTeamResponseData } from '../dto/output/session-team-response';
+import { SessionTeamMapper, SessionTeamWithPlayers } from '../mappers/session-team.mapper';
 
 @Injectable()
 export class SessionTeamsService {
@@ -43,7 +45,9 @@ export class SessionTeamsService {
     return db.sessionTeams.findMany({ where: { sessionUid } });
   }
 
-  async findTeamsBySessionUid(sessionUid: string): Promise<PaginatedDataDto<SessionTeams>> {
+  async findTeamsBySessionUid(
+    sessionUid: string,
+  ): Promise<PaginatedDataDto<SessionTeamResponseData>> {
     const teams = (await this.prisma.sessionTeams.findMany({
       include: {
         sessionPlayers: {
@@ -71,27 +75,45 @@ export class SessionTeamsService {
       sessionPlayers: Array.isArray(team.sessionPlayers) ? team.sessionPlayers : [],
     })) as (SessionTeams & SessionTeamWithPlayers)[];
 
-    const formattedTeams = sanitizedTeams.map((team) => SessionUtils.formatSessionPlayers(team));
+    const formattedTeams = SessionTeamMapper.toDtoList(sanitizedTeams);
 
     return {
-      items: formattedTeams as unknown as SessionTeams[],
+      items: formattedTeams,
       nextCursor: null,
       totalCount: teams.length,
     };
   }
 
-  async findOneByUid(uid: string): Promise<SessionTeams & { _count: { sessionPlayers: number } }> {
-    return this.prisma.sessionTeams.findUnique({
-      include: {
-        _count: {
+  async findOneByUid(uid: string): Promise<SessionTeamResponseData | null> {
+    const team = await this.prisma.sessionTeams.findUnique({
+      select: {
+        sessionPlayers: {
           select: {
-            sessionPlayers: true,
+            teamUid: true,
+            user: {
+              select: {
+                firstname: true,
+                imageUrl: true,
+                lastname: true,
+              },
+            },
+            userUid: true,
           },
         },
+        sessionUid: true,
+        teamLabel: true,
+        teamName: true,
       },
+
       where: {
         uid: uid,
       },
     });
+
+    if (!team) {
+      return null;
+    }
+
+    return SessionTeamMapper.toDto(team as unknown as SessionTeamWithPlayers);
   }
 }

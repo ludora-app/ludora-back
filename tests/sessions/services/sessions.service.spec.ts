@@ -99,6 +99,9 @@ describe('SessionsService', () => {
               findMany: jest.fn(),
               update: jest.fn(),
             },
+            sessionTeams: {
+              findUnique: jest.fn(),
+            },
           },
         },
         {
@@ -358,15 +361,21 @@ describe('SessionsService', () => {
         );
       });
 
-      it('should throw BadRequestException if there is a session conflict', async () => {
+      it('should throw BadRequestException if there is a session conflict on a private field', async () => {
         // Arrange
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        const privateSessionDto = {
+          ...createSessionDto,
+          fieldUid: 'field-uid-2',
+          slotUid: 'slot-uid-1',
+        };
+        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPrivateField);
+        (fieldSlotsService.findOne as jest.Mock).mockResolvedValue(mockFieldSlot);
         (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue({
           uid: 'existing-session-uid',
         });
 
         // Act & Assert
-        await expect(service.create(createSessionDto)).rejects.toThrow(
+        await expect(service.create(privateSessionDto)).rejects.toThrow(
           new BadRequestException(
             'Another session is already scheduled at this time on this field',
           ),
@@ -763,23 +772,48 @@ describe('SessionsService', () => {
   describe('findOne', () => {
     const mockSession = {
       uid: 'session-uid-1',
-      description: 'Test session',
+      creatorUid: 'creator-uid-1',
       endDate: new Date('2023-01-10T16:00:00Z'),
-      fieldUid: 'field-uid-1',
-      gameMode: '5v5',
+      gameMode: GameModes.FIVE_V_FIVE,
+      level: SessionSportLevel.INTERMEDIATE,
       maxPlayersPerTeam: 5,
-      minPlayersPerTeam: 3,
       sport: Sport.FOOTBALL,
       startDate: new Date('2023-01-10T14:00:00Z'),
-      teamsPerGame: 2,
-      title: 'Test Session Title',
-      createdAt: new Date('2023-01-01T12:00:00Z'),
-      updatedAt: new Date('2023-01-01T12:00:00Z'),
+      visibility: 'PUBLIC',
+      field: {
+        latitude: 48.8566,
+        longitude: 2.3522,
+        shortAddress: 'Paris, France',
+        fieldImages: [
+          { order: 1, url: 'image1.jpg' },
+          { order: 2, url: 'image2.jpg' },
+        ],
+      },
+      sessionTeams: [
+        {
+          teamName: 'Team A',
+          teamLabel: 'A',
+          sessionPlayers: [
+            {
+              userUid: 'user-1',
+              teamUid: 'team-1',
+              user: {
+                firstname: 'John',
+                lastname: 'Doe',
+                imageUrl: 'user1.jpg',
+              },
+            },
+          ],
+        },
+      ],
     };
 
     it('should return a session by uid', async () => {
       // Arrange
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
+      (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
+        async (folder: string, url: string) => `https://signed-url.com/${url}`,
+      );
 
       // Act
       const result = await service.findOne('session-uid-1');
@@ -788,25 +822,29 @@ describe('SessionsService', () => {
       expect(result).toEqual(
         expect.objectContaining({
           uid: 'session-uid-1',
+          fieldImages: expect.arrayContaining([
+            expect.objectContaining({ order: 1 }),
+            expect.objectContaining({ order: 2 }),
+          ]),
+          sessionTeams: expect.arrayContaining([
+            expect.objectContaining({
+              teamName: 'Team A',
+              numberOfPlayers: 1,
+            }),
+          ]),
         }),
       );
-      expect(prismaService.sessions.findUnique).toHaveBeenCalledWith({
-        where: { uid: 'session-uid-1' },
-      });
+      expect(prismaService.sessions.findUnique).toHaveBeenCalled();
     });
 
-    it('should return null if session not found', async () => {
+    it('should throw NotFoundException if session not found', async () => {
       // Arrange
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(null);
 
-      // Act
-      const result = await service.findOne('non-existent-uid');
-
-      // Assert
-      expect(result).toBeNull();
-      expect(prismaService.sessions.findUnique).toHaveBeenCalledWith({
-        where: { uid: 'non-existent-uid' },
-      });
+      // Act & Assert
+      await expect(service.findOne('non-existent-uid')).rejects.toThrow(
+        new NotFoundException('Session not found'),
+      );
     });
   });
 
@@ -822,9 +860,30 @@ describe('SessionsService', () => {
       title: 'Updated Session Title',
     };
 
-    const mockSession = {
+    const mockSessionForFindOne = {
       uid: 'session-uid-1',
+      creatorUid: 'creator-uid-1',
+      endDate: new Date('2023-01-10T16:00:00Z'),
       fieldUid: 'field-uid-1',
+      gameMode: GameModes.FIVE_V_FIVE,
+      level: SessionSportLevel.INTERMEDIATE,
+      maxPlayersPerTeam: 5,
+      sport: Sport.FOOTBALL,
+      startDate: new Date('2023-01-10T14:00:00Z'),
+      visibility: 'PUBLIC',
+      field: {
+        latitude: 48.8566,
+        longitude: 2.3522,
+        shortAddress: 'Paris, France',
+        fieldImages: [{ order: 1, url: 'image1.jpg' }],
+      },
+      sessionTeams: [
+        {
+          teamName: 'Team A',
+          teamLabel: 'A',
+          sessionPlayers: [],
+        },
+      ],
     };
 
     const mockField = {
@@ -853,9 +912,12 @@ describe('SessionsService', () => {
 
     it('should update a session successfully', async () => {
       // Arrange
-      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
+      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSessionForFindOne);
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
       (prismaService.sessions.update as jest.Mock).mockResolvedValue(mockUpdatedSession);
+      (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
+        async (folder: string, url: string) => `https://signed-url.com/${url}`,
+      );
 
       // Act
       const result = await service.update('session-uid-1', updateSessionDto);
@@ -887,8 +949,11 @@ describe('SessionsService', () => {
 
     it('should throw NotFoundException if field not found', async () => {
       // Arrange
-      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
+      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSessionForFindOne);
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(null);
+      (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
+        async (folder: string, url: string) => `https://signed-url.com/${url}`,
+      );
 
       // Act & Assert
       await expect(service.update('session-uid-1', updateSessionDto)).rejects.toThrow(
@@ -914,6 +979,18 @@ describe('SessionsService', () => {
     const mockSession = {
       uid: 'session-uid-123',
       maxPlayersPerTeam: 10,
+      creatorUid: 'creator-uid-1',
+      endDate: new Date('2023-01-10T16:00:00Z'),
+      gameMode: GameModes.FIVE_V_FIVE,
+      level: SessionSportLevel.INTERMEDIATE,
+      sport: Sport.FOOTBALL,
+      startDate: new Date('2023-01-10T14:00:00Z'),
+      visibility: 'PUBLIC',
+      fieldImages: [],
+      fieldLatitude: 48.8566,
+      fieldLongitude: 2.3522,
+      fieldShortAddress: 'Paris, France',
+      sessionTeams: [],
     };
 
     const mockTeam = {
@@ -934,19 +1011,21 @@ describe('SessionsService', () => {
     };
 
     it('should successfully add a player to a session when all validations pass', async () => {
-      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
-      (sessionTeamsService.findOneByUid as jest.Mock).mockResolvedValue(mockTeam);
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockSession as any);
+      (prismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue(mockTeam);
       (sessionPlayersService.findOne as jest.Mock).mockResolvedValue(null);
       (sessionPlayersService.addPlayerToSession as jest.Mock).mockResolvedValue(mockNewPlayer);
 
       const result = await service.joinSession(mockCreateSessionPlayerDto as any);
 
-      expect(prismaService.sessions.findUnique).toHaveBeenCalledWith({
-        where: { uid: mockCreateSessionPlayerDto.sessionUid },
+      expect(service.findOne).toHaveBeenCalledWith(mockCreateSessionPlayerDto.sessionUid);
+      expect(prismaService.sessionTeams.findUnique).toHaveBeenCalledWith({
+        select: {
+          _count: { select: { sessionPlayers: true } },
+          sessionUid: true,
+        },
+        where: { uid: mockCreateSessionPlayerDto.teamUid },
       });
-      expect(sessionTeamsService.findOneByUid).toHaveBeenCalledWith(
-        mockCreateSessionPlayerDto.teamUid,
-      );
       expect(sessionPlayersService.findOne).toHaveBeenCalledWith(
         mockCreateSessionPlayerDto.sessionUid,
         mockCreateSessionPlayerDto.userUid,
@@ -958,39 +1037,39 @@ describe('SessionsService', () => {
     });
 
     it('should throw NotFoundException when session does not exist', async () => {
-      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(null);
+      jest.spyOn(service, 'findOne').mockResolvedValue(null);
 
       await expect(service.joinSession(mockCreateSessionPlayerDto as any)).rejects.toThrow(
         new NotFoundException(`Session ${mockCreateSessionPlayerDto.sessionUid} not found`),
       );
 
-      expect(prismaService.sessions.findUnique).toHaveBeenCalledWith({
-        where: { uid: mockCreateSessionPlayerDto.sessionUid },
-      });
-      expect(sessionTeamsService.findOneByUid).not.toHaveBeenCalled();
+      expect(service.findOne).toHaveBeenCalledWith(mockCreateSessionPlayerDto.sessionUid);
+      expect(prismaService.sessionTeams.findUnique).not.toHaveBeenCalled();
       expect(sessionPlayersService.addPlayerToSession).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when team does not exist', async () => {
-      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
-      (sessionTeamsService.findOneByUid as jest.Mock).mockResolvedValue(null);
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockSession as any);
+      (prismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.joinSession(mockCreateSessionPlayerDto as any)).rejects.toThrow(
         new NotFoundException(`Team ${mockCreateSessionPlayerDto.teamUid} not found`),
       );
 
-      expect(prismaService.sessions.findUnique).toHaveBeenCalledWith({
-        where: { uid: mockCreateSessionPlayerDto.sessionUid },
+      expect(service.findOne).toHaveBeenCalledWith(mockCreateSessionPlayerDto.sessionUid);
+      expect(prismaService.sessionTeams.findUnique).toHaveBeenCalledWith({
+        select: {
+          _count: { select: { sessionPlayers: true } },
+          sessionUid: true,
+        },
+        where: { uid: mockCreateSessionPlayerDto.teamUid },
       });
-      expect(sessionTeamsService.findOneByUid).toHaveBeenCalledWith(
-        mockCreateSessionPlayerDto.teamUid,
-      );
       expect(sessionPlayersService.addPlayerToSession).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when session and team do not match', async () => {
-      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
-      (sessionTeamsService.findOneByUid as jest.Mock).mockResolvedValue({
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockSession as any);
+      (prismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue({
         ...mockTeam,
         sessionUid: 'different-session-uid',
       });
@@ -1001,15 +1080,12 @@ describe('SessionsService', () => {
         ),
       );
 
-      expect(sessionTeamsService.findOneByUid).toHaveBeenCalledWith(
-        mockCreateSessionPlayerDto.teamUid,
-      );
       expect(sessionPlayersService.addPlayerToSession).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when team is full', async () => {
-      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
-      (sessionTeamsService.findOneByUid as jest.Mock).mockResolvedValue({
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockSession as any);
+      (prismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue({
         ...mockTeam,
         _count: { sessionPlayers: 10 },
       });
@@ -1023,8 +1099,8 @@ describe('SessionsService', () => {
     });
 
     it('should throw BadRequestException when player already exists in session', async () => {
-      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
-      (sessionTeamsService.findOneByUid as jest.Mock).mockResolvedValue(mockTeam);
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockSession as any);
+      (prismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue(mockTeam);
       (sessionPlayersService.findOne as jest.Mock).mockResolvedValue({ uid: 'existing-player' });
 
       await expect(service.joinSession(mockCreateSessionPlayerDto as any)).rejects.toThrow(

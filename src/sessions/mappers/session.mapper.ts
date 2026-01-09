@@ -1,10 +1,15 @@
 import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
 import { GameModes, Sessions, SessionVisibility } from 'generated/prisma/client';
 
-import { SessionResponseData } from '../dto/output/session.response.dto';
-import { SessionCollectionItemDto } from '../dto/output/session-collection.response.dto';
+import { SessionResponseData } from '../dto/output/session-response.dto';
+import { SessionTeamMapper, SessionTeamWithPlayers } from './session-team.mapper';
+import { SessionCollectionItemDto } from '../dto/output/session-collection-response.dto';
+import { FindOneSessionResponseData } from '../dto/output/find-one-session-response.dto';
 
-export interface RawSession {
+/**
+ * @description Raw session data retrieved for the findAll operations
+ */
+export interface RawSessionCollectionItem {
   uid: string;
   endDate: Date;
   sport: string;
@@ -29,6 +34,28 @@ export interface RawSession {
 }
 
 /**
+ * @description Raw session data retrieved for the findOne operation
+ */
+export interface RawSessionFindOneItem {
+  uid: string;
+  endDate: Date;
+  sport: string;
+  level: number;
+  startDate: Date;
+  gameMode: string;
+  creatorUid: string;
+  maxPlayersPerTeam: number;
+  visibility?: SessionVisibility;
+  sessionTeams: SessionTeamWithPlayers[];
+  field: {
+    latitude: number;
+    longitude: number;
+    shortAddress: string;
+    fieldImages: { order: number; url: string }[];
+  };
+}
+
+/**
  * @description Mapper for the Session entity
  * Allows the response to return a session.sport as Sport enum instead of a string
  * without having to cast it in the controller nor change the prisma schemas
@@ -41,8 +68,30 @@ export class SessionMapper {
     };
   }
 
-  static toSessionResponses(sessions: Sessions[]): SessionResponseData[] {
-    return sessions.map(SessionMapper.toDto);
+  static toFindOneDto(session: RawSessionFindOneItem): FindOneSessionResponseData {
+    const { field, sessionTeams } = session;
+    return {
+      creatorUid: session.creatorUid,
+      endDate: session.endDate,
+
+      fieldImages: field.fieldImages.map((image) => ({
+        order: image.order,
+        url: image.url,
+      })),
+
+      fieldLatitude: field.latitude,
+      fieldLongitude: field.longitude,
+      fieldShortAddress: field.shortAddress,
+
+      gameMode: session.gameMode as GameModes,
+      level: session.level as SessionSportLevel,
+      maxPlayersPerTeam: session.maxPlayersPerTeam,
+      sessionTeams: SessionTeamMapper.toDtoList(sessionTeams),
+      sport: session.sport as Sport,
+      startDate: session.startDate,
+      uid: session.uid,
+      visibility: session.visibility as SessionVisibility,
+    };
   }
 
   /**
@@ -51,7 +100,7 @@ export class SessionMapper {
    * @returns Session collection item
    */
   static fromRawToCollectionItem(
-    session: RawSession,
+    session: RawSessionCollectionItem,
     distanceMap: Map<string, { distance: number | null; index: number }>,
   ): SessionCollectionItemDto {
     const { field, sessionTeams, ...sessionData } = session;
@@ -90,7 +139,7 @@ export class SessionMapper {
    * @returns Session collection items
    */
   static fromRawToSessionResponses(
-    sessions: RawSession[],
+    sessions: RawSessionCollectionItem[],
     distanceMap: Map<string, { distance: number | null; index: number }>,
   ): SessionCollectionItemDto[] {
     return sessions.map((session) => SessionMapper.fromRawToCollectionItem(session, distanceMap));

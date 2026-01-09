@@ -53,7 +53,9 @@ model Fields {
   latitude     Float
   longitude    Float
 
-  // Relations
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   fieldImages   FieldImages[]
   fieldSlots    FieldSlots[]
   partner       Partners?     @relation(fields: [partnerUid], references: [uid])

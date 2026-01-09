@@ -37,11 +37,11 @@ import { UpdateSessionDto } from '../dto/input/update-session.dto';
 import { SessionFilterDto } from '../dto/input/session-filter.dto';
 import { MySessionFilterDto } from '../dto/input/my-session-filter.dto';
 import { CreateSessionFromRequestDto } from '../dto/input/create-session.dto';
-import { SessionResponseData, SessionResponseDto } from '../dto/output/session.response.dto';
+import { SessionResponseData, SessionResponseDto } from '../dto/output/session-response.dto';
 import {
   PaginatedSessionCollectionResponseDto,
   SessionCollectionItemDto,
-} from '../dto/output/session-collection.response.dto';
+} from '../dto/output/session-collection-response.dto';
 
 @Controller('sessions')
 @UseGuards(AuthB2CGuard)

@@ -24,8 +24,8 @@ export class FlattenedSessionPlayer {
 }
 
 export class SessionTeamResponseData {
-  @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
-  readonly uid: string;
+  // @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
+  // readonly uid?: string;
 
   @ApiProperty({ example: 'Team A', readOnly: true })
   readonly teamName: string;
@@ -37,22 +37,31 @@ export class SessionTeamResponseData {
     description: 'Session update date',
     example: '2025-05-10T22:30:32.525Z',
     readOnly: true,
+    required: false,
   })
-  readonly updatedAt: Date;
+  readonly updatedAt?: Date;
 
   @ApiProperty({
     description: 'Session creation date',
     example: '2025-05-10T22:30:32.525Z',
     readOnly: true,
+    required: false,
   })
-  readonly createdAt: Date;
+  readonly createdAt?: Date;
 
   @ApiProperty({
     description: 'Players in the team',
     readOnly: true,
     type: [FlattenedSessionPlayer],
   })
-  readonly Session_players?: FlattenedSessionPlayer[];
+  readonly sessionPlayers?: FlattenedSessionPlayer[];
+
+  @ApiProperty({
+    description: 'Number of players in the team',
+    example: 1,
+    readOnly: true,
+  })
+  readonly numberOfPlayers: number;
 }
 
 export class SessionTeamResponseDto extends ResponseTypeDto<SessionTeamResponseData> {
