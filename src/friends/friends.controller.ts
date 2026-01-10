@@ -56,14 +56,14 @@ export class FriendsController {
     };
   }
 
-  @Get('my-collection')
+  @Get('my-friends-collection')
   @Protected()
   @ApiOperation({ summary: 'Get all friends of the connected user' })
   @ApiOkResponse({ type: PaginatedFriendResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
-  async findAll(
+  async findAllMyFriends(
     @Query() filters: UserFilterDto,
     @Req() req: Request,
   ): Promise<PaginationResponseTypeDto<FriendResponseData>> {
@@ -72,6 +72,25 @@ export class FriendsController {
     return {
       data: friends,
       message: 'Friends fetched successfully',
+    };
+  }
+
+  @Get('my-requests-collection')
+  @Protected()
+  @ApiOperation({ summary: 'Get all friend requests of the connected user' })
+  @ApiOkResponse({ type: PaginatedFriendResponse })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.OK)
+  async findAllMyRequests(
+    @Query() filters: UserFilterDto,
+    @Req() req: Request,
+  ): Promise<PaginationResponseTypeDto<FriendResponseData>> {
+    const userUid = req['user'].uid;
+    const friends = await this.friendsService.findAllMyRequests(filters, userUid);
+    return {
+      data: friends,
+      message: 'Friend requests fetched successfully',
     };
   }
 

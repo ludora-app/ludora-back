@@ -5,6 +5,20 @@ import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-re
 
 export class FriendResponseData {
   @ApiProperty({
+    description: 'Firstname of the friend',
+    example: 'John',
+    readOnly: true,
+  })
+  firstname: string;
+
+  @ApiProperty({
+    description: 'Lastname of the friend',
+    example: 'Doe',
+    readOnly: true,
+  })
+  lastname: string;
+
+  @ApiProperty({
     description: 'Friend request creation date',
     example: '2025-01-01T10:00:00.000Z',
     readOnly: true,
@@ -31,13 +45,6 @@ export class FriendResponseData {
     readOnly: true,
   })
   friendUid: string;
-
-  @ApiProperty({
-    description: 'Concatenated firstname and lastname of the friend',
-    example: 'John Doe',
-    readOnly: true,
-  })
-  userName: string;
 
   @ApiProperty({
     description: 'Friend request user profile picture',

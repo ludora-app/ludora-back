@@ -205,7 +205,8 @@ describe('FriendsService', () => {
             updatedAt: mockFriendRequest.updatedAt,
             status: InvitationStatus.PENDING,
             friendUid: 'user-456',
-            userName: 'Jane Smith',
+            firstname: 'Jane',
+            lastname: 'Smith',
             userProfilePicture: 'https://signed-url.com/profile2.jpg',
           },
         ],
@@ -253,6 +254,135 @@ describe('FriendsService', () => {
     });
   });
 
+  describe('findAllMyRequests', () => {
+    const mockFilters = {
+      cursor: undefined,
+      limit: 10,
+      name: undefined,
+    };
+
+    const mockPendingRequest = {
+      userUid1: 'user-789',
+      userUid2: 'user-123',
+      status: InvitationStatus.PENDING,
+      createdAt: new Date('2025-01-01T10:00:00.000Z'),
+      updatedAt: new Date('2025-01-01T10:00:00.000Z'),
+      user1: {
+        firstname: 'Alice',
+        lastname: 'Johnson',
+        imageUrl: 'profile3.jpg',
+      },
+      user2: {
+        firstname: 'John',
+        lastname: 'Doe',
+        imageUrl: 'profile.jpg',
+      },
+    };
+
+    it('should return paginated friend requests list', async () => {
+      const mockRequests = [mockPendingRequest];
+      prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
+      prismaService.$queryRaw.mockResolvedValue(mockRequests as any);
+      storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile3.jpg');
+
+      const result = await service.findAllMyRequests(mockFilters, 'user-123');
+
+      expect(result).toEqual({
+        items: [
+          {
+            createdAt: mockPendingRequest.createdAt,
+            updatedAt: mockPendingRequest.updatedAt,
+            status: InvitationStatus.PENDING,
+            friendUid: 'user-789',
+            firstname: 'Alice',
+            lastname: 'Johnson',
+            userProfilePicture: 'https://signed-url.com/profile3.jpg',
+          },
+        ],
+        nextCursor: null,
+        totalCount: 1,
+      });
+      expect(prismaService.$executeRawUnsafe).toHaveBeenCalled();
+      expect(prismaService.$queryRaw).toHaveBeenCalled();
+    });
+
+    it('should filter friend requests by name', async () => {
+      const filtersWithName = { ...mockFilters, name: 'Alice' };
+      prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
+      prismaService.$queryRaw.mockResolvedValue([mockPendingRequest] as any);
+      storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile3.jpg');
+
+      await service.findAllMyRequests(filtersWithName, 'user-123');
+
+      expect(prismaService.$executeRawUnsafe).toHaveBeenCalled();
+      expect(prismaService.$queryRaw).toHaveBeenCalled();
+    });
+
+    it('should handle pagination with cursor', async () => {
+      const filtersWithCursor = { ...mockFilters, cursor: 'user-789' };
+      prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
+      prismaService.$queryRaw.mockResolvedValue([mockPendingRequest] as any);
+      storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile3.jpg');
+
+      await service.findAllMyRequests(filtersWithCursor, 'user-123');
+
+      expect(prismaService.$executeRawUnsafe).toHaveBeenCalled();
+      expect(prismaService.$queryRaw).toHaveBeenCalled();
+    });
+
+    it('should return nextCursor when more results available', async () => {
+      const mockRequests = Array(11).fill(mockPendingRequest);
+      prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
+      prismaService.$queryRaw.mockResolvedValue(mockRequests as any);
+      storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile3.jpg');
+
+      const result = await service.findAllMyRequests(mockFilters, 'user-123');
+
+      expect(result.nextCursor).toBe('user-789');
+      expect(result.totalCount).toBe(10);
+    });
+
+    it('should return requests where user is receiver (userUid2)', async () => {
+      const mockRequests = [mockPendingRequest];
+      prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
+      prismaService.$queryRaw.mockResolvedValue(mockRequests as any);
+      storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile3.jpg');
+
+      const result = await service.findAllMyRequests(mockFilters, 'user-123');
+
+      expect(result.items[0].friendUid).toBe('user-789');
+      expect(result.items[0].firstname).toBe('Alice');
+      expect(result.items[0].lastname).toBe('Johnson');
+    });
+
+    it('should return request without image URL if no profile picture', async () => {
+      const requestWithoutImage = {
+        ...mockPendingRequest,
+        user1: { ...mockPendingRequest.user1, imageUrl: null },
+      };
+      prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
+      prismaService.$queryRaw.mockResolvedValue([requestWithoutImage] as any);
+
+      const result = await service.findAllMyRequests(mockFilters, 'user-123');
+
+      expect(result.items[0].userProfilePicture).toBeNull();
+      expect(storageService.getSignedUrl).not.toHaveBeenCalled();
+    });
+
+    it('should return empty list when no requests found', async () => {
+      prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
+      prismaService.$queryRaw.mockResolvedValue([]);
+
+      const result = await service.findAllMyRequests(mockFilters, 'user-123');
+
+      expect(result).toEqual({
+        items: [],
+        nextCursor: null,
+        totalCount: 0,
+      });
+    });
+  });
+
   describe('findOne', () => {
     it('should find a friend request successfully', async () => {
       prismaService.friends.findFirst.mockResolvedValue(mockFriendRequest as any);
@@ -265,7 +395,8 @@ describe('FriendsService', () => {
         updatedAt: mockFriendRequest.updatedAt,
         status: InvitationStatus.PENDING,
         friendUid: 'user-456',
-        userName: 'Jane Smith',
+        firstname: 'Jane',
+        lastname: 'Smith',
         userProfilePicture: 'https://signed-url.com/profile2.jpg',
       });
       expect(prismaService.friends.findFirst).toHaveBeenCalled();

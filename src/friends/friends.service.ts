@@ -104,7 +104,7 @@ export class FriendsService {
     this.eventEmitter.emit(EventTypes.FRIEND_REQUEST, {
       recipientId: receiverUid,
       senderId: senderUid,
-      senderName: friendDto.userName,
+      senderName: friendDto.firstname + ' ' + friendDto.lastname,
     });
 
     // todo: send a notification to the receiver
@@ -183,6 +183,106 @@ export class FriendsService {
         ${searchWhereSql}
         ${cursorCondition}
     ORDER BY f.user_uid_1 ASC, f.user_uid_2 ASC
+    LIMIT ${take}
+    `;
+
+    let nextCursor: string | null = null;
+
+    if (friends.length > limit) {
+      const nextItem = friends.pop();
+      nextCursor = nextItem!.userUid1;
+    }
+
+    const friendCollectionDto = FriendMapper.toCollectionDto(friends, userUid);
+
+    const friendCollectionWithImageUrl = await Promise.all(
+      friendCollectionDto.map(async (friend) => {
+        if (!friend.userProfilePicture) {
+          return friend;
+        }
+        const friendImageUrl = await this.storageService.getSignedUrl(
+          StorageFolderName.USERS,
+          friend.userProfilePicture,
+        );
+        return { ...friend, userProfilePicture: friendImageUrl };
+      }),
+    );
+
+    return {
+      items: friendCollectionWithImageUrl,
+      nextCursor,
+      totalCount: friends.length,
+    };
+  }
+  /**
+   * Get all friend requests of the connected user
+   * @description Gets the friend entity where the connected user is the receiver (userUid2)
+   * @param filters
+   * @param userUid
+   * @returns
+   */
+  async findAllMyRequests(
+    filters: UserFilterDto,
+    userUid: string,
+  ): Promise<PaginatedDataDto<FriendResponseData>> {
+    const { cursor, limit = 10, name } = filters;
+
+    await this.prisma.$executeRawUnsafe(
+      `SET pg_trgm.word_similarity_threshold = ${this.WORD_SIMILARITY_THRESHOLD};`,
+    );
+
+    let searchWhereSql = Prisma.empty;
+    if (name) {
+      const searchPattern = `%${name}%`;
+      searchWhereSql = Prisma.sql`
+        AND (
+          (f.user_uid_2 = ${userUid} AND (
+            u1.firstname %> ${name}
+            OR u1.lastname %> ${name}
+            OR u1.firstname ILIKE ${searchPattern}
+            OR u1.lastname ILIKE ${searchPattern}
+            OR CONCAT(u1.firstname, ' ', u1.lastname) ILIKE ${searchPattern}
+          ))
+        )
+      `;
+    }
+
+    // Build cursor pagination
+    const cursorCondition = cursor
+      ? Prisma.sql`AND (f.user_uid_1, f.user_uid_2) > (${cursor}, '')`
+      : Prisma.empty;
+
+    const take = limit + 1;
+    const friends = await this.prisma.$queryRaw<FriendWithUsers[]>`
+    SELECT 
+        f.user_uid_1 as "userUid1",
+        f.user_uid_2 as "userUid2",
+        f.status,
+        f.created_at as "createdAt",
+        f.updated_at as "updatedAt",
+        
+        -- Build the nested user1 object
+        json_build_object(
+            'firstname', u1.firstname,
+            'lastname', u1.lastname,
+            'imageUrl', u1.image_url
+        ) as "user1",
+
+        -- Build the nested user2 object
+        json_build_object(
+            'firstname', u2.firstname,
+            'lastname', u2.lastname,
+            'imageUrl', u2.image_url
+        ) as "user2"
+
+    FROM social."Friends" f
+    INNER JOIN auth."Users" u1 ON f.user_uid_1 = u1.uid
+    INNER JOIN auth."Users" u2 ON f.user_uid_2 = u2.uid
+    WHERE f.status = ${InvitationStatus.PENDING}
+    AND f.user_uid_2 = ${userUid}
+        ${searchWhereSql}
+        ${cursorCondition}
+    ORDER BY f.created_at ASC
     LIMIT ${take}
     `;
 
@@ -398,7 +498,7 @@ export class FriendsService {
 
       this.eventEmitter.emit(EventTypes.FRIEND_ACCEPTED, {
         recipientUid: eventReceiverUserUid,
-        senderName: friendDto.userName,
+        senderName: friendDto.firstname + ' ' + friendDto.lastname,
         senderUid: requestAccepterUserUid,
       });
     }

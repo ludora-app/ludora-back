@@ -29,10 +29,11 @@ export class FriendMapper {
 
     return {
       createdAt: friend.createdAt,
+      firstname: otherUser.firstname,
       friendUid,
+      lastname: otherUser.lastname,
       status: friend.status,
       updatedAt: friend.updatedAt,
-      userName: otherUser.firstname + ' ' + otherUser.lastname,
       userProfilePicture: otherUser.imageUrl,
     };
   }
