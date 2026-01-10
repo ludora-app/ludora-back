@@ -31,8 +31,9 @@ describe('FriendsController', () => {
     updatedAt: new Date('2025-01-01T10:00:00.000Z'),
     status: InvitationStatus.PENDING,
     friendUid: 'user-456',
-    userName: 'Jane Smith',
-    userProfilePicture: 'https://example.com/profile.jpg',
+    firstname: 'Jane',
+    lastname: 'Smith',
+    avatarUrl: 'https://example.com/profile.jpg',
   };
 
   const mockPaginatedResponse = {
@@ -44,7 +45,8 @@ describe('FriendsController', () => {
   beforeEach(async () => {
     const mockFriendsService = {
       create: jest.fn(),
-      findAll: jest.fn(),
+      findAllMyFriends: jest.fn(),
+      findAllMyRequests: jest.fn(),
       findOne: jest.fn(),
       update: jest.fn(),
       remove: jest.fn(),
@@ -79,14 +81,11 @@ describe('FriendsController', () => {
       const createFriendDto: CreateFriendDto = {
         receiverUid: 'user-456',
       };
-      friendsService.create.mockResolvedValue(mockFriendRequest as any);
+      friendsService.create.mockResolvedValue(undefined);
 
       const result = await controller.create(createFriendDto, mockRequest);
 
-      expect(result).toEqual({
-        data: mockFriendRequest,
-        message: 'Friend request created successfully',
-      });
+      expect(result).toBeUndefined();
       expect(friendsService.create).toHaveBeenCalledWith('user-123', 'user-456');
     });
 
@@ -94,7 +93,7 @@ describe('FriendsController', () => {
       const createFriendDto: CreateFriendDto = {
         receiverUid: 'user-789',
       };
-      friendsService.create.mockResolvedValue(mockFriendRequest as any);
+      friendsService.create.mockResolvedValue(undefined);
 
       await controller.create(createFriendDto, mockRequest);
 
@@ -102,22 +101,22 @@ describe('FriendsController', () => {
     });
   });
 
-  describe('findAll', () => {
+  describe('findAllMyFriends', () => {
     it('should return paginated friends list', async () => {
       const filters: UserFilterDto = {
         cursor: undefined,
         limit: 10,
         name: undefined,
       };
-      friendsService.findAll.mockResolvedValue(mockPaginatedResponse);
+      friendsService.findAllMyFriends.mockResolvedValue(mockPaginatedResponse);
 
-      const result = await controller.findAll(filters, mockRequest);
+      const result = await controller.findAllMyFriends(filters, mockRequest);
 
       expect(result).toEqual({
         data: mockPaginatedResponse,
         message: 'Friends fetched successfully',
       });
-      expect(friendsService.findAll).toHaveBeenCalledWith(filters, 'user-123');
+      expect(friendsService.findAllMyFriends).toHaveBeenCalledWith(filters, 'user-123');
     });
 
     it('should pass filters correctly to the service', async () => {
@@ -126,11 +125,11 @@ describe('FriendsController', () => {
         limit: 20,
         name: 'Jane',
       };
-      friendsService.findAll.mockResolvedValue(mockPaginatedResponse);
+      friendsService.findAllMyFriends.mockResolvedValue(mockPaginatedResponse);
 
-      await controller.findAll(filters, mockRequest);
+      await controller.findAllMyFriends(filters, mockRequest);
 
-      expect(friendsService.findAll).toHaveBeenCalledWith(filters, 'user-123');
+      expect(friendsService.findAllMyFriends).toHaveBeenCalledWith(filters, 'user-123');
     });
 
     it('should handle empty results', async () => {
@@ -144,14 +143,120 @@ describe('FriendsController', () => {
         nextCursor: null,
         totalCount: 0,
       };
-      friendsService.findAll.mockResolvedValue(emptyResponse);
+      friendsService.findAllMyFriends.mockResolvedValue(emptyResponse);
 
-      const result = await controller.findAll(filters, mockRequest);
+      const result = await controller.findAllMyFriends(filters, mockRequest);
 
       expect(result).toEqual({
         data: emptyResponse,
         message: 'Friends fetched successfully',
       });
+    });
+  });
+
+  describe('findAllMyRequests', () => {
+    const mockRequestResponseDto = {
+      senderUid: 'user-789',
+      createdAt: new Date('2025-01-01T10:00:00.000Z'),
+      firstname: 'Alice',
+      lastname: 'Johnson',
+      avatarUrl: 'https://example.com/profile3.jpg',
+    };
+
+    const mockRequestsPaginatedResponse = {
+      items: [mockRequestResponseDto],
+      nextCursor: null,
+      totalCount: 1,
+    };
+
+    it('should return paginated friend requests list', async () => {
+      const filters: UserFilterDto = {
+        cursor: undefined,
+        limit: 10,
+        name: undefined,
+      };
+      friendsService.findAllMyRequests.mockResolvedValue(mockRequestsPaginatedResponse);
+
+      const result = await controller.findAllMyRequests(filters, mockRequest);
+
+      expect(result).toEqual({
+        data: mockRequestsPaginatedResponse,
+        message: 'Friend requests fetched successfully',
+      });
+      expect(friendsService.findAllMyRequests).toHaveBeenCalledWith(filters, 'user-123');
+    });
+
+    it('should pass filters correctly to the service', async () => {
+      const filters: UserFilterDto = {
+        cursor: 'cursor-789',
+        limit: 20,
+        name: 'Alice',
+      };
+      friendsService.findAllMyRequests.mockResolvedValue(mockRequestsPaginatedResponse);
+
+      await controller.findAllMyRequests(filters, mockRequest);
+
+      expect(friendsService.findAllMyRequests).toHaveBeenCalledWith(filters, 'user-123');
+    });
+
+    it('should handle empty results', async () => {
+      const filters: UserFilterDto = {
+        cursor: undefined,
+        limit: 10,
+        name: undefined,
+      };
+      const emptyResponse = {
+        items: [],
+        nextCursor: null,
+        totalCount: 0,
+      };
+      friendsService.findAllMyRequests.mockResolvedValue(emptyResponse);
+
+      const result = await controller.findAllMyRequests(filters, mockRequest);
+
+      expect(result).toEqual({
+        data: emptyResponse,
+        message: 'Friend requests fetched successfully',
+      });
+    });
+
+    it('should extract user UID correctly from request', async () => {
+      const customRequest = {
+        user: {
+          uid: 'custom-user-456',
+        },
+      } as any;
+
+      const filters: UserFilterDto = {
+        cursor: undefined,
+        limit: 10,
+        name: undefined,
+      };
+      friendsService.findAllMyRequests.mockResolvedValue(mockRequestsPaginatedResponse);
+
+      await controller.findAllMyRequests(filters, customRequest);
+
+      expect(friendsService.findAllMyRequests).toHaveBeenCalledWith(filters, 'custom-user-456');
+    });
+
+    it('should handle pagination correctly', async () => {
+      const filters: UserFilterDto = {
+        cursor: 'user-789',
+        limit: 5,
+        name: undefined,
+      };
+      const paginatedResponse = {
+        items: Array(5).fill(mockRequestResponseDto),
+        nextCursor: 'user-790',
+        totalCount: 5,
+      };
+      friendsService.findAllMyRequests.mockResolvedValue(paginatedResponse);
+
+      const result = await controller.findAllMyRequests(filters, mockRequest);
+
+      expect(result.data.nextCursor).toBe('user-790');
+      expect(result.data.totalCount).toBe(5);
+      expect(friendsService.findAllMyRequests).toHaveBeenCalledWith(filters, 'user-123');
     });
   });
 
@@ -270,7 +375,7 @@ describe('FriendsController', () => {
       const createFriendDto: CreateFriendDto = {
         receiverUid: 'user-456',
       };
-      friendsService.create.mockResolvedValue(mockFriendRequest as any);
+      friendsService.create.mockResolvedValue(undefined);
 
       await controller.create(createFriendDto, customRequest);
 

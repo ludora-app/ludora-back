@@ -1,6 +1,6 @@
 import { PinoLogger } from 'nestjs-pino';
 import { UserFilterDto } from 'src/users/dto';
-import { Friends } from 'generated/prisma/browser';
+import { Prisma } from 'generated/prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -17,11 +17,18 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import { FriendFilterDto } from './dto/input/friend-filter.dto';
 import { FriendResponseData } from './dto/output/friend-response.dto';
 import { FriendMapper, FriendWithUsers } from './mappers/friend.mapper';
+import { FriendRequestResponseData } from './dto/output/friend-request-response.dto';
 
 @Injectable()
 export class FriendsService {
+  /**
+   * The word similarity threshold used by pg_trgm.word_similarity for the friend search
+   */
+  private readonly WORD_SIMILARITY_THRESHOLD = 0.2;
+
   constructor(
     private readonly usersService: UsersService,
     private readonly prisma: PrismaService,
@@ -31,7 +38,7 @@ export class FriendsService {
   ) {
     this.logger.setContext(FriendsService.name);
   }
-  async create(senderUid: string, receiverUid: string): Promise<Friends> {
+  async create(senderUid: string, receiverUid: string): Promise<void> {
     if (senderUid === receiverUid) {
       this.logger.error(`User ${senderUid} cannot add himself as a friend`);
       throw new BadRequestException('You cannot add yourself as a friend');
@@ -92,87 +99,189 @@ export class FriendsService {
       },
     });
 
-    const friendDto = FriendMapper.toDto(newFriendRequest, receiverUid);
-
     this.logger.debug(`Friend request sent to ${receiverUid} by ${senderUid}`);
 
     this.eventEmitter.emit(EventTypes.FRIEND_REQUEST, {
       recipientId: receiverUid,
       senderId: senderUid,
-      senderName: friendDto.userName,
+      senderName: newFriendRequest.user2.firstname + ' ' + newFriendRequest.user2.lastname,
     });
 
-    // todo: send a notification to the receiver
-    return newFriendRequest;
+    return;
   }
 
-  async findAll(
-    filters: UserFilterDto,
+  async findAllMyFriends(
+    filters: FriendFilterDto,
     userUid: string,
   ): Promise<PaginatedDataDto<FriendResponseData>> {
-    const { cursor, limit, name } = filters;
+    const { cursor, limit = 10, name, sessionUid } = filters;
 
-    const query: any = {
-      include: {
-        user1: {
-          select: {
-            firstname: true,
-            imageUrl: true,
-            lastname: true,
-          },
-        },
-        user2: {
-          select: {
-            firstname: true,
-            imageUrl: true,
-            lastname: true,
-          },
-        },
-      },
-      where: {
-        AND: [
-          {
-            OR: [{ userUid1: userUid }, { userUid2: userUid }],
-          },
-          { status: InvitationStatus.ACCEPTED },
-        ],
-      },
-    };
-
-    if (name) {
-      query.where.AND.push({
-        OR: [
-          { user1: { firstname: { contains: name, mode: 'insensitive' } } },
-          { user2: { firstname: { contains: name, mode: 'insensitive' } } },
-          { user1: { lastname: { contains: name, mode: 'insensitive' } } },
-          { user2: { lastname: { contains: name, mode: 'insensitive' } } },
-        ],
-      });
-    }
-    if (limit) {
-      query.take = limit + 1;
-    }
-    if (cursor) {
-      query.cursor = cursor;
-    }
-    const friends = await this.prisma.friends.findMany(query);
-    const friendCollectionDto = FriendMapper.toCollectionDto(friends as any, userUid);
-    const friendCollectionWithImageUrl = await Promise.all(
-      friendCollectionDto.map(async (friend) => {
-        const friendImageUrl = await this.storageService.getSignedUrl(
-          StorageFolderName.USERS,
-          friend.userProfilePicture,
-        );
-        return { ...friend, userProfilePicture: friendImageUrl };
-      }),
+    await this.prisma.$executeRawUnsafe(
+      `SET pg_trgm.word_similarity_threshold = ${this.WORD_SIMILARITY_THRESHOLD};`,
     );
+
+    // Build search condition for friend's name
+    let searchWhereSql = Prisma.empty;
+    if (name) {
+      const searchPattern = `%${name}%`;
+      searchWhereSql = Prisma.sql`
+            AND (
+                friend.firstname %> ${name}
+                OR friend.lastname %> ${name}
+                OR friend.firstname ILIKE ${searchPattern}
+                OR friend.lastname ILIKE ${searchPattern}
+                OR CONCAT(friend.firstname, ' ', friend.lastname) ILIKE ${searchPattern}
+            )
+        `;
+    }
+
+    // Conditionally add session invitation join
+    const sessionJoinSql = sessionUid
+      ? Prisma.sql`
+            LEFT JOIN sessions."Session_invitations" si ON (
+                si.session_uid = ${sessionUid}
+                AND si.receiver_uid = friend.uid
+            )
+          `
+      : Prisma.empty;
+
+    const cursorCondition = cursor ? Prisma.sql`AND friend.uid > ${cursor}` : Prisma.empty;
+
+    const take = limit + 1;
+
+    const friends = await this.prisma.$queryRaw<FriendResponseData[]>`
+        SELECT 
+            friend.uid as "friendUid",
+            f.created_at as "createdAt",
+            friend.firstname,
+            friend.lastname,
+            friend.image_url as "avatarUrl",
+            CASE WHEN si.receiver_uid IS NOT NULL THEN true ELSE false END as "isInvited"
+        FROM social."Friends" f
+        INNER JOIN auth."Users" friend ON (
+            friend.uid = CASE 
+                WHEN f.user_uid_1 = ${userUid} THEN f.user_uid_2
+                ELSE f.user_uid_1
+            END
+        )
+        ${sessionJoinSql}
+        WHERE f.status = ${InvitationStatus.ACCEPTED}
+            AND (f.user_uid_1 = ${userUid} OR f.user_uid_2 = ${userUid})
+            ${searchWhereSql}
+            ${cursorCondition}
+        ORDER BY friend.uid ASC
+        LIMIT ${take}
+    `;
+
     let nextCursor: string | null = null;
     if (friends.length > limit) {
       const nextItem = friends.pop();
-      nextCursor = nextItem!.userUid1;
+      nextCursor = nextItem!.friendUid;
     }
+
+    // Get signed URLs for profile pictures
+    const friendsWithImageUrl = await Promise.all(
+      friends.map(async (friend) => {
+        if (!friend.avatarUrl) {
+          return friend;
+        }
+        const friendImageUrl = await this.storageService.getSignedUrl(
+          StorageFolderName.USERS,
+          friend.avatarUrl,
+        );
+        return {
+          ...friend,
+          avatarUrl: friendImageUrl,
+        };
+      }),
+    );
+
     return {
-      items: friendCollectionWithImageUrl,
+      items: friendsWithImageUrl,
+      nextCursor,
+      totalCount: friends.length,
+    };
+  }
+  /**
+   * Get all friend requests of the connected user
+   * @description Gets the friend entity where the connected user is the receiver (userUid2)
+   * @param filters
+   * @param userUid
+   * @returns
+   */
+  async findAllMyRequests(
+    filters: UserFilterDto,
+    userUid: string,
+  ): Promise<PaginatedDataDto<FriendRequestResponseData>> {
+    const { cursor, limit = 10, name } = filters;
+
+    await this.prisma.$executeRawUnsafe(
+      `SET pg_trgm.word_similarity_threshold = ${this.WORD_SIMILARITY_THRESHOLD};`,
+    );
+
+    // Build search condition for friend's name
+    let searchWhereSql = Prisma.empty;
+    if (name) {
+      const searchPattern = `%${name}%`;
+      searchWhereSql = Prisma.sql`
+            AND (
+                sender.firstname %> ${name}
+                OR sender.lastname %> ${name}
+                OR sender.firstname ILIKE ${searchPattern}
+                OR sender.lastname ILIKE ${searchPattern}
+                OR CONCAT(sender.firstname, ' ', sender.lastname) ILIKE ${searchPattern}
+            )
+        `;
+    }
+
+    const cursorCondition = cursor ? Prisma.sql`AND friend.uid > ${cursor}` : Prisma.empty;
+
+    const take = limit + 1;
+
+    const friends = await this.prisma.$queryRaw<FriendRequestResponseData[]>`
+        SELECT 
+            f.user_uid_1 as "senderUid",
+            f.created_at as "createdAt",
+            sender.firstname,
+            sender.lastname,
+            sender.image_url as "avatarUrl"
+        FROM social."Friends" f
+        INNER JOIN auth."Users" sender ON (
+            sender.uid = f.user_uid_1
+        )
+        WHERE f.status = ${InvitationStatus.PENDING}
+            AND f.user_uid_2 = ${userUid}
+            ${searchWhereSql}
+            ${cursorCondition}
+        ORDER BY sender.uid ASC
+        LIMIT ${take}
+    `;
+
+    let nextCursor: string | null = null;
+    if (friends.length > limit) {
+      const nextItem = friends.pop();
+      nextCursor = nextItem!.senderUid;
+    }
+
+    // Get signed URLs for profile pictures
+    const friendsWithImageUrl = await Promise.all(
+      friends.map(async (friend) => {
+        if (!friend.avatarUrl) {
+          return friend;
+        }
+        const friendImageUrl = await this.storageService.getSignedUrl(
+          StorageFolderName.USERS,
+          friend.avatarUrl,
+        );
+        return {
+          ...friend,
+          avatarUrl: friendImageUrl,
+        };
+      }),
+    );
+
+    return {
+      items: friendsWithImageUrl,
       nextCursor,
       totalCount: friends.length,
     };
@@ -217,14 +326,14 @@ export class FriendsService {
       );
     }
     const friendDto = FriendMapper.toDto(existingFriend, connectedUserUid);
-    if (!friendDto.userProfilePicture) {
+    if (!friendDto.avatarUrl) {
       return friendDto;
     }
     const friendImageUrl = await this.storageService.getSignedUrl(
       StorageFolderName.USERS,
-      friendDto.userProfilePicture,
+      friendDto.avatarUrl,
     );
-    return { ...friendDto, userProfilePicture: friendImageUrl };
+    return { ...friendDto, avatarUrl: friendImageUrl };
   }
 
   async update(
@@ -361,7 +470,7 @@ export class FriendsService {
 
       this.eventEmitter.emit(EventTypes.FRIEND_ACCEPTED, {
         recipientUid: eventReceiverUserUid,
-        senderName: friendDto.userName,
+        senderName: friendDto.firstname + ' ' + friendDto.lastname,
         senderUid: requestAccepterUserUid,
       });
     }

@@ -1,5 +1,4 @@
 import { UserFilterDto } from 'src/users/dto';
-import { Friends } from 'generated/prisma/browser';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { HttpCode, HttpStatus, Query, UseGuards } from '@nestjs/common';
@@ -13,7 +12,6 @@ import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-r
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
-  ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -24,11 +22,16 @@ import {
 import { FriendsService } from './friends.service';
 import { UpdateFriendDto } from './dto/input/update-friend.dto';
 import { CreateFriendDto } from './dto/input/create-friend.dto';
+import { FriendFilterDto } from './dto/input/friend-filter.dto';
 import {
   FriendResponseData,
   FriendResponseDto,
   PaginatedFriendResponse,
 } from './dto/output/friend-response.dto';
+import {
+  FriendRequestResponseData,
+  PaginatedFriendRequestResponse,
+} from './dto/output/friend-request-response.dto';
 
 @Controller('friends')
 @UseGuards(AuthB2CGuard)
@@ -38,40 +41,53 @@ export class FriendsController {
   @Post()
   @Protected()
   @ApiOperation({ summary: 'Create a new friend request at the PENDING status' })
-  @ApiCreatedResponse({ type: ResponseTypeDto<Friends> })
+  @ApiNoContentResponse({ description: 'Friend request created successfully' })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @ApiConflictResponse({ type: ConflictResponseDto })
-  @HttpCode(HttpStatus.CREATED)
-  async create(
-    @Body() createFriendDto: CreateFriendDto,
-    @Req() req: Request,
-  ): Promise<ResponseTypeDto<Friends>> {
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async create(@Body() createFriendDto: CreateFriendDto, @Req() req: Request): Promise<void> {
     const senderUid = req['user'].uid;
-    const friendRequest = await this.friendsService.create(senderUid, createFriendDto.receiverUid);
-    return {
-      data: friendRequest,
-      message: 'Friend request created successfully',
-    };
+    await this.friendsService.create(senderUid, createFriendDto.receiverUid);
+    return;
   }
 
-  @Get('my-collection')
+  @Get('my-friends-collection')
   @Protected()
   @ApiOperation({ summary: 'Get all friends of the connected user' })
   @ApiOkResponse({ type: PaginatedFriendResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
-  async findAll(
-    @Query() filters: UserFilterDto,
+  async findAllMyFriends(
+    @Query() filters: FriendFilterDto,
     @Req() req: Request,
   ): Promise<PaginationResponseTypeDto<FriendResponseData>> {
     const userUid = req['user'].uid;
-    const friends = await this.friendsService.findAll(filters, userUid);
+    const friends = await this.friendsService.findAllMyFriends(filters, userUid);
     return {
       data: friends,
       message: 'Friends fetched successfully',
+    };
+  }
+
+  @Get('my-requests-collection')
+  @Protected()
+  @ApiOperation({ summary: 'Get all friend requests of the connected user' })
+  @ApiOkResponse({ type: PaginatedFriendRequestResponse })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.OK)
+  async findAllMyRequests(
+    @Query() filters: UserFilterDto,
+    @Req() req: Request,
+  ): Promise<PaginationResponseTypeDto<FriendRequestResponseData>> {
+    const userUid = req['user'].uid;
+    const friends = await this.friendsService.findAllMyRequests(filters, userUid);
+    return {
+      data: friends,
+      message: 'Friend requests fetched successfully',
     };
   }
 
