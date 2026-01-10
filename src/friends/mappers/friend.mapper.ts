@@ -28,13 +28,13 @@ export class FriendMapper {
     const friendUid = friend.userUid1 === currentUserUid ? friend.userUid2 : friend.userUid1;
 
     return {
+      avatarUrl: otherUser.imageUrl,
       createdAt: friend.createdAt,
       firstname: otherUser.firstname,
       friendUid,
       lastname: otherUser.lastname,
       status: friend.status,
       updatedAt: friend.updatedAt,
-      userProfilePicture: otherUser.imageUrl,
     };
   }
 

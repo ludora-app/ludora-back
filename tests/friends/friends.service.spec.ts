@@ -113,7 +113,7 @@ describe('FriendsService', () => {
 
       const result = await service.create('user-123', 'user-456');
 
-      expect(result).toEqual(mockFriendRequest);
+      expect(result).toBeUndefined();
       expect(usersService.findOne).toHaveBeenCalledTimes(2);
       expect(prismaService.friends.findFirst).toHaveBeenCalled();
       expect(prismaService.friends.create).toHaveBeenCalledWith({
@@ -142,7 +142,7 @@ describe('FriendsService', () => {
       expect(eventEmitter.emit).toHaveBeenCalledWith(EventTypes.FRIEND_REQUEST, {
         recipientId: 'user-456',
         senderId: 'user-123',
-        senderName: 'John Doe',
+        senderName: 'Jane Smith',
       });
     });
 
@@ -191,23 +191,31 @@ describe('FriendsService', () => {
     };
 
     it('should return paginated friends list', async () => {
-      const mockFriends = [mockFriendRequest];
+      const mockFriends = [
+        {
+          friendUid: 'user-456',
+          createdAt: mockFriendRequest.createdAt,
+          firstname: 'Jane',
+          lastname: 'Smith',
+          avatarUrl: 'profile2.jpg',
+          isInvited: false,
+        },
+      ];
       prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
       prismaService.$queryRaw.mockResolvedValue(mockFriends as any);
       storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile2.jpg');
 
-      const result = await service.findAll(mockFilters, 'user-123');
+      const result = await service.findAllMyFriends(mockFilters, 'user-123');
 
       expect(result).toEqual({
         items: [
           {
-            createdAt: mockFriendRequest.createdAt,
-            updatedAt: mockFriendRequest.updatedAt,
-            status: InvitationStatus.PENDING,
             friendUid: 'user-456',
+            createdAt: mockFriendRequest.createdAt,
             firstname: 'Jane',
             lastname: 'Smith',
-            userProfilePicture: 'https://signed-url.com/profile2.jpg',
+            avatarUrl: 'https://signed-url.com/profile2.jpg',
+            isInvited: false,
           },
         ],
         nextCursor: null,
@@ -219,11 +227,21 @@ describe('FriendsService', () => {
 
     it('should filter friends by name', async () => {
       const filtersWithName = { ...mockFilters, name: 'Jane' };
+      const mockFriends = [
+        {
+          friendUid: 'user-456',
+          createdAt: mockFriendRequest.createdAt,
+          firstname: 'Jane',
+          lastname: 'Smith',
+          avatarUrl: 'profile2.jpg',
+          isInvited: false,
+        },
+      ];
       prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
-      prismaService.$queryRaw.mockResolvedValue([mockFriendRequest] as any);
+      prismaService.$queryRaw.mockResolvedValue(mockFriends as any);
       storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile2.jpg');
 
-      await service.findAll(filtersWithName, 'user-123');
+      await service.findAllMyFriends(filtersWithName, 'user-123');
 
       expect(prismaService.$executeRawUnsafe).toHaveBeenCalled();
       expect(prismaService.$queryRaw).toHaveBeenCalled();
@@ -231,23 +249,40 @@ describe('FriendsService', () => {
 
     it('should handle pagination with cursor', async () => {
       const filtersWithCursor = { ...mockFilters, cursor: 'user-123' };
+      const mockFriends = [
+        {
+          friendUid: 'user-456',
+          createdAt: mockFriendRequest.createdAt,
+          firstname: 'Jane',
+          lastname: 'Smith',
+          avatarUrl: 'profile2.jpg',
+          isInvited: false,
+        },
+      ];
       prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
-      prismaService.$queryRaw.mockResolvedValue([mockFriendRequest] as any);
+      prismaService.$queryRaw.mockResolvedValue(mockFriends as any);
       storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile2.jpg');
 
-      await service.findAll(filtersWithCursor, 'user-123');
+      await service.findAllMyFriends(filtersWithCursor, 'user-123');
 
       expect(prismaService.$executeRawUnsafe).toHaveBeenCalled();
       expect(prismaService.$queryRaw).toHaveBeenCalled();
     });
 
     it('should return nextCursor when more results available', async () => {
-      const mockFriends = Array(11).fill(mockFriendRequest);
+      const mockFriends = Array(11).fill({
+        friendUid: 'user-123',
+        createdAt: mockFriendRequest.createdAt,
+        firstname: 'Jane',
+        lastname: 'Smith',
+        avatarUrl: 'profile2.jpg',
+        isInvited: false,
+      });
       prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
       prismaService.$queryRaw.mockResolvedValue(mockFriends as any);
       storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile2.jpg');
 
-      const result = await service.findAll(mockFilters, 'user-123');
+      const result = await service.findAllMyFriends(mockFilters, 'user-123');
 
       expect(result.nextCursor).toBe('user-123');
       expect(result.totalCount).toBe(10);
@@ -262,21 +297,11 @@ describe('FriendsService', () => {
     };
 
     const mockPendingRequest = {
-      userUid1: 'user-789',
-      userUid2: 'user-123',
-      status: InvitationStatus.PENDING,
+      senderUid: 'user-789',
       createdAt: new Date('2025-01-01T10:00:00.000Z'),
-      updatedAt: new Date('2025-01-01T10:00:00.000Z'),
-      user1: {
-        firstname: 'Alice',
-        lastname: 'Johnson',
-        imageUrl: 'profile3.jpg',
-      },
-      user2: {
-        firstname: 'John',
-        lastname: 'Doe',
-        imageUrl: 'profile.jpg',
-      },
+      firstname: 'Alice',
+      lastname: 'Johnson',
+      avatarUrl: 'profile3.jpg',
     };
 
     it('should return paginated friend requests list', async () => {
@@ -290,13 +315,11 @@ describe('FriendsService', () => {
       expect(result).toEqual({
         items: [
           {
+            senderUid: 'user-789',
             createdAt: mockPendingRequest.createdAt,
-            updatedAt: mockPendingRequest.updatedAt,
-            status: InvitationStatus.PENDING,
-            friendUid: 'user-789',
             firstname: 'Alice',
             lastname: 'Johnson',
-            userProfilePicture: 'https://signed-url.com/profile3.jpg',
+            avatarUrl: 'https://signed-url.com/profile3.jpg',
           },
         ],
         nextCursor: null,
@@ -350,7 +373,7 @@ describe('FriendsService', () => {
 
       const result = await service.findAllMyRequests(mockFilters, 'user-123');
 
-      expect(result.items[0].friendUid).toBe('user-789');
+      expect(result.items[0].senderUid).toBe('user-789');
       expect(result.items[0].firstname).toBe('Alice');
       expect(result.items[0].lastname).toBe('Johnson');
     });
@@ -358,14 +381,14 @@ describe('FriendsService', () => {
     it('should return request without image URL if no profile picture', async () => {
       const requestWithoutImage = {
         ...mockPendingRequest,
-        user1: { ...mockPendingRequest.user1, imageUrl: null },
+        avatarUrl: null,
       };
       prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
       prismaService.$queryRaw.mockResolvedValue([requestWithoutImage] as any);
 
       const result = await service.findAllMyRequests(mockFilters, 'user-123');
 
-      expect(result.items[0].userProfilePicture).toBeNull();
+      expect(result.items[0].avatarUrl).toBeNull();
       expect(storageService.getSignedUrl).not.toHaveBeenCalled();
     });
 
@@ -397,7 +420,7 @@ describe('FriendsService', () => {
         friendUid: 'user-456',
         firstname: 'Jane',
         lastname: 'Smith',
-        userProfilePicture: 'https://signed-url.com/profile2.jpg',
+        avatarUrl: 'https://signed-url.com/profile2.jpg',
       });
       expect(prismaService.friends.findFirst).toHaveBeenCalled();
     });
@@ -411,7 +434,7 @@ describe('FriendsService', () => {
 
       const result = await service.findOne('user-123', 'user-456');
 
-      expect(result.userProfilePicture).toBeNull();
+      expect(result.avatarUrl).toBeNull();
       expect(storageService.getSignedUrl).not.toHaveBeenCalled();
     });
 

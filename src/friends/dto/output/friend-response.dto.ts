@@ -52,7 +52,14 @@ export class FriendResponseData {
     nullable: true,
     readOnly: true,
   })
-  userProfilePicture: string;
+  avatarUrl: string;
+
+  @ApiProperty({
+    description: 'If the friend has been invited to a session',
+    example: true,
+    readOnly: true,
+  })
+  isInvited?: boolean;
 }
 
 export class FriendResponseDto extends ResponseTypeDto<FriendResponseData> {

@@ -1,9 +1,9 @@
 import { PinoLogger } from 'nestjs-pino';
 import { UserFilterDto } from 'src/users/dto';
+import { Prisma } from 'generated/prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Friends, Prisma } from 'generated/prisma/client';
 import { InvitationStatus } from 'generated/prisma/enums';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { StorageFolderName } from 'src/shared/constants/constants';
@@ -17,8 +17,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import { FriendFilterDto } from './dto/input/friend-filter.dto';
 import { FriendResponseData } from './dto/output/friend-response.dto';
 import { FriendMapper, FriendWithUsers } from './mappers/friend.mapper';
+import { FriendRequestResponseData } from './dto/output/friend-request-response.dto';
 
 @Injectable()
 export class FriendsService {
@@ -36,7 +38,7 @@ export class FriendsService {
   ) {
     this.logger.setContext(FriendsService.name);
   }
-  async create(senderUid: string, receiverUid: string): Promise<Friends> {
+  async create(senderUid: string, receiverUid: string): Promise<void> {
     if (senderUid === receiverUid) {
       this.logger.error(`User ${senderUid} cannot add himself as a friend`);
       throw new BadRequestException('You cannot add yourself as a friend');
@@ -97,119 +99,105 @@ export class FriendsService {
       },
     });
 
-    const friendDto = FriendMapper.toDto(newFriendRequest, receiverUid);
-
     this.logger.debug(`Friend request sent to ${receiverUid} by ${senderUid}`);
 
     this.eventEmitter.emit(EventTypes.FRIEND_REQUEST, {
       recipientId: receiverUid,
       senderId: senderUid,
-      senderName: friendDto.firstname + ' ' + friendDto.lastname,
+      senderName: newFriendRequest.user2.firstname + ' ' + newFriendRequest.user2.lastname,
     });
 
-    // todo: send a notification to the receiver
-    return newFriendRequest;
+    return;
   }
 
-  async findAll(
-    filters: UserFilterDto,
+  async findAllMyFriends(
+    filters: FriendFilterDto,
     userUid: string,
   ): Promise<PaginatedDataDto<FriendResponseData>> {
-    const { cursor, limit = 10, name } = filters;
+    const { cursor, limit = 10, name, sessionUid } = filters;
 
     await this.prisma.$executeRawUnsafe(
       `SET pg_trgm.word_similarity_threshold = ${this.WORD_SIMILARITY_THRESHOLD};`,
     );
 
+    // Build search condition for friend's name
     let searchWhereSql = Prisma.empty;
     if (name) {
       const searchPattern = `%${name}%`;
       searchWhereSql = Prisma.sql`
-        AND (
-          -- Search in user1 (when current user is user2)
-          (f.user_uid_2 = ${userUid} AND (
-            u1.firstname %> ${name}
-            OR u1.lastname %> ${name}
-            OR u1.firstname ILIKE ${searchPattern}
-            OR u1.lastname ILIKE ${searchPattern}
-            OR CONCAT(u1.firstname, ' ', u1.lastname) ILIKE ${searchPattern}
-          ))
-          OR
-          -- Search in user2 (when current user is user1)
-          (f.user_uid_1 = ${userUid} AND (
-            u2.firstname %> ${name}
-            OR u2.lastname %> ${name}
-            OR u2.firstname ILIKE ${searchPattern}
-            OR u2.lastname ILIKE ${searchPattern}
-            OR CONCAT(u2.firstname, ' ', u2.lastname) ILIKE ${searchPattern}
-          ))
-        )
-      `;
+            AND (
+                friend.firstname %> ${name}
+                OR friend.lastname %> ${name}
+                OR friend.firstname ILIKE ${searchPattern}
+                OR friend.lastname ILIKE ${searchPattern}
+                OR CONCAT(friend.firstname, ' ', friend.lastname) ILIKE ${searchPattern}
+            )
+        `;
     }
 
-    // Build cursor pagination
-    const cursorCondition = cursor
-      ? Prisma.sql`AND (f.user_uid_1, f.user_uid_2) > (${cursor}, '')`
+    // Conditionally add session invitation join
+    const sessionJoinSql = sessionUid
+      ? Prisma.sql`
+            LEFT JOIN sessions."Session_invitations" si ON (
+                si.session_uid = ${sessionUid}
+                AND si.receiver_uid = friend.uid
+            )
+          `
       : Prisma.empty;
 
+    const cursorCondition = cursor ? Prisma.sql`AND friend.uid > ${cursor}` : Prisma.empty;
+
     const take = limit + 1;
-    const friends = await this.prisma.$queryRaw<FriendWithUsers[]>`
-    SELECT 
-        f.user_uid_1 as "userUid1",
-        f.user_uid_2 as "userUid2",
-        f.status,
-        f.created_at as "createdAt",
-        f.updated_at as "updatedAt",
-        
-        -- Build the nested user1 object
-        json_build_object(
-            'firstname', u1.firstname,
-            'lastname', u1.lastname,
-            'imageUrl', u1.image_url
-        ) as "user1",
 
-        -- Build the nested user2 object
-        json_build_object(
-            'firstname', u2.firstname,
-            'lastname', u2.lastname,
-            'imageUrl', u2.image_url
-        ) as "user2"
-
-    FROM social."Friends" f
-    INNER JOIN auth."Users" u1 ON f.user_uid_1 = u1.uid
-    INNER JOIN auth."Users" u2 ON f.user_uid_2 = u2.uid
-    WHERE f.status = ${InvitationStatus.ACCEPTED}
-        AND (f.user_uid_1 = ${userUid} OR f.user_uid_2 = ${userUid})
-        ${searchWhereSql}
-        ${cursorCondition}
-    ORDER BY f.user_uid_1 ASC, f.user_uid_2 ASC
-    LIMIT ${take}
+    const friends = await this.prisma.$queryRaw<FriendResponseData[]>`
+        SELECT 
+            friend.uid as "friendUid",
+            f.created_at as "createdAt",
+            friend.firstname,
+            friend.lastname,
+            friend.image_url as "avatarUrl",
+            CASE WHEN si.receiver_uid IS NOT NULL THEN true ELSE false END as "isInvited"
+        FROM social."Friends" f
+        INNER JOIN auth."Users" friend ON (
+            friend.uid = CASE 
+                WHEN f.user_uid_1 = ${userUid} THEN f.user_uid_2
+                ELSE f.user_uid_1
+            END
+        )
+        ${sessionJoinSql}
+        WHERE f.status = ${InvitationStatus.ACCEPTED}
+            AND (f.user_uid_1 = ${userUid} OR f.user_uid_2 = ${userUid})
+            ${searchWhereSql}
+            ${cursorCondition}
+        ORDER BY friend.uid ASC
+        LIMIT ${take}
     `;
 
     let nextCursor: string | null = null;
-
     if (friends.length > limit) {
       const nextItem = friends.pop();
-      nextCursor = nextItem!.userUid1;
+      nextCursor = nextItem!.friendUid;
     }
 
-    const friendCollectionDto = FriendMapper.toCollectionDto(friends, userUid);
-
-    const friendCollectionWithImageUrl = await Promise.all(
-      friendCollectionDto.map(async (friend) => {
-        if (!friend.userProfilePicture) {
+    // Get signed URLs for profile pictures
+    const friendsWithImageUrl = await Promise.all(
+      friends.map(async (friend) => {
+        if (!friend.avatarUrl) {
           return friend;
         }
         const friendImageUrl = await this.storageService.getSignedUrl(
           StorageFolderName.USERS,
-          friend.userProfilePicture,
+          friend.avatarUrl,
         );
-        return { ...friend, userProfilePicture: friendImageUrl };
+        return {
+          ...friend,
+          avatarUrl: friendImageUrl,
+        };
       }),
     );
 
     return {
-      items: friendCollectionWithImageUrl,
+      items: friendsWithImageUrl,
       nextCursor,
       totalCount: friends.length,
     };
@@ -224,92 +212,76 @@ export class FriendsService {
   async findAllMyRequests(
     filters: UserFilterDto,
     userUid: string,
-  ): Promise<PaginatedDataDto<FriendResponseData>> {
+  ): Promise<PaginatedDataDto<FriendRequestResponseData>> {
     const { cursor, limit = 10, name } = filters;
 
     await this.prisma.$executeRawUnsafe(
       `SET pg_trgm.word_similarity_threshold = ${this.WORD_SIMILARITY_THRESHOLD};`,
     );
 
+    // Build search condition for friend's name
     let searchWhereSql = Prisma.empty;
     if (name) {
       const searchPattern = `%${name}%`;
       searchWhereSql = Prisma.sql`
-        AND (
-          (f.user_uid_2 = ${userUid} AND (
-            u1.firstname %> ${name}
-            OR u1.lastname %> ${name}
-            OR u1.firstname ILIKE ${searchPattern}
-            OR u1.lastname ILIKE ${searchPattern}
-            OR CONCAT(u1.firstname, ' ', u1.lastname) ILIKE ${searchPattern}
-          ))
-        )
-      `;
+            AND (
+                sender.firstname %> ${name}
+                OR sender.lastname %> ${name}
+                OR sender.firstname ILIKE ${searchPattern}
+                OR sender.lastname ILIKE ${searchPattern}
+                OR CONCAT(sender.firstname, ' ', sender.lastname) ILIKE ${searchPattern}
+            )
+        `;
     }
 
-    // Build cursor pagination
-    const cursorCondition = cursor
-      ? Prisma.sql`AND (f.user_uid_1, f.user_uid_2) > (${cursor}, '')`
-      : Prisma.empty;
+    const cursorCondition = cursor ? Prisma.sql`AND friend.uid > ${cursor}` : Prisma.empty;
 
     const take = limit + 1;
-    const friends = await this.prisma.$queryRaw<FriendWithUsers[]>`
-    SELECT 
-        f.user_uid_1 as "userUid1",
-        f.user_uid_2 as "userUid2",
-        f.status,
-        f.created_at as "createdAt",
-        f.updated_at as "updatedAt",
-        
-        -- Build the nested user1 object
-        json_build_object(
-            'firstname', u1.firstname,
-            'lastname', u1.lastname,
-            'imageUrl', u1.image_url
-        ) as "user1",
 
-        -- Build the nested user2 object
-        json_build_object(
-            'firstname', u2.firstname,
-            'lastname', u2.lastname,
-            'imageUrl', u2.image_url
-        ) as "user2"
-
-    FROM social."Friends" f
-    INNER JOIN auth."Users" u1 ON f.user_uid_1 = u1.uid
-    INNER JOIN auth."Users" u2 ON f.user_uid_2 = u2.uid
-    WHERE f.status = ${InvitationStatus.PENDING}
-    AND f.user_uid_2 = ${userUid}
-        ${searchWhereSql}
-        ${cursorCondition}
-    ORDER BY f.created_at ASC
-    LIMIT ${take}
+    const friends = await this.prisma.$queryRaw<FriendRequestResponseData[]>`
+        SELECT 
+            f.user_uid_1 as "senderUid",
+            f.created_at as "createdAt",
+            sender.firstname,
+            sender.lastname,
+            sender.image_url as "avatarUrl"
+        FROM social."Friends" f
+        INNER JOIN auth."Users" sender ON (
+            sender.uid = f.user_uid_1
+        )
+        WHERE f.status = ${InvitationStatus.PENDING}
+            AND f.user_uid_2 = ${userUid}
+            ${searchWhereSql}
+            ${cursorCondition}
+        ORDER BY sender.uid ASC
+        LIMIT ${take}
     `;
 
     let nextCursor: string | null = null;
-
     if (friends.length > limit) {
       const nextItem = friends.pop();
-      nextCursor = nextItem!.userUid1;
+      nextCursor = nextItem!.senderUid;
     }
 
-    const friendCollectionDto = FriendMapper.toCollectionDto(friends, userUid);
-
-    const friendCollectionWithImageUrl = await Promise.all(
-      friendCollectionDto.map(async (friend) => {
-        if (!friend.userProfilePicture) {
+    // Get signed URLs for profile pictures
+    const friendsWithImageUrl = await Promise.all(
+      friends.map(async (friend) => {
+        if (!friend.avatarUrl) {
           return friend;
         }
         const friendImageUrl = await this.storageService.getSignedUrl(
           StorageFolderName.USERS,
-          friend.userProfilePicture,
+          friend.avatarUrl,
         );
-        return { ...friend, userProfilePicture: friendImageUrl };
+        return {
+          ...friend,
+          avatarUrl: friendImageUrl,
+        };
       }),
     );
 
     return {
-      items: friendCollectionWithImageUrl,
+      items: friendsWithImageUrl,
       nextCursor,
       totalCount: friends.length,
     };
@@ -354,14 +326,14 @@ export class FriendsService {
       );
     }
     const friendDto = FriendMapper.toDto(existingFriend, connectedUserUid);
-    if (!friendDto.userProfilePicture) {
+    if (!friendDto.avatarUrl) {
       return friendDto;
     }
     const friendImageUrl = await this.storageService.getSignedUrl(
       StorageFolderName.USERS,
-      friendDto.userProfilePicture,
+      friendDto.avatarUrl,
     );
-    return { ...friendDto, userProfilePicture: friendImageUrl };
+    return { ...friendDto, avatarUrl: friendImageUrl };
   }
 
   async update(
