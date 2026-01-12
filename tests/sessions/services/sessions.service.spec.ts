@@ -1210,6 +1210,7 @@ describe('SessionsService', () => {
         where: { creatorUid: userUid },
         orderBy: undefined,
         select: expect.any(Object),
+        take: 11,
       });
     });
 
@@ -1226,6 +1227,7 @@ describe('SessionsService', () => {
         where: { sessionPlayers: { some: { userUid } } },
         orderBy: undefined,
         select: expect.any(Object),
+        take: 11,
       });
     });
 
@@ -1245,6 +1247,7 @@ describe('SessionsService', () => {
         },
         orderBy: undefined,
         select: expect.any(Object),
+        take: 11,
       });
     });
 
@@ -1264,6 +1267,7 @@ describe('SessionsService', () => {
         },
         orderBy: undefined,
         select: expect.any(Object),
+        take: 11,
       });
     });
 
@@ -1283,6 +1287,7 @@ describe('SessionsService', () => {
         },
         orderBy: undefined,
         select: expect.any(Object),
+        take: 11,
       });
     });
 
@@ -1304,6 +1309,7 @@ describe('SessionsService', () => {
         },
         orderBy: undefined,
         select: expect.any(Object),
+        take: 11,
       });
     });
 
@@ -1323,6 +1329,7 @@ describe('SessionsService', () => {
         },
         orderBy: undefined,
         select: expect.any(Object),
+        take: 11,
       });
     });
 
@@ -1348,6 +1355,7 @@ describe('SessionsService', () => {
           sport: true,
           startDate: true,
         }),
+        take: 11,
       });
     });
 
@@ -1370,6 +1378,7 @@ describe('SessionsService', () => {
           sport: true,
           startDate: true,
         }),
+        take: 11,
       });
     });
 
@@ -1388,6 +1397,7 @@ describe('SessionsService', () => {
         },
         orderBy: undefined,
         select: expect.any(Object),
+        take: 11,
       });
     });
 
@@ -1409,6 +1419,7 @@ describe('SessionsService', () => {
         },
         orderBy: undefined,
         select: expect.any(Object),
+        take: 11,
       });
     });
 
@@ -1427,6 +1438,7 @@ describe('SessionsService', () => {
         where: { creatorUid: userUid },
         orderBy: [{ startDate: 'asc' }],
         select: expect.any(Object),
+        take: 11,
       });
     });
 
@@ -1445,6 +1457,7 @@ describe('SessionsService', () => {
         where: { creatorUid: userUid },
         orderBy: [{ startDate: 'desc' }],
         select: expect.any(Object),
+        take: 11,
       });
     });
 
@@ -1463,6 +1476,7 @@ describe('SessionsService', () => {
         where: { creatorUid: userUid },
         orderBy: [{ createdAt: 'desc' }],
         select: expect.any(Object),
+        take: 11,
       });
     });
 
@@ -1482,6 +1496,7 @@ describe('SessionsService', () => {
         where: { creatorUid: userUid },
         orderBy: [{ startDate: 'asc' }, { createdAt: 'desc' }],
         select: expect.any(Object),
+        take: 11,
       });
     });
 
@@ -1511,6 +1526,7 @@ describe('SessionsService', () => {
           sport: true,
           startDate: true,
         }),
+        take: 11,
       });
     });
 
@@ -1524,6 +1540,129 @@ describe('SessionsService', () => {
       expect(result.items).toEqual([]);
       expect(result.totalCount).toBe(0);
       expect(result.nextCursor).toBeNull();
+      expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
+        where: { creatorUid: userUid },
+        orderBy: undefined,
+        select: expect.any(Object),
+        take: 11,
+      });
+    });
+
+    it('should filter sessions by level', async () => {
+      (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession1]);
+
+      await service.findAllByUserUid(userUid, {
+        ownership: SessionOwnnership.CREATOR,
+        level: SessionSportLevel.BEGINNER,
+      });
+
+      expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
+        where: {
+          creatorUid: userUid,
+          level: SessionSportLevel.BEGINNER,
+        },
+        orderBy: undefined,
+        select: expect.any(Object),
+        take: 11,
+      });
+    });
+
+    it('should filter sessions by visibility', async () => {
+      (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession1]);
+
+      await service.findAllByUserUid(userUid, {
+        ownership: SessionOwnnership.CREATOR,
+        visibility: 'PUBLIC',
+      });
+
+      expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
+        where: {
+          creatorUid: userUid,
+          visibility: 'PUBLIC',
+        },
+        orderBy: undefined,
+        select: expect.any(Object),
+        take: 11,
+      });
+    });
+
+    it('should handle pagination with cursor', async () => {
+      (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession2]);
+
+      await service.findAllByUserUid(userUid, {
+        ownership: SessionOwnnership.CREATOR,
+        cursor: 'session-uid-1',
+        limit: 10,
+      });
+
+      expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
+        where: {
+          creatorUid: userUid,
+          uid: { gt: 'session-uid-1' },
+        },
+        orderBy: undefined,
+        select: expect.any(Object),
+        take: 11,
+      });
+    });
+
+    it('should return nextCursor when more results are available', async () => {
+      const moreSessions = Array(11)
+        .fill(null)
+        .map((_, i) => ({
+          ...mockSession1,
+          uid: `session-uid-${i}`,
+        }));
+      (prismaService.sessions.findMany as jest.Mock).mockResolvedValue(moreSessions);
+
+      const result = await service.findAllByUserUid(userUid, {
+        ownership: SessionOwnnership.CREATOR,
+        limit: 10,
+      });
+
+      expect(result.items).toHaveLength(10);
+      expect(result.nextCursor).toBe('session-uid-10');
+      expect(result.totalCount).toBe(10);
+    });
+
+    it('should return null nextCursor when no more results', async () => {
+      (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession1]);
+
+      const result = await service.findAllByUserUid(userUid, {
+        ownership: SessionOwnnership.CREATOR,
+        limit: 10,
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.nextCursor).toBeNull();
+      expect(result.totalCount).toBe(1);
+    });
+
+    it('should combine level, visibility, and other filters', async () => {
+      const minStart = new Date('2023-01-08T00:00:00Z');
+      (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession1]);
+
+      await service.findAllByUserUid(userUid, {
+        ownership: SessionOwnnership.CREATOR,
+        level: SessionSportLevel.INTERMEDIATE,
+        visibility: 'PUBLIC',
+        sports: [Sport.FOOTBALL],
+        minStart,
+        startDateSortOrder: 'asc',
+      });
+
+      expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
+        where: {
+          creatorUid: userUid,
+          level: SessionSportLevel.INTERMEDIATE,
+          visibility: 'PUBLIC',
+          sport: { in: [Sport.FOOTBALL] },
+          startDate: { gte: minStart },
+        },
+        orderBy: [{ startDate: 'asc' }],
+        select: expect.any(Object),
+        take: 11,
+      });
     });
   });
 });

@@ -470,8 +470,10 @@ export class SessionsService {
   ): Promise<PaginatedDataDto<SessionCollectionItemDto>> {
     const {
       createdAtSortOrder,
+      cursor,
       endDate,
       level,
+      limit = 10,
       maxStart,
       minStart,
       ownership,
@@ -540,6 +542,12 @@ export class SessionsService {
       where.visibility = visibility;
     }
 
+    // Handle pagination
+    if (cursor) {
+      where.uid = { gt: cursor };
+    }
+
+    const take = limit + 1;
     // Build orderBy
     const orderBy: Prisma.SessionsOrderByWithRelationInput[] = [];
     if (startDateSortOrder) {
@@ -571,14 +579,21 @@ export class SessionsService {
         uid: true,
         visibility: true,
       },
+      take,
       where,
     });
+
+    let nextCursor: string | null = null;
+    if (sessions.length > limit) {
+      const nextItem = sessions.pop();
+      nextCursor = nextItem!.uid;
+    }
 
     const items = SessionMapper.fromRawToSessionResponses(sessions, new Map());
 
     return {
       items,
-      nextCursor: null,
+      nextCursor,
       totalCount: items.length,
     };
   }
