@@ -156,7 +156,7 @@ export class FriendsService {
             friend.firstname,
             friend.lastname,
             friend.image_url as "avatarUrl",
-            CASE WHEN si.receiver_uid IS NOT NULL THEN true ELSE false END as "isInvited"
+            CASE WHEN ${sessionUid ? Prisma.sql`si.receiver_uid IS NOT NULL` : Prisma.sql`false`} THEN true ELSE false END as "isInvited"
         FROM social."Friends" f
         INNER JOIN auth."Users" friend ON (
             friend.uid = CASE 
