@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { GameModes } from 'generated/prisma/enums';
 import { Transform, Type } from 'class-transformer';
 import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
 import {
@@ -121,10 +122,48 @@ export class SessionFilterDto {
   @IsNumber()
   @ApiProperty({
     description: 'Level for filtering sessions',
-    example: SessionSportLevel.BEGINNER,
+    enum: SessionSportLevel,
+    example: [SessionSportLevel.BEGINNER, SessionSportLevel.ADVANCED],
+    isArray: true,
     required: false,
   })
-  level?: SessionSportLevel;
+  levels?: SessionSportLevel[];
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') return value.split(',').map((s) => s.trim());
+    if (Array.isArray(value)) return value;
+    return [value];
+  })
+  @IsEnum(GameModes, { each: true })
+  @IsArray()
+  @ApiProperty({
+    description: 'Game modes (FIVE_V_FIVE, etc.)',
+    enum: GameModes,
+    example: [GameModes.FIVE_V_FIVE, GameModes.ONE_V_ONE],
+    isArray: true,
+    required: false,
+  })
+  gameModes?: GameModes[];
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    description: 'Search query for filtering sessions',
+    example: 'soccer',
+    required: false,
+  })
+  search?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @ApiProperty({
+    description: 'Filter sessions by duration in minutes (e.g. 60, 90)',
+    example: 60,
+    required: false,
+  })
+  duration?: number;
 }
 
 export class FindAllSessionsDto extends SessionFilterDto {
