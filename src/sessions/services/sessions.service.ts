@@ -278,7 +278,7 @@ export class SessionsService {
     }
 
     // ---------------------------------------------------------
-    // 3. SEARCH INTELLIGENCE (NEW 🚀)
+    // 3. SEARCH INTELLIGENCE
     // ---------------------------------------------------------
     let searchScoreSql = Prisma.sql`0`;
     let searchWhereSql = Prisma.empty;
