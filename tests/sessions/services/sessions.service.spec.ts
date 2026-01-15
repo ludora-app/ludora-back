@@ -89,6 +89,7 @@ describe('SessionsService', () => {
           useValue: {
             $transaction: jest.fn(),
             $queryRawUnsafe: jest.fn(),
+            $executeRawUnsafe: jest.fn(),
             fields: {
               findUnique: jest.fn(),
             },

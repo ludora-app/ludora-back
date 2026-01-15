@@ -183,10 +183,13 @@ export class SessionsService {
    */
   async findAll({
     cursor,
+    duration,
     endDate,
-    level,
+    gameModes: filterGameModes = [],
+    levels: filterLevels = [],
     limit = 10,
     maxDistance = SESSION_SUGGESTION_CONFIG.THRESHOLDS.MAX_DISTANCE_METERS,
+    search,
     sports: filterSports = [],
     startDate,
     urgent = false,
@@ -231,11 +234,28 @@ export class SessionsService {
     if (isFiltering) {
       sportWhereSql = Prisma.sql`AND s.sport::text IN (${Prisma.join(filterSports)})`;
     }
-
-    // C. LEVEL
+    // B.A. LEVELS (Nombres)
     let levelWhereSql = Prisma.empty;
-    if (level) {
-      levelWhereSql = Prisma.sql`AND s.level = ${level}`;
+    if (filterLevels.length > 0) {
+      levelWhereSql = Prisma.sql`AND s.level IN (${Prisma.join(filterLevels)})`;
+    }
+
+    // B.B. GAME MODES (Strings)
+    let gameModeWhereSql = Prisma.empty;
+    if (filterGameModes.length > 0) {
+      gameModeWhereSql = Prisma.sql`AND s.game_mode::text IN (${Prisma.join(filterGameModes)})`;
+    }
+
+    // B.C. DURATION (Strings)
+    let durationWhereSql = Prisma.empty;
+    if (duration) {
+      // 1. (s.end_date - s.start_date) donne un intervalle
+      // 2. EXTRACT(EPOCH FROM ...) convertit cet intervalle en SECONDES totales
+      // 3. On divise par 60 pour avoir les minutes
+      // 4. On cast en ::int pour comparer proprement avec ton paramètre
+      durationWhereSql = Prisma.sql`
+        AND (EXTRACT(EPOCH FROM (s.end_date - s.start_date)) / 60)::int = ${duration}
+      `;
     }
 
     // ---------------------------------------------------------
@@ -258,20 +278,63 @@ export class SessionsService {
     }
 
     // ---------------------------------------------------------
-    // 3. SAFETY BARRIER
+    // 3. SEARCH INTELLIGENCE
+    // ---------------------------------------------------------
+    let searchScoreSql = Prisma.sql`0`;
+    let searchWhereSql = Prisma.empty;
+
+    if (search) {
+      // Nettoyage pour comparaison stricte (ex: "Five V Five" -> "FiveVFive")
+      const searchCompact = search.replace(/\s+/g, '');
+      const searchPattern = `%${search}%`;
+      const searchCompactPattern = `%${searchCompact}%`;
+
+      // SCORE : On prend le meilleur score entre le Titre Session et le Nom du Terrain
+      searchScoreSql = Prisma.sql`
+        GREATEST(
+          word_similarity(${search}, s.title), 
+          word_similarity(${search}, f.name),
+          similarity(REPLACE(s.title, ' ', ''), ${searchCompact}),
+          similarity(REPLACE(f.name, ' ', ''), ${searchCompact})
+        ) * ${SCORES.SEARCH_MAX_POINTS}
+      `;
+
+      // FILTRE : On garde si ça match le titre OU le terrain
+      searchWhereSql = Prisma.sql`
+        AND (
+          s.title %> ${search}                      -- Session Title fuzzy
+          OR f.name %> ${search}                    -- Field Name fuzzy
+          OR s.title ILIKE ${searchPattern}         -- Session Title exact
+          OR f.name ILIKE ${searchPattern}          -- Field Name exact
+          OR REPLACE(s.title, ' ', '') ILIKE ${searchCompactPattern} -- Compact match
+          OR REPLACE(f.name, ' ', '') ILIKE ${searchCompactPattern}  -- Compact match
+        )
+      `;
+    }
+    // ---------------------------------------------------------
+    // 4. SAFETY BARRIER
     // ---------------------------------------------------------
     const hasLocation = userLat != null && userLon != null;
     const hasTimePrefs = userTimePreferences.length > 0;
     const hasDate = !!startDateObj;
     // We consider we have criteria if we have sports (profile or filter)
     const hasSportsCriteria = hasSportsToScore;
-
-    if (!hasLocation && !hasSportsCriteria && !hasTimePrefs && !urgent && !hasDate) {
+    const hasSearch = !!search;
+    const hasDuration = !!duration;
+    if (
+      !hasLocation &&
+      !hasSportsCriteria &&
+      !hasTimePrefs &&
+      !urgent &&
+      !hasDate &&
+      !hasSearch &&
+      !hasDuration
+    ) {
       return { items: [], nextCursor: null, totalCount: 0 };
     }
 
     // ---------------------------------------------------------
-    // 4. REMAINING SQL CONSTRUCTION
+    // 5. REMAINING SQL CONSTRUCTION
     // ---------------------------------------------------------
 
     // C. DISTANCE
@@ -355,9 +418,11 @@ export class SessionsService {
     }
 
     // ---------------------------------------------------------
-    // 5. EXECUTION
+    // 6. EXECUTION
     // ---------------------------------------------------------
-
+    await this.prisma.$executeRawUnsafe(
+      `SET pg_trgm.word_similarity_threshold = ${THRESHOLDS.WORD_SIMILARITY_THRESHOLD};`,
+    );
     const rankedSessions = await this.prisma.$queryRaw<
       {
         uid: string;
@@ -379,7 +444,8 @@ export class SessionsService {
             (${sportScoreSql}) +
             (${distanceScoreSql}) +
             (${timeScoreSql}) +
-            (${dateScoreSql})
+            (${dateScoreSql}) +
+            (${searchScoreSql})
           ) as score
         
         FROM sessions."Sessions" s
@@ -391,6 +457,9 @@ export class SessionsService {
           ${dateWhereSql}
           ${sportWhereSql} -- HERE: Strict filter only if filterSports is filled
           ${levelWhereSql}
+          ${gameModeWhereSql}
+          ${searchWhereSql}
+          ${durationWhereSql}
           AND s.visibility = ${SessionVisibility.PUBLIC}
       ) as ranked_sessions
       
@@ -405,7 +474,7 @@ export class SessionsService {
     `;
 
     // ---------------------------------------------------------
-    // 6. HYDRATION & RETURN (Standard Code)
+    // 7. HYDRATION & RETURN (Standard Code)
     // ---------------------------------------------------------
 
     if (!rankedSessions || rankedSessions.length === 0) {
