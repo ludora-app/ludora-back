@@ -71,7 +71,7 @@ export class SessionsController {
 
   @Get('/list/collection')
   @Protected()
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 100, ttl: 60000 } })
   @ApiOperation({ summary: 'Get all sessions' })
   @ApiOkResponse({ type: PaginatedSessionCollectionResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })

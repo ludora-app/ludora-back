@@ -467,7 +467,8 @@ export class SessionsService {
       
       ORDER BY 
         ranked_sessions.score DESC,
-        ranked_sessions.start_date ASC
+        ranked_sessions.start_date ASC,
+        ranked_sessions.uid ASC
       
       LIMIT ${take} 
       OFFSET ${currentOffset};
