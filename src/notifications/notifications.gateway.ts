@@ -16,6 +16,7 @@ import {
 import { EventTypes } from './constants/event.types';
 import { NotificationsService } from './notifications.service';
 import { NotificationEventDto } from './dto/notification-event.dto';
+import { NotificationMetadata } from './dto/input/notification-metadata';
 
 /**
  * NotificationsGateway handles real-time notifications using Socket.io
@@ -157,7 +158,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     title: string;
     message: string;
     foreignUid?: string;
-    metadata?: any;
+    metadata?: NotificationMetadata;
     data?: Record<string, any>; // Legacy pour compatibilité
   }) {
     const { data, foreignUid, message, metadata, title, type, userUid } = payload;
@@ -169,13 +170,21 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         ...data,
       };
 
+      const notification = await this.notificationsService.create({
+        message,
+        metadata: enrichedMetadata,
+        title,
+        type,
+        userUid,
+      });
+
       if (this.isUserConnected(userUid)) {
         // User is connected → Send via Socket.io (real-time, no persistence)
         const userRoom = `user:${userUid}`;
         this.server.to(userRoom).emit('notification', {
           data: enrichedMetadata,
           message,
-          timestamp: new Date().toISOString(),
+          timestamp: notification.createdAt,
           title,
           type,
         });
@@ -187,6 +196,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
           foreignUid,
           message,
           metadata: enrichedMetadata,
+          notificationUid: notification.uid,
           title,
           type,
           userUid,

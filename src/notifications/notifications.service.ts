@@ -8,7 +8,9 @@ import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-t
 
 import { NotificationMetadata } from './dto/input/notification-metadata';
 import { CreateNotificationDto } from './dto/input/create-notification.dto';
+import { SendPushNotificationDto } from './dto/input/send-push-notification.dto';
 import { NotificationResponseData } from './dto/output/notification-response.dto';
+import { CreateManyNotificationsDto } from './dto/input/create-many-notifications.dto';
 
 @Injectable()
 export class NotificationsService {
@@ -66,6 +68,27 @@ export class NotificationsService {
     }
   }
 
+  async createMany(data: CreateManyNotificationsDto) {
+    try {
+      const notifications = await this.prisma.notifications.createMany({
+        data: data.userUids.map((userUid) => ({
+          body: data.message,
+          data: data.metadata || {},
+          foreignUid: data.foreignUid,
+          title: data.title,
+          type: data.type,
+          userUid,
+        })),
+      });
+      return notifications;
+    } catch (error) {
+      this.logger.error(`Failed to create many notifications: ${error.message}`, {
+        error: error.stack,
+      });
+      throw error;
+    }
+  }
+
   /**
    * Send a push notification to the user via Firebase
    * @param data
@@ -73,19 +96,16 @@ export class NotificationsService {
    */
   async sendPushNotification(data: CreateNotificationDto) {
     try {
-      //? notification persisted in the database
-      const notification = await this.create(data);
-
       //? get all active FCM tokens for the user
       const tokens = await this.devicesService.getUserFcmTokens(data.userUid);
 
       if (tokens.length === 0) {
         this.logger.warn(`No FCM tokens found for user ${data.userUid}`);
-        return notification;
+        return;
       }
 
       //? build the Firebase payload
-      const payload = this.buildFcmPayload(notification, data.metadata);
+      const payload = this.buildFcmPayload(data);
 
       //? send the notification via Firebase
       const response = await this.firebaseService.sendToMultipleTokens(tokens, {
@@ -96,19 +116,19 @@ export class NotificationsService {
       //? mark the notification as sent via push
       await this.prisma.notifications.update({
         data: { sentViaPush: true },
-        where: { uid: notification.uid },
+        where: { uid: data.notificationUid },
       });
 
       this.logger.debug(
         `Push notification sent: ${response.successCount}/${tokens.length} devices`,
         {
-          notificationUid: notification.uid,
+          notificationUid: data.notificationUid,
           type: data.type,
           userUid: data.userUid,
         },
       );
 
-      return notification;
+      return;
     } catch (error) {
       this.logger.error(`Failed to send push notification: ${error.message}`, {
         data,
@@ -119,10 +139,58 @@ export class NotificationsService {
     }
   }
 
-  private buildFcmPayload(
-    notification: any,
-    metadata?: NotificationMetadata,
-  ): {
+  /**
+   * Send a simple push notification to a specific FCM token
+   * This method does not persist the notification in the database
+   * @param dto - Contains the FCM token and notification data
+   */
+  async sendPushNotificationByToken(dto: SendPushNotificationDto): Promise<void> {
+    try {
+      const payload = {
+        data: dto.data || {},
+        notification: {
+          body: dto.body,
+          title: dto.title,
+        },
+      } as any;
+
+      await this.firebaseService.sendToToken(dto.fcmToken, payload);
+
+      this.logger.info(
+        `Simple push notification sent to token: ${dto.fcmToken.substring(0, 10)}...`,
+      );
+    } catch (error) {
+      const errorCode = error?.code || 'unknown';
+      const errorMessage = error?.message || 'Unknown error';
+
+      this.logger.error(
+        `Failed to send simple push notification. Error code: ${errorCode}, Message: ${errorMessage}`,
+        {
+          errorCode,
+          errorMessage,
+          fcmTokenPrefix: dto.fcmToken.substring(0, 10),
+          stack: error.stack,
+        },
+      );
+
+      // Fournir un message d'erreur plus explicite
+      if (errorCode === 'messaging/registration-token-not-registered') {
+        throw new Error(
+          'FCM token is invalid or expired. The device may have uninstalled the app or the token is no longer valid.',
+        );
+      } else if (errorCode === 'messaging/invalid-registration-token') {
+        throw new Error('FCM token format is invalid.');
+      } else if (errorMessage.includes('Requested entity was not found')) {
+        throw new Error(
+          'FCM token not found. Please verify: 1) Token is valid, 2) Firebase project is correctly configured, 3) Token belongs to this Firebase project.',
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  private buildFcmPayload(notification: CreateNotificationDto): {
     notification: { title: string; body: string };
     data: Record<string, string>;
     android: any;
@@ -130,12 +198,12 @@ export class NotificationsService {
   } {
     return {
       data: {
-        actionUrl: metadata?.actionUrl || '',
+        actionUrl: notification.metadata?.actionUrl || '',
         foreignUid: notification.foreignUid || '',
-        notificationUid: notification.uid,
+        notificationUid: notification.notificationUid,
         type: notification.type,
         // Aplatir les metadata en strings pour FCM
-        ...this.flattenMetadata(metadata),
+        ...this.flattenMetadata(notification.metadata),
       },
       notification: {
         body: notification.message,
@@ -146,7 +214,7 @@ export class NotificationsService {
         notification: {
           channelId: this.getAndroidChannelId(notification.type),
           sound: 'default',
-          ...(metadata?.imageUrl && { imageUrl: metadata.imageUrl }),
+          ...(notification.metadata?.imageUrl && { imageUrl: notification.metadata.imageUrl }),
         },
         priority: 'high' as const,
       },
@@ -156,8 +224,8 @@ export class NotificationsService {
           aps: {
             badge: 1, // Sera mis à jour dynamiquement
             sound: 'default',
-            ...(metadata?.imageUrl && {
-              'media-url': metadata.imageUrl,
+            ...(notification.metadata?.imageUrl && {
+              'media-url': notification.metadata.imageUrl,
               'mutable-content': 1,
             }),
           },

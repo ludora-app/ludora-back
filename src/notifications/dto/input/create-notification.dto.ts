@@ -11,5 +11,6 @@ export interface CreateNotificationDto {
   message: string;
   foreignUid?: string;
   type: NotificationType;
+  notificationUid?: string;
   metadata?: NotificationMetadata;
 }

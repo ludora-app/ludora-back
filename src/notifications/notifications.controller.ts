@@ -1,7 +1,8 @@
 import { FastifyRequest } from 'fastify';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
-import { Get, Patch, Delete, UseGuards } from '@nestjs/common';
+import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
+import { Get, Patch, Delete, Post, Body, UseGuards } from '@nestjs/common';
 import { Controller, HttpCode, HttpStatus, Param, Req } from '@nestjs/common';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
@@ -13,6 +14,7 @@ import {
 } from '@nestjs/swagger';
 
 import { NotificationsService } from './notifications.service';
+import { SendPushNotificationDto } from './dto/input/send-push-notification.dto';
 import {
   NotificationResponseData,
   PaginatedNotificationResponse,
@@ -88,5 +90,21 @@ export class NotificationsController {
     const userUid = req['user'].uid;
     await this.notificationsService.delete(uid, userUid);
     return;
+  }
+
+  @Post('send-push')
+  @UseGuards(DevOnlyGuard)
+  @Protected()
+  @ApiOperation({ summary: 'Send a push notification to a specific FCM token' })
+  @ApiOkResponse({
+    description: 'Push notification sent successfully',
+  })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  async sendPushNotification(@Body() dto: SendPushNotificationDto) {
+    await this.notificationsService.sendPushNotificationByToken(dto);
+    return {
+      message: 'Push notification sent successfully',
+      success: true,
+    };
   }
 }
