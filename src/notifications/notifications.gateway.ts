@@ -349,7 +349,6 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     recipientId: string;
     sessionName: string;
     sessionId: string;
-    sessionDate?: string;
     invitedBy: string;
     inviterAvatar?: string;
   }): Promise<void> {
@@ -360,7 +359,6 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         actionUrl: `app://sessions/${payload.sessionId}`,
         inviterAvatar: payload.inviterAvatar,
         inviterName: payload.invitedBy,
-        sessionDate: payload.sessionDate,
         sessionTitle: payload.sessionName,
         sessionUid: payload.sessionId,
       },
