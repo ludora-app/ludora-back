@@ -5,6 +5,7 @@ import { Socket } from 'socket.io';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
 import { NotificationsGateway } from 'src/notifications/notifications.gateway';
+import { NotificationsService } from 'src/notifications/notifications.service';
 import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
 import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
 import { NotificationType } from 'generated/prisma/enums';
@@ -25,6 +26,16 @@ describe('NotificationsGateway', () => {
 
   const mockWebSocketAuthService = {
     authenticateSocket: jest.fn(),
+  };
+
+  const mockNotificationsService = {
+    create: jest.fn(),
+    findAll: jest.fn(),
+    findAllByReceiver: jest.fn(),
+    findOne: jest.fn(),
+    markAsRead: jest.fn(),
+    markAllAsRead: jest.fn(),
+    getUnreadCount: jest.fn(),
   };
 
   const mockWebSocketAuthGuard = {
@@ -55,6 +66,10 @@ describe('NotificationsGateway', () => {
           provide: WebSocketAuthService,
           useValue: mockWebSocketAuthService,
         },
+        {
+          provide: NotificationsService,
+          useValue: mockNotificationsService,
+        },
       ],
     })
       .overrideGuard(WebSocketAuthGuard)
@@ -74,6 +89,10 @@ describe('NotificationsGateway', () => {
   describe('handleConnection', () => {
     it('should join authenticated user to notification room', async () => {
       const userUid = 'user-123';
+      const unreadCount = 5;
+
+      mockNotificationsService.getUnreadCount.mockResolvedValue(unreadCount);
+
       const mockAuthenticatedSocket = {
         id: 'socket-123',
         data: { userUid },
@@ -87,6 +106,7 @@ describe('NotificationsGateway', () => {
       expect(mockAuthenticatedSocket.join).toHaveBeenCalledWith(`user:${userUid}`);
       expect(mockAuthenticatedSocket.emit).toHaveBeenCalledWith('connected', {
         message: 'Successfully connected to notifications',
+        unreadCount,
         userUid,
       });
     });
@@ -111,7 +131,7 @@ describe('NotificationsGateway', () => {
   });
 
   describe('handleNotificationSend', () => {
-    it('should send notification to specific user', () => {
+    it('should send notification to specific user', async () => {
       const payload = {
         userId: 'user-123',
         type: NotificationType.FRIEND_REQUEST,
@@ -120,16 +140,26 @@ describe('NotificationsGateway', () => {
         data: { requestId: 'req-456' },
       };
 
+      mockNotificationsService.create.mockResolvedValue({
+        uid: 'notif-123',
+        createdAt: new Date(),
+      });
+
+      const mockEmit = jest.fn();
       const mockServerTo = jest.fn().mockReturnValue({
-        emit: jest.fn(),
+        emit: mockEmit,
       });
       gateway.server = {
         to: mockServerTo,
       } as any;
 
-      gateway.handleNotificationSend(payload);
+      // Simulate a connected user
+      gateway['connectedUsers'].set('user-123', new Set(['socket-123']));
+
+      await gateway.handleNotificationSend(payload);
 
       expect(mockServerTo).toHaveBeenCalledWith('user:user-123');
+      expect(mockEmit).toHaveBeenCalledWith('notification', expect.any(Object));
     });
   });
 
@@ -160,7 +190,7 @@ describe('NotificationsGateway', () => {
   });
 
   describe('handleNotificationSendToMultiple', () => {
-    it('should send notification to multiple users', () => {
+    it('should send notification to multiple users', async () => {
       const payload = {
         userIds: ['user-1', 'user-2', 'user-3'],
         type: NotificationType.SESSION_REMINDER,
@@ -169,14 +199,25 @@ describe('NotificationsGateway', () => {
         data: { sessionId: 'session-123' },
       };
 
+      mockNotificationsService.create.mockResolvedValue({
+        uid: 'notif-123',
+        createdAt: new Date(),
+      });
+
+      const mockEmit = jest.fn();
       const mockServerTo = jest.fn().mockReturnValue({
-        emit: jest.fn(),
+        emit: mockEmit,
       });
       gateway.server = {
         to: mockServerTo,
       } as any;
 
-      gateway.handleNotificationSendToMultiple(payload);
+      // Simulate connected users
+      gateway['connectedUsers'].set('user-1', new Set(['socket-1']));
+      gateway['connectedUsers'].set('user-2', new Set(['socket-2']));
+      gateway['connectedUsers'].set('user-3', new Set(['socket-3']));
+
+      await gateway.handleNotificationSendToMultiple(payload);
 
       expect(mockServerTo).toHaveBeenCalledTimes(3);
       expect(mockServerTo).toHaveBeenCalledWith('user:user-1');
@@ -186,7 +227,7 @@ describe('NotificationsGateway', () => {
   });
 
   describe('handleFriendRequestNotification', () => {
-    it('should send friend request notification', () => {
+    it('should send friend request notification', async () => {
       const payload = {
         recipientId: 'user-123',
         senderId: 'user-456',
@@ -194,21 +235,31 @@ describe('NotificationsGateway', () => {
         requestId: 'req-789',
       };
 
+      mockNotificationsService.create.mockResolvedValue({
+        uid: 'notif-123',
+        createdAt: new Date(),
+      });
+
+      const mockEmit = jest.fn();
       const mockServerTo = jest.fn().mockReturnValue({
-        emit: jest.fn(),
+        emit: mockEmit,
       });
       gateway.server = {
         to: mockServerTo,
       } as any;
 
-      gateway.handleFriendRequestNotification(payload);
+      // Simulate a connected user
+      gateway['connectedUsers'].set('user-123', new Set(['socket-123']));
+
+      await gateway.handleFriendRequestNotification(payload);
 
       expect(mockServerTo).toHaveBeenCalledWith('user:user-123');
+      expect(mockEmit).toHaveBeenCalledWith('notification', expect.any(Object));
     });
   });
 
   describe('handleSessionInvitationNotification', () => {
-    it('should send session invitation notification', () => {
+    it('should send session invitation notification', async () => {
       const payload = {
         recipientId: 'user-123',
         sessionName: 'Basketball Game',
@@ -216,16 +267,26 @@ describe('NotificationsGateway', () => {
         invitedBy: 'Jane Smith',
       };
 
+      mockNotificationsService.create.mockResolvedValue({
+        uid: 'notif-123',
+        createdAt: new Date(),
+      });
+
+      const mockEmit = jest.fn();
       const mockServerTo = jest.fn().mockReturnValue({
-        emit: jest.fn(),
+        emit: mockEmit,
       });
       gateway.server = {
         to: mockServerTo,
       } as any;
 
-      gateway.handleSessionInvitationNotification(payload);
+      // Simulate a connected user
+      gateway['connectedUsers'].set('user-123', new Set(['socket-123']));
+
+      await gateway.handleSessionInvitationNotification(payload);
 
       expect(mockServerTo).toHaveBeenCalledWith('user:user-123');
+      expect(mockEmit).toHaveBeenCalledWith('notification', expect.any(Object));
     });
   });
 
@@ -236,11 +297,12 @@ describe('NotificationsGateway', () => {
         data: { userUid: 'user-123' },
       } as unknown as Socket;
 
+      // Set up a connected user with the socket
+      gateway['connectedUsers'].set('user-123', new Set(['socket-123']));
+
       gateway.handleDisconnect(mockAuthenticatedSocket);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        expect.stringContaining('User user-123 disconnected'),
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining('User user-123'));
     });
 
     it('should handle unauthenticated socket disconnection', () => {

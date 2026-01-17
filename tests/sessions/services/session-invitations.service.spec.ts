@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InvitationStatus } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
@@ -25,6 +26,12 @@ describe('SessionInvitationsService', () => {
       findMany: jest.fn(),
       update: jest.fn(),
     },
+    sessionPlayers: {
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+    },
     $transaction: jest.fn(),
   } as unknown as PrismaService;
 
@@ -48,8 +55,17 @@ describe('SessionInvitationsService', () => {
     log: jest.fn(),
   };
 
+  const mockEventEmitter = {
+    emit: jest.fn(),
+    on: jest.fn(),
+    once: jest.fn(),
+    removeListener: jest.fn(),
+    removeAllListeners: jest.fn(),
+  };
+
   const mockSession = {
     id: 'session-123',
+    date: new Date('2024-01-15T10:00:00Z'),
   } as any;
 
   const mockUser = { id: 'user-123' } as any;
@@ -64,6 +80,15 @@ describe('SessionInvitationsService', () => {
   } as any;
 
   const senderUid = 'sender-123';
+
+  const mockPlayerWithUser = {
+    userUid: senderUid,
+    user: {
+      firstname: 'John',
+      lastname: 'Doe',
+      imageUrl: 'https://example.com/avatar.jpg',
+    },
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -88,6 +113,10 @@ describe('SessionInvitationsService', () => {
         {
           provide: PinoLogger,
           useValue: mockLogger,
+        },
+        {
+          provide: EventEmitter2,
+          useValue: mockEventEmitter,
         },
       ],
     }).compile();
@@ -114,7 +143,8 @@ describe('SessionInvitationsService', () => {
 
     it('should create a session invitation successfully', async () => {
       mockSessionsService.findOne.mockResolvedValue(mockSession);
-      mockSessionPlayersService.findOne.mockResolvedValue({ userUid: senderUid });
+      (prismaService.sessionPlayers.findFirst as jest.Mock).mockResolvedValue(mockPlayerWithUser);
+      mockSessionPlayersService.findOne.mockResolvedValue(mockPlayerWithUser);
       mockUsersService.findOne.mockResolvedValue(mockUser);
       (prismaService.sessionInvitations.findFirst as jest.Mock).mockResolvedValue(null);
       (prismaService.sessionInvitations.create as jest.Mock).mockResolvedValue(mockInvitation);
@@ -123,7 +153,21 @@ describe('SessionInvitationsService', () => {
 
       expect(result).toEqual(mockInvitation);
       expect(sessionsService.findOne).toHaveBeenCalledWith('session-123');
-      expect(playersService.findOne).toHaveBeenCalledWith('session-123', senderUid);
+      expect(prismaService.sessionPlayers.findFirst).toHaveBeenCalledWith({
+        include: {
+          user: {
+            select: {
+              firstname: true,
+              imageUrl: true,
+              lastname: true,
+            },
+          },
+        },
+        where: {
+          sessionUid: 'session-123',
+          userUid: senderUid,
+        },
+      });
       expect(usersService.findOne).toHaveBeenCalledWith('user-123', USERSELECT.findOne);
       expect(prismaService.sessionInvitations.findFirst).toHaveBeenCalledWith({
         where: { receiverUid: 'user-123', sessionUid: 'session-123' },
@@ -135,6 +179,7 @@ describe('SessionInvitationsService', () => {
 
     it('should throw BadRequestException when session does not exist', async () => {
       mockSessionsService.findOne.mockResolvedValue(null);
+      (prismaService.sessionPlayers.findFirst as jest.Mock).mockResolvedValue(null);
 
       await expect(service.create(senderUid, createDto)).rejects.toThrow(BadRequestException);
       expect(sessionsService.findOne).toHaveBeenCalledWith('session-123');
@@ -145,12 +190,12 @@ describe('SessionInvitationsService', () => {
 
     it('should throw BadRequestException when user does not exist', async () => {
       mockSessionsService.findOne.mockResolvedValue(mockSession);
-      mockSessionPlayersService.findOne.mockResolvedValue({ userUid: senderUid });
+      (prismaService.sessionPlayers.findFirst as jest.Mock).mockResolvedValue(mockPlayerWithUser);
+      mockSessionPlayersService.findOne.mockResolvedValue(mockPlayerWithUser);
       mockUsersService.findOne.mockResolvedValue(null);
 
       await expect(service.create(senderUid, createDto)).rejects.toThrow(BadRequestException);
       expect(sessionsService.findOne).toHaveBeenCalledWith('session-123');
-      expect(playersService.findOne).toHaveBeenCalledWith('session-123', senderUid);
       expect(usersService.findOne).toHaveBeenCalledWith('user-123', USERSELECT.findOne);
       expect(prismaService.sessionInvitations.findFirst).not.toHaveBeenCalled();
       expect(prismaService.sessionInvitations.create).not.toHaveBeenCalled();
@@ -158,7 +203,8 @@ describe('SessionInvitationsService', () => {
 
     it('should throw BadRequestException when inviting self', async () => {
       mockSessionsService.findOne.mockResolvedValue(mockSession);
-      mockSessionPlayersService.findOne.mockResolvedValue({ userUid: senderUid });
+      (prismaService.sessionPlayers.findFirst as jest.Mock).mockResolvedValue(mockPlayerWithUser);
+      mockSessionPlayersService.findOne.mockResolvedValue(mockPlayerWithUser);
       mockUsersService.findOne.mockResolvedValue(mockUser);
       const selfDto = { ...createDto, receiverUid: senderUid };
       await expect(service.create(senderUid, selfDto)).rejects.toThrow(BadRequestException);
@@ -167,7 +213,8 @@ describe('SessionInvitationsService', () => {
 
     it('should throw ConflictException when existing invitation is PENDING or ACCEPTED', async () => {
       mockSessionsService.findOne.mockResolvedValue(mockSession);
-      mockSessionPlayersService.findOne.mockResolvedValue({ userUid: senderUid });
+      (prismaService.sessionPlayers.findFirst as jest.Mock).mockResolvedValue(mockPlayerWithUser);
+      mockSessionPlayersService.findOne.mockResolvedValue(mockPlayerWithUser);
       mockUsersService.findOne.mockResolvedValue(mockUser);
 
       (prismaService.sessionInvitations.findFirst as jest.Mock).mockResolvedValue({
@@ -183,7 +230,8 @@ describe('SessionInvitationsService', () => {
 
     it('should create when previous invitation was REJECTED', async () => {
       mockSessionsService.findOne.mockResolvedValue(mockSession);
-      mockSessionPlayersService.findOne.mockResolvedValue({ userUid: senderUid });
+      (prismaService.sessionPlayers.findFirst as jest.Mock).mockResolvedValue(mockPlayerWithUser);
+      mockSessionPlayersService.findOne.mockResolvedValue(mockPlayerWithUser);
       mockUsersService.findOne.mockResolvedValue(mockUser);
       (prismaService.sessionInvitations.findFirst as jest.Mock).mockResolvedValue({
         status: InvitationStatus.REJECTED,
