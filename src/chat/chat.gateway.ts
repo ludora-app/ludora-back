@@ -27,7 +27,6 @@ import { TypingIndicatorDto } from './dto/input/typing-indicator.dto';
     credentials: true,
     origin: '*', // Configure this properly in production
   },
-  namespace: '/chat',
 })
 @UseGuards(WebSocketAuthGuard)
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {

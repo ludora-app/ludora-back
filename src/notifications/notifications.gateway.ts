@@ -2,7 +2,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { OnEvent } from '@nestjs/event-emitter';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { NotificationType } from 'generated/prisma/enums';
 import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
 import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
 import {
@@ -14,43 +14,45 @@ import {
 } from '@nestjs/websockets';
 
 import { EventTypes } from './constants/event.types';
-import { NotificationType } from './constants/notification.types';
+import { NotificationsService } from './notifications.service';
 import { NotificationEventDto } from './dto/notification-event.dto';
+import { NotificationMetadata } from './dto/input/notification-metadata';
 
 /**
  * NotificationsGateway handles real-time notifications using Socket.io
- * - Uses JWT authentication for secure connections (via WsAuthGuard)
- * - Implements event-driven architecture with @nestjs/event-emitter
+ * - Uses JWT authentication for secure connections
+ * - Hybrid approach: Socket.io for connected users, Firebase Push for offline users
+ * - Persists all notifications in database
  */
 @WebSocketGateway({
   cors: {
     credentials: true,
     origin: '*',
   },
-  namespace: '/notifications',
 })
 @UseGuards(WebSocketAuthGuard)
 export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
+  // Track connected users for hybrid delivery
+  private connectedUsers = new Map<string, Set<string>>(); // userUid -> Set of socketIds
+
   constructor(
-    private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
     private readonly webSocketAuthService: WebSocketAuthService,
+    private readonly notificationsService: NotificationsService,
   ) {
     this.logger.setContext(NotificationsGateway.name);
   }
 
   /**
    * Handle new WebSocket connection
-   * - Authentication is handled by WsAuthGuard (if guard executes) or manually here
-   * - Joins user to their personal notification room (user:{userId})
    */
   async handleConnection(@ConnectedSocket() client: Socket): Promise<void> {
     try {
-      // If guard didn't execute (common issue with OnGatewayConnection), authenticate manually
       let userUid = client.data.userUid;
+
       if (!userUid) {
         this.logger.debug(
           `Guard didn't set userUid, authenticating manually for client ${client.id}`,
@@ -81,11 +83,22 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       const userRoom = `user:${userUid}`;
       await client.join(userRoom);
 
-      this.logger.info(`User ${userUid} connected to notifications (socket: ${client.id})`);
+      // Track connected user
+      if (!this.connectedUsers.has(userUid)) {
+        this.connectedUsers.set(userUid, new Set());
+      }
+      this.connectedUsers.get(userUid)!.add(client.id);
 
-      // Notify user of successful connection
+      this.logger.info(
+        `User ${userUid} connected to notifications (socket: ${client.id}, total sockets: ${this.connectedUsers.get(userUid)!.size})`,
+      );
+
+      // Send unread count on connection
+      const unreadCount = await this.notificationsService.getUnreadCount(userUid);
+
       client.emit('connected', {
         message: 'Successfully connected to notifications',
+        unreadCount,
         userUid,
       });
     } catch (error) {
@@ -102,64 +115,119 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
   /**
    * Handle WebSocket disconnection
-   * - Socket.io automatically removes the socket from all rooms
-   * - No manual cleanup needed (stateless design)
    */
   handleDisconnect(@ConnectedSocket() client: Socket): void {
     const userUid = client.data.userUid;
+
     if (userUid) {
-      this.logger.info(`User ${userUid} disconnected from notifications (socket: ${client.id})`);
+      // Remove socket from tracking
+      const userSockets = this.connectedUsers.get(userUid);
+      if (userSockets) {
+        userSockets.delete(client.id);
+
+        // Remove user entirely if no more sockets
+        if (userSockets.size === 0) {
+          this.connectedUsers.delete(userUid);
+          this.logger.info(`User ${userUid} fully disconnected (last socket: ${client.id})`);
+        } else {
+          this.logger.info(
+            `User ${userUid} socket ${client.id} disconnected (${userSockets.size} remaining)`,
+          );
+        }
+      }
     } else {
-      this.logger.info(`Unauthenticated socket ${client.id} disconnected from notifications`);
+      this.logger.info(`Unauthenticated socket ${client.id} disconnected`);
     }
   }
 
   /**
-   * Event listener for notification.send events
-   * - Listens to internal application events
-   * - Sends notifications to specific users via their rooms
-   *
-   * Usage example:
-   * this.eventEmitter.emit('notification.send', {
-   *   userId: 'user-123',
-   *   type: NotificationType.FRIEND_REQUEST,
-   *   title: 'New Friend Request',
-   *   message: 'John Doe sent you a friend request',
-   *   data: { requestId: 'req-456' }
-   * });
+   * Check if a user is currently connected via WebSocket
    */
-  @OnEvent(EventTypes.NOTIFICATION_SEND)
-  handleNotificationSend(payload: NotificationEventDto): void {
+  private isUserConnected(userUid: string): boolean {
+    return this.connectedUsers.has(userUid) && this.connectedUsers.get(userUid)!.size > 0;
+  }
+
+  /**
+   * HYBRID DELIVERY: Send via Socket OR Firebase Push
+   * - If user connected → Send via Socket.io (real-time)
+   * - If user disconnected → Send via Firebase Push + persist
+   */
+  private async sendNotification(payload: {
+    userUid: string;
+    type: NotificationType;
+    title: string;
+    message: string;
+    foreignUid?: string;
+    metadata?: NotificationMetadata;
+    data?: Record<string, any>; // Legacy pour compatibilité
+  }) {
+    const { data, foreignUid, message, metadata, title, type, userUid } = payload;
+
     try {
-      const { data, message, title, type, userId } = payload;
+      // Merge metadata et data (legacy)
+      const enrichedMetadata = {
+        ...metadata,
+        ...data,
+      };
 
-      const userRoom = `user:${userId}`;
-
-      // Send notification to user's room
-      this.server.to(userRoom).emit('notification', {
-        data,
+      const notification = await this.notificationsService.create({
         message,
-        timestamp: new Date().toISOString(),
+        metadata: enrichedMetadata,
         title,
         type,
+        userUid,
       });
 
-      this.logger.debug(`Notification sent to user ${userId} - Type: ${type}, Title: ${title}`);
+      if (this.isUserConnected(userUid)) {
+        // User is connected → Send via Socket.io (real-time, no persistence)
+        const userRoom = `user:${userUid}`;
+        this.server.to(userRoom).emit('notification', {
+          data: enrichedMetadata,
+          message,
+          timestamp: notification.createdAt,
+          title,
+          type,
+        });
+
+        this.logger.debug(`✓ Socket notification sent to ${userUid} - ${type}`);
+      } else {
+        // User is offline → Send via Firebase Push + persist in DB
+        await this.notificationsService.sendPushNotification({
+          foreignUid,
+          message,
+          metadata: enrichedMetadata,
+          notificationUid: notification.uid,
+          title,
+          type,
+          userUid,
+        });
+
+        this.logger.debug(`✓ Push notification sent to ${userUid} - ${type}`);
+      }
     } catch (error) {
-      this.logger.error(`Error sending notification: ${error.message}`);
+      this.logger.error(`Failed to send notification to ${userUid}: ${error.message}`, {
+        error: error.stack,
+        payload,
+      });
     }
+  }
+
+  /**
+   * Event listener for generic notification.send events
+   */
+  @OnEvent(EventTypes.NOTIFICATION_SEND)
+  async handleNotificationSend(payload: NotificationEventDto): Promise<void> {
+    await this.sendNotification({
+      data: payload.data,
+      message: payload.message,
+      title: payload.title,
+      type: payload.type,
+      userUid: payload.userId,
+    });
   }
 
   /**
    * Event listener for notification.broadcast events
-   * - Broadcasts notifications to all connected users
-   *
-   * Usage example:
-   * this.eventEmitter.emit('notification.broadcast', {
-   *   type: NotificationType.GENERAL,
-   *   title: 'System Maintenance',
-   *   message: 'The system will be under maintenance in 10 minutes',
-   * });
    */
   @OnEvent(EventTypes.NOTIFICATION_BROADCAST)
   handleNotificationBroadcast(payload: {
@@ -188,37 +256,30 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
   /**
    * Event listener for notification.sendToMultiple events
-   * - Sends notifications to multiple users at once
-   *
-   * Usage example:
-   * this.eventEmitter.emit('notification.sendToMultiple', {
-   *   userIds: ['user-1', 'user-2', 'user-3'],
-   *   type: NotificationType.SESSION_REMINDER,
-   *   title: 'Session Starting Soon',
-   *   message: 'Your session starts in 30 minutes',
-   *   data: { sessionId: 'session-123' }
-   * });
    */
   @OnEvent(EventTypes.NOTIFICATION_SEND_TO_MULTIPLE)
-  handleNotificationSendToMultiple(payload: {
+  async handleNotificationSendToMultiple(payload: {
     userIds: string[];
     type: NotificationType;
     title: string;
     message: string;
+    foreignUid?: string;
+    metadata?: any;
     data?: Record<string, any>;
-  }): void {
+  }): Promise<void> {
     try {
-      const { data, message, title, type, userIds } = payload;
+      const { data, foreignUid, message, metadata, title, type, userIds } = payload;
 
-      // Send to each user's room
-      for (const userId of userIds) {
-        const userRoom = `user:${userId}`;
-        this.server.to(userRoom).emit('notification', {
+      // Send to each user with hybrid logic
+      for (const userUid of userIds) {
+        await this.sendNotification({
           data,
+          foreignUid,
           message,
-          timestamp: new Date().toISOString(),
+          metadata,
           title,
           type,
+          userUid,
         });
       }
 
@@ -231,142 +292,142 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   }
 
   /**
-   * Event listener for friend request notifications
-   * Specific event handler for friend requests
+   * FRIEND_REQUEST: Send via hybrid delivery
    */
   @OnEvent(EventTypes.FRIEND_REQUEST)
-  handleFriendRequestNotification(payload: {
+  async handleFriendRequestNotification(payload: {
     recipientId: string;
     senderId: string;
     senderName: string;
-  }): void {
-    try {
-      const { recipientId, senderName } = payload;
-
-      const userRoom = `user:${recipientId}`;
-      this.server.to(userRoom).emit('notification', {
-        message: `${senderName} sent you a friend request`,
-        timestamp: new Date().toISOString(),
-        title: 'New Friend Request',
-        type: NotificationType.FRIEND_REQUEST,
-      });
-
-      this.logger.debug(`Friend request notification sent to user ${recipientId}`);
-    } catch (error) {
-      this.logger.error(`Error sending friend request notification: ${error.message}`);
-    }
-  }
-
-  @OnEvent(EventTypes.FRIEND_ACCEPTED)
-  handleFriendAcceptedNotification(payload: {
-    recipientUid: string;
-    senderUid: string;
-    senderName: string;
-  }): void {
-    try {
-      const { recipientUid, senderName } = payload;
-
-      const userRoom = `user:${recipientUid}`;
-      this.server.to(userRoom).emit('notification', {
-        message: `${senderName} accepted your friend request`,
-        timestamp: new Date().toISOString(),
-        title: `${senderName} accepted your friend request`,
-        type: NotificationType.FRIEND_ACCEPTED,
-      });
-
-      this.logger.debug(`Accepted friend request notification sent to user ${recipientUid}`);
-    } catch (error) {
-      this.logger.error(`Error sending friend accepted notification: ${error.message}`);
-    }
+    senderAvatar?: string;
+  }): Promise<void> {
+    await this.sendNotification({
+      foreignUid: payload.senderId,
+      message: `${payload.senderName} sent you a friend request`,
+      metadata: {
+        actionUrl: `app://friends/requests/${payload.senderId}`,
+        senderAvatar: payload.senderAvatar,
+        senderName: payload.senderName,
+        senderUid: payload.senderId,
+      },
+      title: 'New Friend Request',
+      type: NotificationType.FRIEND_REQUEST,
+      userUid: payload.recipientId,
+    });
   }
 
   /**
-   * Event listener for session invitation notifications
+   * FRIEND_ACCEPTED: Send via hybrid delivery
+   */
+  @OnEvent(EventTypes.FRIEND_ACCEPTED)
+  async handleFriendAcceptedNotification(payload: {
+    recipientUid: string;
+    senderUid: string;
+    senderName: string;
+    senderAvatar?: string;
+  }): Promise<void> {
+    await this.sendNotification({
+      foreignUid: payload.senderUid,
+      message: `${payload.senderName} accepted your friend request`,
+      metadata: {
+        actionUrl: `app://profile/${payload.senderUid}`,
+        senderAvatar: payload.senderAvatar,
+        senderName: payload.senderName,
+        senderUid: payload.senderUid,
+      },
+      title: 'Friend Request Accepted',
+      type: NotificationType.FRIEND_ACCEPTED,
+      userUid: payload.recipientUid,
+    });
+  }
+
+  /**
+   * SESSION_INVITATION: Send via hybrid delivery
    */
   @OnEvent(EventTypes.SESSION_INVITATION)
-  handleSessionInvitationNotification(payload: {
+  async handleSessionInvitationNotification(payload: {
     recipientId: string;
     sessionName: string;
     sessionId: string;
     invitedBy: string;
-  }): void {
-    try {
-      const { invitedBy, recipientId, sessionId, sessionName } = payload;
-
-      const userRoom = `user:${recipientId}`;
-      this.server.to(userRoom).emit('notification', {
-        data: { sessionId },
-        message: `${invitedBy} invited you to join "${sessionName}"`,
-        timestamp: new Date().toISOString(),
-        title: 'New Session Invitation',
-        type: NotificationType.SESSION_INVITATION,
-      });
-
-      this.logger.debug(`Session invitation notification sent to user ${recipientId}`);
-    } catch (error) {
-      this.logger.error(`Error sending session invitation notification: ${error.message}`);
-    }
+    inviterAvatar?: string;
+  }): Promise<void> {
+    await this.sendNotification({
+      foreignUid: payload.sessionId,
+      message: `${payload.invitedBy} invited you to join "${payload.sessionName}"`,
+      metadata: {
+        actionUrl: `app://sessions/${payload.sessionId}`,
+        inviterAvatar: payload.inviterAvatar,
+        inviterName: payload.invitedBy,
+        sessionTitle: payload.sessionName,
+        sessionUid: payload.sessionId,
+      },
+      title: 'New Session Invitation',
+      type: NotificationType.SESSION_INVITATION,
+      userUid: payload.recipientId,
+    });
   }
 
+  /**
+   * EMAIL_VERIFIED: Send via hybrid delivery
+   */
   @OnEvent(EventTypes.EMAIL_VERIFIED)
-  handleEmailVerified(payload: { userUid: string }): void {
-    try {
-      const { userUid } = payload;
-      this.logger.debug(`Received ${EventTypes.EMAIL_VERIFIED} event for user ${userUid}`);
-
-      const userRoom = `user:${userUid}`;
-      this.server.to(userRoom).emit('notification', {
-        message: 'Your email has been verified',
-        timestamp: new Date().toISOString(),
-        title: 'Email Verified',
-        type: NotificationType.EMAIL_VERIFIED,
-      });
-
-      this.logger.info(`Email verified notification sent to user ${userUid} (room: ${userRoom})`);
-    } catch (error) {
-      this.logger.error(`Error sending email verified notification: ${error.message}`, {
-        error: error.stack,
-        payload,
-      });
-    }
+  async handleEmailVerified(payload: { userUid: string }): Promise<void> {
+    await this.sendNotification({
+      message: 'Your email has been verified successfully',
+      metadata: {
+        actionUrl: 'app://profile',
+      },
+      title: 'Email Verified',
+      type: NotificationType.EMAIL_VERIFIED,
+      userUid: payload.userUid,
+    });
   }
 
+  /**
+   * NEW_MESSAGE: Send to multiple recipients via hybrid delivery
+   */
   @OnEvent(EventTypes.NEW_MESSAGE)
   async handleNewMessage(payload: {
     content: string;
     conversationUid: string;
     senderUid: string;
+    senderName: string;
+    senderAvatar?: string;
     notificationTitle: string;
   }): Promise<void> {
     try {
-      const { content, conversationUid, notificationTitle, senderUid } = payload;
-      console.log('event emitted', payload);
+      const { content, conversationUid, notificationTitle, senderAvatar, senderName, senderUid } =
+        payload;
 
-      //? Get all members of the conversation except the sender
-      //* No need to check for the conversation existence as it is already verified in the messages service
-      const receiverUids = await this.prisma.conversationMembers.findMany({
-        select: {
-          userUid: true,
-        },
-        where: {
-          conversationUid,
-          userUid: {
-            not: senderUid,
+      // Get all conversation members except sender
+      const receiverUids = await this.notificationsService.getReceiverUids(
+        conversationUid,
+        senderUid,
+      );
+
+      // Send to each receiver with hybrid logic
+      for (const receiver of receiverUids) {
+        await this.sendNotification({
+          foreignUid: conversationUid,
+          message: content,
+          metadata: {
+            actionUrl: `app://conversations/${conversationUid}`,
+            conversationUid,
+            messagePreview: content.substring(0, 100),
+            senderAvatar,
+            senderName,
+            senderUid,
           },
-        },
-      });
-      console.log('receiverUids', receiverUids);
-      for (const receiverUid of receiverUids) {
-        const userRoom = `user:${receiverUid.userUid}`;
-        this.server.to(userRoom).emit('notification', {
-          data: {
-            content,
-            timestamp: new Date().toISOString(),
-            title: notificationTitle,
-            type: NotificationType.NEW_MESSAGE,
-          },
+          title: notificationTitle,
+          type: NotificationType.NEW_MESSAGE,
+          userUid: receiver.userUid,
         });
       }
+
+      this.logger.debug(
+        `New message notification sent to ${receiverUids.length} recipients in conversation ${conversationUid}`,
+      );
     } catch (error) {
       this.logger.error(`Error sending new message notification: ${error.message}`, {
         error: error.stack,

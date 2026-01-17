@@ -16,8 +16,10 @@ import { FieldsModule } from './fields/fields.module';
 import { PaymentModule } from './payment/payment.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { FriendsModule } from './friends/friends.module';
+import { DevicesModule } from './devices/devices.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { PartnersModule } from './partners/partners.module';
+import { FirebaseModule } from './firebase/firebase.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { UserHourPreferencesModule } from './user-hour-preferences/user-hour-preferences.module';
@@ -114,6 +116,8 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
     UserHourPreferencesModule,
     UserSportPreferencesModule,
     UsersModule,
+    FirebaseModule,
+    DevicesModule,
   ],
   providers: [
     AppService,

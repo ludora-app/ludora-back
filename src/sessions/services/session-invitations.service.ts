@@ -1,7 +1,9 @@
 import { PinoLogger } from 'nestjs-pino';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
+import { EventTypes } from 'src/notifications/constants/event.types';
 import { SessionsService } from 'src/sessions/services/sessions.service';
 import { InvitationStatus, SessionInvitations } from 'generated/prisma/client';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
@@ -26,6 +28,7 @@ export class SessionInvitationsService {
     private readonly usersService: UsersService,
     private readonly playersService: SessionPlayersService,
     private readonly logger: PinoLogger,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     this.logger.setContext(SessionInvitationsService.name);
   }
@@ -44,10 +47,21 @@ export class SessionInvitationsService {
       throw new BadRequestException('Session not found');
     }
     // ? checks if the sender is a player in the session
-    const existingPlayer = await this.playersService.findOne(
-      createSessionInvitationDto.sessionUid,
-      senderUid,
-    );
+    const existingPlayer = await this.prisma.sessionPlayers.findFirst({
+      include: {
+        user: {
+          select: {
+            firstname: true,
+            imageUrl: true,
+            lastname: true,
+          },
+        },
+      },
+      where: {
+        sessionUid: createSessionInvitationDto.sessionUid,
+        userUid: senderUid,
+      },
+    });
 
     if (!existingPlayer) {
       throw new BadRequestException('Sender is not a player in the session');
@@ -96,9 +110,17 @@ export class SessionInvitationsService {
           sessionUid: createSessionInvitationDto.sessionUid,
         },
       });
-      this.logger.info(
+      this.logger.debug(
         `User ${createSessionInvitationDto.receiverUid} invited to the session ${createSessionInvitationDto.sessionUid} by User${senderUid}`,
       );
+      this.eventEmitter.emit(EventTypes.SESSION_INVITATION, {
+        invitedBy: existingPlayer.user.firstname + ' ' + existingPlayer.user.lastname,
+        inviterAvatar: existingPlayer.user.imageUrl,
+        recipientId: createSessionInvitationDto.receiverUid,
+        sessionDate: existingSession.date,
+        sessionId: existingSession.uid,
+        sessionName: existingSession.title,
+      });
       return invitation;
     }
 

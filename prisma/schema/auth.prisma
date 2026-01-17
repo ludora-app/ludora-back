@@ -69,6 +69,8 @@ model Users {
   userSports          UserSports[]
   userHourPreferences UserHourPreferences[]
   messageReceipts     MessageReceipts[]
+  notifications       Notifications[]
+  devices             Devices[]
 
   @@index([createdAt])
   @@index([isConnected])
