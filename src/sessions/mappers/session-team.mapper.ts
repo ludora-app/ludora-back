@@ -8,6 +8,7 @@ export type SessionTeamWithPlayers = {
   teamLabel: TeamLabels;
   sessionPlayers: RawPlayer[];
   uid: string;
+  isJoined?: boolean;
 };
 
 export type SessionTeamWithPlayersAndNumberOfPlayers = SessionTeamWithPlayers & {
@@ -16,17 +17,34 @@ export type SessionTeamWithPlayersAndNumberOfPlayers = SessionTeamWithPlayers & 
 };
 
 export class SessionTeamMapper {
-  static toDto(sessionTeam: SessionTeamWithPlayers): SessionTeamResponseData {
-    return {
-      numberOfPlayers: sessionTeam.sessionPlayers.length,
-      sessionPlayers: SessionPlayerMapper.toDtoList(sessionTeam.sessionPlayers),
+  static toDto(
+    sessionTeam: SessionTeamWithPlayers,
+    maxPlayersPerTeam?: number,
+  ): SessionTeamResponseData {
+    const numberOfPlayers = sessionTeam.sessionPlayers.length;
+    const dto: SessionTeamResponseData = {
+      numberOfPlayers,
+      sessionPlayers: SessionPlayerMapper.toDtoList(sessionTeam.sessionPlayers.slice(0, 3)),
       teamLabel: sessionTeam.teamLabel,
       teamName: sessionTeam.teamName,
       teamUid: sessionTeam.uid,
     };
+
+    if (maxPlayersPerTeam !== undefined) {
+      dto.isComplete = numberOfPlayers >= maxPlayersPerTeam;
+    }
+
+    if (sessionTeam.isJoined !== undefined) {
+      dto.isJoined = sessionTeam.isJoined;
+    }
+
+    return dto;
   }
 
-  static toDtoList(sessionTeams: SessionTeamWithPlayers[]): SessionTeamResponseData[] {
-    return sessionTeams.map((team) => this.toDto(team));
+  static toDtoList(
+    sessionTeams: SessionTeamWithPlayers[],
+    maxPlayersPerTeam?: number,
+  ): SessionTeamResponseData[] {
+    return sessionTeams.map((team) => this.toDto(team, maxPlayersPerTeam));
   }
 }

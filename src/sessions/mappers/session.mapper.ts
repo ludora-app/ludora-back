@@ -48,8 +48,14 @@ export interface RawSessionFindOneItem {
   creatorUid: string;
   description: string;
   maxPlayersPerTeam: number;
+  creatorSessionsCount?: number;
   visibility?: SessionVisibility;
   sessionTeams: SessionTeamWithPlayers[];
+  creator?: {
+    firstname: string;
+    lastname: string;
+    imageUrl: string | null;
+  };
   field: {
     latitude: number;
     longitude: number;
@@ -75,7 +81,15 @@ export class SessionMapper {
 
   static toFindOneDto(session: RawSessionFindOneItem): FindOneSessionResponseData {
     const { field, sessionTeams } = session;
-    return {
+
+    const totalPlayersInSession = sessionTeams.reduce(
+      (sum, team) => sum + team.sessionPlayers.length,
+      0,
+    );
+    const totalAvailableSpots = session.maxPlayersPerTeam * sessionTeams.length;
+    const remainingPlayers = Math.max(0, totalAvailableSpots - totalPlayersInSession);
+
+    const response: FindOneSessionResponseData = {
       creatorUid: session.creatorUid,
       description: session.description,
       endDate: session.endDate,
@@ -94,13 +108,25 @@ export class SessionMapper {
       isJoined: session.isJoined,
       level: session.level as SessionSportLevel,
       maxPlayersPerTeam: session.maxPlayersPerTeam,
-      sessionTeams: SessionTeamMapper.toDtoList(sessionTeams),
+      remainingPlayers,
+      sessionTeams: SessionTeamMapper.toDtoList(sessionTeams, session.maxPlayersPerTeam),
       sport: session.sport as Sport,
       startDate: session.startDate,
       title: session.title,
       uid: session.uid,
       visibility: session.visibility as SessionVisibility,
     };
+
+    if (session.creator && session.creatorSessionsCount !== undefined) {
+      response.creator = {
+        firstname: session.creator.firstname,
+        imageUrl: session.creator.imageUrl,
+        lastname: session.creator.lastname,
+        sessionsCount: session.creatorSessionsCount,
+      };
+    }
+
+    return response;
   }
 
   /**

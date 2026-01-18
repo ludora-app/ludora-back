@@ -695,6 +695,13 @@ export class SessionsService {
   async findOne(uid: string, userUid?: string | undefined): Promise<FindOneSessionResponseData> {
     const session: Omit<RawSessionFindOneItem, 'isJoined'> = await this.prisma.sessions.findUnique({
       select: {
+        creator: {
+          select: {
+            firstname: true,
+            imageUrl: true,
+            lastname: true,
+          },
+        },
         creatorUid: true,
         description: true,
         endDate: true,
@@ -743,6 +750,10 @@ export class SessionsService {
       isJoined = true;
     }
 
+    const creatorSessionsCount = await this.prisma.sessions.count({
+      where: { creatorUid: session.creatorUid },
+    });
+
     const unlockedFieldImages = await Promise.all(
       session.field.fieldImages.map(async (image) => ({
         order: image.order,
@@ -751,7 +762,60 @@ export class SessionsService {
     );
 
     session.field.fieldImages = unlockedFieldImages;
-    return SessionMapper.toFindOneDto({ ...session, isJoined: isJoined });
+
+    if (session.creator && session.creator.imageUrl) {
+      session.creator.imageUrl = await this.storageService.getSignedUrl(
+        StorageFolderName.USERS,
+        session.creator.imageUrl,
+      );
+    }
+
+    // Add isJoined flag to each team and process signed URLs for player images
+    const teamsWithIsJoinedAndSignedUrls = await Promise.all(
+      session.sessionTeams.map(async (team) => {
+        // Process signed URLs for player images
+        const playersWithSignedUrls = await Promise.all(
+          team.sessionPlayers.map(async (player) => ({
+            ...player,
+            user: {
+              ...player.user,
+              imageUrl: player.user.imageUrl
+                ? await this.storageService.getSignedUrl(
+                    StorageFolderName.USERS,
+                    player.user.imageUrl,
+                  )
+                : null,
+            },
+          })),
+        );
+
+        // Reorder players: if current user is in the team, move them to index 0
+        const currentPlayerIndex = playersWithSignedUrls.findIndex(
+          (player) => player.userUid === userUid,
+        );
+        let orderedPlayers = playersWithSignedUrls;
+        if (currentPlayerIndex !== -1) {
+          orderedPlayers = [
+            playersWithSignedUrls[currentPlayerIndex],
+            ...playersWithSignedUrls.slice(0, currentPlayerIndex),
+            ...playersWithSignedUrls.slice(currentPlayerIndex + 1),
+          ];
+        }
+
+        return {
+          ...team,
+          isJoined: currentPlayerIndex !== -1,
+          sessionPlayers: orderedPlayers,
+        };
+      }),
+    );
+
+    return SessionMapper.toFindOneDto({
+      ...session,
+      creatorSessionsCount,
+      isJoined: isJoined,
+      sessionTeams: teamsWithIsJoinedAndSignedUrls,
+    });
   }
 
   /**

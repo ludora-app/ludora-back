@@ -58,7 +58,42 @@ export class TeamFromFindOneSessionResponseData {
     example: 'Team A',
   })
   teamName: string;
+
+  @ApiProperty({
+    description: 'Whether the current user has joined this team',
+    example: false,
+    readOnly: true,
+    required: false,
+  })
+  isJoined?: boolean;
 }
+export class CreatorInfoResponseData {
+  @ApiProperty({
+    description: 'Creator first name',
+    example: 'John',
+  })
+  firstname: string;
+
+  @ApiProperty({
+    description: 'Creator last name',
+    example: 'Doe',
+  })
+  lastname: string;
+
+  @ApiProperty({
+    description: 'Creator profile image URL',
+    example: '1738433236109explore2.png',
+    nullable: true,
+  })
+  imageUrl: string | null;
+
+  @ApiProperty({
+    description: 'Number of sessions organized by the creator',
+    example: 5,
+  })
+  sessionsCount: number;
+}
+
 export class FindOneSessionResponseData extends OmitType(SessionCollectionItemDto, [
   'sessionTeams',
   'fieldImage',
@@ -101,6 +136,20 @@ export class FindOneSessionResponseData extends OmitType(SessionCollectionItemDt
     example: false,
   })
   isJoined: boolean;
+
+  @ApiProperty({
+    description: 'Creator information',
+    required: false,
+    type: CreatorInfoResponseData,
+  })
+  creator?: CreatorInfoResponseData;
+
+  @ApiProperty({
+    description: 'Total number of remaining available spots across all teams',
+    example: 5,
+    required: false,
+  })
+  remainingPlayers?: number;
 }
 
 export class FindOneSessionWithDistanceResponseData extends FindOneSessionResponseData {
