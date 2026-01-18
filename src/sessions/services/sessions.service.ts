@@ -11,6 +11,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
 import { SessionScope, Sport, StorageFolderName } from 'src/shared/constants/constants';
+import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import { UserHourPreferencesService } from 'src/user-hour-preferences/user-hour-preferences.service';
 import { UserSportPreferencesService } from 'src/user-sport-preferences/user-sport-preferences.service';
 import {
@@ -30,8 +31,11 @@ import { SessionTeamResponseData } from '../dto/output/session-team-response';
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
 import { RawSessionFindOneItem, SessionMapper } from '../mappers/session.mapper';
 import { SessionCollectionItemDto } from '../dto/output/session-collection-response.dto';
-import { FindOneSessionResponseData } from '../dto/output/find-one-session-response.dto';
 import { MySessionFilterDto, SessionOwnnership } from '../dto/input/my-session-filter.dto';
+import {
+  FindOneSessionResponseData,
+  FindOneSessionWithDistanceResponseData,
+} from '../dto/output/find-one-session-response.dto';
 
 /**
  * This service is responsible for the creation, retrieval, and management of sessions.
@@ -729,6 +733,32 @@ export class SessionsService {
 
     session.field.fieldImages = unlockedFieldImages;
     return SessionMapper.toFindOneDto({ ...session, isJoined: isJoined });
+  }
+
+  /**
+   *  Same as the findOne method, but with the connected users distance to the session
+   * @param uid
+   * @param latitude
+   * @param longitude
+   * @returns
+   */
+  async findOneWithDistance(
+    uid: string,
+    userUid: string,
+    latitude: number,
+    longitude: number,
+  ): Promise<FindOneSessionWithDistanceResponseData> {
+    const session = await this.findOne(uid, userUid);
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+    const distance = GeolocalisationService.calculateDistanceBetweenCoordinates(
+      latitude,
+      longitude,
+      session.fieldLatitude,
+      session.fieldLongitude,
+    );
+    return { ...session, userDistance: distance };
   }
 
   async update(uid: string, updateSessionDto: UpdateSessionDto): Promise<void> {

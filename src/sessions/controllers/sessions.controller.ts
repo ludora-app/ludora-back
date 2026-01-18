@@ -40,13 +40,15 @@ import { MySessionFilterDto } from '../dto/input/my-session-filter.dto';
 import { CreateSessionFromRequestDto } from '../dto/input/create-session.dto';
 import { SessionResponseData, SessionResponseDto } from '../dto/output/session-response.dto';
 import {
-  FindOneSessionResponseData,
-  FindOneSessionResponseDto,
-} from '../dto/output/find-one-session-response.dto';
-import {
   PaginatedSessionCollectionResponseDto,
   SessionCollectionItemDto,
 } from '../dto/output/session-collection-response.dto';
+import {
+  FindOneSessionResponseData,
+  FindOneSessionResponseDto,
+  FindOneSessionWithDistanceResponseData,
+  FindOneSessionWithDistanceResponseDto,
+} from '../dto/output/find-one-session-response.dto';
 
 @Controller('sessions')
 @UseGuards(AuthB2CGuard)
@@ -135,6 +137,39 @@ export class SessionsController {
   ): Promise<ResponseTypeDto<FindOneSessionResponseData>> {
     const userUid = request['user'].uid;
     const session = await this.sessionsService.findOne(uid, userUid);
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    return {
+      data: session,
+      message: 'Session fetched successfully',
+    };
+  }
+
+  @Get(':uid/distance')
+  @Protected()
+  @ApiOperation({
+    summary: 'Get a session by uid with the connected users distance to the session',
+  })
+  @ApiOkResponse({ type: FindOneSessionWithDistanceResponseDto })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  async findOneWithDistance(
+    @Param('uid') uid: string,
+    @Req() request: FastifyRequest,
+    @Query('latitude') latitude: number,
+    @Query('longitude') longitude: number,
+  ): Promise<ResponseTypeDto<FindOneSessionWithDistanceResponseData>> {
+    const userUid = request['user'].uid;
+    const session = await this.sessionsService.findOneWithDistance(
+      uid,
+      userUid,
+      latitude,
+      longitude,
+    );
 
     if (!session) {
       throw new NotFoundException('Session not found');

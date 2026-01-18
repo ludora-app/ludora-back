@@ -26,6 +26,7 @@ describe('SessionsController', () => {
     findAll: jest.fn(),
     findAllByUserUid: jest.fn(),
     findOne: jest.fn(),
+    findOneWithDistance: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
   };
@@ -264,6 +265,71 @@ describe('SessionsController', () => {
         NotFoundException,
       );
       expect(service.findOne).toHaveBeenCalledWith('non-existent-uid', 'user-uid-1');
+    });
+  });
+
+  describe('findOneWithDistance', () => {
+    const sessionUid = 'session-uid-1';
+    const mockRequest = {
+      user: {
+        uid: 'user-uid-1',
+      },
+    } as any;
+    const latitude = 48.8566;
+    const longitude = 2.3522;
+
+    it('should return a session with distance', async () => {
+      const sessionData = {
+        uid: sessionUid,
+        title: 'Test Session',
+        sport: Sport.FOOTBALL,
+        description: 'Test session',
+        gameMode: GameModes.FIVE_V_FIVE,
+        startDate: '2023-02-15T14:00:00Z',
+        endDate: '2023-02-15T16:00:00Z',
+        maxPlayersPerTeam: 5,
+        minPlayersPerTeam: 3,
+        teamsPerGame: 2,
+        fieldLatitude: 48.8584,
+        fieldLongitude: 2.2945,
+        userDistance: 3.5, // Distance in kilometers
+      };
+
+      mockSessionsService.findOneWithDistance.mockResolvedValue(sessionData);
+
+      const result = await controller.findOneWithDistance(
+        sessionUid,
+        mockRequest,
+        latitude,
+        longitude,
+      );
+
+      expect(result).toEqual({
+        data: sessionData,
+        message: 'Session fetched successfully',
+      });
+      expect(mockSessionsService.findOneWithDistance).toHaveBeenCalledWith(
+        sessionUid,
+        'user-uid-1',
+        latitude,
+        longitude,
+      );
+    });
+
+    it('should throw NotFoundException when session not found', async () => {
+      mockSessionsService.findOneWithDistance.mockRejectedValue(
+        new NotFoundException('Session not found'),
+      );
+
+      await expect(
+        controller.findOneWithDistance('non-existent-uid', mockRequest, latitude, longitude),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockSessionsService.findOneWithDistance).toHaveBeenCalledWith(
+        'non-existent-uid',
+        'user-uid-1',
+        latitude,
+        longitude,
+      );
     });
   });
 

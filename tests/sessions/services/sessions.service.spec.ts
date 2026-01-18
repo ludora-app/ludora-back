@@ -849,6 +849,138 @@ describe('SessionsService', () => {
     });
   });
 
+  describe('findOneWithDistance', () => {
+    const mockSession = {
+      uid: 'session-uid-1',
+      creatorUid: 'creator-uid-1',
+      endDate: new Date('2023-01-10T16:00:00Z'),
+      gameMode: GameModes.FIVE_V_FIVE,
+      level: SessionSportLevel.INTERMEDIATE,
+      maxPlayersPerTeam: 5,
+      sport: Sport.FOOTBALL,
+      startDate: new Date('2023-01-10T14:00:00Z'),
+      visibility: 'PUBLIC',
+      fieldLatitude: 48.8566,
+      fieldLongitude: 2.3522,
+      field: {
+        latitude: 48.8566,
+        longitude: 2.3522,
+        shortAddress: 'Paris, France',
+        fieldImages: [
+          { order: 1, url: 'image1.jpg' },
+          { order: 2, url: 'image2.jpg' },
+        ],
+      },
+      sessionTeams: [
+        {
+          teamName: 'Team A',
+          teamLabel: 'A',
+          sessionPlayers: [
+            {
+              userUid: 'user-1',
+              teamUid: 'team-1',
+              user: {
+                firstname: 'John',
+                lastname: 'Doe',
+                imageUrl: 'user1.jpg',
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    it('should return a session with user distance', async () => {
+      // Arrange
+      const userLatitude = 48.8584;
+      const userLongitude = 2.2945;
+      const userUid = 'user-uid-1';
+
+      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
+      (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
+        async (folder: string, url: string) => `https://signed-url.com/${url}`,
+      );
+
+      // Act
+      const result = await service.findOneWithDistance(
+        'session-uid-1',
+        userUid,
+        userLatitude,
+        userLongitude,
+      );
+
+      // Assert
+      expect(result).toEqual(
+        expect.objectContaining({
+          uid: 'session-uid-1',
+          fieldLatitude: 48.8566,
+          fieldLongitude: 2.3522,
+          userDistance: expect.any(Number),
+        }),
+      );
+      expect(result.userDistance).toBeGreaterThanOrEqual(0);
+      expect(prismaService.sessions.findUnique).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if session not found', async () => {
+      // Arrange
+      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(
+        service.findOneWithDistance('non-existent-uid', 'user-uid-1', 48.8584, 2.2945),
+      ).rejects.toThrow(new NotFoundException('Session not found'));
+    });
+
+    it('should calculate correct distance based on coordinates', async () => {
+      // Arrange
+      const userLatitude = 48.8584; // Eiffel Tower coordinates
+      const userLongitude = 2.2945;
+      const userUid = 'user-uid-1';
+
+      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
+      (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
+        async (folder: string, url: string) => `https://signed-url.com/${url}`,
+      );
+
+      // Act
+      const result = await service.findOneWithDistance(
+        'session-uid-1',
+        userUid,
+        userLatitude,
+        userLongitude,
+      );
+
+      // Assert
+      // Distance between (48.8584, 2.2945) and (48.8566, 2.3522) should be around 3.8-4.5 km
+      expect(result.userDistance).toBeGreaterThan(3.5);
+      expect(result.userDistance).toBeLessThan(5);
+    });
+
+    it('should return zero distance when user is at the same location', async () => {
+      // Arrange
+      const userLatitude = 48.8566; // Same as field
+      const userLongitude = 2.3522; // Same as field
+      const userUid = 'user-uid-1';
+
+      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
+      (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
+        async (folder: string, url: string) => `https://signed-url.com/${url}`,
+      );
+
+      // Act
+      const result = await service.findOneWithDistance(
+        'session-uid-1',
+        userUid,
+        userLatitude,
+        userLongitude,
+      );
+
+      // Assert
+      expect(result.userDistance).toBe(0);
+    });
+  });
+
   describe('update', () => {
     const updateSessionDto: UpdateSessionDto = {
       endDate: mockFutureEndDate.toISOString(),

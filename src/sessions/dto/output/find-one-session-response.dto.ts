@@ -103,7 +103,20 @@ export class FindOneSessionResponseData extends OmitType(SessionCollectionItemDt
   isJoined: boolean;
 }
 
+export class FindOneSessionWithDistanceResponseData extends FindOneSessionResponseData {
+  @ApiProperty({
+    description: 'Distance to the session in kilometers',
+    example: 1.2,
+  })
+  userDistance: number;
+}
+
 export class FindOneSessionResponseDto extends ResponseTypeDto<FindOneSessionResponseData> {
   @ApiProperty({ type: FindOneSessionResponseData })
   readonly data: FindOneSessionResponseData;
+}
+
+export class FindOneSessionWithDistanceResponseDto extends ResponseTypeDto<FindOneSessionWithDistanceResponseData> {
+  @ApiProperty({ type: FindOneSessionWithDistanceResponseData })
+  readonly data: FindOneSessionWithDistanceResponseData;
 }
