@@ -62,6 +62,22 @@ export class SessionTeamResponseData {
     readOnly: true,
   })
   readonly numberOfPlayers: number;
+
+  @ApiProperty({
+    description: 'Whether the team is complete (full)',
+    example: false,
+    readOnly: true,
+    required: false,
+  })
+  isComplete?: boolean;
+
+  @ApiProperty({
+    description: 'Whether the current user has joined this team',
+    example: false,
+    readOnly: true,
+    required: false,
+  })
+  isJoined?: boolean;
 }
 
 export class SessionTeamResponseDto extends ResponseTypeDto<SessionTeamResponseData> {

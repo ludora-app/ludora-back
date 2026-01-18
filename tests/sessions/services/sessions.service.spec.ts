@@ -99,6 +99,7 @@ describe('SessionsService', () => {
               findUnique: jest.fn(),
               findMany: jest.fn(),
               update: jest.fn(),
+              count: jest.fn(),
             },
             sessionTeams: {
               findUnique: jest.fn(),
@@ -812,6 +813,7 @@ describe('SessionsService', () => {
     it('should return a session by uid', async () => {
       // Arrange
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
       (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
         async (folder: string, url: string) => `https://signed-url.com/${url}`,
       );
@@ -897,6 +899,7 @@ describe('SessionsService', () => {
       const userUid = 'user-uid-1';
 
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
       (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
         async (folder: string, url: string) => `https://signed-url.com/${url}`,
       );
@@ -939,6 +942,7 @@ describe('SessionsService', () => {
       const userUid = 'user-uid-1';
 
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
       (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
         async (folder: string, url: string) => `https://signed-url.com/${url}`,
       );
@@ -964,6 +968,7 @@ describe('SessionsService', () => {
       const userUid = 'user-uid-1';
 
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
       (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
         async (folder: string, url: string) => `https://signed-url.com/${url}`,
       );
@@ -1046,6 +1051,7 @@ describe('SessionsService', () => {
     it('should update a session successfully', async () => {
       // Arrange
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSessionForFindOne);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
       (prismaService.sessions.update as jest.Mock).mockResolvedValue(mockUpdatedSession);
       (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
@@ -1078,6 +1084,7 @@ describe('SessionsService', () => {
     it('should throw NotFoundException if field not found', async () => {
       // Arrange
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSessionForFindOne);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
       (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(null);
       (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
         async (folder: string, url: string) => `https://signed-url.com/${url}`,
