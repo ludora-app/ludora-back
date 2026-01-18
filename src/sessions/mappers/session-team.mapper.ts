@@ -7,6 +7,12 @@ export type SessionTeamWithPlayers = {
   teamName: string;
   teamLabel: TeamLabels;
   sessionPlayers: RawPlayer[];
+  uid: string;
+};
+
+export type SessionTeamWithPlayersAndNumberOfPlayers = SessionTeamWithPlayers & {
+  numberOfPlayers: number;
+  uid: string;
 };
 
 export class SessionTeamMapper {
@@ -16,6 +22,7 @@ export class SessionTeamMapper {
       sessionPlayers: SessionPlayerMapper.toDtoList(sessionTeam.sessionPlayers),
       teamLabel: sessionTeam.teamLabel,
       teamName: sessionTeam.teamName,
+      teamUid: sessionTeam.uid,
     };
   }
 

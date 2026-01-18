@@ -1,4 +1,6 @@
+import { FieldType } from 'generated/prisma/enums';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
 
 import { SessionTeamResponseData } from './session-team-response';
@@ -70,5 +72,38 @@ export class FindOneSessionResponseData extends OmitType(SessionCollectionItemDt
   })
   sessionTeams: SessionTeamResponseData[];
 
+  @ApiProperty({
+    description: 'The uid of the field',
+    example: 'cmkiwtv9r02d65pmp40klxt2i',
+  })
+  fieldUid: string;
+
   fieldImages: ImageResponseDto[];
+
+  @ApiProperty({
+    description: 'The title of the session',
+    example: 'Session 1',
+  })
+  title: string;
+
+  @ApiProperty({ description: 'Session description', example: 'Test session' })
+  description: string;
+
+  @ApiProperty({
+    description: 'The type of the field',
+    enum: FieldType,
+    example: FieldType.PUBLIC,
+  })
+  fieldType: FieldType;
+
+  @ApiProperty({
+    description: 'Whether the user is joined to the session',
+    example: false,
+  })
+  isJoined: boolean;
+}
+
+export class FindOneSessionResponseDto extends ResponseTypeDto<FindOneSessionResponseData> {
+  @ApiProperty({ type: FindOneSessionResponseData })
+  readonly data: FindOneSessionResponseData;
 }

@@ -1,5 +1,5 @@
 import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
-import { GameModes, Sessions, SessionVisibility } from 'generated/prisma/client';
+import { FieldType, GameModes, Sessions, SessionVisibility } from 'generated/prisma/client';
 
 import { SessionResponseData } from '../dto/output/session-response.dto';
 import { SessionTeamMapper, SessionTeamWithPlayers } from './session-team.mapper';
@@ -38,12 +38,15 @@ export interface RawSessionCollectionItem {
  */
 export interface RawSessionFindOneItem {
   uid: string;
+  title: string;
   endDate: Date;
   sport: string;
   level: number;
   startDate: Date;
   gameMode: string;
+  isJoined: boolean;
   creatorUid: string;
+  description: string;
   maxPlayersPerTeam: number;
   visibility?: SessionVisibility;
   sessionTeams: SessionTeamWithPlayers[];
@@ -52,6 +55,8 @@ export interface RawSessionFindOneItem {
     longitude: number;
     shortAddress: string;
     fieldImages: { order: number; url: string }[];
+    uid: string;
+    type: FieldType;
   };
 }
 
@@ -72,23 +77,27 @@ export class SessionMapper {
     const { field, sessionTeams } = session;
     return {
       creatorUid: session.creatorUid,
+      description: session.description,
       endDate: session.endDate,
-
       fieldImages: field.fieldImages.map((image) => ({
         order: image.order,
         url: image.url,
       })),
-
       fieldLatitude: field.latitude,
+
       fieldLongitude: field.longitude,
       fieldShortAddress: field.shortAddress,
-
+      fieldType: field.type,
+      fieldUid: field.uid,
       gameMode: session.gameMode as GameModes,
+
+      isJoined: session.isJoined,
       level: session.level as SessionSportLevel,
       maxPlayersPerTeam: session.maxPlayersPerTeam,
       sessionTeams: SessionTeamMapper.toDtoList(sessionTeams),
       sport: session.sport as Sport,
       startDate: session.startDate,
+      title: session.title,
       uid: session.uid,
       visibility: session.visibility as SessionVisibility,
     };
