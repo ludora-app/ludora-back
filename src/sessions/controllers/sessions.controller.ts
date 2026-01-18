@@ -1,3 +1,4 @@
+import { FastifyRequest } from 'fastify';
 import { Throttle } from '@nestjs/throttler';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
@@ -38,6 +39,10 @@ import { SessionFilterDto } from '../dto/input/session-filter.dto';
 import { MySessionFilterDto } from '../dto/input/my-session-filter.dto';
 import { CreateSessionFromRequestDto } from '../dto/input/create-session.dto';
 import { SessionResponseData, SessionResponseDto } from '../dto/output/session-response.dto';
+import {
+  FindOneSessionResponseData,
+  FindOneSessionResponseDto,
+} from '../dto/output/find-one-session-response.dto';
 import {
   PaginatedSessionCollectionResponseDto,
   SessionCollectionItemDto,
@@ -120,19 +125,23 @@ export class SessionsController {
   @Get(':uid')
   @Protected()
   @ApiOperation({ summary: 'Get a session by uid' })
-  @ApiOkResponse({ type: SessionResponseDto })
+  @ApiOkResponse({ type: FindOneSessionResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
-  async findOne(@Param('uid') uid: string): Promise<ResponseTypeDto<SessionResponseData>> {
-    const session = await this.sessionsService.findOne(uid);
+  async findOne(
+    @Param('uid') uid: string,
+    @Req() request: FastifyRequest,
+  ): Promise<ResponseTypeDto<FindOneSessionResponseData>> {
+    const userUid = request['user'].uid;
+    const session = await this.sessionsService.findOne(uid, userUid);
 
     if (!session) {
       throw new NotFoundException('Session not found');
     }
 
     return {
-      data: SessionMapper.toDto(session),
+      data: session,
       message: 'Session fetched successfully',
     };
   }

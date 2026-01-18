@@ -117,9 +117,9 @@ export class SessionInvitationsService {
         invitedBy: existingPlayer.user.firstname + ' ' + existingPlayer.user.lastname,
         inviterAvatar: existingPlayer.user.imageUrl,
         recipientId: createSessionInvitationDto.receiverUid,
-        sessionDate: existingSession.date,
+        sessionDate: existingSession.startDate,
         sessionId: existingSession.uid,
-        sessionName: existingSession.title,
+        // sessionName: existingSession.title,
       });
       return invitation;
     }

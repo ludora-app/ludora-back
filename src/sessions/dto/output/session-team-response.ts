@@ -24,8 +24,8 @@ export class FlattenedSessionPlayer {
 }
 
 export class SessionTeamResponseData {
-  // @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
-  // readonly uid?: string;
+  @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
+  readonly teamUid?: string;
 
   @ApiProperty({ example: 'Team A', readOnly: true })
   readonly teamName: string;

@@ -226,6 +226,11 @@ describe('SessionsController', () => {
 
   describe('findOne', () => {
     const sessionUid = 'session-uid-1';
+    const mockRequest = {
+      user: {
+        uid: 'user-uid-1',
+      },
+    } as any;
 
     it('should return a session by uid', async () => {
       const sessionData = {
@@ -243,20 +248,22 @@ describe('SessionsController', () => {
 
       mockSessionsService.findOne.mockResolvedValue(sessionData);
 
-      const result = await controller.findOne(sessionUid);
+      const result = await controller.findOne(sessionUid, mockRequest);
 
       expect(result).toEqual({
         data: sessionData,
         message: 'Session fetched successfully',
       });
-      expect(service.findOne).toHaveBeenCalledWith(sessionUid);
+      expect(service.findOne).toHaveBeenCalledWith(sessionUid, 'user-uid-1');
     });
 
     it('should throw NotFoundException when session not found', async () => {
       mockSessionsService.findOne.mockRejectedValue(new NotFoundException('Session not found'));
 
-      await expect(controller.findOne('non-existent-uid')).rejects.toThrow(NotFoundException);
-      expect(service.findOne).toHaveBeenCalledWith('non-existent-uid');
+      await expect(controller.findOne('non-existent-uid', mockRequest)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(service.findOne).toHaveBeenCalledWith('non-existent-uid', 'user-uid-1');
     });
   });
 

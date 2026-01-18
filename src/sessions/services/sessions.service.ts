@@ -30,6 +30,7 @@ import { SessionTeamResponseData } from '../dto/output/session-team-response';
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
 import { RawSessionFindOneItem, SessionMapper } from '../mappers/session.mapper';
 import { SessionCollectionItemDto } from '../dto/output/session-collection-response.dto';
+import { FindOneSessionResponseData } from '../dto/output/find-one-session-response.dto';
 import { MySessionFilterDto, SessionOwnnership } from '../dto/input/my-session-filter.dto';
 
 /**
@@ -667,10 +668,11 @@ export class SessionsService {
     };
   }
 
-  async findOne(uid: string): Promise<any> {
-    const session = await this.prisma.sessions.findUnique({
+  async findOne(uid: string, userUid?: string | undefined): Promise<FindOneSessionResponseData> {
+    const session: Omit<RawSessionFindOneItem, 'isJoined'> = await this.prisma.sessions.findUnique({
       select: {
         creatorUid: true,
+        description: true,
         endDate: true,
         field: {
           select: {
@@ -678,6 +680,8 @@ export class SessionsService {
             latitude: true,
             longitude: true,
             shortAddress: true,
+            type: true,
+            uid: true,
           },
         },
         gameMode: true,
@@ -694,10 +698,12 @@ export class SessionsService {
             },
             teamLabel: true,
             teamName: true,
+            uid: true,
           },
         },
         sport: true,
         startDate: true,
+        title: true,
         uid: true,
         visibility: true,
       },
@@ -706,6 +712,12 @@ export class SessionsService {
 
     if (!session) {
       throw new NotFoundException('Session not found');
+    }
+    const existingPlayer = await this.playersService.findOne(uid, userUid);
+    console.log('existingPlayer', existingPlayer);
+    let isJoined = false;
+    if (existingPlayer) {
+      isJoined = true;
     }
 
     const unlockedFieldImages = await Promise.all(
@@ -716,11 +728,10 @@ export class SessionsService {
     );
 
     session.field.fieldImages = unlockedFieldImages;
-
-    return SessionMapper.toFindOneDto(session as unknown as RawSessionFindOneItem);
+    return SessionMapper.toFindOneDto({ ...session, isJoined: isJoined });
   }
 
-  async update(uid: string, updateSessionDto: UpdateSessionDto): Promise<Sessions> {
+  async update(uid: string, updateSessionDto: UpdateSessionDto): Promise<void> {
     const { endDate, startDate } = updateSessionDto;
 
     const session = await this.findOne(uid);
@@ -737,10 +748,10 @@ export class SessionsService {
       throw new NotFoundException('Field not found');
     }
 
-    const updatedSession = await this.prisma.sessions.update({
+    await this.prisma.sessions.update({
       data: {
         description: updateSessionDto.description,
-        endDate: endDate,
+        endDate,
         gameMode: updateSessionDto.gameMode,
         maxPlayersPerTeam: updateSessionDto.maxPlayersPerTeam,
         minPlayersPerTeam: updateSessionDto.minPlayersPerTeam,
@@ -752,10 +763,7 @@ export class SessionsService {
       where: { uid: session.uid },
     });
 
-    return {
-      ...updatedSession,
-      sport: updatedSession.sport as Sport,
-    };
+    return;
   }
 
   remove(uid: string) {

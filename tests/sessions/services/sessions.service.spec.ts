@@ -924,12 +924,7 @@ describe('SessionsService', () => {
       const result = await service.update('session-uid-1', updateSessionDto);
 
       // Assert
-      expect(result).toEqual(
-        expect.objectContaining({
-          uid: 'session-uid-1',
-          title: 'Updated Session Title',
-        }),
-      );
+      expect(result).toBeUndefined();
       expect(prismaService.sessions.update).toHaveBeenCalledWith({
         data: expect.objectContaining({
           title: 'Updated Session Title',
