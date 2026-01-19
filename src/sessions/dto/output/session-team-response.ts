@@ -21,6 +21,23 @@ export class FlattenedSessionPlayer {
 
   @ApiProperty({ example: '1738433236109explore2.png', readOnly: true })
   readonly imageUrl: string | null;
+
+  @ApiProperty({
+    description: 'User bio',
+    example: 'Passionate football player',
+    nullable: true,
+    readOnly: true,
+    required: false,
+  })
+  readonly bio?: string | null;
+
+  @ApiProperty({
+    description: 'Number of sessions the user has played',
+    example: 12,
+    readOnly: true,
+    required: false,
+  })
+  readonly sessionsCount?: number;
 }
 
 export class SessionTeamResponseData {
@@ -70,6 +87,22 @@ export class SessionTeamResponseData {
     required: false,
   })
   isComplete?: boolean;
+
+  @ApiProperty({
+    description: 'Number of remaining available spots in the team',
+    example: 2,
+    readOnly: true,
+    required: false,
+  })
+  remainingPlayers?: number;
+
+  @ApiProperty({
+    description: 'Maximum number of players allowed per team',
+    example: 5,
+    readOnly: true,
+    required: false,
+  })
+  maxPlayersPerTeam?: number;
 
   @ApiProperty({
     description: 'Whether the current user has joined this team',

@@ -745,6 +745,7 @@ export class SessionsService {
       throw new NotFoundException('Session not found');
     }
     const existingPlayer = await this.playersService.findOne(uid, userUid);
+
     let isJoined = false;
     if (existingPlayer) {
       isJoined = true;
@@ -974,6 +975,7 @@ export class SessionsService {
 
   async findTeamsBySessionUid(
     sessionUid: string,
+    userUid: string,
   ): Promise<PaginatedDataDto<SessionTeamResponseData>> {
     const existingSession = await this.findOne(sessionUid);
 
@@ -982,7 +984,7 @@ export class SessionsService {
       throw new NotFoundException(`Session ${sessionUid} not found`);
     }
 
-    return await this.teamsService.findTeamsBySessionUid(sessionUid);
+    return await this.teamsService.findTeamsBySessionUid(sessionUid, userUid);
   }
 
   // ============================================================================

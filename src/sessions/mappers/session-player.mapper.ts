@@ -10,15 +10,19 @@ export type RawPlayer = {
     firstname: string;
     lastname: string;
     imageUrl: string | null;
+    bio?: string | null;
   };
+  sessionsCount?: number;
 };
 
 export class SessionPlayerMapper {
   static toDto(player: RawPlayer): FlattenedSessionPlayer {
     return {
+      bio: player.user.bio,
       firstname: player.user.firstname,
       imageUrl: player.user.imageUrl,
       lastname: player.user.lastname,
+      sessionsCount: player.sessionsCount,
       teamUid: player.teamUid,
       userUid: player.userUid,
     };

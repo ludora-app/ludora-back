@@ -1,6 +1,8 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { StorageFolderName } from 'src/shared/constants/constants';
+import { StorageService } from 'src/shared/storage/storage.service';
 import { Prisma, SessionTeams, TeamLabels } from 'generated/prisma/client';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
@@ -12,6 +14,7 @@ export class SessionTeamsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
+    private readonly storageService: StorageService,
   ) {
     this.logger.setContext(SessionTeamsService.name);
   }
@@ -49,7 +52,15 @@ export class SessionTeamsService {
 
   async findTeamsBySessionUid(
     sessionUid: string,
+    userUid: string,
   ): Promise<PaginatedDataDto<SessionTeamResponseData>> {
+    const session = await this.prisma.sessions.findUnique({
+      select: {
+        maxPlayersPerTeam: true,
+      },
+      where: { uid: sessionUid },
+    });
+
     const teams = (await this.prisma.sessionTeams.findMany({
       include: {
         sessionPlayers: {
@@ -57,6 +68,7 @@ export class SessionTeamsService {
             teamUid: true,
             user: {
               select: {
+                bio: true,
                 firstname: true,
                 imageUrl: true,
                 lastname: true,
@@ -77,7 +89,49 @@ export class SessionTeamsService {
       sessionPlayers: Array.isArray(team.sessionPlayers) ? team.sessionPlayers : [],
     })) as (SessionTeams & SessionTeamWithPlayers)[];
 
-    const formattedTeams = SessionTeamMapper.toDtoList(sanitizedTeams);
+    // Get sessions count for each player
+    const playerSessionsCounts = new Map<string, number>();
+    for (const team of sanitizedTeams) {
+      for (const player of team.sessionPlayers) {
+        if (!playerSessionsCounts.has(player.userUid)) {
+          const count = await this.prisma.sessionPlayers.count({
+            where: { userUid: player.userUid },
+          });
+          playerSessionsCounts.set(player.userUid, count);
+        }
+      }
+    }
+
+    console.log('userUid', userUid);
+    // Process signed URLs for player images and add isJoined flag
+    const teamsWithSignedUrls = await Promise.all(
+      sanitizedTeams.map(async (team) => ({
+        ...team,
+        isJoined: userUid
+          ? team.sessionPlayers.some((player) => player.userUid === userUid)
+          : false,
+        sessionPlayers: await Promise.all(
+          team.sessionPlayers.map(async (player) => ({
+            ...player,
+            sessionsCount: playerSessionsCounts.get(player.userUid),
+            user: {
+              ...player.user,
+              imageUrl: player.user.imageUrl
+                ? await this.storageService.getSignedUrl(
+                    StorageFolderName.USERS,
+                    player.user.imageUrl,
+                  )
+                : null,
+            },
+          })),
+        ),
+      })),
+    );
+
+    const formattedTeams = SessionTeamMapper.toDtoList(
+      teamsWithSignedUrls,
+      session?.maxPlayersPerTeam,
+    );
 
     return {
       items: formattedTeams,

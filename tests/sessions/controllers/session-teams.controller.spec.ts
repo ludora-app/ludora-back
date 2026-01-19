@@ -4,6 +4,7 @@ import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { SessionTeamsController } from 'src/sessions/controllers/session-teams.controller';
 import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
 import { SessionsService } from 'src/sessions/services/sessions.service';
+import { FastifyRequest } from 'fastify';
 
 describe('SessionTeamsController', () => {
   let controller: SessionTeamsController;
@@ -66,9 +67,13 @@ describe('SessionTeamsController', () => {
         totalCount: 1,
       });
 
-      const result = await controller.findTeamsBySessionUid('session-1');
+      const mockRequest = { user: { uid: 'test-user-uid' } } as unknown as FastifyRequest;
+      const result = await controller.findTeamsBySessionUid('session-1', mockRequest);
 
-      expect(mockSessionsService.findTeamsBySessionUid).toHaveBeenCalledWith('session-1');
+      expect(mockSessionsService.findTeamsBySessionUid).toHaveBeenCalledWith(
+        'session-1',
+        'test-user-uid',
+      );
       expect(result.data.items.length).toBe(1);
       expect(result.message).toContain('session-1');
     });
@@ -80,10 +85,14 @@ describe('SessionTeamsController', () => {
         totalCount: 0,
       });
 
-      await expect(controller.findTeamsBySessionUid('missing')).rejects.toBeInstanceOf(
+      const mockRequest = { user: { uid: 'test-user-uid' } } as unknown as FastifyRequest;
+      await expect(controller.findTeamsBySessionUid('missing', mockRequest)).rejects.toBeInstanceOf(
         NotFoundException,
       );
-      expect(mockSessionsService.findTeamsBySessionUid).toHaveBeenCalledWith('missing');
+      expect(mockSessionsService.findTeamsBySessionUid).toHaveBeenCalledWith(
+        'missing',
+        'test-user-uid',
+      );
     });
   });
 

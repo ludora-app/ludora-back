@@ -24,7 +24,7 @@ export class SessionTeamMapper {
     const numberOfPlayers = sessionTeam.sessionPlayers.length;
     const dto: SessionTeamResponseData = {
       numberOfPlayers,
-      sessionPlayers: SessionPlayerMapper.toDtoList(sessionTeam.sessionPlayers.slice(0, 3)),
+      sessionPlayers: SessionPlayerMapper.toDtoList(sessionTeam.sessionPlayers),
       teamLabel: sessionTeam.teamLabel,
       teamName: sessionTeam.teamName,
       teamUid: sessionTeam.uid,
@@ -32,6 +32,12 @@ export class SessionTeamMapper {
 
     if (maxPlayersPerTeam !== undefined) {
       dto.isComplete = numberOfPlayers >= maxPlayersPerTeam;
+      dto.remainingPlayers = Math.max(0, maxPlayersPerTeam - numberOfPlayers);
+      dto.maxPlayersPerTeam = maxPlayersPerTeam;
+    }
+
+    if (sessionTeam.isJoined !== undefined) {
+      dto.isJoined = sessionTeam.isJoined;
     }
 
     if (sessionTeam.isJoined !== undefined) {
