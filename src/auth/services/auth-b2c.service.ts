@@ -45,6 +45,9 @@ export class AuthB2CService {
   }
   private readonly NODE_ENV = this.configService.getOrThrow('NODE_ENV');
   private readonly TOKEN_EXPIRATION_TIME = this.NODE_ENV === 'production' ? '15m' : '1d';
+  private readonly MINIMUM_AGE_DATE = new Date(
+    new Date().setFullYear(new Date().getFullYear() - 15),
+  );
 
   async register(
     registerDto: RegisterB2CDto,
@@ -54,6 +57,10 @@ export class AuthB2CService {
 
     const result = await this.prismaService.$transaction(async (tx) => {
       let newUser;
+
+      if (new Date(registerDto.birthdate) < this.MINIMUM_AGE_DATE) {
+        throw new BadRequestException('User must be at least 15 years old');
+      }
 
       if (type === UserType.USER) {
         const { bio, birthdate, email, firstname, lastname, password, phone, sex } = registerDto;
