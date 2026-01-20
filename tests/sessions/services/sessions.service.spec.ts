@@ -239,7 +239,10 @@ describe('SessionsService', () => {
       jest.clearAllMocks();
     });
 
-    const setupTransactionMock = () => {
+    const setupTransactionMock = (
+      teamAName: string = 'Equipe A',
+      teamBName: string = 'Equipe B',
+    ) => {
       (prismaService.$transaction as jest.Mock).mockImplementation(async (cb: any) => {
         const tx = {
           conversations: {
@@ -257,7 +260,15 @@ describe('SessionsService', () => {
           uid: 'team-a',
           sessionUid: 'session-uid-1',
           teamLabel: 'A',
-          teamName: 'Team A',
+          teamName: teamAName,
+          createdAt: mockCurrentDate,
+          updatedAt: mockCurrentDate,
+        },
+        {
+          uid: 'team-b',
+          sessionUid: 'session-uid-1',
+          teamLabel: 'B',
+          teamName: teamBName,
           createdAt: mockCurrentDate,
           updatedAt: mockCurrentDate,
         },
@@ -571,6 +582,130 @@ describe('SessionsService', () => {
             level: undefined,
           }),
         });
+      });
+    });
+
+    describe('Team names handling', () => {
+      it('should create teams with custom names when provided', async () => {
+        // Arrange
+        const customTeamAName = 'Les Bleus';
+        const customTeamBName = 'Les Rouges';
+        const dtoWithCustomTeamNames = {
+          ...createSessionDto,
+          teamAName: customTeamAName,
+          teamBName: customTeamBName,
+        };
+        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
+        (prismaService.sessions.create as jest.Mock).mockResolvedValue(mockCreatedSession);
+        setupTransactionMock(customTeamAName, customTeamBName);
+
+        // Act
+        await service.create(dtoWithCustomTeamNames);
+
+        // Assert
+        expect(sessionTeamsService.createDefaultTeams).toHaveBeenCalledWith(
+          'session-uid-1',
+          customTeamAName,
+          customTeamBName,
+          expect.anything(),
+        );
+      });
+
+      it('should use default team names when not provided', async () => {
+        // Arrange
+        const dtoWithoutTeamNames = { ...createSessionDto };
+        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
+        (prismaService.sessions.create as jest.Mock).mockResolvedValue(mockCreatedSession);
+        setupTransactionMock('Equipe A', 'Equipe B');
+
+        // Act
+        await service.create(dtoWithoutTeamNames);
+
+        // Assert
+        expect(sessionTeamsService.createDefaultTeams).toHaveBeenCalledWith(
+          'session-uid-1',
+          'Equipe A',
+          'Equipe B',
+          expect.anything(),
+        );
+      });
+
+      it('should handle only teamAName provided', async () => {
+        // Arrange
+        const customTeamAName = 'Custom Team A';
+        const dtoWithOnlyTeamAName = {
+          ...createSessionDto,
+          teamAName: customTeamAName,
+        };
+        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
+        (prismaService.sessions.create as jest.Mock).mockResolvedValue(mockCreatedSession);
+        setupTransactionMock(customTeamAName, 'Equipe B');
+
+        // Act
+        await service.create(dtoWithOnlyTeamAName);
+
+        // Assert
+        expect(sessionTeamsService.createDefaultTeams).toHaveBeenCalledWith(
+          'session-uid-1',
+          customTeamAName,
+          'Equipe B',
+          expect.anything(),
+        );
+      });
+
+      it('should handle only teamBName provided', async () => {
+        // Arrange
+        const customTeamBName = 'Custom Team B';
+        const dtoWithOnlyTeamBName = {
+          ...createSessionDto,
+          teamBName: customTeamBName,
+        };
+        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
+        (prismaService.sessions.create as jest.Mock).mockResolvedValue(mockCreatedSession);
+        setupTransactionMock('Equipe A', customTeamBName);
+
+        // Act
+        await service.create(dtoWithOnlyTeamBName);
+
+        // Assert
+        expect(sessionTeamsService.createDefaultTeams).toHaveBeenCalledWith(
+          'session-uid-1',
+          'Equipe A',
+          customTeamBName,
+          expect.anything(),
+        );
+      });
+
+      it('should add creator to team A with correct team name', async () => {
+        // Arrange
+        const customTeamAName = 'Les Bleus';
+        const customTeamBName = 'Les Rouges';
+        const dtoWithCustomTeamNames = {
+          ...createSessionDto,
+          teamAName: customTeamAName,
+          teamBName: customTeamBName,
+        };
+        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
+        (prismaService.sessions.create as jest.Mock).mockResolvedValue(mockCreatedSession);
+        setupTransactionMock(customTeamAName, customTeamBName);
+
+        // Act
+        await service.create(dtoWithCustomTeamNames);
+
+        // Assert
+        expect(sessionPlayersService.addPlayerToSession).toHaveBeenCalledWith(
+          {
+            sessionUid: 'session-uid-1',
+            teamUid: 'team-a',
+            userUid: 'user-uid-1',
+          },
+          expect.anything(),
+        );
       });
     });
   });

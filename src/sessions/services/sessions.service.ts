@@ -59,7 +59,17 @@ export class SessionsService {
   }
 
   async create(createSessionDto: CreateSessionDto): Promise<Sessions> {
-    const { endDate, fieldUid, level, slotUid, startDate, userUid, visibility } = createSessionDto;
+    const {
+      endDate,
+      fieldUid,
+      level,
+      slotUid,
+      startDate,
+      teamAName,
+      teamBName,
+      userUid,
+      visibility,
+    } = createSessionDto;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -125,6 +135,9 @@ export class SessionsService {
       createSessionDto.gameMode,
     );
 
+    const teamANameToUse = teamAName ?? 'Equipe A';
+    const teamBNameToUse = teamBName ?? 'Equipe B';
+
     const newSession = await this.prisma.$transaction(async (tx) => {
       const createdSession = await tx.sessions.create({
         data: {
@@ -144,10 +157,16 @@ export class SessionsService {
           visibility,
         },
       });
+
       // create default teams in transaction and fetch them back
-      const defaultTeams = await this.teamsService.createDefaultTeams(createdSession.uid, tx);
+      const defaultTeams = await this.teamsService.createDefaultTeams(
+        createdSession.uid,
+        teamANameToUse,
+        teamBNameToUse,
+        tx,
+      );
       // pick team A for the creator
-      const teamA = defaultTeams.find((t) => t.teamLabel === 'A');
+      const teamA = defaultTeams.find((t) => t.teamName === teamANameToUse);
       if (teamA && createSessionDto.userUid) {
         await this.playersService.addPlayerToSession(
           {
@@ -719,7 +738,6 @@ export class SessionsService {
       throw new NotFoundException('Session not found');
     }
     const existingPlayer = await this.playersService.findOne(uid, userUid);
-    console.log('existingPlayer', existingPlayer);
     let isJoined = false;
     if (existingPlayer) {
       isJoined = true;

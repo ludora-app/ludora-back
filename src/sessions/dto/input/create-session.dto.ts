@@ -2,7 +2,16 @@ import { Type } from 'class-transformer';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { SessionSportLevel } from 'src/shared/constants/constants';
 import { GameModes, SessionVisibility } from 'generated/prisma/client';
-import { IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 /**
  * @description DTO for creating a session
@@ -103,6 +112,28 @@ export class CreateSessionDto {
     required: false,
   })
   visibility?: SessionVisibility;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(15)
+  @ApiProperty({
+    description: 'The name of the team A',
+    example: 'Equipe A',
+    required: false,
+  })
+  teamAName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(15)
+  @ApiProperty({
+    description: 'The name of the team B',
+    example: 'Equipe B',
+    required: false,
+  })
+  teamBName?: string;
 }
 
 export class CreateSessionFromRequestDto extends OmitType(CreateSessionDto, ['userUid']) {}

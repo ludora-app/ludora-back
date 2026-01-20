@@ -29,14 +29,16 @@ export class SessionTeamsService {
    */
   async createDefaultTeams(
     sessionUid: string,
+    teamAName: string,
+    teamBName: string,
     tx?: Prisma.TransactionClient,
   ): Promise<SessionTeams[]> {
     const db = tx ?? this.prisma;
 
     await db.sessionTeams.createMany({
       data: [
-        { sessionUid: sessionUid, teamLabel: TeamLabels.A, teamName: 'Team A' },
-        { sessionUid: sessionUid, teamLabel: TeamLabels.B, teamName: 'Team B' },
+        { sessionUid: sessionUid, teamLabel: TeamLabels.A, teamName: teamAName },
+        { sessionUid: sessionUid, teamLabel: TeamLabels.B, teamName: teamBName },
       ],
     });
 

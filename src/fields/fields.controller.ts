@@ -80,16 +80,11 @@ export class FieldsController {
     @UploadedFilesCustom() images: { buffer: Buffer; originalname: string }[],
   ) {
     const imagesDto = Array.isArray(images)
-      ? images.map(
-          (image, index) => (
-            console.log(image.originalname),
-            {
-              file: image.buffer,
-              name: image.originalname,
-              order: index,
-            }
-          ),
-        )
+      ? images.map((image, index) => ({
+          file: image.buffer,
+          name: image.originalname,
+          order: index,
+        }))
       : [];
 
     const response = await this.fieldsService.create({
