@@ -1,12 +1,13 @@
 import { FieldType } from 'generated/prisma/enums';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
+import { UserSimpleDisplayDataDto } from 'src/users/dto';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
 
 import { SessionTeamResponseData } from './session-team-response';
 import { SessionCollectionItemDto } from './session-collection-response.dto';
 
-export class SessionPlayerFromFindOneSessionResponseData {
+export class SessionPlayerFromFindOneSessionResponseData extends UserSimpleDisplayDataDto {
   @ApiProperty({
     example: 'cmgoxfs3t002hob8arwdna80g',
     readOnly: true,
@@ -18,24 +19,6 @@ export class SessionPlayerFromFindOneSessionResponseData {
     readOnly: true,
   })
   teamUid: string;
-
-  @ApiProperty({
-    example: 'Seto',
-    readOnly: true,
-  })
-  firstname: string;
-
-  @ApiProperty({
-    example: 'Kaiba',
-    readOnly: true,
-  })
-  lastname: string;
-
-  @ApiProperty({
-    example: '1738433236109explore2.png',
-    readOnly: true,
-  })
-  imageUrl: string | null;
 }
 
 export class TeamFromFindOneSessionResponseData {
@@ -67,26 +50,7 @@ export class TeamFromFindOneSessionResponseData {
   })
   isJoined?: boolean;
 }
-export class CreatorInfoResponseData {
-  @ApiProperty({
-    description: 'Creator first name',
-    example: 'John',
-  })
-  firstname: string;
-
-  @ApiProperty({
-    description: 'Creator last name',
-    example: 'Doe',
-  })
-  lastname: string;
-
-  @ApiProperty({
-    description: 'Creator profile image URL',
-    example: '1738433236109explore2.png',
-    nullable: true,
-  })
-  imageUrl: string | null;
-
+export class CreatorInfoResponseData extends UserSimpleDisplayDataDto {
   @ApiProperty({
     description: 'Number of sessions organized by the creator',
     example: 5,

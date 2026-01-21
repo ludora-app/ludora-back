@@ -794,13 +794,15 @@ export class SessionsService {
         const currentPlayerIndex = playersWithSignedUrls.findIndex(
           (player) => player.userUid === userUid,
         );
+
         let orderedPlayers = playersWithSignedUrls;
         if (currentPlayerIndex !== -1) {
-          orderedPlayers = [
-            playersWithSignedUrls[currentPlayerIndex],
-            ...playersWithSignedUrls.slice(0, currentPlayerIndex),
-            ...playersWithSignedUrls.slice(currentPlayerIndex + 1),
-          ];
+          const otherPlayers = playersWithSignedUrls
+            .filter((_, index) => index !== currentPlayerIndex)
+            .slice(0, 2);
+          orderedPlayers = [playersWithSignedUrls[currentPlayerIndex], ...otherPlayers];
+        } else {
+          orderedPlayers = playersWithSignedUrls.slice(0, 3);
         }
 
         return {

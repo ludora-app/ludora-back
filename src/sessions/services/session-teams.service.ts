@@ -83,16 +83,11 @@ export class SessionTeamsService {
       },
     })) as (SessionTeams & Partial<SessionTeamWithPlayers>)[];
 
-    // Ensure sessionPlayers is always an array to avoid runtime errors if omitted in query/mocks
-    const sanitizedTeams: (SessionTeams & SessionTeamWithPlayers)[] = teams.map((team) => ({
-      ...team,
-      sessionPlayers: Array.isArray(team.sessionPlayers) ? team.sessionPlayers : [],
-    })) as (SessionTeams & SessionTeamWithPlayers)[];
-
     // Get sessions count for each player
     const playerSessionsCounts = new Map<string, number>();
-    for (const team of sanitizedTeams) {
-      for (const player of team.sessionPlayers) {
+    for (const team of teams) {
+      const sessionPlayers = Array.isArray(team.sessionPlayers) ? team.sessionPlayers : [];
+      for (const player of sessionPlayers) {
         if (!playerSessionsCounts.has(player.userUid)) {
           const count = await this.prisma.sessionPlayers.count({
             where: { userUid: player.userUid },
@@ -102,30 +97,30 @@ export class SessionTeamsService {
       }
     }
 
-    console.log('userUid', userUid);
     // Process signed URLs for player images and add isJoined flag
     const teamsWithSignedUrls = await Promise.all(
-      sanitizedTeams.map(async (team) => ({
-        ...team,
-        isJoined: userUid
-          ? team.sessionPlayers.some((player) => player.userUid === userUid)
-          : false,
-        sessionPlayers: await Promise.all(
-          team.sessionPlayers.map(async (player) => ({
-            ...player,
-            sessionsCount: playerSessionsCounts.get(player.userUid),
-            user: {
-              ...player.user,
-              imageUrl: player.user.imageUrl
-                ? await this.storageService.getSignedUrl(
-                    StorageFolderName.USERS,
-                    player.user.imageUrl,
-                  )
-                : null,
-            },
-          })),
-        ),
-      })),
+      teams.map(async (team) => {
+        const sessionPlayers = Array.isArray(team.sessionPlayers) ? team.sessionPlayers : [];
+        return {
+          ...team,
+          isJoined: userUid ? sessionPlayers.some((player) => player.userUid === userUid) : false,
+          sessionPlayers: await Promise.all(
+            sessionPlayers.map(async (player) => ({
+              ...player,
+              sessionsCount: playerSessionsCounts.get(player.userUid),
+              user: {
+                ...player.user,
+                imageUrl: player.user.imageUrl
+                  ? await this.storageService.getSignedUrl(
+                      StorageFolderName.USERS,
+                      player.user.imageUrl,
+                    )
+                  : null,
+              },
+            })),
+          ),
+        };
+      }),
     );
 
     const formattedTeams = SessionTeamMapper.toDtoList(
