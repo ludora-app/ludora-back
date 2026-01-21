@@ -30,8 +30,10 @@ import { SESSION_SUGGESTION_CONFIG } from '../constants/session.constants';
 import { SessionTeamResponseData } from '../dto/output/session-team-response';
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
 import { RawSessionFindOneItem, SessionMapper } from '../mappers/session.mapper';
+import { JoinSessionErrorTypes } from '../dto/errors/create-session-player-error.dto';
 import { SessionCollectionItemDto } from '../dto/output/session-collection-response.dto';
 import { MySessionFilterDto, SessionOwnnership } from '../dto/input/my-session-filter.dto';
+import { FindOneSessionResponseErrorTypes } from '../dto/errors/find-one-session-response-error.dto';
 import {
   FindOneSessionResponseData,
   FindOneSessionWithDistanceResponseData,
@@ -735,7 +737,7 @@ export class SessionsService {
     });
 
     if (!session) {
-      throw new NotFoundException('Session not found');
+      throw new NotFoundException(FindOneSessionResponseErrorTypes.SESSION_NOT_FOUND);
     }
     const existingPlayer = await this.playersService.findOne(uid, userUid);
     let isJoined = false;
@@ -934,7 +936,7 @@ export class SessionsService {
 
     if (!existingSession) {
       this.logger.error(`Session ${createSessionPlayerDto.sessionUid} not found`);
-      throw new NotFoundException(`Session ${createSessionPlayerDto.sessionUid} not found`);
+      throw new NotFoundException(JoinSessionErrorTypes.SESSION_NOT_FOUND);
     }
     const existingTeam = await this.prisma.sessionTeams.findUnique({
       select: {
@@ -946,21 +948,19 @@ export class SessionsService {
 
     if (!existingTeam) {
       this.logger.error(`Team ${createSessionPlayerDto.teamUid} not found`);
-      throw new NotFoundException(`Team ${createSessionPlayerDto.teamUid} not found`);
+      throw new NotFoundException(JoinSessionErrorTypes.TEAM_NOT_FOUND);
     }
 
     if (existingSession.uid !== existingTeam.sessionUid) {
       this.logger.error(
         `Session ${createSessionPlayerDto.sessionUid} and team ${createSessionPlayerDto.teamUid} do not match`,
       );
-      throw new BadRequestException(
-        `Session ${createSessionPlayerDto.sessionUid} and team ${createSessionPlayerDto.teamUid} do not match`,
-      );
+      throw new BadRequestException(JoinSessionErrorTypes.SESSION_AND_TEAM_DO_NOT_MATCH);
     }
 
     if (existingTeam._count.sessionPlayers >= existingSession.maxPlayersPerTeam) {
       this.logger.error(`Team ${createSessionPlayerDto.teamUid} is full`);
-      throw new BadRequestException(`Team ${createSessionPlayerDto.teamUid} is full`);
+      throw new BadRequestException(JoinSessionErrorTypes.SESSION_FULL);
     }
 
     const existingPlayer = await this.playersService.findOne(
@@ -972,9 +972,7 @@ export class SessionsService {
       this.logger.error(
         `Player ${createSessionPlayerDto.userUid} already in session ${createSessionPlayerDto.sessionUid}`,
       );
-      throw new BadRequestException(
-        `Player ${createSessionPlayerDto.userUid} already in session ${createSessionPlayerDto.sessionUid}`,
-      );
+      throw new BadRequestException(JoinSessionErrorTypes.SESSION_ALREADY_JOINED);
     }
 
     return this.playersService.addPlayerToSession(createSessionPlayerDto);
