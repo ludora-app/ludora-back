@@ -668,7 +668,7 @@ describe('SessionTeamsService', () => {
 
       // Act
       await service.createDefaultTeams(sessionUid, teamAName, teamBName);
-      const result = await service.findTeamsBySessionUid(sessionUid);
+      const result = await service.findTeamsBySessionUid(sessionUid, 'test-user-uid');
 
       // Assert
       expect(result.items).toHaveLength(2);

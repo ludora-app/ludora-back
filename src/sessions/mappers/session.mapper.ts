@@ -48,6 +48,7 @@ export interface RawSessionFindOneItem {
   creatorUid: string;
   description: string;
   maxPlayersPerTeam: number;
+  remainingPlayers?: number;
   creatorSessionsCount?: number;
   visibility?: SessionVisibility;
   sessionTeams: SessionTeamWithPlayers[];
@@ -82,13 +83,6 @@ export class SessionMapper {
   static toFindOneDto(session: RawSessionFindOneItem): FindOneSessionResponseData {
     const { field, sessionTeams } = session;
 
-    const totalPlayersInSession = sessionTeams.reduce(
-      (sum, team) => sum + team.sessionPlayers.length,
-      0,
-    );
-    const totalAvailableSpots = session.maxPlayersPerTeam * sessionTeams.length;
-    const remainingPlayers = Math.max(0, totalAvailableSpots - totalPlayersInSession);
-
     const response: FindOneSessionResponseData = {
       creatorUid: session.creatorUid,
       description: session.description,
@@ -108,7 +102,7 @@ export class SessionMapper {
       isJoined: session.isJoined,
       level: session.level as SessionSportLevel,
       maxPlayersPerTeam: session.maxPlayersPerTeam,
-      remainingPlayers,
+      remainingPlayers: session.remainingPlayers,
       sessionTeams: SessionTeamMapper.toDtoList(sessionTeams, session.maxPlayersPerTeam),
       sport: session.sport as Sport,
       startDate: session.startDate,

@@ -813,10 +813,19 @@ export class SessionsService {
       }),
     );
 
+    // Calculate remaining players
+    const totalPlayersInSession = teamsWithIsJoinedAndSignedUrls.reduce(
+      (sum, team) => sum + team.sessionPlayers.length,
+      0,
+    );
+    const totalAvailableSpots = session.maxPlayersPerTeam * session.sessionTeams.length;
+    const remainingPlayers = Math.max(0, totalAvailableSpots - totalPlayersInSession);
+
     return SessionMapper.toFindOneDto({
       ...session,
       creatorSessionsCount,
       isJoined: isJoined,
+      remainingPlayers,
       sessionTeams: teamsWithIsJoinedAndSignedUrls,
     });
   }
