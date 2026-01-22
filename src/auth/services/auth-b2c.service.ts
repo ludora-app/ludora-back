@@ -650,7 +650,7 @@ export class AuthB2CService {
     const formattedEmail = email.toLowerCase();
     const user = await this.userService.findOneByEmail(formattedEmail, USERSELECT.findOneByEmail);
     if (!user) {
-      this.logger.error(`User not found for email: ${email}`);
+      this.logger.error(`User email not found`);
       throw new NotFoundException(`User ${email} not found`);
     }
 

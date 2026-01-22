@@ -63,7 +63,8 @@ export class SessionResponseData {
 
   @ApiProperty({
     description: 'Session game mode',
-    example: 'THREE_VS_THREE',
+    enum: GameModes,
+    example: GameModes.THREE_V_THREE,
     readOnly: true,
   })
   gameMode: GameModes;
