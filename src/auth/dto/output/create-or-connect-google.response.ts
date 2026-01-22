@@ -20,10 +20,10 @@ export class CreateOrConnectGoogleResponseDto extends ResponseTypeDto<CreateOrCo
     readOnly: true,
     type: String,
   })
-  message: string;
+  readonly message: string;
 
   @ApiProperty({
     type: CreateOrConnectGoogleResponseData,
   })
-  data: CreateOrConnectGoogleResponseData;
+  readonly data: CreateOrConnectGoogleResponseData;
 }
