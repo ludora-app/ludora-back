@@ -231,7 +231,6 @@ describe('ConversationsService', () => {
             },
           },
         ],
-
         messages: [
           {
             content: 'Last message',
@@ -262,7 +261,6 @@ describe('ConversationsService', () => {
             },
           },
         ],
-
         messages: [
           {
             content: 'Another message',
@@ -299,7 +297,6 @@ describe('ConversationsService', () => {
                   uid: message.uid,
                 }
               : null,
-
             name: conversation.name || (user ? `${user.firstname} ${user.lastname}` : ''),
             sender: message?.sender || null,
             sessionUid: conversation.sessionUid || null,
@@ -389,7 +386,6 @@ describe('ConversationsService', () => {
         {
           conversationMembers: [],
           createdAt: new Date(),
-
           messages: [],
           name: 'Conv 1',
           type: ConversationType.PRIVATE,
@@ -399,7 +395,6 @@ describe('ConversationsService', () => {
         {
           conversationMembers: [],
           createdAt: new Date(),
-
           messages: [],
           name: 'Conv 2',
           type: ConversationType.PRIVATE,
@@ -409,7 +404,6 @@ describe('ConversationsService', () => {
         {
           conversationMembers: [],
           createdAt: new Date(),
-
           messages: [],
           name: 'Conv 3',
           type: ConversationType.PRIVATE,
@@ -428,7 +422,6 @@ describe('ConversationsService', () => {
         {
           conversationMembers: [],
           createdAt: new Date(),
-
           messages: [],
           name: 'Conv 5',
           type: ConversationType.PRIVATE,
@@ -438,7 +431,6 @@ describe('ConversationsService', () => {
         {
           conversationMembers: [],
           createdAt: new Date(),
-
           messages: [],
           name: 'Conv 6',
           type: ConversationType.PRIVATE,
@@ -455,7 +447,6 @@ describe('ConversationsService', () => {
             return {
               imageUrl: null,
               lastMessage: null,
-
               name: `Conv ${conversation.uid}`,
               sender: null,
               sessionUid: null,
@@ -560,7 +551,6 @@ describe('ConversationsService', () => {
         },
       ],
       createdAt: new Date(),
-
       messages: [
         {
           content: 'Message 1',
