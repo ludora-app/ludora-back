@@ -3,7 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { ConversationsController } from 'src/conversations/conversations.controller';
 import { ConversationsService } from 'src/conversations/conversations.service';
-import { ConversationType, MessageType } from 'generated/prisma/enums';
+import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
 
 describe('ConversationsController', () => {
   let controller: ConversationsController;
@@ -11,7 +11,6 @@ describe('ConversationsController', () => {
 
   beforeEach(async () => {
     mockConversationsService = {
-      createMockConversation: jest.fn(),
       createMessage: jest.fn(),
       createPrivateConversation: jest.fn(),
       createSessionConversation: jest.fn(),
@@ -124,8 +123,25 @@ describe('ConversationsController', () => {
       } as any;
 
       const mockConversation = {
-        messages: [{ content: 'Message 1', uid: 'msg-1' }],
-        name: 'Test Conversation',
+        imageUrl: null,
+        lastMessageAt: new Date(),
+        messages: [
+          {
+            content: 'Message 1',
+            createdAt: new Date(),
+            globalStatus: MessageStatus.SENT,
+            type: MessageType.TEXT,
+            uid: 'msg-1',
+          },
+        ],
+        name: 'John Doe',
+        sender: {
+          firstname: 'John',
+          imageUrl: 'user2.jpg',
+          lastname: 'Doe',
+          uid: 'user-2',
+        },
+        sessionUid: null,
         type: ConversationType.PRIVATE,
         uid: 'conv-123',
       };
@@ -141,57 +157,27 @@ describe('ConversationsController', () => {
       expect(mockConversationsService.findOne).toHaveBeenCalledWith('conv-123', 'user-123');
     });
 
-    it('should throw NotFoundException if conversation not found', async () => {
-      const mockRequest = {
-        user: { uid: 'user-123' },
-      } as any;
-
-      mockConversationsService.findOne.mockResolvedValue(null);
-
-      await expect(controller.findOne('non-existent', mockRequest)).rejects.toThrow(
-        NotFoundException,
-      );
-      await expect(controller.findOne('non-existent', mockRequest)).rejects.toThrow(
-        'Conversation with uid non-existent not found',
-      );
-    });
-
     it('should pass user uid from request to service', async () => {
       const mockRequest = {
         user: { uid: 'user-789' },
       } as any;
 
-      mockConversationsService.findOne.mockResolvedValue({ uid: 'conv-456' });
+      const mockConversationResponse = {
+        imageUrl: null,
+        lastMessageAt: new Date(),
+        messages: [],
+        name: 'Test Conv',
+        sender: null,
+        sessionUid: null,
+        type: ConversationType.PRIVATE,
+        uid: 'conv-456',
+      };
+
+      mockConversationsService.findOne.mockResolvedValue(mockConversationResponse);
 
       await controller.findOne('conv-456', mockRequest);
 
       expect(mockConversationsService.findOne).toHaveBeenCalledWith('conv-456', 'user-789');
-    });
-  });
-
-  describe('createMockConversation', () => {
-    it('should create mock conversations for authenticated user', async () => {
-      const mockRequest = {
-        user: { uid: 'user-123' },
-      } as any;
-
-      mockConversationsService.createMockConversation.mockResolvedValue(undefined);
-
-      await controller.createMockConversation(mockRequest);
-
-      expect(mockConversationsService.createMockConversation).toHaveBeenCalledWith('user-123');
-    });
-
-    it('should extract user uid from request', async () => {
-      const mockRequest = {
-        user: { uid: 'user-999' },
-      } as any;
-
-      mockConversationsService.createMockConversation.mockResolvedValue(undefined);
-
-      await controller.createMockConversation(mockRequest);
-
-      expect(mockConversationsService.createMockConversation).toHaveBeenCalledWith('user-999');
     });
   });
 

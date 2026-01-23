@@ -63,6 +63,7 @@ model Sessions {
   sessionImages      SessionImages[]
   sessionTeams       SessionTeams[]
   sessionPlayers     SessionPlayers[]
+  conversation       Conversations?
 
   @@index([fieldUid, startDate, endDate])
   @@schema("sessions")
