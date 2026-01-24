@@ -1,10 +1,11 @@
+import { FastifyRequest } from 'fastify';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
-import { Controller, Get, NotFoundException, Param, UseGuards } from '@nestjs/common';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { Controller, Get, NotFoundException, Param, Req, UseGuards } from '@nestjs/common';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   ApiBadRequestResponse,
@@ -39,8 +40,10 @@ export class SessionTeamsController {
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   async findTeamsBySessionUid(
     @Param('sessionUid') sessionUid: string,
+    @Req() request: FastifyRequest,
   ): Promise<PaginationResponseTypeDto<SessionTeamResponseData>> {
-    const teams = await this.sessionsService.findTeamsBySessionUid(sessionUid);
+    const userUid = request['user'].uid;
+    const teams = await this.sessionsService.findTeamsBySessionUid(sessionUid, userUid);
 
     if (teams.items.length === 0) {
       throw new NotFoundException('No teams found for session');

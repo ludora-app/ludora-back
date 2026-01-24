@@ -695,6 +695,13 @@ export class SessionsService {
   async findOne(uid: string, userUid?: string | undefined): Promise<FindOneSessionResponseData> {
     const session: Omit<RawSessionFindOneItem, 'isJoined'> = await this.prisma.sessions.findUnique({
       select: {
+        creator: {
+          select: {
+            firstname: true,
+            imageUrl: true,
+            lastname: true,
+          },
+        },
         creatorUid: true,
         description: true,
         endDate: true,
@@ -738,10 +745,15 @@ export class SessionsService {
       throw new NotFoundException('Session not found');
     }
     const existingPlayer = await this.playersService.findOne(uid, userUid);
+
     let isJoined = false;
     if (existingPlayer) {
       isJoined = true;
     }
+
+    const creatorSessionsCount = await this.prisma.sessions.count({
+      where: { creatorUid: session.creatorUid },
+    });
 
     const unlockedFieldImages = await Promise.all(
       session.field.fieldImages.map(async (image) => ({
@@ -751,7 +763,71 @@ export class SessionsService {
     );
 
     session.field.fieldImages = unlockedFieldImages;
-    return SessionMapper.toFindOneDto({ ...session, isJoined: isJoined });
+
+    if (session.creator && session.creator.imageUrl) {
+      session.creator.imageUrl = await this.storageService.getSignedUrl(
+        StorageFolderName.USERS,
+        session.creator.imageUrl,
+      );
+    }
+
+    // Add isJoined flag to each team and process signed URLs for player images
+    const teamsWithIsJoinedAndSignedUrls = await Promise.all(
+      session.sessionTeams.map(async (team) => {
+        // Process signed URLs for player images
+        const playersWithSignedUrls = await Promise.all(
+          team.sessionPlayers.map(async (player) => ({
+            ...player,
+            user: {
+              ...player.user,
+              imageUrl: player.user.imageUrl
+                ? await this.storageService.getSignedUrl(
+                    StorageFolderName.USERS,
+                    player.user.imageUrl,
+                  )
+                : null,
+            },
+          })),
+        );
+
+        // Reorder players: if current user is in the team, move them to index 0
+        const currentPlayerIndex = playersWithSignedUrls.findIndex(
+          (player) => player.userUid === userUid,
+        );
+
+        let orderedPlayers = playersWithSignedUrls;
+        if (currentPlayerIndex !== -1) {
+          const otherPlayers = playersWithSignedUrls
+            .filter((_, index) => index !== currentPlayerIndex)
+            .slice(0, 2);
+          orderedPlayers = [playersWithSignedUrls[currentPlayerIndex], ...otherPlayers];
+        } else {
+          orderedPlayers = playersWithSignedUrls.slice(0, 3);
+        }
+
+        return {
+          ...team,
+          isJoined: currentPlayerIndex !== -1,
+          sessionPlayers: orderedPlayers,
+        };
+      }),
+    );
+
+    // Calculate remaining players
+    const totalPlayersInSession = teamsWithIsJoinedAndSignedUrls.reduce(
+      (sum, team) => sum + team.sessionPlayers.length,
+      0,
+    );
+    const totalAvailableSpots = session.maxPlayersPerTeam * session.sessionTeams.length;
+    const remainingPlayers = Math.max(0, totalAvailableSpots - totalPlayersInSession);
+
+    return SessionMapper.toFindOneDto({
+      ...session,
+      creatorSessionsCount,
+      isJoined: isJoined,
+      remainingPlayers,
+      sessionTeams: teamsWithIsJoinedAndSignedUrls,
+    });
   }
 
   /**
@@ -910,6 +986,7 @@ export class SessionsService {
 
   async findTeamsBySessionUid(
     sessionUid: string,
+    userUid: string,
   ): Promise<PaginatedDataDto<SessionTeamResponseData>> {
     const existingSession = await this.findOne(sessionUid);
 
@@ -918,7 +995,7 @@ export class SessionsService {
       throw new NotFoundException(`Session ${sessionUid} not found`);
     }
 
-    return await this.teamsService.findTeamsBySessionUid(sessionUid);
+    return await this.teamsService.findTeamsBySessionUid(sessionUid, userUid);
   }
 
   // ============================================================================

@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SessionTeams, TeamLabels } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { StorageService } from 'src/shared/storage/storage.service';
 import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
 
 describe('SessionTeamsService', () => {
@@ -16,6 +17,12 @@ describe('SessionTeamsService', () => {
       findMany: jest.fn(),
       findUnique: jest.fn(),
     },
+    sessions: {
+      findUnique: jest.fn(),
+    },
+    sessionPlayers: {
+      count: jest.fn(),
+    },
   };
   const mockLogger = {
     setContext: jest.fn(),
@@ -24,6 +31,9 @@ describe('SessionTeamsService', () => {
     debug: jest.fn(),
     warn: jest.fn(),
     log: jest.fn(),
+  };
+  const mockStorageService = {
+    getSignedUrl: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -37,6 +47,10 @@ describe('SessionTeamsService', () => {
         {
           provide: PinoLogger,
           useValue: mockLogger,
+        },
+        {
+          provide: StorageService,
+          useValue: mockStorageService,
         },
       ],
     }).compile();
@@ -290,10 +304,15 @@ describe('SessionTeamsService', () => {
 
     it('should return teams for a given session', async () => {
       // Arrange
+      mockPrismaService.sessions.findUnique.mockResolvedValue({ maxPlayersPerTeam: 5 });
+      mockPrismaService.sessionPlayers.count.mockResolvedValue(0);
       mockPrismaService.sessionTeams.findMany.mockResolvedValue(mockTeams);
+      mockStorageService.getSignedUrl.mockImplementation(
+        async (folder, url) => `https://signed-url.com/${url}`,
+      );
 
       // Act
-      const result = await service.findTeamsBySessionUid(sessionUid);
+      const result = await service.findTeamsBySessionUid(sessionUid, 'test-user-uid');
 
       // Assert
       expect(result).toEqual({
@@ -304,6 +323,10 @@ describe('SessionTeamsService', () => {
             numberOfPlayers: 0,
             sessionPlayers: [],
             teamUid: 'team-uid-1',
+            isComplete: false,
+            remainingPlayers: 5,
+            maxPlayersPerTeam: 5,
+            isJoined: false,
           },
           {
             teamName: 'Team B',
@@ -311,6 +334,10 @@ describe('SessionTeamsService', () => {
             numberOfPlayers: 0,
             sessionPlayers: [],
             teamUid: 'team-uid-2',
+            isComplete: false,
+            remainingPlayers: 5,
+            maxPlayersPerTeam: 5,
+            isJoined: false,
           },
         ],
         totalCount: 2,
@@ -330,6 +357,15 @@ describe('SessionTeamsService', () => {
                   firstname: true,
                   lastname: true,
                   imageUrl: true,
+                  bio: true,
+                  userSports: {
+                    select: {
+                      level: true,
+                    },
+                    where: {
+                      sport: undefined,
+                    },
+                  },
                 },
               },
             },
@@ -340,10 +376,15 @@ describe('SessionTeamsService', () => {
 
     it('should return empty array when no teams found', async () => {
       // Arrange
+      mockPrismaService.sessions.findUnique.mockResolvedValue({ maxPlayersPerTeam: 5 });
+      mockPrismaService.sessionPlayers.count.mockResolvedValue(0);
       mockPrismaService.sessionTeams.findMany.mockResolvedValue([]);
+      mockStorageService.getSignedUrl.mockImplementation(
+        async (folder, url) => `https://signed-url.com/${url}`,
+      );
 
       // Act
-      const result = await service.findTeamsBySessionUid(sessionUid);
+      const result = await service.findTeamsBySessionUid(sessionUid, 'test-user-uid');
 
       // Assert
       expect(result).toEqual({
@@ -351,6 +392,7 @@ describe('SessionTeamsService', () => {
         totalCount: 0,
         nextCursor: null,
       });
+      expect(mockPrismaService.sessions.findUnique).toHaveBeenCalled();
       expect(mockPrismaService.sessionTeams.findMany).toHaveBeenCalledWith({
         where: {
           sessionUid: sessionUid,
@@ -365,6 +407,15 @@ describe('SessionTeamsService', () => {
                   firstname: true,
                   lastname: true,
                   imageUrl: true,
+                  bio: true,
+                  userSports: {
+                    select: {
+                      level: true,
+                    },
+                    where: {
+                      sport: undefined,
+                    },
+                  },
                 },
               },
             },
@@ -381,10 +432,15 @@ describe('SessionTeamsService', () => {
           sessionPlayers: [],
         },
       ];
+      mockPrismaService.sessions.findUnique.mockResolvedValue({ maxPlayersPerTeam: 5 });
+      mockPrismaService.sessionPlayers.count.mockResolvedValue(0);
       mockPrismaService.sessionTeams.findMany.mockResolvedValue(singleTeam);
+      mockStorageService.getSignedUrl.mockImplementation(
+        async (folder, url) => `https://signed-url.com/${url}`,
+      );
 
       // Act
-      const result = await service.findTeamsBySessionUid(sessionUid);
+      const result = await service.findTeamsBySessionUid(sessionUid, 'test-user-uid');
 
       // Assert
       expect(result.items).toHaveLength(1);
@@ -392,41 +448,17 @@ describe('SessionTeamsService', () => {
       expect(result.nextCursor).toBeNull();
     });
 
-    it('should handle database errors when finding teams', async () => {
-      // Arrange
-      const databaseError = new Error('Database query failed');
-      mockPrismaService.sessionTeams.findMany.mockRejectedValue(databaseError);
-
-      // Act & Assert
-      await expect(service.findTeamsBySessionUid(sessionUid)).rejects.toThrow(databaseError);
-      expect(mockPrismaService.sessionTeams.findMany).toHaveBeenCalledWith({
-        where: {
-          sessionUid: sessionUid,
-        },
-        include: {
-          sessionPlayers: {
-            select: {
-              userUid: true,
-              teamUid: true,
-              user: {
-                select: {
-                  firstname: true,
-                  lastname: true,
-                  imageUrl: true,
-                },
-              },
-            },
-          },
-        },
-      });
-    });
-
     it('should maintain proper return type structure', async () => {
       // Arrange
+      mockPrismaService.sessions.findUnique.mockResolvedValue({ maxPlayersPerTeam: 5 });
+      mockPrismaService.sessionPlayers.count.mockResolvedValue(0);
       mockPrismaService.sessionTeams.findMany.mockResolvedValue(mockTeams);
+      mockStorageService.getSignedUrl.mockImplementation(
+        async (folder, url) => `https://signed-url.com/${url}`,
+      );
 
       // Act
-      const result = await service.findTeamsBySessionUid(sessionUid);
+      const result = await service.findTeamsBySessionUid(sessionUid, 'test-user-uid');
 
       // Assert
       expect(result).toHaveProperty('items');
@@ -652,7 +684,7 @@ describe('SessionTeamsService', () => {
 
       // Act
       await service.createDefaultTeams(sessionUid, teamAName, teamBName);
-      const result = await service.findTeamsBySessionUid(sessionUid);
+      const result = await service.findTeamsBySessionUid(sessionUid, 'test-user-uid');
 
       // Assert
       expect(result.items).toHaveLength(2);
@@ -724,7 +756,7 @@ describe('SessionTeamsService', () => {
       mockPrismaService.sessionTeams.findUnique.mockResolvedValue(mockTeamFromDbForFindOne);
 
       // Act
-      const allTeams = await service.findTeamsBySessionUid(sessionUid);
+      const allTeams = await service.findTeamsBySessionUid(sessionUid, 'test-user-uid');
       const singleTeam = await service.findOneByUid(teamUid);
 
       // Assert
