@@ -358,6 +358,14 @@ describe('SessionTeamsService', () => {
                   lastname: true,
                   imageUrl: true,
                   bio: true,
+                  userSports: {
+                    select: {
+                      level: true,
+                    },
+                    where: {
+                      sport: undefined,
+                    },
+                  },
                 },
               },
             },
@@ -400,6 +408,14 @@ describe('SessionTeamsService', () => {
                   lastname: true,
                   imageUrl: true,
                   bio: true,
+                  userSports: {
+                    select: {
+                      level: true,
+                    },
+                    where: {
+                      sport: undefined,
+                    },
+                  },
                 },
               },
             },

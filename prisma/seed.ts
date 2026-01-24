@@ -5,6 +5,8 @@ import {
   PrismaClient,
   Sex,
   TeamLabels,
+  TimePeriod,
+  UserHourPreferenceType,
   UserType,
   VerificationStatus,
 } from '../generated/prisma/client';
@@ -1358,6 +1360,76 @@ async function seed() {
     createdUsers.push({ uid: createdUser.uid });
     console.log(`Created user: ${user.email}`);
   }
+
+  // Create UserSports (sport levels for each user)
+  console.log('Creating user sport levels...');
+  const createdUserSports = [];
+
+  for (const user of createdUsers) {
+    // Each user gets 1-3 random sports with levels
+    const numSports = Math.floor(Math.random() * 3) + 1; // 1 to 3 sports
+    const userSportsList = [...createdSports]
+      .sort(() => Math.random() - 0.5) // Shuffle
+      .slice(0, numSports); // Take random sports
+
+    for (const sport of userSportsList) {
+      // Assign a random level between 1 and 3
+      const level = Math.floor(Math.random() * 3) + 1;
+
+      try {
+        const userSport = await prisma.userSports.upsert({
+          where: {
+            userUid_sport: {
+              userUid: user.uid,
+              sport: sport.name,
+            },
+          },
+          update: {},
+          create: {
+            userUid: user.uid,
+            sport: sport.name,
+            level: level,
+          },
+        });
+        createdUserSports.push(userSport);
+      } catch (e) {
+        // Skip if duplicate
+      }
+    }
+  }
+
+  console.log(`${createdUserSports.length} user sport levels created`);
+
+  // Create UserHourPreferences (time preferences for each user)
+  console.log('Creating user hour preferences...');
+  const createdUserHourPreferences = [];
+
+  for (const user of createdUsers) {
+    // Each user gets 2-5 random time preferences
+    const numPreferences = Math.floor(Math.random() * 4) + 2; // 2 to 5 preferences
+
+    for (let i = 0; i < numPreferences; i++) {
+      const dayOfWeek = Math.floor(Math.random() * 7); // 0-6 (Monday-Sunday)
+      const timePeriods = ['MORNING', 'AFTERNOON', 'EVENING'];
+      const timePeriod = timePeriods[Math.floor(Math.random() * timePeriods.length)];
+
+      try {
+        const userHourPreference = await prisma.userHourPreferences.create({
+          data: {
+            userUid: user.uid,
+            type: UserHourPreferenceType.RECURRENT,
+            dayOfWeek: dayOfWeek,
+            timePeriod: timePeriod as TimePeriod,
+          },
+        });
+        createdUserHourPreferences.push(userHourPreference);
+      } catch (e) {
+        // Skip if duplicate or error
+      }
+    }
+  }
+
+  console.log(`${createdUserHourPreferences.length} user hour preferences created`);
 
   // Helper function to get appropriate gameModes based on sport
   const getGameModesForSport = (sport: string): GameModes[] => {

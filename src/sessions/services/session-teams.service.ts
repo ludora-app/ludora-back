@@ -57,6 +57,7 @@ export class SessionTeamsService {
     const session = await this.prisma.sessions.findUnique({
       select: {
         maxPlayersPerTeam: true,
+        sport: true,
       },
       where: { uid: sessionUid },
     });
@@ -72,6 +73,14 @@ export class SessionTeamsService {
                 firstname: true,
                 imageUrl: true,
                 lastname: true,
+                userSports: {
+                  select: {
+                    level: true,
+                  },
+                  where: {
+                    sport: session?.sport,
+                  },
+                },
               },
             },
             userUid: true,
@@ -83,20 +92,6 @@ export class SessionTeamsService {
       },
     })) as (SessionTeams & Partial<SessionTeamWithPlayers>)[];
 
-    // Get sessions count for each player
-    const playerSessionsCounts = new Map<string, number>();
-    for (const team of teams) {
-      const sessionPlayers = Array.isArray(team.sessionPlayers) ? team.sessionPlayers : [];
-      for (const player of sessionPlayers) {
-        if (!playerSessionsCounts.has(player.userUid)) {
-          const count = await this.prisma.sessionPlayers.count({
-            where: { userUid: player.userUid },
-          });
-          playerSessionsCounts.set(player.userUid, count);
-        }
-      }
-    }
-
     // Process signed URLs for player images and add isJoined flag
     const teamsWithSignedUrls = await Promise.all(
       teams.map(async (team) => {
@@ -107,7 +102,7 @@ export class SessionTeamsService {
           sessionPlayers: await Promise.all(
             sessionPlayers.map(async (player) => ({
               ...player,
-              sessionsCount: playerSessionsCounts.get(player.userUid),
+              sportLevel: player.user.userSports?.[0]?.level ?? null,
               user: {
                 ...player.user,
                 imageUrl: player.user.imageUrl

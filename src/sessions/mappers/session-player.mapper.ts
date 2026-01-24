@@ -11,8 +11,9 @@ export type RawPlayer = {
     lastname: string;
     imageUrl: string | null;
     bio?: string | null;
+    userSports?: { level: number }[];
   };
-  sessionsCount?: number;
+  sportLevel?: number | null;
 };
 
 export class SessionPlayerMapper {
@@ -22,7 +23,7 @@ export class SessionPlayerMapper {
       firstname: player.user.firstname,
       imageUrl: player.user.imageUrl,
       lastname: player.user.lastname,
-      sessionsCount: player.sessionsCount,
+      sportLevel: player.sportLevel,
       teamUid: player.teamUid,
       userUid: player.userUid,
     };

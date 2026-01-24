@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { TeamLabels } from 'generated/prisma/client';
+import { SessionSportLevel } from 'src/shared/constants/constants';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
@@ -7,19 +8,41 @@ import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-re
  * @description session player object created by mixing the Session_players and Users table
  */
 export class FlattenedSessionPlayer {
-  @ApiProperty({ example: 'cmgoxfs3t002hob8arwdna80g', readOnly: true })
+  @ApiProperty({
+    description: 'User unique identifier',
+    example: 'cmgoxfs3t002hob8arwdna80g',
+    readOnly: true,
+  })
   readonly userUid: string;
 
-  @ApiProperty({ example: 'cmgoxfs47002zob8a42uq1u8z', readOnly: true })
+  @ApiProperty({
+    description: 'Team unique identifier',
+    example: 'cmgoxfs47002zob8a42uq1u8z',
+    readOnly: true,
+  })
   readonly teamUid: string;
 
-  @ApiProperty({ example: 'Seto', readOnly: true })
+  @ApiProperty({
+    description: 'User first name',
+    example: 'Seto',
+    readOnly: true,
+  })
   readonly firstname: string;
 
-  @ApiProperty({ example: 'Kaiba', readOnly: true })
+  @ApiProperty({
+    description: 'User last name',
+    example: 'Kaiba',
+    readOnly: true,
+  })
   readonly lastname: string;
 
-  @ApiProperty({ example: '1738433236109explore2.png', readOnly: true })
+  @ApiProperty({
+    description: 'User image URL',
+    example: '1738433236109explore2.png',
+    nullable: true,
+    readOnly: true,
+    required: false,
+  })
   readonly imageUrl: string | null;
 
   @ApiProperty({
@@ -32,26 +55,41 @@ export class FlattenedSessionPlayer {
   readonly bio?: string | null;
 
   @ApiProperty({
-    description: 'Number of sessions the user has played',
-    example: 12,
+    description: 'User sport level for this session sport (1-3)',
+    enum: SessionSportLevel,
+    example: SessionSportLevel.BEGINNER,
+    nullable: true,
     readOnly: true,
     required: false,
   })
-  readonly sessionsCount?: number;
+  readonly sportLevel?: SessionSportLevel;
 }
 
 export class SessionTeamResponseData {
-  @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
+  @ApiProperty({
+    description: 'Team unique identifier',
+    example: 'cm7hvgonx0000to0mh5maqajc',
+    readOnly: true,
+  })
   readonly teamUid?: string;
 
-  @ApiProperty({ example: 'Team A', readOnly: true })
+  @ApiProperty({
+    description: 'Team name',
+    example: 'Team A',
+    readOnly: true,
+  })
   readonly teamName: string;
 
-  @ApiProperty({ example: TeamLabels.A, readOnly: true })
+  @ApiProperty({
+    description: 'Team label',
+    enum: TeamLabels,
+    example: TeamLabels.A,
+    readOnly: true,
+  })
   readonly teamLabel: TeamLabels;
 
   @ApiProperty({
-    description: 'Session update date',
+    description: 'Team update date',
     example: '2025-05-10T22:30:32.525Z',
     readOnly: true,
     required: false,
@@ -59,7 +97,7 @@ export class SessionTeamResponseData {
   readonly updatedAt?: Date;
 
   @ApiProperty({
-    description: 'Session creation date',
+    description: 'Team creation date',
     example: '2025-05-10T22:30:32.525Z',
     readOnly: true,
     required: false,
