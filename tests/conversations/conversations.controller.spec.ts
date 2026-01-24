@@ -186,68 +186,62 @@ describe('ConversationsController', () => {
       user: { uid: 'user-123' },
     } as any;
 
-    const conversationUid = 'conv-123';
-    const content = 'Hello, this is a test message';
-
     it('should create a text message successfully', async () => {
       const dto = {
-        content,
+        content: 'Hello, this is a test message',
+        conversationUid: 'conv-123',
         type: MessageType.TEXT,
       };
       const files: any[] = [];
 
       mockConversationsService.createMessage.mockResolvedValue(undefined);
 
-      await controller.createMessage(mockRequest, dto, conversationUid, files);
+      await controller.createMessage(mockRequest, dto, files);
 
       expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
         'user-123',
-        content,
-        conversationUid,
-        MessageType.TEXT,
+        dto,
         undefined,
       );
     });
 
     it('should create a media message with file', async () => {
       const dto = {
+        conversationUid: 'conv-123',
         type: MessageType.IMAGE,
       };
       const mockFile = {
         buffer: Buffer.from('fake-image-data'),
-        originalname: 'test-image.jpg',
         mimetype: 'image/jpeg',
+        originalname: 'test-image.jpg',
       };
       const files = [mockFile];
 
       mockConversationsService.createMessage.mockResolvedValue(undefined);
 
-      await controller.createMessage(mockRequest, dto, conversationUid, files);
+      await controller.createMessage(mockRequest, dto, files);
 
       expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
         'user-123',
-        undefined,
-        conversationUid,
-        MessageType.IMAGE,
+        dto,
         mockFile,
       );
     });
 
     it('should handle empty files array for media message', async () => {
       const dto = {
+        conversationUid: 'conv-123',
         type: MessageType.IMAGE,
       };
       const files: any[] = [];
 
       mockConversationsService.createMessage.mockResolvedValue(undefined);
 
-      await controller.createMessage(mockRequest, dto, conversationUid, files);
+      await controller.createMessage(mockRequest, dto, files);
 
       expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
         'user-123',
-        undefined,
-        conversationUid,
-        MessageType.IMAGE,
+        dto,
         undefined,
       );
     });
@@ -258,49 +252,48 @@ describe('ConversationsController', () => {
       } as any;
       const dto = {
         content: 'Test message',
+        conversationUid: 'conv-123',
         type: MessageType.TEXT,
       };
       const files: any[] = [];
 
       mockConversationsService.createMessage.mockResolvedValue(undefined);
 
-      await controller.createMessage(differentUserRequest, dto, conversationUid, files);
+      await controller.createMessage(differentUserRequest, dto, files);
 
       expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
         'user-456',
-        'Test message',
-        conversationUid,
-        MessageType.TEXT,
+        dto,
         undefined,
       );
     });
 
     it('should handle video message type', async () => {
       const dto = {
+        conversationUid: 'conv-123',
         type: MessageType.VIDEO,
       };
       const mockFile = {
         buffer: Buffer.from('fake-video-data'),
-        originalname: 'test-video.mp4',
         mimetype: 'video/mp4',
+        originalname: 'test-video.mp4',
       };
       const files = [mockFile];
 
       mockConversationsService.createMessage.mockResolvedValue(undefined);
 
-      await controller.createMessage(mockRequest, dto, conversationUid, files);
+      await controller.createMessage(mockRequest, dto, files);
 
       expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
         'user-123',
-        undefined,
-        conversationUid,
-        MessageType.VIDEO,
+        dto,
         mockFile,
       );
     });
 
     it('should use first file when multiple files are provided', async () => {
       const dto = {
+        conversationUid: 'conv-123',
         type: MessageType.IMAGE,
       };
       const mockFile1 = {
@@ -315,14 +308,73 @@ describe('ConversationsController', () => {
 
       mockConversationsService.createMessage.mockResolvedValue(undefined);
 
-      await controller.createMessage(mockRequest, dto, conversationUid, files);
+      await controller.createMessage(mockRequest, dto, files);
 
       expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
         'user-123',
-        undefined,
-        conversationUid,
-        MessageType.IMAGE,
+        dto,
         mockFile1,
+      );
+    });
+
+    it('should handle session message with sessionUid', async () => {
+      const dto = {
+        content: 'Session message',
+        sessionUid: 'session-456',
+        type: MessageType.TEXT,
+      };
+      const files: any[] = [];
+
+      mockConversationsService.createMessage.mockResolvedValue(undefined);
+
+      await controller.createMessage(mockRequest, dto, files);
+
+      expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
+        'user-123',
+        dto,
+        undefined,
+      );
+    });
+
+    it('should handle private message with recipientUid', async () => {
+      const dto = {
+        content: 'Private message',
+        recipientUid: 'user-789',
+        type: MessageType.TEXT,
+      };
+      const files: any[] = [];
+
+      mockConversationsService.createMessage.mockResolvedValue(undefined);
+
+      await controller.createMessage(mockRequest, dto, files);
+
+      expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
+        'user-123',
+        dto,
+        undefined,
+      );
+    });
+
+    it('should handle audio message type', async () => {
+      const dto = {
+        conversationUid: 'conv-123',
+        type: MessageType.AUDIO,
+      };
+      const mockFile = {
+        buffer: Buffer.from('fake-audio-data'),
+        mimetype: 'audio/mpeg',
+        originalname: 'test-audio.mp3',
+      };
+      const files = [mockFile];
+
+      mockConversationsService.createMessage.mockResolvedValue(undefined);
+
+      await controller.createMessage(mockRequest, dto, files);
+
+      expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
+        'user-123',
+        dto,
+        mockFile,
       );
     });
   });

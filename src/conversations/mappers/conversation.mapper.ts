@@ -94,7 +94,7 @@ export class ConversationMapper {
 
     return {
       imageUrl: signedImageUrl,
-      lastMessage: firstMessage ? this.toLastMessageDto(firstMessage) : null,
+      lastMessage: firstMessage ? await this.toLastMessageDto(firstMessage, storageService) : null,
       lastMessageAt: conversation.lastMessageAt,
       name:
         conversation.type === ConversationType.PRIVATE && otherUser
@@ -107,12 +107,17 @@ export class ConversationMapper {
     };
   }
 
-  static toFindOneDto(conversation: RawFindOneConversation): FindOneConversationResponseData {
+  static async toFindOneDto(
+    conversation: RawFindOneConversation,
+    storageService: StorageService,
+  ): Promise<FindOneConversationResponseData> {
     const otherUser = conversation.conversationMembers?.[0]?.user;
     return {
       imageUrl: conversation.session?.sessionImages?.[0]?.url || null,
       lastMessageAt: conversation.lastMessageAt,
-      messages: conversation.messages.map((message) => this.toLastMessageDto(message)),
+      messages: await Promise.all(
+        conversation.messages.map((message) => this.toLastMessageDto(message, storageService)),
+      ),
       name:
         conversation.type === ConversationType.PRIVATE && otherUser
           ? `${otherUser.firstname} ${otherUser.lastname}`
@@ -124,9 +129,15 @@ export class ConversationMapper {
     };
   }
 
-  private static toLastMessageDto(message: RawMessage): MessageDto {
+  private static async toLastMessageDto(
+    message: RawMessage,
+    storageService: StorageService,
+  ): Promise<MessageDto> {
     return {
-      content: message.content,
+      content:
+        message.type !== MessageType.TEXT
+          ? await storageService.getSignedUrl(StorageFolderName.CONVERSATIONS, message.content)
+          : message.content,
       createdAt: message.createdAt,
       globalStatus: message.globalStatus,
       type: message.type,

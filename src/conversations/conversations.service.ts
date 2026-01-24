@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 
 import { MessagesService } from './messages.service';
+import { CreateMessageDto } from './dto/input/create-message.dto';
 import { ConversationMapper } from './mappers/conversation.mapper';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
 import { CreateSessionConversationDto } from './dto/input/create-session-conversation.dto';
@@ -72,7 +73,7 @@ export class ConversationsService {
   }
 
   /**
-   * @description Method called when a friend invitation is accepted, the conversation is created automatically.
+   * @description Method called automatically when a new message is created between two users that don't have a conversation yet.
    * @param createPrivateConversationDto - The DTO containing conversation data
    * @param tx - Optional Prisma transaction client for atomic operations
    * @returns void
@@ -80,7 +81,7 @@ export class ConversationsService {
   async createPrivateConversation(
     createPrivateConversationDto: CreatePrivateConversationDto,
     tx?: Prisma.TransactionClient,
-  ): Promise<void> {
+  ): Promise<{ uid: string }> {
     const prismaClient = tx ?? this.prisma;
 
     const newConversation = await prismaClient.conversations.create({
@@ -97,6 +98,8 @@ export class ConversationsService {
       })),
     });
     this.logger.debug(`Conversation members created`);
+
+    return { uid: newConversation.uid };
   }
 
   async findAllByUserUid(
@@ -345,31 +348,80 @@ export class ConversationsService {
       throw new ForbiddenException(`User with uid ${userUid} is not a member of this conversation`);
     }
 
-    const conversation = ConversationMapper.toFindOneDto(existingConversation);
+    const conversation = await ConversationMapper.toFindOneDto(
+      existingConversation,
+      this.storageService,
+    );
 
     return conversation;
   }
 
-  async createMessage(
-    userUid: string,
-    content: string,
-    conversationUid: string,
-    type: MessageType,
-    file?: any,
-  ): Promise<void> {
-    const existingConversation = await this.findOne(conversationUid, userUid);
+  async createMessage(userUid: string, dto: CreateMessageDto, file?: any): Promise<void> {
+    const { content, conversationUid, recipientUid, type } = dto;
+    // const existingConversation = await this.findOne(conversationUid, userUid);
 
-    const sessionUid = existingConversation.sessionUid ?? null;
+    //? handle the session conversation case
+    let sessionConversation;
+    if (dto.sessionUid) {
+      sessionConversation = await this.prisma.conversations.findUnique({
+        where: {
+          sessionUid: dto.sessionUid,
+          type: ConversationType.SESSION,
+        },
+      });
+      if (!sessionConversation) {
+        this.logger.error(`Session conversation with uid ${dto.sessionUid} not found`);
+        throw new NotFoundException(`Session conversation not found`);
+      }
+    }
+
+    //? handle the private conversation case
+    let privateConversation;
+    if (recipientUid) {
+      privateConversation = await this.prisma.conversations.findFirst({
+        where: {
+          AND: [
+            {
+              conversationMembers: {
+                some: {
+                  userUid: userUid,
+                },
+              },
+            },
+            {
+              conversationMembers: {
+                some: {
+                  userUid: recipientUid,
+                },
+              },
+            },
+          ],
+          type: ConversationType.PRIVATE,
+        },
+      });
+      if (!privateConversation) {
+        this.logger.debug(`Private conversation not found, creating a new one`);
+        privateConversation = await this.createPrivateConversation({
+          type: ConversationType.PRIVATE,
+          userUids: [userUid, recipientUid],
+        });
+      }
+    }
 
     if (type === MessageType.TEXT) {
-      return this.messagesService.createTextMessage(userUid, content, conversationUid, sessionUid);
+      return this.messagesService.createTextMessage(
+        userUid,
+        content,
+        privateConversation?.uid ?? conversationUid,
+        sessionConversation?.uid ?? null,
+      );
     } else {
       return this.messagesService.createMediaMessage(
         userUid,
-        conversationUid,
+        privateConversation?.uid ?? conversationUid,
         type,
         file,
-        sessionUid,
+        sessionConversation?.uid ?? null,
       );
     }
   }

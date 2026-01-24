@@ -46,7 +46,7 @@ export class ConversationsController {
   constructor(private readonly conversationsService: ConversationsService) {}
 
   // @Post()
-  // create(@Body() createConversationDto: CreateConversationDto) {
+  // create(@Body() createConversationDto: CreatePrivateConversationDto) {
   //   return this.conversationsService.create(createConversationDto);
   // }
 
@@ -91,20 +91,18 @@ export class ConversationsController {
     };
   }
 
-  @Post(':conversationUid/messages')
+  @Post()
   @Protected()
   @UseInterceptors(new FastifyFilesInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   async createMessage(
     @Req() request: Request,
     @Body() dto: CreateMessageDto,
-    @Param('conversationUid') conversationUid: string,
     @UploadedFilesCustom() files: { buffer: Buffer; originalname: string }[],
   ) {
     const userUid = request['user'].uid;
-    const { content, type } = dto;
     const file = files && files.length > 0 ? files[0] : undefined;
-    return this.conversationsService.createMessage(userUid, content, conversationUid, type, file);
+    return this.conversationsService.createMessage(userUid, dto, file);
   }
 
   // @Patch(':id')

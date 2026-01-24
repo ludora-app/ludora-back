@@ -34,6 +34,7 @@ describe('ConversationsService', () => {
       },
       conversations: {
         create: jest.fn(),
+        findFirst: jest.fn(),
         findMany: jest.fn(),
         findUnique: jest.fn(),
       },
@@ -625,7 +626,7 @@ describe('ConversationsService', () => {
     };
 
     beforeEach(() => {
-      jest.spyOn(ConversationMapper, 'toFindOneDto').mockReturnValue(mockMappedConversation);
+      jest.spyOn(ConversationMapper, 'toFindOneDto').mockResolvedValue(mockMappedConversation);
     });
 
     it('should return a mapped conversation if user is a member', async () => {
@@ -685,7 +686,10 @@ describe('ConversationsService', () => {
           uid: 'conv-123',
         },
       });
-      expect(ConversationMapper.toFindOneDto).toHaveBeenCalledWith(mockRawConversation);
+      expect(ConversationMapper.toFindOneDto).toHaveBeenCalledWith(
+        mockRawConversation,
+        mockStorageService,
+      );
     });
 
     it('should throw NotFoundException if conversation does not exist', async () => {
@@ -777,133 +781,296 @@ describe('ConversationsService', () => {
     const conversationUid = 'conv-123';
     const content = 'Hello, this is a test message';
 
-    const mockMappedConversation = {
-      imageUrl: null,
-      lastMessageAt: new Date(),
-      messages: [],
-      name: 'Test Conversation',
-      sender: null,
-      sessionUid: null,
-      type: ConversationType.PRIVATE,
-      uid: conversationUid,
-    };
+    describe('Session Conversation Messages', () => {
+      it('should create a text message in a session conversation', async () => {
+        const sessionUid = 'session-456';
+        const dto = {
+          content,
+          sessionUid,
+          type: MessageType.TEXT,
+        };
+        const mockSessionConversation = {
+          sessionUid,
+          type: ConversationType.SESSION,
+          uid: 'session-conv-123',
+        };
 
-    beforeEach(() => {
-      jest.spyOn(service, 'findOne').mockResolvedValue(mockMappedConversation);
-    });
+        mockPrismaService.conversations.findUnique.mockResolvedValue(mockSessionConversation);
+        mockMessagesService.createTextMessage.mockResolvedValue(undefined);
 
-    it('should create a text message when type is TEXT', async () => {
-      mockMessagesService.createTextMessage.mockResolvedValue(undefined);
+        await service.createMessage(userUid, dto);
 
-      await service.createMessage(userUid, content, conversationUid, MessageType.TEXT);
-
-      expect(service.findOne).toHaveBeenCalledWith(conversationUid, userUid);
-      expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
-        userUid,
-        content,
-        conversationUid,
-        null,
-      );
-      expect(mockMessagesService.createMediaMessage).not.toHaveBeenCalled();
-    });
-
-    it('should create a media message when type is IMAGE', async () => {
-      const mockFile = {
-        buffer: Buffer.from('fake-image-data'),
-        originalname: 'test-image.jpg',
-      };
-      mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
-
-      await service.createMessage(userUid, content, conversationUid, MessageType.IMAGE, mockFile);
-
-      expect(service.findOne).toHaveBeenCalledWith(conversationUid, userUid);
-      expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
-        userUid,
-        conversationUid,
-        MessageType.IMAGE,
-        mockFile,
-        null,
-      );
-      expect(mockMessagesService.createTextMessage).not.toHaveBeenCalled();
-    });
-
-    it('should create a media message when type is VIDEO', async () => {
-      const mockFile = {
-        buffer: Buffer.from('fake-video-data'),
-        originalname: 'test-video.mp4',
-      };
-      mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
-
-      await service.createMessage(userUid, content, conversationUid, MessageType.VIDEO, mockFile);
-
-      expect(service.findOne).toHaveBeenCalledWith(conversationUid, userUid);
-      expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
-        userUid,
-        conversationUid,
-        MessageType.VIDEO,
-        mockFile,
-        null,
-      );
-    });
-
-    it('should pass sessionUid when conversation has a session', async () => {
-      const sessionUid = 'session-456';
-      const conversationWithSession = {
-        ...mockMappedConversation,
-        sessionUid,
-      };
-      jest.spyOn(service, 'findOne').mockResolvedValue(conversationWithSession);
-      mockMessagesService.createTextMessage.mockResolvedValue(undefined);
-
-      await service.createMessage(userUid, content, conversationUid, MessageType.TEXT);
-
-      expect(service.findOne).toHaveBeenCalledWith(conversationUid, userUid);
-      expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
-        userUid,
-        content,
-        conversationUid,
-        sessionUid,
-      );
-    });
-
-    it('should verify user is a member before creating message via findOne', async () => {
-      mockMessagesService.createTextMessage.mockResolvedValue(undefined);
-
-      await service.createMessage(userUid, content, conversationUid, MessageType.TEXT);
-
-      expect(service.findOne).toHaveBeenCalledWith(conversationUid, userUid);
-    });
-
-    it('should throw ForbiddenException if user is not a member', async () => {
-      jest
-        .spyOn(service, 'findOne')
-        .mockRejectedValue(
-          new ForbiddenException(`User with uid ${userUid} is not a member of this conversation`),
+        expect(mockPrismaService.conversations.findUnique).toHaveBeenCalledWith({
+          where: {
+            sessionUid,
+            type: ConversationType.SESSION,
+          },
+        });
+        expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
+          userUid,
+          content,
+          undefined,
+          'session-conv-123',
         );
+        expect(mockMessagesService.createMediaMessage).not.toHaveBeenCalled();
+      });
 
-      await expect(
-        service.createMessage(userUid, content, conversationUid, MessageType.TEXT),
-      ).rejects.toThrow(ForbiddenException);
-      await expect(
-        service.createMessage(userUid, content, conversationUid, MessageType.TEXT),
-      ).rejects.toThrow(`User with uid ${userUid} is not a member of this conversation`);
-      expect(mockMessagesService.createTextMessage).not.toHaveBeenCalled();
+      it('should create a media message in a session conversation', async () => {
+        const sessionUid = 'session-456';
+        const mockFile = {
+          buffer: Buffer.from('fake-image-data'),
+          originalname: 'test-image.jpg',
+        };
+        const dto = {
+          sessionUid,
+          type: MessageType.IMAGE,
+        };
+        const mockSessionConversation = {
+          sessionUid,
+          type: ConversationType.SESSION,
+          uid: 'session-conv-123',
+        };
+
+        mockPrismaService.conversations.findUnique.mockResolvedValue(mockSessionConversation);
+        mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
+
+        await service.createMessage(userUid, dto, mockFile);
+
+        expect(mockPrismaService.conversations.findUnique).toHaveBeenCalledWith({
+          where: {
+            sessionUid,
+            type: ConversationType.SESSION,
+          },
+        });
+        expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
+          userUid,
+          undefined,
+          MessageType.IMAGE,
+          mockFile,
+          'session-conv-123',
+        );
+        expect(mockMessagesService.createTextMessage).not.toHaveBeenCalled();
+      });
+
+      it('should throw NotFoundException when session conversation does not exist', async () => {
+        const sessionUid = 'session-456';
+        const dto = {
+          content,
+          sessionUid,
+          type: MessageType.TEXT,
+        };
+
+        mockPrismaService.conversations.findUnique.mockResolvedValue(null);
+
+        await expect(service.createMessage(userUid, dto)).rejects.toThrow(NotFoundException);
+        await expect(service.createMessage(userUid, dto)).rejects.toThrow(
+          'Session conversation not found',
+        );
+        expect(mockMessagesService.createTextMessage).not.toHaveBeenCalled();
+      });
     });
 
-    it('should throw NotFoundException if conversation does not exist', async () => {
-      jest
-        .spyOn(service, 'findOne')
-        .mockRejectedValue(
-          new NotFoundException(`Conversation with uid ${conversationUid} not found`),
-        );
+    describe('Private Conversation Messages', () => {
+      it('should create a text message in an existing private conversation', async () => {
+        const recipientUid = 'user-456';
+        const dto = {
+          content,
+          recipientUid,
+          type: MessageType.TEXT,
+        };
+        const mockPrivateConversation = {
+          type: ConversationType.PRIVATE,
+          uid: 'private-conv-123',
+        };
 
-      await expect(
-        service.createMessage(userUid, content, conversationUid, MessageType.TEXT),
-      ).rejects.toThrow(NotFoundException);
-      await expect(
-        service.createMessage(userUid, content, conversationUid, MessageType.TEXT),
-      ).rejects.toThrow(`Conversation with uid ${conversationUid} not found`);
-      expect(mockMessagesService.createTextMessage).not.toHaveBeenCalled();
+        mockPrismaService.conversations.findFirst.mockResolvedValue(mockPrivateConversation);
+        mockMessagesService.createTextMessage.mockResolvedValue(undefined);
+
+        await service.createMessage(userUid, dto);
+
+        expect(mockPrismaService.conversations.findFirst).toHaveBeenCalledWith({
+          where: {
+            AND: [
+              {
+                conversationMembers: {
+                  some: {
+                    userUid: userUid,
+                  },
+                },
+              },
+              {
+                conversationMembers: {
+                  some: {
+                    userUid: recipientUid,
+                  },
+                },
+              },
+            ],
+            type: ConversationType.PRIVATE,
+          },
+        });
+        expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
+          userUid,
+          content,
+          'private-conv-123',
+          null,
+        );
+      });
+
+      it('should create a new private conversation if it does not exist', async () => {
+        const recipientUid = 'user-456';
+        const dto = {
+          content,
+          recipientUid,
+          type: MessageType.TEXT,
+        };
+        const newPrivateConversation = {
+          uid: 'new-private-conv-123',
+        };
+
+        mockPrismaService.conversations.findFirst.mockResolvedValue(null);
+        jest.spyOn(service, 'createPrivateConversation').mockResolvedValue(newPrivateConversation);
+        mockMessagesService.createTextMessage.mockResolvedValue(undefined);
+
+        await service.createMessage(userUid, dto);
+
+        expect(mockPrismaService.conversations.findFirst).toHaveBeenCalled();
+        expect(service.createPrivateConversation).toHaveBeenCalledWith({
+          type: ConversationType.PRIVATE,
+          userUids: [userUid, recipientUid],
+        });
+        expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
+          userUid,
+          content,
+          'new-private-conv-123',
+          null,
+        );
+      });
+
+      it('should create a media message in a new private conversation', async () => {
+        const recipientUid = 'user-456';
+        const mockFile = {
+          buffer: Buffer.from('fake-video-data'),
+          originalname: 'test-video.mp4',
+        };
+        const dto = {
+          recipientUid,
+          type: MessageType.VIDEO,
+        };
+        const newPrivateConversation = {
+          uid: 'new-private-conv-456',
+        };
+
+        mockPrismaService.conversations.findFirst.mockResolvedValue(null);
+        jest.spyOn(service, 'createPrivateConversation').mockResolvedValue(newPrivateConversation);
+        mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
+
+        await service.createMessage(userUid, dto, mockFile);
+
+        expect(service.createPrivateConversation).toHaveBeenCalledWith({
+          type: ConversationType.PRIVATE,
+          userUids: [userUid, recipientUid],
+        });
+        expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
+          userUid,
+          'new-private-conv-456',
+          MessageType.VIDEO,
+          mockFile,
+          null,
+        );
+      });
+    });
+
+    describe('Regular Conversation Messages', () => {
+      it('should create a text message in a regular conversation', async () => {
+        const dto = {
+          content,
+          conversationUid,
+          type: MessageType.TEXT,
+        };
+
+        mockMessagesService.createTextMessage.mockResolvedValue(undefined);
+
+        await service.createMessage(userUid, dto);
+
+        expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
+          userUid,
+          content,
+          conversationUid,
+          null,
+        );
+        expect(mockMessagesService.createMediaMessage).not.toHaveBeenCalled();
+      });
+
+      it('should create a media message when type is IMAGE', async () => {
+        const mockFile = {
+          buffer: Buffer.from('fake-image-data'),
+          originalname: 'test-image.jpg',
+        };
+        const dto = {
+          conversationUid,
+          type: MessageType.IMAGE,
+        };
+
+        mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
+
+        await service.createMessage(userUid, dto, mockFile);
+
+        expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
+          userUid,
+          conversationUid,
+          MessageType.IMAGE,
+          mockFile,
+          null,
+        );
+        expect(mockMessagesService.createTextMessage).not.toHaveBeenCalled();
+      });
+
+      it('should create a media message when type is VIDEO', async () => {
+        const mockFile = {
+          buffer: Buffer.from('fake-video-data'),
+          originalname: 'test-video.mp4',
+        };
+        const dto = {
+          conversationUid,
+          type: MessageType.VIDEO,
+        };
+
+        mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
+
+        await service.createMessage(userUid, dto, mockFile);
+
+        expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
+          userUid,
+          conversationUid,
+          MessageType.VIDEO,
+          mockFile,
+          null,
+        );
+      });
+
+      it('should create a media message when type is AUDIO', async () => {
+        const mockFile = {
+          buffer: Buffer.from('fake-audio-data'),
+          originalname: 'test-audio.mp3',
+        };
+        const dto = {
+          conversationUid,
+          type: MessageType.AUDIO,
+        };
+
+        mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
+
+        await service.createMessage(userUid, dto, mockFile);
+
+        expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
+          userUid,
+          conversationUid,
+          MessageType.AUDIO,
+          mockFile,
+          null,
+        );
+      });
     });
   });
 });
