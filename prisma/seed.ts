@@ -5,6 +5,8 @@ import {
   PrismaClient,
   Sex,
   TeamLabels,
+  TimePeriod,
+  UserHourPreferenceType,
   UserType,
   VerificationStatus,
 } from '../generated/prisma/client';
@@ -1359,18 +1361,119 @@ async function seed() {
     console.log(`Created user: ${user.email}`);
   }
 
-  // Generate sessions with startTime and duration
-  const allGameModes = [
-    GameModes.TWO_V_TWO,
-    GameModes.THREE_V_THREE,
-    GameModes.FOUR_V_FOUR,
-    GameModes.FIVE_V_FIVE,
-    GameModes.SIX_V_SIX,
-    GameModes.SEVEN_V_SEVEN,
-    GameModes.EIGHT_V_EIGHT,
-    GameModes.TEN_V_TEN,
-    GameModes.ELEVEN_V_ELEVEN,
-  ];
+  // Create UserSports (sport levels for each user)
+  console.log('Creating user sport levels...');
+  const createdUserSports = [];
+
+  for (const user of createdUsers) {
+    // Each user gets 1-3 random sports with levels
+    const numSports = Math.floor(Math.random() * 3) + 1; // 1 to 3 sports
+    const userSportsList = [...createdSports]
+      .sort(() => Math.random() - 0.5) // Shuffle
+      .slice(0, numSports); // Take random sports
+
+    for (const sport of userSportsList) {
+      // Assign a random level between 1 and 3
+      const level = Math.floor(Math.random() * 3) + 1;
+
+      try {
+        const userSport = await prisma.userSports.upsert({
+          where: {
+            userUid_sport: {
+              userUid: user.uid,
+              sport: sport.name,
+            },
+          },
+          update: {},
+          create: {
+            userUid: user.uid,
+            sport: sport.name,
+            level: level,
+          },
+        });
+        createdUserSports.push(userSport);
+      } catch (e) {
+        // Skip if duplicate
+      }
+    }
+  }
+
+  console.log(`${createdUserSports.length} user sport levels created`);
+
+  // Create UserHourPreferences (time preferences for each user)
+  console.log('Creating user hour preferences...');
+  const createdUserHourPreferences = [];
+
+  for (const user of createdUsers) {
+    // Each user gets 2-5 random time preferences
+    const numPreferences = Math.floor(Math.random() * 4) + 2; // 2 to 5 preferences
+
+    for (let i = 0; i < numPreferences; i++) {
+      const dayOfWeek = Math.floor(Math.random() * 7); // 0-6 (Monday-Sunday)
+      const timePeriods = ['MORNING', 'AFTERNOON', 'EVENING'];
+      const timePeriod = timePeriods[Math.floor(Math.random() * timePeriods.length)];
+
+      try {
+        const userHourPreference = await prisma.userHourPreferences.create({
+          data: {
+            userUid: user.uid,
+            type: UserHourPreferenceType.RECURRENT,
+            dayOfWeek: dayOfWeek,
+            timePeriod: timePeriod as TimePeriod,
+          },
+        });
+        createdUserHourPreferences.push(userHourPreference);
+      } catch (e) {
+        // Skip if duplicate or error
+      }
+    }
+  }
+
+  console.log(`${createdUserHourPreferences.length} user hour preferences created`);
+
+  // Helper function to get appropriate gameModes based on sport
+  const getGameModesForSport = (sport: string): GameModes[] => {
+    switch (sport) {
+      case 'BASKETBALL':
+        return [GameModes.THREE_V_THREE, GameModes.FIVE_V_FIVE];
+      case 'FOOTBALL':
+        return [GameModes.FIVE_V_FIVE, GameModes.ELEVEN_V_ELEVEN];
+      case 'TENNIS':
+        return [GameModes.ONE_V_ONE, GameModes.TWO_V_TWO];
+      case 'PADDEL':
+        return [GameModes.ONE_V_ONE, GameModes.TWO_V_TWO];
+      default:
+        return [GameModes.THREE_V_THREE, GameModes.FIVE_V_FIVE];
+    }
+  };
+
+  // Helper function to get players per team based on gameMode
+  const getPlayersPerTeamData = (mode: GameModes) => {
+    switch (mode) {
+      case GameModes.ONE_V_ONE:
+        return { maxPlayersPerTeam: 1, minPlayersPerTeam: 1 };
+      case GameModes.TWO_V_TWO:
+        return { maxPlayersPerTeam: 2, minPlayersPerTeam: 2 };
+      case GameModes.THREE_V_THREE:
+        return { maxPlayersPerTeam: 3, minPlayersPerTeam: 3 };
+      case GameModes.FOUR_V_FOUR:
+        return { maxPlayersPerTeam: 4, minPlayersPerTeam: 3 };
+      case GameModes.FIVE_V_FIVE:
+        return { maxPlayersPerTeam: 5, minPlayersPerTeam: 3 };
+      case GameModes.SIX_V_SIX:
+        return { maxPlayersPerTeam: 6, minPlayersPerTeam: 4 };
+      case GameModes.SEVEN_V_SEVEN:
+        return { maxPlayersPerTeam: 7, minPlayersPerTeam: 5 };
+      case GameModes.EIGHT_V_EIGHT:
+        return { maxPlayersPerTeam: 8, minPlayersPerTeam: 5 };
+      case GameModes.TEN_V_TEN:
+        return { maxPlayersPerTeam: 10, minPlayersPerTeam: 7 };
+      case GameModes.ELEVEN_V_ELEVEN:
+        return { maxPlayersPerTeam: 11, minPlayersPerTeam: 8 };
+      default:
+        return { maxPlayersPerTeam: 5, minPlayersPerTeam: 3 };
+    }
+  };
 
   const today = new Date();
   const createdSessions = [];
@@ -1405,7 +1508,9 @@ async function seed() {
       if (!field) continue;
 
       const creator = createdUsers[i % createdUsers.length];
-      const gameMode = allGameModes[i % allGameModes.length];
+      const sportGameModes = getGameModesForSport(field.sport);
+      const gameMode = sportGameModes[i % sportGameModes.length];
+      const { maxPlayersPerTeam, minPlayersPerTeam } = getPlayersPerTeamData(gameMode);
 
       const startDate = slot.startTime;
       const endDate = slot.endTime;
@@ -1420,8 +1525,8 @@ async function seed() {
           startDate: startDate,
           endDate: endDate,
           title: `Session ${field.sport} - ${field.name}`,
-          maxPlayersPerTeam: 5,
-          minPlayersPerTeam: 3,
+          maxPlayersPerTeam,
+          minPlayersPerTeam,
           teamsPerGame: 2,
           description: `Session de ${field.sport} sur terrain privé`,
         },
@@ -1452,7 +1557,9 @@ async function seed() {
 
       const field = publicFields[i % publicFields.length];
       const creator = createdUsers[i % createdUsers.length];
-      const gameMode = allGameModes[i % allGameModes.length];
+      const sportGameModes = getGameModesForSport(field.sport);
+      const gameMode = sportGameModes[i % sportGameModes.length];
+      const { maxPlayersPerTeam, minPlayersPerTeam } = getPlayersPerTeamData(gameMode);
 
       const createdSession = await prisma.sessions.create({
         data: {
@@ -1464,8 +1571,8 @@ async function seed() {
           startDate: startDate,
           endDate: endDate,
           title: `Session ${field.sport} - ${field.name || 'Terrain public'}`,
-          maxPlayersPerTeam: 5,
-          minPlayersPerTeam: 3,
+          maxPlayersPerTeam,
+          minPlayersPerTeam,
           teamsPerGame: 2,
           description: `Session gratuite de ${field.sport} sur terrain public`,
         },
@@ -1501,7 +1608,9 @@ async function seed() {
           endDate.setMinutes(startDate.getMinutes() + (durationHours % 1) * 60);
 
           const creator = createdUsers[j % createdUsers.length];
-          const gameMode = allGameModes[j % allGameModes.length];
+          const sportGameModes = getGameModesForSport(field.sport);
+          const gameMode = sportGameModes[j % sportGameModes.length];
+          const { maxPlayersPerTeam, minPlayersPerTeam } = getPlayersPerTeamData(gameMode);
 
           const dayLabel = dayOffset === 0 ? "aujourd'hui" : 'demain';
 
@@ -1515,8 +1624,8 @@ async function seed() {
               startDate: startDate,
               endDate: endDate,
               title: `Session ${field.sport} ${dayLabel} à ${randomHour}h - ${field.name || 'Terrain public'}`,
-              maxPlayersPerTeam: 5,
-              minPlayersPerTeam: 3,
+              maxPlayersPerTeam,
+              minPlayersPerTeam,
               teamsPerGame: 2,
               description: `Session gratuite de ${field.sport} sur terrain public ${dayLabel} à ${randomHour}h`,
             },
@@ -1632,19 +1741,20 @@ async function seed() {
   }
   console.log(`${createdTeams.length} teams created`);
 
-  // Add some players to random teams
-  console.log('Adding sample players to some teams...');
+  // Add players to all sessions based on gameMode
+  console.log('Adding players to all sessions based on gameMode...');
   const createdPlayers: { sessionUid: string; teamUid: string; userUid: string }[] = [];
 
-  // Add players to the first 20 sessions
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < createdSessions.length; i++) {
     const session = createdSessions[i];
     const sessionTeams = createdTeams.filter((t) => t.sessionUid === session.uid);
+    const { maxPlayersPerTeam } = getPlayersPerTeamData(session.gameMode);
 
     for (const team of sessionTeams) {
-      const numPlayers = 2 + Math.floor(Math.random() * 2); // 2-3 players
+      // Add players between minPlayersPerTeam and maxPlayersPerTeam
+      const numPlayers = Math.ceil(maxPlayersPerTeam * (0.6 + Math.random() * 0.4)); // 60-100% of max
       for (let j = 0; j < numPlayers; j++) {
-        const user = createdUsers[(i * 2 + j) % createdUsers.length];
+        const user = createdUsers[(i * 10 + j) % createdUsers.length];
         try {
           const createdPlayer = await prisma.sessionPlayers.upsert({
             where: {
@@ -1670,9 +1780,13 @@ async function seed() {
         }
       }
     }
+
+    if ((i + 1) % 50 === 0) {
+      console.log(`Added players to ${i + 1}/${createdSessions.length} sessions`);
+    }
   }
 
-  console.log(`${createdPlayers.length} players added to sessions`);
+  console.log(`${createdPlayers.length} players added to all sessions`);
 
   // Create friend relationships and invitations
   console.log('Creating friend relationships and invitations...');

@@ -693,55 +693,76 @@ export class SessionsService {
   }
 
   async findOne(uid: string, userUid?: string | undefined): Promise<FindOneSessionResponseData> {
-    const session: Omit<RawSessionFindOneItem, 'isJoined'> = await this.prisma.sessions.findUnique({
-      select: {
-        creatorUid: true,
-        description: true,
-        endDate: true,
-        field: {
-          select: {
-            fieldImages: { select: { order: true, url: true } },
-            latitude: true,
-            longitude: true,
-            shortAddress: true,
-            type: true,
-            uid: true,
-          },
-        },
-        gameMode: true,
-        level: true,
-        maxPlayersPerTeam: true,
-        sessionTeams: {
-          select: {
-            sessionPlayers: {
-              select: {
-                teamUid: true,
-                user: { select: { firstname: true, imageUrl: true, lastname: true } },
-                userUid: true,
-              },
+    const [session, creatorSessionsCount] = await Promise.all([
+      this.prisma.sessions.findUnique({
+        select: {
+          creator: {
+            select: {
+              firstname: true,
+              imageUrl: true,
+              lastname: true,
             },
-            teamLabel: true,
-            teamName: true,
-            uid: true,
           },
+          creatorUid: true,
+          description: true,
+          endDate: true,
+          field: {
+            select: {
+              fieldImages: { select: { order: true, url: true } },
+              latitude: true,
+              longitude: true,
+              shortAddress: true,
+              type: true,
+              uid: true,
+            },
+          },
+          gameMode: true,
+          level: true,
+          maxPlayersPerTeam: true,
+          sessionTeams: {
+            select: {
+              sessionPlayers: {
+                select: {
+                  teamUid: true,
+                  user: { select: { firstname: true, imageUrl: true, lastname: true } },
+                  userUid: true,
+                },
+              },
+              teamLabel: true,
+              teamName: true,
+              uid: true,
+            },
+          },
+          sport: true,
+          startDate: true,
+          title: true,
+          uid: true,
+          visibility: true,
         },
-        sport: true,
-        startDate: true,
-        title: true,
-        uid: true,
-        visibility: true,
-      },
-      where: { uid },
-    });
+        where: { uid },
+      }) as Promise<Omit<RawSessionFindOneItem, 'isJoined'>>,
+      // Parallel query for creator sessions count - will be resolved together
+      this.prisma.sessions
+        .findUnique({
+          select: { creatorUid: true },
+          where: { uid },
+        })
+        .then((s) =>
+          s
+            ? this.prisma.sessions.count({
+                where: { creatorUid: s.creatorUid },
+              })
+            : 0,
+        ),
+    ]);
 
     if (!session) {
       throw new NotFoundException('Session not found');
     }
-    const existingPlayer = await this.playersService.findOne(uid, userUid);
-    let isJoined = false;
-    if (existingPlayer) {
-      isJoined = true;
-    }
+
+    const isJoined = session.sessionTeams.some((team) =>
+      team.sessionPlayers.some((player) => player.userUid === userUid),
+    );
 
     const unlockedFieldImages = await Promise.all(
       session.field.fieldImages.map(async (image) => ({
@@ -751,7 +772,72 @@ export class SessionsService {
     );
 
     session.field.fieldImages = unlockedFieldImages;
-    return SessionMapper.toFindOneDto({ ...session, isJoined: isJoined });
+
+    if (session.creator && session.creator.imageUrl) {
+      session.creator.imageUrl = await this.storageService.getSignedUrl(
+        StorageFolderName.USERS,
+        session.creator.imageUrl,
+      );
+    }
+
+    const teamsWithIsJoinedAndSignedUrls = await Promise.all(
+      session.sessionTeams.map(async (team) => {
+        const totalPlayersInTeam = team.sessionPlayers.length;
+
+        const currentPlayerIndex = team.sessionPlayers.findIndex(
+          (player) => player.userUid === userUid,
+        );
+
+        let playersToProcess = team.sessionPlayers;
+        if (currentPlayerIndex !== -1) {
+          const otherPlayers = team.sessionPlayers
+            .filter((_, index) => index !== currentPlayerIndex)
+            .slice(0, 2);
+          playersToProcess = [team.sessionPlayers[currentPlayerIndex], ...otherPlayers];
+        } else {
+          playersToProcess = team.sessionPlayers.slice(0, 3);
+        }
+
+        const playersWithSignedUrls = await Promise.all(
+          playersToProcess.map(async (player) => ({
+            ...player,
+            user: {
+              ...player.user,
+              imageUrl: player.user.imageUrl
+                ? await this.storageService.getSignedUrl(
+                    StorageFolderName.USERS,
+                    player.user.imageUrl,
+                  )
+                : null,
+            },
+          })),
+        );
+
+        return {
+          ...team,
+          isJoined: currentPlayerIndex !== -1,
+          sessionPlayers: playersWithSignedUrls,
+          totalPlayersInTeam,
+        };
+      }),
+    );
+
+    const totalPlayersInSession = teamsWithIsJoinedAndSignedUrls.reduce(
+      (sum, team) => sum + team.totalPlayersInTeam,
+      0,
+    );
+
+    const totalAvailableSpots = session.maxPlayersPerTeam * session.sessionTeams.length;
+
+    const remainingPlayers = Math.max(0, totalAvailableSpots - totalPlayersInSession);
+
+    return SessionMapper.toFindOneDto({
+      ...session,
+      creatorSessionsCount,
+      isJoined: isJoined,
+      remainingPlayers,
+      sessionTeams: teamsWithIsJoinedAndSignedUrls,
+    });
   }
 
   /**
@@ -910,6 +996,7 @@ export class SessionsService {
 
   async findTeamsBySessionUid(
     sessionUid: string,
+    userUid: string,
   ): Promise<PaginatedDataDto<SessionTeamResponseData>> {
     const existingSession = await this.findOne(sessionUid);
 
@@ -918,7 +1005,7 @@ export class SessionsService {
       throw new NotFoundException(`Session ${sessionUid} not found`);
     }
 
-    return await this.teamsService.findTeamsBySessionUid(sessionUid);
+    return await this.teamsService.findTeamsBySessionUid(sessionUid, userUid);
   }
 
   // ============================================================================
