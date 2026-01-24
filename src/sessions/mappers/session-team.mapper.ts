@@ -9,6 +9,7 @@ export type SessionTeamWithPlayers = {
   sessionPlayers: RawPlayer[];
   uid: string;
   isJoined?: boolean;
+  totalPlayersInTeam?: number; // Real count before slicing
 };
 
 export type SessionTeamWithPlayersAndNumberOfPlayers = SessionTeamWithPlayers & {
@@ -21,7 +22,7 @@ export class SessionTeamMapper {
     sessionTeam: SessionTeamWithPlayers,
     maxPlayersPerTeam?: number,
   ): SessionTeamResponseData {
-    const numberOfPlayers = sessionTeam.sessionPlayers.length;
+    const numberOfPlayers = sessionTeam.totalPlayersInTeam ?? sessionTeam.sessionPlayers.length;
     const dto: SessionTeamResponseData = {
       numberOfPlayers,
       sessionPlayers: SessionPlayerMapper.toDtoList(sessionTeam.sessionPlayers),
