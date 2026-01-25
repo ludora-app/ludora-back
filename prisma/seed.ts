@@ -1522,6 +1522,7 @@ async function seed() {
           slotUid: slot.uid,
           sport: field.sport,
           gameMode: gameMode,
+          level: Math.floor(Math.random() * 3) + 1, // Random level 1-3
           startDate: startDate,
           endDate: endDate,
           title: `Session ${field.sport} - ${field.name}`,
@@ -1568,6 +1569,7 @@ async function seed() {
           slotUid: null, // Pas de slot pour les terrains publics
           sport: field.sport,
           gameMode: gameMode,
+          level: Math.floor(Math.random() * 3) + 1, // Random level 1-3
           startDate: startDate,
           endDate: endDate,
           title: `Session ${field.sport} - ${field.name || 'Terrain public'}`,
@@ -1621,6 +1623,7 @@ async function seed() {
               slotUid: null,
               sport: field.sport,
               gameMode: gameMode,
+              level: Math.floor(Math.random() * 3) + 1, // Random level 1-3
               startDate: startDate,
               endDate: endDate,
               title: `Session ${field.sport} ${dayLabel} à ${randomHour}h - ${field.name || 'Terrain public'}`,

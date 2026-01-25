@@ -261,7 +261,7 @@ export class SessionsService {
     // B.A. LEVELS (Nombres)
     let levelWhereSql = Prisma.empty;
     if (filterLevels.length > 0) {
-      levelWhereSql = Prisma.sql`AND s.level IN (${Prisma.join(filterLevels)})`;
+      levelWhereSql = Prisma.sql`AND s.level IN (${Prisma.join(filterLevels.map((l) => Prisma.sql`${l}`))})`;
     }
 
     // B.B. GAME MODES (Strings)
