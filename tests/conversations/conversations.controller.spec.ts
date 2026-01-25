@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { ConversationsController } from 'src/conversations/conversations.controller';
-import { ConversationsService } from 'src/conversations/conversations.service';
+import { ConversationsService } from 'src/conversations/services/conversations.service';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
 
 describe('ConversationsController', () => {

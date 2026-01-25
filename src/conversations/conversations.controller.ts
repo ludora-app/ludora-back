@@ -29,8 +29,8 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { ConversationsService } from './conversations.service';
 import { CreateMessageDto } from './dto/input/create-message.dto';
+import { ConversationsService } from './services/conversations.service';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
 import {
   FindOneConversationResponseData,

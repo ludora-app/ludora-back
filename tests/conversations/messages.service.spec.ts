@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { MessagesService } from 'src/conversations/messages.service';
+import { MessagesService } from 'src/conversations/services/messages.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { MessageStatus, MessageType } from 'generated/prisma/enums';

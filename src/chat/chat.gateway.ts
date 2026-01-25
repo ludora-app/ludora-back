@@ -13,8 +13,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 
-import { MessagesService } from '../conversations/messages.service';
 import { TypingIndicatorDto } from './dto/input/typing-indicator.dto';
+import { MessagesService } from '../conversations/services/messages.service';
 
 /**
  * ChatGateway handles real-time chat messaging using Socket.io

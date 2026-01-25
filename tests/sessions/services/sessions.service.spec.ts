@@ -7,7 +7,7 @@ import { SessionScope, SessionSportLevel, Sport } from 'src/shared/constants/con
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
 import { StorageService } from 'src/shared/storage/storage.service';
-import { ConversationsService } from 'src/conversations/conversations.service';
+import { ConversationsService } from 'src/conversations/services/conversations.service';
 import { SessionsService } from 'src/sessions/services/sessions.service';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
 import { FindAllSessionsDto, SessionFilterDto } from 'src/sessions/dto/input/session-filter.dto';

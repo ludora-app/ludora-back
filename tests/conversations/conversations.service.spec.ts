@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { ConversationsService } from 'src/conversations/conversations.service';
-import { MessagesService } from 'src/conversations/messages.service';
+import { ConversationsService } from 'src/conversations/services/conversations.service';
+import { MessagesService } from 'src/conversations/services/messages.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';

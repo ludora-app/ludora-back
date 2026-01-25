@@ -12,13 +12,13 @@ import {
 } from '@nestjs/common';
 
 import { MessagesService } from './messages.service';
-import { CreateMessageDto } from './dto/input/create-message.dto';
-import { ConversationMapper } from './mappers/conversation.mapper';
-import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
-import { CreateSessionConversationDto } from './dto/input/create-session-conversation.dto';
-import { CreatePrivateConversationDto } from './dto/input/create-private-conversation.dto';
-import { FindOneConversationResponseData } from './dto/output/find-one-conversation-response.dto';
-import { ConversationCollectionResponseData } from './dto/output/conversation-collection-response.dto';
+import { CreateMessageDto } from '../dto/input/create-message.dto';
+import { ConversationMapper } from '../mappers/conversation.mapper';
+import { ConversationFilterDto } from '../dto/input/conversation-filter.dto';
+import { CreateSessionConversationDto } from '../dto/input/create-session-conversation.dto';
+import { CreatePrivateConversationDto } from '../dto/input/create-private-conversation.dto';
+import { FindOneConversationResponseData } from '../dto/output/find-one-conversation-response.dto';
+import { ConversationCollectionResponseData } from '../dto/output/conversation-collection-response.dto';
 
 @Injectable()
 export class ConversationsService {
