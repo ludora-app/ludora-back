@@ -1,5 +1,5 @@
-import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { ForbiddenResponseDto } from 'src/shared/dto/errors/forbidden-response.dto';
 import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
@@ -16,8 +16,6 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  UseGuards,
-  NotFoundException,
   Body,
   UseInterceptors,
 } from '@nestjs/common';
@@ -31,48 +29,38 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { ConversationsService } from './conversations.service';
 import { CreateMessageDto } from './dto/input/create-message.dto';
+import { ConversationsService } from './services/conversations.service';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
 import {
-  ConversationResponseDto,
-  ConversationResponseData,
-  PaginatedConversationResponseDto,
-} from './dto/output/conversation-response.dto';
+  FindOneConversationResponseData,
+  FindOneConversationResponseDto,
+} from './dto/output/find-one-conversation-response.dto';
+import {
+  ConversationCollectionResponseData,
+  PaginatedConversationCollectionResponseDto,
+} from './dto/output/conversation-collection-response.dto';
 
 @Controller('conversations')
 export class ConversationsController {
   constructor(private readonly conversationsService: ConversationsService) {}
 
   // @Post()
-  // create(@Body() createConversationDto: CreateConversationDto) {
+  // create(@Body() createConversationDto: CreatePrivateConversationDto) {
   //   return this.conversationsService.create(createConversationDto);
   // }
-
-  @Post('/mock')
-  @UseGuards(DevOnlyGuard)
-  @Protected()
-  @ApiOperation({ summary: 'DEV ONLY:Create mock conversations' })
-  @ApiOkResponse({ type: ConversationResponseDto })
-  @ApiBadRequestResponse({ type: BadRequestResponseDto })
-  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  @HttpCode(HttpStatus.OK)
-  async createMockConversation(@Req() request: Request) {
-    const userUid = request['user'].uid;
-    return this.conversationsService.createMockConversation(userUid);
-  }
 
   @Get('/list/collection')
   @Protected()
   @ApiOperation({ summary: 'Get all conversations' })
-  @ApiOkResponse({ type: PaginatedConversationResponseDto })
+  @ApiOkResponse({ type: PaginatedConversationCollectionResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findAllByUserUid(
     @Query() filters: ConversationFilterDto,
     @Req() request: Request,
-  ): Promise<PaginationResponseTypeDto<ConversationResponseData>> {
+  ): Promise<PaginationResponseTypeDto<ConversationCollectionResponseData>> {
     const userUid = request['user'].uid;
     const conversations = await this.conversationsService.findAllByUserUid(filters, userUid);
     return {
@@ -84,19 +72,18 @@ export class ConversationsController {
   @Get(':uid')
   @Protected()
   @ApiOperation({ summary: 'Get a conversation by uid' })
-  @ApiOkResponse({ type: ConversationResponseDto })
+  @ApiOkResponse({ type: FindOneConversationResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiForbiddenResponse({ type: ForbiddenResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.OK)
-  async findOne(@Param('uid') uid: string, @Req() request: Request) {
+  async findOne(
+    @Param('uid') uid: string,
+    @Req() request: Request,
+  ): Promise<ResponseTypeDto<FindOneConversationResponseData>> {
     const userUid = request['user'].uid;
     const conversation = await this.conversationsService.findOne(uid, userUid);
-
-    if (!conversation) {
-      throw new NotFoundException(`Conversation with uid ${uid} not found`);
-    }
 
     return {
       data: conversation,
@@ -104,20 +91,18 @@ export class ConversationsController {
     };
   }
 
-  @Post(':conversationUid/messages')
+  @Post()
   @Protected()
   @UseInterceptors(new FastifyFilesInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   async createMessage(
     @Req() request: Request,
     @Body() dto: CreateMessageDto,
-    @Param('conversationUid') conversationUid: string,
     @UploadedFilesCustom() files: { buffer: Buffer; originalname: string }[],
   ) {
     const userUid = request['user'].uid;
-    const { content, type } = dto;
     const file = files && files.length > 0 ? files[0] : undefined;
-    return this.conversationsService.createMessage(userUid, content, conversationUid, type, file);
+    return this.conversationsService.createMessage(userUid, dto, file);
   }
 
   // @Patch(':id')

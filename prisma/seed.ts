@@ -1,7 +1,10 @@
 import {
+  ConversationType,
   FieldType,
   GameModes,
   InvitationStatus,
+  MessageStatus,
+  MessageType,
   PrismaClient,
   Sex,
   TeamLabels,
@@ -25,9 +28,6 @@ async function hashPassword(password: string): Promise<string> {
   return argon2.hash(password);
 }
 
-/**
- * @description Seeds the infrastructure & sessions schema
- */
 async function seed() {
   const sports = [
     { name: 'FOOTBALL' },
@@ -979,13 +979,13 @@ async function seed() {
       imageUrl: '1738433236109explore2.png',
     },
     {
-      email: 'tsunade.senju@hotmail.fr',
-      password: await hashPassword('Tsunade398!'),
-      firstname: 'Tsunade',
-      lastname: 'Senju',
-      birthdate: new Date('1968-08-02T00:00:00Z'),
+      email: 'ichigo.kurosaki@hotmail.fr',
+      password: await hashPassword('Ichigo398!'),
+      firstname: 'Ichigo',
+      lastname: 'Kurosaki',
+      birthdate: new Date('1998-08-02T00:00:00Z'),
       sex: Sex.FEMALE,
-      bio: 'Sannin légendaire et experte en médecine',
+      bio: 'Shinigami qui a obtenu les pouvoirs des Hollows',
       phone: '+33609032673',
       imageUrl: '1738433236109explore2.png',
     },
@@ -1001,24 +1001,24 @@ async function seed() {
       imageUrl: '1738433236109explore2.png',
     },
     {
-      email: 'nami.swan@hotmail.fr',
-      password: await hashPassword('Nami398!'),
-      firstname: 'Nami',
-      lastname: 'Swan',
-      birthdate: new Date('2001-07-03T00:00:00Z'),
-      sex: Sex.FEMALE,
-      bio: 'Navigatrice des Pirates au Chapeau de Paille',
+      email: 'zoro.roronoa@hotmail.fr',
+      password: await hashPassword('Zoro398!'),
+      firstname: 'Zoro',
+      lastname: 'Roronoa',
+      birthdate: new Date('1998-07-03T00:00:00Z'),
+      sex: Sex.MALE,
+      bio: 'Chasseur de têtes et expert en sabre',
       phone: '+33609032666',
       imageUrl: '1738433236109explore2.png',
     },
     {
-      email: 'robin.nico@hotmail.fr',
-      password: await hashPassword('Robin398!'),
-      firstname: 'Robin',
-      lastname: 'Nico',
+      email: 'aizen.sosuke@hotmail.fr',
+      password: await hashPassword('Aizen398!'),
+      firstname: 'Aizen',
+      lastname: 'Sosuke',
       birthdate: new Date('1998-02-06T00:00:00Z'),
-      sex: Sex.FEMALE,
-      bio: 'Archéologue des Pirates au Chapeau de Paille',
+      sex: Sex.MALE,
+      bio: 'Seigneur des Hollows et des Shinigamis',
       phone: '+33609032667',
       imageUrl: '1738433236109explore2.png',
     },
@@ -1303,15 +1303,6 @@ async function seed() {
     'Butson',
     'Butt',
     'Buttacavoli',
-    'Buttafuoco',
-    'Buttafuoco',
-    'Buttafuoco',
-    'Buttafuoco',
-    'Buttafuoco',
-    'Buttafuoco',
-    'Buttafuoco',
-    'Buttafuoco',
-    'Buttafuoco',
     'Buttafuoco',
   ];
   const domains = [
@@ -1791,6 +1782,59 @@ async function seed() {
 
   console.log(`${createdPlayers.length} players added to all sessions`);
 
+  // Create GROUP conversations for each session
+  console.log('Creating GROUP conversations for sessions...');
+  let sessionConversationsCreated = 0;
+
+  for (let i = 0; i < createdSessions.length; i++) {
+    const session = createdSessions[i];
+
+    // Récupérer tous les joueurs de cette session
+    const sessionPlayers = await prisma.sessionPlayers.findMany({
+      where: { sessionUid: session.uid },
+      select: { userUid: true },
+    });
+
+    // Créer un Set pour éviter les doublons
+    const participantUids = new Set<string>();
+
+    // Ajouter le créateur de la session
+    participantUids.add(session.creatorUid);
+
+    // Ajouter tous les joueurs
+    sessionPlayers.forEach((player) => {
+      participantUids.add(player.userUid);
+    });
+
+    // Créer la conversation de session
+    const groupConversation = await prisma.conversations.create({
+      data: {
+        type: ConversationType.SESSION,
+        sessionUid: session.uid,
+        name: session.title || `Session ${session.sport}`,
+      },
+    });
+
+    // Ajouter tous les participants comme membres de la conversation
+    for (const userUid of participantUids) {
+      await prisma.conversationMembers.create({
+        data: {
+          conversationUid: groupConversation.uid,
+          userUid: userUid,
+          isAdmin: userUid === session.creatorUid, // Le créateur est admin
+        },
+      });
+    }
+
+    sessionConversationsCreated++;
+
+    if ((i + 1) % 50 === 0) {
+      console.log(`Created group conversations for ${i + 1}/${createdSessions.length} sessions`);
+    }
+  }
+
+  console.log(`${sessionConversationsCreated} group conversations created for sessions`);
+
   // Create friend relationships and invitations
   console.log('Creating friend relationships and invitations...');
 
@@ -1901,6 +1945,157 @@ async function seed() {
   }
 
   console.log(`${createdCount} friend relationships created`);
+
+  // Create conversations and messages
+  console.log('Creating conversations and messages...');
+
+  const messageContents = [
+    'Salut ! Ça te dit de jouer demain ?',
+    'Ouais carrément ! Tu as un terrain en tête ?',
+    'Je pensais au terrain près de République, il est pas mal',
+    'Parfait ! On se retrouve à quelle heure ?',
+    'Vers 15h ça te va ?',
+    "C'est noté ! À demain alors",
+    'Hey, tu es dispo cette semaine pour une partie ?',
+    'Merci pour la session, on remet ça bientôt !',
+    "J'ai trouvé un nouveau spot, je t'envoie l'adresse",
+    "Tu penses qu'on peut organiser un match à 5v5 ?",
+    'Je connais quelques personnes qui seraient intéressées',
+    'Cool ! On pourrait faire ça samedi prochain',
+    'Tu as vu le nouveau terrain qui a ouvert ?',
+    "Ouais, il a l'air top ! On devrait y aller",
+    'Franchement la dernière session était géniale',
+    'Tu es plutôt basket ou foot ?',
+    'Les deux ! Mais je préfère le basket',
+    'On devrait créer un groupe pour organiser des sessions régulières',
+    'Bonne idée ! Je vais en parler aux autres',
+    'Tu as quel niveau en tennis ?',
+  ];
+
+  const additionalUsersStartIndex = 17; // Les utilisateurs additionnels commencent à l'index 17
+  const numberOfConversationsPerUser = 5;
+  const numberOfMessagesPerConversation = 5;
+
+  let totalConversations = 0;
+  let totalMessages = 0;
+
+  // Pour chaque utilisateur (on prend tous les utilisateurs, pas seulement les principaux)
+  for (let i = 0; i < createdUsers.length; i++) {
+    const user = createdUsers[i];
+
+    // Sélectionner 5 autres utilisateurs aléatoirement (parmi les additionalUsers)
+    const potentialPartners = [];
+    for (let j = additionalUsersStartIndex; j < createdUsers.length; j++) {
+      if (j !== i) {
+        potentialPartners.push(createdUsers[j]);
+      }
+    }
+
+    // Mélanger et prendre 5 utilisateurs
+    const shuffled = potentialPartners.sort(() => Math.random() - 0.5);
+    const selectedPartners = shuffled.slice(
+      0,
+      Math.min(numberOfConversationsPerUser, shuffled.length),
+    );
+
+    for (const partner of selectedPartners) {
+      // Vérifier si une conversation existe déjà entre ces deux utilisateurs
+      const existingConversation = await prisma.conversations.findFirst({
+        where: {
+          type: ConversationType.PRIVATE,
+          conversationMembers: {
+            every: {
+              OR: [{ userUid: user.uid }, { userUid: partner.uid }],
+            },
+          },
+        },
+        include: {
+          conversationMembers: true,
+        },
+      });
+
+      // Vérifier que la conversation a exactement 2 membres et qu'ils sont bien les deux utilisateurs qu'on veut
+      const conversationExists =
+        existingConversation &&
+        existingConversation.conversationMembers.length === 2 &&
+        existingConversation.conversationMembers.some((m) => m.userUid === user.uid) &&
+        existingConversation.conversationMembers.some((m) => m.userUid === partner.uid);
+
+      if (conversationExists) {
+        continue; // Passer à la conversation suivante
+      }
+
+      // Créer une nouvelle conversation PRIVATE
+      const conversation = await prisma.conversations.create({
+        data: {
+          type: ConversationType.PRIVATE,
+        },
+      });
+
+      // Ajouter les deux utilisateurs comme membres de la conversation
+      await prisma.conversationMembers.create({
+        data: {
+          conversationUid: conversation.uid,
+          userUid: user.uid,
+          isAdmin: false,
+        },
+      });
+
+      await prisma.conversationMembers.create({
+        data: {
+          conversationUid: conversation.uid,
+          userUid: partner.uid,
+          isAdmin: false,
+        },
+      });
+
+      totalConversations++;
+
+      // Créer 5 messages alternés entre les deux utilisateurs
+      const baseTime = new Date();
+      baseTime.setDate(baseTime.getDate() - Math.floor(Math.random() * 30)); // Messages dans les 30 derniers jours
+
+      for (let msgIndex = 0; msgIndex < numberOfMessagesPerConversation; msgIndex++) {
+        const senderUid = msgIndex % 2 === 0 ? user.uid : partner.uid;
+        const receiverUid = msgIndex % 2 === 0 ? partner.uid : user.uid;
+
+        const messageTime = new Date(baseTime);
+        messageTime.setMinutes(baseTime.getMinutes() + msgIndex * 10); // 10 minutes entre chaque message
+
+        const messageContent = messageContents[Math.floor(Math.random() * messageContents.length)];
+
+        const message = await prisma.messages.create({
+          data: {
+            conversationUid: conversation.uid,
+            senderUid: senderUid,
+            content: messageContent,
+            globalStatus: MessageStatus.READ,
+            type: MessageType.TEXT,
+            createdAt: messageTime,
+            updatedAt: messageTime,
+          },
+        });
+
+        // Créer le MessageReceipt pour le destinataire
+        await prisma.messageReceipts.create({
+          data: {
+            messageUid: message.uid,
+            userUid: receiverUid,
+            status: MessageStatus.READ,
+          },
+        });
+
+        totalMessages++;
+      }
+    }
+
+    if ((i + 1) % 20 === 0) {
+      console.log(`Processed conversations for ${i + 1}/${createdUsers.length} users`);
+    }
+  }
+
+  console.log(`${totalConversations} conversations created`);
+  console.log(`${totalMessages} messages created`);
   console.log('✅ Seed completed successfully!');
 }
 

@@ -29,18 +29,15 @@ enum ConversationType {
 }
 
 model Conversations {
-  uid        String           @id @default(cuid())
-  sessionUid String?          @map("session_uid")
-  name       String?
-  type       ConversationType
-
-  lastMessageAt DateTime @default(now()) @map("last_message_at")
-
+  uid                 String                @id @default(cuid())
+  sessionUid          String?               @unique @map("session_uid")
+  name                String?
+  type                ConversationType
   createdAt           DateTime              @default(now()) @map("created_at")
   updatedAt           DateTime              @updatedAt @map("updated_at")
-  // todo: image_url
   messages            Messages[]
   conversationMembers ConversationMembers[]
+  session             Sessions?             @relation(fields: [sessionUid], references: [uid])
 
   @@schema("social")
 }
@@ -81,8 +78,8 @@ model MessageReceipts {
 }
 
 model ConversationMembers {
-  conversationUid String
-  userUid         String
+  conversationUid String  @map("conversation_uid")
+  userUid         String  @map("user_uid")
   isAdmin         Boolean @default(false) @map("is_admin")
 
   conversation Conversations @relation(fields: [conversationUid], references: [uid])

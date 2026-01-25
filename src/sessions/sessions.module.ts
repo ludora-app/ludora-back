@@ -5,7 +5,7 @@ import { FieldsModule } from 'src/fields/fields.module';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { FieldSlotsService } from 'src/fields/services/field-slots.service';
 import { ConversationsModule } from 'src/conversations/conversations.module';
-import { ConversationsService } from 'src/conversations/conversations.service';
+import { ConversationsService } from 'src/conversations/services/conversations.service';
 import { UserHourPreferencesModule } from 'src/user-hour-preferences/user-hour-preferences.module';
 import { UserSportPreferencesModule } from 'src/user-sport-preferences/user-sport-preferences.module';
 
