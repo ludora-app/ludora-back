@@ -17,6 +17,8 @@ import { UserSportPreferencesService } from 'src/user-sport-preferences/user-spo
 import { CreateSessionDto } from 'src/sessions/dto/input/create-session.dto';
 import { SessionOwnnership } from 'src/sessions/dto/input/my-session-filter.dto';
 import { FieldSlotsService } from 'src/fields/services/field-slots.service';
+import { JoinSessionErrorTypes } from 'src/sessions/dto/errors/create-session-player-error.dto';
+import { FindOneSessionResponseErrorTypes } from 'src/sessions/dto/errors/find-one-session-response-error.dto';
 
 jest.mock('src/shared/utils/date.utils', () => ({
   DateUtils: {
@@ -981,7 +983,7 @@ describe('SessionsService', () => {
 
       // Act & Assert
       await expect(service.findOne('non-existent-uid')).rejects.toThrow(
-        new NotFoundException('Session not found'),
+        new NotFoundException(FindOneSessionResponseErrorTypes.SESSION_NOT_FOUND),
       );
     });
   });
@@ -1067,7 +1069,7 @@ describe('SessionsService', () => {
       // Act & Assert
       await expect(
         service.findOneWithDistance('non-existent-uid', 'user-uid-1', 48.8584, 2.2945),
-      ).rejects.toThrow(new NotFoundException('Session not found'));
+      ).rejects.toThrow(new NotFoundException(FindOneSessionResponseErrorTypes.SESSION_NOT_FOUND));
     });
 
     it('should calculate correct distance based on coordinates', async () => {
@@ -1212,7 +1214,7 @@ describe('SessionsService', () => {
 
       // Act & Assert
       await expect(service.update('non-existent-uid', updateSessionDto)).rejects.toThrow(
-        new NotFoundException('Session not found'),
+        new NotFoundException(FindOneSessionResponseErrorTypes.SESSION_NOT_FOUND),
       );
     });
 
@@ -1310,7 +1312,7 @@ describe('SessionsService', () => {
       jest.spyOn(service, 'findOne').mockResolvedValue(null);
 
       await expect(service.joinSession(mockCreateSessionPlayerDto as any)).rejects.toThrow(
-        new NotFoundException(`Session ${mockCreateSessionPlayerDto.sessionUid} not found`),
+        new NotFoundException(JoinSessionErrorTypes.SESSION_NOT_FOUND),
       );
 
       expect(service.findOne).toHaveBeenCalledWith(mockCreateSessionPlayerDto.sessionUid);
@@ -1323,7 +1325,7 @@ describe('SessionsService', () => {
       (prismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.joinSession(mockCreateSessionPlayerDto as any)).rejects.toThrow(
-        new NotFoundException(`Team ${mockCreateSessionPlayerDto.teamUid} not found`),
+        new NotFoundException(JoinSessionErrorTypes.TEAM_NOT_FOUND),
       );
 
       expect(service.findOne).toHaveBeenCalledWith(mockCreateSessionPlayerDto.sessionUid);
@@ -1345,9 +1347,7 @@ describe('SessionsService', () => {
       });
 
       await expect(service.joinSession(mockCreateSessionPlayerDto as any)).rejects.toThrow(
-        new BadRequestException(
-          `Session ${mockCreateSessionPlayerDto.sessionUid} and team ${mockCreateSessionPlayerDto.teamUid} do not match`,
-        ),
+        new BadRequestException(JoinSessionErrorTypes.SESSION_AND_TEAM_DO_NOT_MATCH),
       );
 
       expect(sessionPlayersService.addPlayerToSession).not.toHaveBeenCalled();
@@ -1361,7 +1361,7 @@ describe('SessionsService', () => {
       });
 
       await expect(service.joinSession(mockCreateSessionPlayerDto as any)).rejects.toThrow(
-        new BadRequestException(`Team ${mockCreateSessionPlayerDto.teamUid} is full`),
+        new BadRequestException(JoinSessionErrorTypes.SESSION_FULL),
       );
 
       expect(sessionPlayersService.findOne).not.toHaveBeenCalled();
@@ -1374,9 +1374,7 @@ describe('SessionsService', () => {
       (sessionPlayersService.findOne as jest.Mock).mockResolvedValue({ uid: 'existing-player' });
 
       await expect(service.joinSession(mockCreateSessionPlayerDto as any)).rejects.toThrow(
-        new BadRequestException(
-          `Player ${mockCreateSessionPlayerDto.userUid} already in session ${mockCreateSessionPlayerDto.sessionUid}`,
-        ),
+        new BadRequestException(JoinSessionErrorTypes.SESSION_ALREADY_JOINED),
       );
 
       expect(sessionPlayersService.addPlayerToSession).not.toHaveBeenCalled();

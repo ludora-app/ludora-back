@@ -29,6 +29,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
@@ -39,6 +40,7 @@ import { SessionFilterDto } from '../dto/input/session-filter.dto';
 import { MySessionFilterDto } from '../dto/input/my-session-filter.dto';
 import { CreateSessionFromRequestDto } from '../dto/input/create-session.dto';
 import { SessionResponseData, SessionResponseDto } from '../dto/output/session-response.dto';
+import { FindOneSessionResponseErrorDto } from '../dto/errors/find-one-session-response-error.dto';
 import {
   PaginatedSessionCollectionResponseDto,
   SessionCollectionItemDto,
@@ -128,9 +130,11 @@ export class SessionsController {
   @Protected()
   @ApiOperation({ summary: 'Get a session by uid' })
   @ApiOkResponse({ type: FindOneSessionResponseDto })
-  @ApiBadRequestResponse({ type: BadRequestResponseDto })
-  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @ApiResponse({
+    description: 'Error getting session - see error details for specific reason',
+    status: 400,
+    type: FindOneSessionResponseErrorDto,
+  })
   async findOne(
     @Param('uid') uid: string,
     @Req() request: FastifyRequest,
