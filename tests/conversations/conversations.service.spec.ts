@@ -231,7 +231,7 @@ describe('ConversationsService', () => {
             },
           },
         ],
-        lastMessageAt: new Date(),
+
         messages: [
           {
             content: 'Last message',
@@ -262,7 +262,7 @@ describe('ConversationsService', () => {
             },
           },
         ],
-        lastMessageAt: new Date(),
+
         messages: [
           {
             content: 'Another message',
@@ -299,7 +299,7 @@ describe('ConversationsService', () => {
                   uid: message.uid,
                 }
               : null,
-            lastMessageAt: conversation.lastMessageAt,
+
             name: conversation.name || (user ? `${user.firstname} ${user.lastname}` : ''),
             sender: message?.sender || null,
             sessionUid: conversation.sessionUid || null,
@@ -389,7 +389,7 @@ describe('ConversationsService', () => {
         {
           conversationMembers: [],
           createdAt: new Date(),
-          lastMessageAt: new Date(),
+
           messages: [],
           name: 'Conv 1',
           type: ConversationType.PRIVATE,
@@ -399,7 +399,7 @@ describe('ConversationsService', () => {
         {
           conversationMembers: [],
           createdAt: new Date(),
-          lastMessageAt: new Date(),
+
           messages: [],
           name: 'Conv 2',
           type: ConversationType.PRIVATE,
@@ -409,7 +409,7 @@ describe('ConversationsService', () => {
         {
           conversationMembers: [],
           createdAt: new Date(),
-          lastMessageAt: new Date(),
+
           messages: [],
           name: 'Conv 3',
           type: ConversationType.PRIVATE,
@@ -419,7 +419,6 @@ describe('ConversationsService', () => {
         {
           conversationMembers: [],
           createdAt: new Date(),
-          lastMessageAt: new Date(),
           messages: [],
           name: 'Conv 4',
           type: ConversationType.PRIVATE,
@@ -429,7 +428,7 @@ describe('ConversationsService', () => {
         {
           conversationMembers: [],
           createdAt: new Date(),
-          lastMessageAt: new Date(),
+
           messages: [],
           name: 'Conv 5',
           type: ConversationType.PRIVATE,
@@ -439,7 +438,7 @@ describe('ConversationsService', () => {
         {
           conversationMembers: [],
           createdAt: new Date(),
-          lastMessageAt: new Date(),
+
           messages: [],
           name: 'Conv 6',
           type: ConversationType.PRIVATE,
@@ -456,7 +455,7 @@ describe('ConversationsService', () => {
             return {
               imageUrl: null,
               lastMessage: null,
-              lastMessageAt: conversation.lastMessageAt,
+
               name: `Conv ${conversation.uid}`,
               sender: null,
               sessionUid: null,
@@ -561,7 +560,7 @@ describe('ConversationsService', () => {
         },
       ],
       createdAt: new Date(),
-      lastMessageAt: new Date(),
+
       messages: [
         {
           content: 'Message 1',
@@ -601,7 +600,6 @@ describe('ConversationsService', () => {
 
     const mockMappedConversation = {
       imageUrl: null,
-      lastMessageAt: mockRawConversation.lastMessageAt,
       messages: [
         {
           content: 'Message 1',

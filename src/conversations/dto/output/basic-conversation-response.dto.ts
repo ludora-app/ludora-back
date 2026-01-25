@@ -98,13 +98,6 @@ export class BasicConversationResponseData {
   type: ConversationType;
 
   @ApiProperty({
-    description: 'Conversation last message date',
-    example: '2026-01-10T14:24:46.830Z',
-    readOnly: true,
-  })
-  lastMessageAt: Date;
-
-  @ApiProperty({
     description: 'Sender information',
     nullable: true,
     readOnly: true,

@@ -124,7 +124,6 @@ describe('ConversationsController', () => {
 
       const mockConversation = {
         imageUrl: null,
-        lastMessageAt: new Date(),
         messages: [
           {
             content: 'Message 1',
@@ -164,7 +163,6 @@ describe('ConversationsController', () => {
 
       const mockConversationResponse = {
         imageUrl: null,
-        lastMessageAt: new Date(),
         messages: [],
         name: 'Test Conv',
         sender: null,

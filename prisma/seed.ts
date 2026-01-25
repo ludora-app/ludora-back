@@ -1812,7 +1812,6 @@ async function seed() {
         type: ConversationType.SESSION,
         sessionUid: session.uid,
         name: session.title || `Session ${session.sport}`,
-        lastMessageAt: session.startDate,
       },
     });
 
@@ -2030,7 +2029,6 @@ async function seed() {
       const conversation = await prisma.conversations.create({
         data: {
           type: ConversationType.PRIVATE,
-          lastMessageAt: new Date(),
         },
       });
 
@@ -2089,17 +2087,6 @@ async function seed() {
 
         totalMessages++;
       }
-
-      // Mettre à jour le lastMessageAt de la conversation
-      const lastMessageTime = new Date(baseTime);
-      lastMessageTime.setMinutes(
-        baseTime.getMinutes() + (numberOfMessagesPerConversation - 1) * 10,
-      );
-
-      await prisma.conversations.update({
-        where: { uid: conversation.uid },
-        data: { lastMessageAt: lastMessageTime },
-      });
     }
 
     if ((i + 1) % 20 === 0) {

@@ -2,7 +2,7 @@ import { StorageFolderName } from 'src/shared/constants/constants';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
 
-import { MessageDto } from '../dto/output/basic-conversation-response.dto';
+import { MessageMapper } from './message.mapper';
 import { FindOneConversationResponseData } from '../dto/output/find-one-conversation-response.dto';
 import { ConversationCollectionResponseData } from '../dto/output/conversation-collection-response.dto';
 
@@ -11,7 +11,6 @@ export interface RawConversationCollectionItem {
   name: string;
   createdAt: Date;
   updatedAt: Date;
-  lastMessageAt: Date;
   type: ConversationType;
   messages: RawMessage[];
   sessionUid?: string | null;
@@ -35,7 +34,6 @@ export interface RawFindOneConversation {
   name: string;
   createdAt: Date;
   updatedAt: Date;
-  lastMessageAt: Date;
   type: ConversationType;
   messages: RawMessage[];
   sessionUid?: string | null;
@@ -94,8 +92,9 @@ export class ConversationMapper {
 
     return {
       imageUrl: signedImageUrl,
-      lastMessage: firstMessage ? await this.toLastMessageDto(firstMessage, storageService) : null,
-      lastMessageAt: conversation.lastMessageAt,
+      lastMessage: firstMessage
+        ? await MessageMapper.toLastMessageDto(firstMessage, storageService)
+        : null,
       name:
         conversation.type === ConversationType.PRIVATE && otherUser
           ? `${otherUser.firstname} ${otherUser.lastname}`
@@ -114,9 +113,10 @@ export class ConversationMapper {
     const otherUser = conversation.conversationMembers?.[0]?.user;
     return {
       imageUrl: conversation.session?.sessionImages?.[0]?.url || null,
-      lastMessageAt: conversation.lastMessageAt,
       messages: await Promise.all(
-        conversation.messages.map((message) => this.toLastMessageDto(message, storageService)),
+        conversation.messages.map((message) =>
+          MessageMapper.toLastMessageDto(message, storageService),
+        ),
       ),
       name:
         conversation.type === ConversationType.PRIVATE && otherUser
@@ -126,22 +126,6 @@ export class ConversationMapper {
       sessionUid: conversation.sessionUid || null,
       type: conversation.type,
       uid: conversation.uid,
-    };
-  }
-
-  private static async toLastMessageDto(
-    message: RawMessage,
-    storageService: StorageService,
-  ): Promise<MessageDto> {
-    return {
-      content:
-        message.type !== MessageType.TEXT
-          ? await storageService.getSignedUrl(StorageFolderName.CONVERSATIONS, message.content)
-          : message.content,
-      createdAt: message.createdAt,
-      globalStatus: message.globalStatus,
-      type: message.type,
-      uid: message.uid,
     };
   }
 }
