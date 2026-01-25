@@ -118,8 +118,17 @@ export class SessionFilterDto {
   urgent?: boolean;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
+  @IsArray()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.split(',').map((s) => parseInt(s.trim(), 10));
+    }
+    if (Array.isArray(value)) {
+      return value.map((v) => (typeof v === 'number' ? v : parseInt(String(v).trim(), 10)));
+    }
+    return [typeof value === 'number' ? value : parseInt(String(value).trim(), 10)];
+  })
+  @IsNumber({}, { each: true })
   @ApiProperty({
     description: 'Level for filtering sessions',
     enum: SessionSportLevel,
