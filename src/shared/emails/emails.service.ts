@@ -31,14 +31,18 @@ export class EmailsService {
    * @returns {nodemailer.Transporter} Configured nodemailer transporter
    */
   private createTransporter(): nodemailer.Transporter {
+    const emailPort = this.configService.getOrThrow<number>('EMAIL_PORT');
     return nodemailer.createTransport({
       auth: {
         pass: this.configService.getOrThrow<string>('EMAIL_PASSWORD'),
         user: this.configService.getOrThrow<string>('EMAIL_USER'),
       },
       host: this.configService.getOrThrow<string>('EMAIL_HOST'),
-      port: this.configService.getOrThrow<number>('EMAIL_PORT'),
-      secure: true,
+      port: emailPort,
+      secure: emailPort === 465,
+      tls: {
+        rejectUnauthorized: false,
+      },
     });
   }
 
