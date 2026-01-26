@@ -157,9 +157,13 @@ describe('AuthB2CService', () => {
 
   describe('register', () => {
     it('should register a new user', async () => {
+      // Create a birthdate that makes the user at least 15 years old
+      const birthdate = new Date();
+      birthdate.setFullYear(birthdate.getFullYear() - 20); // 20 years ago
+
       const registerDto = {
         bio: 'test bio',
-        birthdate: new Date().toString(),
+        birthdate: birthdate.toISOString(),
         email: 'test@test.com',
         firstname: 'John',
         lastname: 'Doe',
