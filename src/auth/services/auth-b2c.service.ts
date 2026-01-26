@@ -58,7 +58,10 @@ export class AuthB2CService {
     const result = await this.prismaService.$transaction(async (tx) => {
       let newUser;
 
-      if (new Date(registerDto.birthdate) < this.MINIMUM_AGE_DATE) {
+      if (!DateUtils.isBefore(registerDto.birthdate, this.MINIMUM_AGE_DATE)) {
+        this.logger.error(
+          `User must be at least 15 years old: ${registerDto.birthdate} > ${this.MINIMUM_AGE_DATE}`,
+        );
         throw new BadRequestException('User must be at least 15 years old');
       }
 

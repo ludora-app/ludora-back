@@ -125,4 +125,16 @@ export class DateUtils {
       throw new BadRequestException('The earlier and later dates must be on the same day');
     }
   }
+
+  public static isAfter(date1: DateTime | string, date2: DateTime | string): boolean {
+    const dt1 = typeof date1 === 'string' ? DateTime.fromISO(date1) : date1;
+    const dt2 = typeof date2 === 'string' ? DateTime.fromISO(date2) : date2;
+    return dt1 > dt2;
+  }
+
+  public static isBefore(date1: DateTime | string, date2: DateTime | string): boolean {
+    const dt1 = typeof date1 === 'string' ? DateTime.fromISO(date1) : date1;
+    const dt2 = typeof date2 === 'string' ? DateTime.fromISO(date2) : date2;
+    return dt1 < dt2;
+  }
 }
