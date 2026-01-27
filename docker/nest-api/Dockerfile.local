@@ -27,7 +27,7 @@ RUN pnpm install
 COPY . ./
 
 # Copy envconsul config and vault-auth script
-COPY scripts/vault/envconsul-docker.hcl /etc/envconsul/config.hcl
+COPY scripts/vault/envconsul-docker-dev.hcl /etc/envconsul/config.hcl
 COPY scripts/vault/vault-auth.sh /usr/local/bin/vault-auth.sh
 RUN chmod +x /usr/local/bin/vault-auth.sh
 

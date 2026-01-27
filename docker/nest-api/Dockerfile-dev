@@ -1,0 +1,90 @@
+# Multi-stage build for production optimization
+FROM node:22.13.1-slim AS builder
+
+WORKDIR /usr/src/app
+
+# Install dependencies needed for building
+RUN apt-get update && apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    build-essential && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install pnpm
+RUN npm i -g pnpm && npm uninstall -g npm
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies (including dev dependencies for build)
+RUN pnpm install
+
+# Copy source code
+COPY . ./
+
+# Generate Prisma Client
+RUN pnpm prisma generate
+
+# Build the application
+RUN pnpm build
+
+# Remove dev dependencies
+RUN pnpm prune --prod
+
+# ============================================
+# Production stage
+# ============================================
+FROM node:22.13.1-slim AS production
+
+WORKDIR /usr/src/app
+
+# Install only runtime dependencies and envconsul
+RUN apt-get update && apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    dumb-init \
+    unzip && \
+    # Install envconsul
+    curl -L https://releases.hashicorp.com/envconsul/0.13.1/envconsul_0.13.1_linux_amd64.zip -o /tmp/envconsul.zip && \
+    unzip /tmp/envconsul.zip -d /usr/local/bin && \
+    rm /tmp/envconsul.zip && \
+    chmod +x /usr/local/bin/envconsul && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install pnpm
+RUN npm i -g pnpm && npm uninstall -g npm
+
+# Create non-root user
+RUN groupadd -r nodejs && useradd -r -g nodejs nodejs
+
+# Copy built artifacts from builder
+COPY --from=builder --chown=nodejs:nodejs /usr/src/app/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /usr/src/app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /usr/src/app/package.json ./
+COPY --from=builder --chown=nodejs:nodejs /usr/src/app/prisma ./prisma
+COPY --from=builder --chown=nodejs:nodejs /usr/src/app/config ./config
+
+# Copy envconsul config, vault-auth and start script
+COPY --chown=nodejs:nodejs scripts/vault/envconsul-docker-dev.hcl /etc/envconsul/config.hcl
+COPY --chown=nodejs:nodejs scripts/vault/vault-auth.sh /usr/local/bin/vault-auth.sh
+COPY --chown=nodejs:nodejs scripts/start-dev.sh ./scripts/start-dev.sh
+RUN chmod +x /usr/local/bin/vault-auth.sh
+
+# Create writable directories for the app
+RUN mkdir -p /usr/src/app/logs && chown -R nodejs:nodejs /usr/src/app/logs
+
+# Switch to non-root user
+USER nodejs
+
+# Expose port
+EXPOSE 2424
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Le script start-dev.sh gère l'auth AppRole puis lance envconsul
+CMD ["sh", "scripts/start-dev.sh"]
