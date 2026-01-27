@@ -5,7 +5,7 @@ services:
   ludora-api:
     build:
       context: .
-      dockerfile: docker/nest-api/Dockerfile.dev
+      dockerfile: docker/nest-api/Dockerfile.local
     container_name: ludora-api-local
     restart: "no" # Don't restart in local for easier debugging
     ports:
