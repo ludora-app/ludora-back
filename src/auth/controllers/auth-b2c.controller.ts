@@ -140,6 +140,7 @@ export class AuthB2CController {
   })
   async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
     const tokens = await this.authService.login(loginDto);
+    console.log(process.env.DATABASE_URL);
     return {
       data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
       message: 'Token created successfully',

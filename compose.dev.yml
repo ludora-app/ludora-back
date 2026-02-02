@@ -1,100 +1,69 @@
-# Development environment configuration
+# Development environment configuration (production replica with dev Vault)
 # Usage: docker compose -f compose.dev.yml up --build
 
 services:
   ludora-api:
     build:
       context: .
-      dockerfile: docker/nest-api/Dockerfile.dev
-    container_name: ludora-api
-    restart: 'no' # Don't restart in dev for easier debugging
+      dockerfile: docker/nest-api/Dockerfile.prod
+      args:
+        ENV_NAME: dev
+    container_name: ludora-api-dev
+    restart: unless-stopped
     ports:
-      - '2424:2424' # API port
-      - '51212:51212' # Prisma Studio port
-      - '9229:9229' # Node.js debugging port
-    volumes:
-      - ./src:/usr/src/app/src
-      - ./prisma:/usr/src/app/prisma
-      - ./tests:/usr/src/app/tests
-      - ./generated:/usr/src/app/generated
-      - /usr/src/app/node_modules
+      - "2424:2424"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       # Vault AppRole configuration
       - VAULT_ADDR=${VAULT_ADDR:-https://vault.ludora.fr}
       - VAULT_ROLE_ID
       - VAULT_SECRET_ID
-    command: ['sh', 'scripts/start-dev.sh']
     networks:
       - ludora-network
       - traefik
-    depends_on:
-      - ludora-db
-    # Add healthcheck to ensure API is ready
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:2424/health']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    # Add development-specific labels
+      test: ["CMD", "curl", "-f", "http://localhost:2424/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Production security
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    command: ["sh", "scripts/start-dev.sh"]
     labels:
-      - 'dev.environment=development'
-      - 'traefik.enable=true'
-      - 'traefik.docker.network=traefik'
-      - 'traefik.http.services.ludora-api.loadbalancer.server.port=2424'
+      - "dev.environment=development"
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.services.ludora-api-dev.loadbalancer.server.port=2424"
       # Add basic auth middleware for Swagger
-      - 'traefik.http.middlewares.swagger-basicauth.basicauth.users=${BASIC_AUTH_USERNAME}:${BASIC_AUTH_PASSWORD_HASH}'
+      - "traefik.http.middlewares.swagger-basicauth.basicauth.users=${BASIC_AUTH_USERNAME}:${BASIC_AUTH_PASSWORD_HASH}"
       # Router for Swagger with basic auth (higher priority)
-      - 'traefik.http.routers.ludora-api-swagger.rule=Host(`ludora-api-dev.gana-f4ll.fr`) && PathPrefix(`/swagger`)'
-      - 'traefik.http.routers.ludora-api-swagger.entrypoints=websecure'
-      - 'traefik.http.routers.ludora-api-swagger.tls=true'
-      - 'traefik.http.routers.ludora-api-swagger.tls.certresolver=myresolver'
-      - 'traefik.http.routers.ludora-api-swagger.middlewares=swagger-basicauth'
-      - 'traefik.http.routers.ludora-api-swagger.service=ludora-api'
-      - 'traefik.http.routers.ludora-api-swagger.priority=10'
+      - "traefik.http.routers.ludora-api-swagger-dev.rule=Host(`ludora-api-dev.gana-f4ll.fr`) && PathPrefix(`/swagger`)"
+      - "traefik.http.routers.ludora-api-swagger-dev.entrypoints=websecure"
+      - "traefik.http.routers.ludora-api-swagger-dev.tls=true"
+      - "traefik.http.routers.ludora-api-swagger-dev.tls.certresolver=myresolver"
+      - "traefik.http.routers.ludora-api-swagger-dev.middlewares=swagger-basicauth"
+      - "traefik.http.routers.ludora-api-swagger-dev.service=ludora-api-dev"
+      - "traefik.http.routers.ludora-api-swagger-dev.priority=10"
       # Main router for API (lower priority)
-      - 'traefik.http.routers.ludora-api.rule=Host(`ludora-api-dev.gana-f4ll.fr`)'
-      - 'traefik.http.routers.ludora-api.entrypoints=websecure'
-      - 'traefik.http.routers.ludora-api.tls=true'
-      - 'traefik.http.routers.ludora-api.tls.certresolver=myresolver'
-      - 'traefik.http.routers.ludora-api.service=ludora-api'
-      - 'traefik.http.routers.ludora-api.priority=1'
-
-  ludora-db:
-    build:
-      context: .
-      dockerfile: docker/postgres/Dockerfile
-    restart: 'no'
-    ports:
-      - '5432:5432'
-    environment:
-      - POSTGRES_LOG_STATEMENT=all
-      # Vault AppRole configuration
-      - VAULT_ADDR=${VAULT_ADDR:-https://vault.ludora.fr}
-      - VAULT_ROLE_ID
-      - VAULT_SECRET_ID
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-      - ./scripts/vault/envconsul-docker.hcl:/etc/envconsul/config.hcl:ro
-    networks:
-      - ludora-network
-    labels:
-      - 'traefik.enable=false'
-
-  ludora-k6:
-    image: grafana/k6:latest
-    container_name: ludora-k6
-    restart: 'no'
-    volumes:
-      - ./load-tests:/scripts
-    networks:
-      - ludora-network
-    profiles:
-      - tools
-
-volumes:
-  postgres-data:
+      - "traefik.http.routers.ludora-api-dev.rule=Host(`ludora-api-dev.gana-f4ll.fr`)"
+      - "traefik.http.routers.ludora-api-dev.entrypoints=websecure"
+      - "traefik.http.routers.ludora-api-dev.tls=true"
+      - "traefik.http.routers.ludora-api-dev.tls.certresolver=myresolver"
+      - "traefik.http.routers.ludora-api-dev.service=ludora-api-dev"
+      - "traefik.http.routers.ludora-api-dev.priority=1"
 
 networks:
   ludora-network:

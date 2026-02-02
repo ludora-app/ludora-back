@@ -1,28 +1,31 @@
 # Open a shell in the dev container with Vault and envconsul authentication
-dev-sh:
-		docker compose -f compose.dev.yml exec ludora-api sh -c '. /usr/local/bin/vault-auth.sh && envconsul -config=/etc/envconsul/config.hcl -once -- sh'
+local-sh:
+		docker compose -f compose.local.yml exec ludora-api sh -c '. /usr/local/bin/vault-auth.sh && envconsul -config=/etc/envconsul/config.hcl -once -- sh'
 
 # Start containers in dev mode
-dev-up:
-	docker compose -f compose.dev.yml --env-file .env.dev up --build
+local-up:
+	docker compose -f compose.local.yml --env-file .env.local up --build
 
 # Stop dev containers
-dev-down:
-	docker compose -f compose.dev.yml --env-file .env.dev down
+local-down:
+	docker compose -f compose.local.yml --env-file .env.local down
 
 # Reset PostgreSQL (remove volume and rebuild)
-dev-postgres-reset:
-	docker compose -f compose.dev.yml --env-file .env.dev down -v
-	docker compose -f compose.dev.yml --env-file .env.dev up --build ludora-db
+local-postgres-reset:
+	docker compose -f compose.local.yml --env-file .env.local down -v
+	docker compose -f compose.local.yml --env-file .env.local up --build ludora-db
 
 # Stop PostgreSQL only
-dev-postgres-down:
-	docker compose -f compose.dev.yml --env-file .env.dev down ludora-db
+local-postgres-down:
+	docker compose -f compose.local.yml --env-file .env.local down ludora-db
 
 # Start PostgreSQL only
-dev-postgres-up:
-	docker compose -f compose.dev.yml --env-file .env.dev up ludora-db
+local-postgres-up:
+	docker compose -f compose.local.yml --env-file .env.local up ludora-db
 
 # Run load tests
-dev-k6:
-	docker compose -f compose.dev.yml run --rm ludora-k6 run /scripts/auth/auth-load-test.js
+local-k6:
+	docker compose -f compose.local.yml run --rm ludora-k6 run /scripts/auth/auth-load-test.js
+
+dev-up:
+	docker compose -f compose.dev.yml --env-file .env.local up --build
