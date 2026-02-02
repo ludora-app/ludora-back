@@ -18,6 +18,8 @@ import {
   Post,
   Body,
   UseInterceptors,
+  ParseIntPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -32,6 +34,10 @@ import {
 import { CreateMessageDto } from './dto/input/create-message.dto';
 import { ConversationsService } from './services/conversations.service';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
+import {
+  MessageCollectionItemDto,
+  PaginatedMessageCollectionResponseDto,
+} from './dto/output/message-collection-response.dto';
 import {
   FindOneConversationResponseData,
   FindOneConversationResponseDto,
@@ -88,6 +94,29 @@ export class ConversationsController {
     return {
       data: conversation,
       message: 'Conversation fetched successfully',
+    };
+  }
+
+  @Get(':uid/messages-list/collection')
+  @Protected()
+  @ApiOperation({ summary: 'Get a list of messages for a conversation' })
+  @ApiOkResponse({ type: PaginatedMessageCollectionResponseDto })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiForbiddenResponse({ type: ForbiddenResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @HttpCode(HttpStatus.OK)
+  async loadMoreMessages(
+    @Param('uid') uid: string,
+    @Req() request: Request,
+    @Query('cursor') cursor?: string,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit?: number,
+  ): Promise<PaginationResponseTypeDto<MessageCollectionItemDto>> {
+    const userUid = request['user'].uid;
+    const messages = await this.conversationsService.loadMoreMessages(uid, userUid, cursor, limit);
+    return {
+      data: messages,
+      message: 'Messages fetched successfully',
     };
   }
 

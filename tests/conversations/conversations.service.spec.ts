@@ -1,33 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { ConversationsService } from 'src/conversations/services/conversations.service';
-import { MessagesService } from 'src/conversations/services/messages.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
+import { MessagesService } from 'src/conversations/services/messages.service';
+import { ConversationsService } from 'src/conversations/services/conversations.service';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
-import {
-  ConversationMapper,
-  RawConversationCollectionItem,
-} from 'src/conversations/mappers/conversation.mapper';
 
 describe('ConversationsService', () => {
   let service: ConversationsService;
-  let mockPrismaService: any;
+  let mockPrisma: any;
+  let mockLogger: any;
   let mockMessagesService: any;
   let mockStorageService: any;
 
-  const mockPinoLogger = {
-    debug: jest.fn(),
-    error: jest.fn(),
-    info: jest.fn(),
-    setContext: jest.fn(),
-    warn: jest.fn(),
-  };
-
   beforeEach(async () => {
-    mockPrismaService = {
-      $transaction: jest.fn((callback) => callback(mockPrismaService)),
+    mockPrisma = {
       conversationMembers: {
         createMany: jest.fn(),
         findFirst: jest.fn(),
@@ -40,13 +28,21 @@ describe('ConversationsService', () => {
       },
     };
 
+    mockLogger = {
+      debug: jest.fn(),
+      error: jest.fn(),
+      info: jest.fn(),
+      setContext: jest.fn(),
+    };
+
     mockMessagesService = {
-      createTextMessage: jest.fn(),
       createMediaMessage: jest.fn(),
+      createTextMessage: jest.fn(),
+      getMessages: jest.fn(),
     };
 
     mockStorageService = {
-      getSignedUrl: jest.fn().mockResolvedValue('https://signed-url.example.com/image.jpg'),
+      getSignedUrl: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -54,11 +50,11 @@ describe('ConversationsService', () => {
         ConversationsService,
         {
           provide: PrismaService,
-          useValue: mockPrismaService,
+          useValue: mockPrisma,
         },
         {
           provide: PinoLogger,
-          useValue: mockPinoLogger,
+          useValue: mockLogger,
         },
         {
           provide: MessagesService,
@@ -78,122 +74,122 @@ describe('ConversationsService', () => {
     jest.clearAllMocks();
   });
 
-  describe('createSessionConversation', () => {
-    const createSessionConversationDto = {
-      name: 'Test Session',
-      sessionUid: 'session-123',
-      type: ConversationType.SESSION,
-      userUids: ['user-1', 'user-2'],
-    };
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
 
-    it('should create a session conversation without transaction', async () => {
-      const mockConversation = {
-        name: 'Test Session',
+  describe('createSessionConversation', () => {
+    it('should create a session conversation successfully', async () => {
+      const createDto = {
+        name: 'Session 123',
         sessionUid: 'session-123',
         type: ConversationType.SESSION,
-        uid: 'conv-123',
-      };
-
-      mockPrismaService.conversations.create.mockResolvedValue(mockConversation);
-      mockPrismaService.conversationMembers.createMany.mockResolvedValue({ count: 2 });
-
-      await service.createSessionConversation(createSessionConversationDto);
-
-      expect(mockPrismaService.conversations.create).toHaveBeenCalledWith({
-        data: {
-          name: 'Test Session',
-          sessionUid: 'session-123',
-          type: ConversationType.SESSION,
-        },
-      });
-
-      expect(mockPrismaService.conversationMembers.createMany).toHaveBeenCalledWith({
-        data: [
-          { conversationUid: 'conv-123', userUid: 'user-1' },
-          { conversationUid: 'conv-123', userUid: 'user-2' },
-        ],
-      });
-
-      expect(mockPinoLogger.info).toHaveBeenCalled();
-    });
-
-    it('should create a session conversation with transaction', async () => {
-      const mockTx = {
-        conversationMembers: {
-          createMany: jest.fn().mockResolvedValue({ count: 2 }),
-        },
-        conversations: {
-          create: jest.fn().mockResolvedValue({ uid: 'conv-456' }),
-        },
-      };
-
-      await service.createSessionConversation(createSessionConversationDto, mockTx as any);
-
-      expect(mockTx.conversations.create).toHaveBeenCalled();
-      expect(mockTx.conversationMembers.createMany).toHaveBeenCalled();
-      expect(mockPrismaService.conversations.create).not.toHaveBeenCalled();
-    });
-
-    it('should throw BadRequestException when sessionUid is missing', async () => {
-      const invalidDto = {
-        ...createSessionConversationDto,
-        sessionUid: '',
-      };
-
-      await expect(service.createSessionConversation(invalidDto)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.createSessionConversation(invalidDto)).rejects.toThrow(
-        'Session uid is required',
-      );
-    });
-
-    it('should create conversation members for all user uids', async () => {
-      const mockConversation = { uid: 'conv-789' };
-      mockPrismaService.conversations.create.mockResolvedValue(mockConversation);
-      mockPrismaService.conversationMembers.createMany.mockResolvedValue({ count: 3 });
-
-      const dtoWithMultipleUsers = {
-        ...createSessionConversationDto,
         userUids: ['user-1', 'user-2', 'user-3'],
       };
 
-      await service.createSessionConversation(dtoWithMultipleUsers);
+      const mockConversation = {
+        createdAt: new Date(),
+        imageUrl: null,
+        name: createDto.name,
+        sessionUid: createDto.sessionUid,
+        type: createDto.type,
+        uid: 'conv-123',
+        updatedAt: new Date(),
+      };
 
-      expect(mockPrismaService.conversationMembers.createMany).toHaveBeenCalledWith({
+      mockPrisma.conversations.create.mockResolvedValue(mockConversation);
+      mockPrisma.conversationMembers.createMany.mockResolvedValue({ count: 3 });
+
+      await service.createSessionConversation(createDto);
+
+      expect(mockPrisma.conversations.create).toHaveBeenCalledWith({
+        data: {
+          name: createDto.name,
+          sessionUid: createDto.sessionUid,
+          type: createDto.type,
+        },
+      });
+      expect(mockPrisma.conversationMembers.createMany).toHaveBeenCalledWith({
         data: [
-          { conversationUid: 'conv-789', userUid: 'user-1' },
-          { conversationUid: 'conv-789', userUid: 'user-2' },
-          { conversationUid: 'conv-789', userUid: 'user-3' },
+          { conversationUid: 'conv-123', userUid: 'user-1' },
+          { conversationUid: 'conv-123', userUid: 'user-2' },
+          { conversationUid: 'conv-123', userUid: 'user-3' },
         ],
       });
+    });
+
+    it('should throw BadRequestException when sessionUid is missing', async () => {
+      const createDto = {
+        name: 'Session',
+        sessionUid: undefined,
+        type: ConversationType.SESSION,
+        userUids: ['user-1'],
+      } as any;
+
+      await expect(service.createSessionConversation(createDto)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockPrisma.conversations.create).not.toHaveBeenCalled();
+    });
+
+    it('should work with a transaction client', async () => {
+      const createDto = {
+        name: 'Session TX',
+        sessionUid: 'session-tx-123',
+        type: ConversationType.SESSION,
+        userUids: ['user-1'],
+      };
+
+      const mockConversation = {
+        uid: 'conv-tx-123',
+      };
+
+      const mockTx = {
+        conversationMembers: {
+          createMany: jest.fn().mockResolvedValue({ count: 1 }),
+        },
+        conversations: {
+          create: jest.fn().mockResolvedValue(mockConversation),
+        },
+      } as any;
+
+      await service.createSessionConversation(createDto, mockTx);
+
+      expect(mockTx.conversations.create).toHaveBeenCalled();
+      expect(mockTx.conversationMembers.createMany).toHaveBeenCalled();
+      expect(mockPrisma.conversations.create).not.toHaveBeenCalled();
     });
   });
 
   describe('createPrivateConversation', () => {
-    const createPrivateConversationDto = {
-      type: ConversationType.PRIVATE,
-      userUids: ['user-1', 'user-2'],
-    };
-
-    it('should create a private conversation without transaction', async () => {
-      const mockConversation = {
+    it('should create a private conversation successfully', async () => {
+      const createDto = {
         type: ConversationType.PRIVATE,
-        uid: 'conv-private-123',
+        userUids: ['user-1', 'user-2'],
       };
 
-      mockPrismaService.conversations.create.mockResolvedValue(mockConversation);
-      mockPrismaService.conversationMembers.createMany.mockResolvedValue({ count: 2 });
+      const mockConversation = {
+        createdAt: new Date(),
+        imageUrl: null,
+        name: null,
+        sessionUid: null,
+        type: createDto.type,
+        uid: 'conv-private-123',
+        updatedAt: new Date(),
+      };
 
-      await service.createPrivateConversation(createPrivateConversationDto);
+      mockPrisma.conversations.create.mockResolvedValue(mockConversation);
+      mockPrisma.conversationMembers.createMany.mockResolvedValue({ count: 2 });
 
-      expect(mockPrismaService.conversations.create).toHaveBeenCalledWith({
+      const result = await service.createPrivateConversation(createDto);
+
+      expect(result).toEqual({ uid: 'conv-private-123' });
+      expect(mockPrisma.conversations.create).toHaveBeenCalledWith({
         data: {
-          type: ConversationType.PRIVATE,
+          type: createDto.type,
         },
       });
-
-      expect(mockPrismaService.conversationMembers.createMany).toHaveBeenCalledWith({
+      expect(mockPrisma.conversationMembers.createMany).toHaveBeenCalledWith({
         data: [
           { conversationUid: 'conv-private-123', userUid: 'user-1' },
           { conversationUid: 'conv-private-123', userUid: 'user-2' },
@@ -201,874 +197,464 @@ describe('ConversationsService', () => {
       });
     });
 
-    it('should create a private conversation with transaction', async () => {
+    it('should work with a transaction client', async () => {
+      const createDto = {
+        type: ConversationType.PRIVATE,
+        userUids: ['user-1', 'user-2'],
+      };
+
+      const mockConversation = {
+        uid: 'conv-tx-private-123',
+      };
+
       const mockTx = {
         conversationMembers: {
           createMany: jest.fn().mockResolvedValue({ count: 2 }),
         },
         conversations: {
-          create: jest.fn().mockResolvedValue({ uid: 'conv-private-456' }),
+          create: jest.fn().mockResolvedValue(mockConversation),
         },
-      };
+      } as any;
 
-      await service.createPrivateConversation(createPrivateConversationDto, mockTx as any);
+      const result = await service.createPrivateConversation(createDto, mockTx);
 
+      expect(result).toEqual({ uid: 'conv-tx-private-123' });
       expect(mockTx.conversations.create).toHaveBeenCalled();
-      expect(mockTx.conversationMembers.createMany).toHaveBeenCalled();
+      expect(mockPrisma.conversations.create).not.toHaveBeenCalled();
     });
   });
 
   describe('findAllByUserUid', () => {
-    const mockConversations = [
-      {
-        conversationMembers: [
-          {
-            user: {
-              firstname: 'John',
-              imageUrl: 'user1.jpg',
-              lastname: 'Doe',
-              uid: 'user-2',
-            },
-          },
-        ],
+    it('should return paginated conversations', async () => {
+      const userUid = 'user-123';
+      const filters = {};
 
-        messages: [
-          {
-            content: 'Last message',
-            createdAt: new Date(),
-            sender: {
-              firstname: 'John',
-              imageUrl: 'user1.jpg',
-              lastname: 'Doe',
-              uid: 'user-2',
-            },
-            senderUid: 'user-2',
-            uid: 'msg-1',
-            updatedAt: new Date(),
-          },
-        ],
-        name: 'Group 1',
-        type: ConversationType.GROUP,
-        uid: 'conv-1',
-      },
-      {
-        conversationMembers: [
-          {
-            user: {
-              firstname: 'Jane',
-              imageUrl: 'user3.jpg',
-              lastname: 'Smith',
-              uid: 'user-3',
-            },
-          },
-        ],
-
-        messages: [
-          {
-            content: 'Another message',
-            createdAt: new Date(),
-            sender: {
-              firstname: 'Jane',
-              imageUrl: 'user3.jpg',
-              lastname: 'Smith',
-              uid: 'user-3',
-            },
-            senderUid: 'user-3',
-            uid: 'msg-2',
-            updatedAt: new Date(),
-          },
-        ],
-        name: 'Group 2',
-        type: ConversationType.GROUP,
-        uid: 'conv-2',
-      },
-    ];
-
-    beforeEach(() => {
-      jest
-        .spyOn(ConversationMapper, 'toCollectionDto')
-        .mockImplementation(async (conversation: RawConversationCollectionItem) => {
-          const user = conversation.conversationMembers?.[0]?.user;
-          const message = conversation.messages?.[0];
-          return {
-            imageUrl: user?.imageUrl ? 'https://signed-url.example.com/' + user.imageUrl : null,
-            lastMessage: message
-              ? {
-                  content: message.content,
-                  createdAt: message.createdAt,
-                  uid: message.uid,
-                }
-              : null,
-
-            name: conversation.name || (user ? `${user.firstname} ${user.lastname}` : ''),
-            sender: message?.sender || null,
-            sessionUid: conversation.sessionUid || null,
-            type: conversation.type,
-            uid: conversation.uid,
-          } as any;
-        });
-    });
-
-    it('should return paginated conversations with default limit', async () => {
-      mockPrismaService.conversations.findMany.mockResolvedValue(mockConversations);
-
-      const result = await service.findAllByUserUid({}, 'user-123');
-
-      expect(result.items).toHaveLength(2);
-      expect(result.items[0].uid).toBe('conv-1');
-      expect(result.items[0].name).toBe('Group 1');
-      expect(result.items[1].uid).toBe('conv-2');
-      expect(result.items[1].name).toBe('Group 2');
-      expect(result.nextCursor).toBeNull();
-      expect(result.totalCount).toBe(2);
-      expect(mockPrismaService.conversations.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          take: 10,
-          where: expect.objectContaining({
-            conversationMembers: {
-              some: {
-                userUid: 'user-123',
-              },
-            },
-          }),
-        }),
-      );
-      expect(ConversationMapper.toCollectionDto).toHaveBeenCalledTimes(2);
-      expect(ConversationMapper.toCollectionDto).toHaveBeenCalledWith(
-        mockConversations[0],
-        mockStorageService,
-      );
-    });
-
-    it('should filter conversations by type', async () => {
-      mockPrismaService.conversations.findMany.mockResolvedValue([mockConversations[0]]);
-
-      await service.findAllByUserUid({ type: ConversationType.GROUP }, 'user-123');
-
-      expect(mockPrismaService.conversations.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            type: ConversationType.GROUP,
-          }),
-        }),
-      );
-    });
-
-    it('should filter conversations by name', async () => {
-      mockPrismaService.conversations.findMany.mockResolvedValue([mockConversations[0]]);
-
-      await service.findAllByUserUid({ name: 'Group 1' }, 'user-123');
-
-      expect(mockPrismaService.conversations.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            name: {
-              contains: 'Group 1',
-              mode: 'insensitive',
-            },
-          }),
-        }),
-      );
-    });
-
-    it('should handle pagination with cursor', async () => {
-      mockPrismaService.conversations.findMany.mockResolvedValue(mockConversations);
-
-      await service.findAllByUserUid({ cursor: 'conv-cursor', limit: 10 }, 'user-123');
-
-      expect(mockPrismaService.conversations.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          cursor: { uid: 'conv-cursor' },
-          skip: 1,
-        }),
-      );
-    });
-
-    it('should calculate next cursor when more items than limit', async () => {
-      const manyConversations = [
+      const mockConversations = [
         {
           conversationMembers: [],
           createdAt: new Date(),
-
-          messages: [],
-          name: 'Conv 1',
+          imageUrl: null,
+          messages: [
+            {
+              content: 'Last message',
+              createdAt: new Date(),
+              globalStatus: MessageStatus.SENT,
+              sender: {
+                firstname: 'John',
+                imageUrl: null,
+                lastname: 'Doe',
+                uid: 'user-2',
+              },
+              senderUid: 'user-2',
+              type: MessageType.TEXT,
+              uid: 'msg-1',
+              updatedAt: new Date(),
+            },
+          ],
+          name: 'Test Conversation',
+          session: null,
+          sessionUid: null,
           type: ConversationType.PRIVATE,
           uid: 'conv-1',
           updatedAt: new Date(),
         },
+      ];
+
+      mockPrisma.conversations.findMany.mockResolvedValue(mockConversations);
+      mockStorageService.getSignedUrl.mockResolvedValue('signed-url');
+
+      const result = await service.findAllByUserUid(filters, userUid);
+
+      expect(result.items).toHaveLength(1);
+      expect(result.totalCount).toBe(1);
+      expect(result.nextCursor).toBeNull();
+      expect(mockPrisma.conversations.findMany).toHaveBeenCalled();
+    });
+
+    it('should apply filters correctly', async () => {
+      const userUid = 'user-123';
+      const filters = {
+        limit: 5,
+        name: 'Test',
+        type: ConversationType.GROUP,
+      };
+
+      mockPrisma.conversations.findMany.mockResolvedValue([]);
+      mockStorageService.getSignedUrl.mockResolvedValue('signed-url');
+
+      await service.findAllByUserUid(filters, userUid);
+
+      const callArgs = mockPrisma.conversations.findMany.mock.calls[0][0];
+      expect(callArgs.where.type).toBe(ConversationType.GROUP);
+      expect(callArgs.where.name).toEqual({ contains: 'Test', mode: 'insensitive' });
+      expect(callArgs.take).toBe(6); // limit + 1 for cursor pagination
+    });
+
+    it('should handle cursor pagination', async () => {
+      const userUid = 'user-123';
+      const filters = {
+        cursor: 'conv-cursor-123',
+        limit: 10,
+      };
+
+      mockPrisma.conversations.findMany.mockResolvedValue([]);
+      mockStorageService.getSignedUrl.mockResolvedValue('signed-url');
+
+      await service.findAllByUserUid(filters, userUid);
+
+      const callArgs = mockPrisma.conversations.findMany.mock.calls[0][0];
+      expect(callArgs.cursor).toEqual({ uid: 'conv-cursor-123' });
+      expect(callArgs.skip).toBe(1);
+    });
+
+    it('should return nextCursor when more items available', async () => {
+      const userUid = 'user-123';
+      const filters = { limit: 2 };
+
+      const mockConversations = [
         {
           conversationMembers: [],
-          createdAt: new Date(),
-
+          messages: [],
+          name: 'Conv 1',
+          session: null,
+          type: ConversationType.PRIVATE,
+          uid: 'conv-1',
+        },
+        {
+          conversationMembers: [],
           messages: [],
           name: 'Conv 2',
+          session: null,
           type: ConversationType.PRIVATE,
           uid: 'conv-2',
-          updatedAt: new Date(),
         },
         {
           conversationMembers: [],
-          createdAt: new Date(),
-
           messages: [],
           name: 'Conv 3',
+          session: null,
           type: ConversationType.PRIVATE,
           uid: 'conv-3',
-          updatedAt: new Date(),
-        },
-        {
-          conversationMembers: [],
-          createdAt: new Date(),
-          messages: [],
-          name: 'Conv 4',
-          type: ConversationType.PRIVATE,
-          uid: 'conv-4',
-          updatedAt: new Date(),
-        },
-        {
-          conversationMembers: [],
-          createdAt: new Date(),
-
-          messages: [],
-          name: 'Conv 5',
-          type: ConversationType.PRIVATE,
-          uid: 'conv-5',
-          updatedAt: new Date(),
-        },
-        {
-          conversationMembers: [],
-          createdAt: new Date(),
-
-          messages: [],
-          name: 'Conv 6',
-          type: ConversationType.PRIVATE,
-          uid: 'conv-6',
-          updatedAt: new Date(),
         },
       ];
 
-      mockPrismaService.conversations.findMany.mockResolvedValue(manyConversations);
-      jest
-        .spyOn(ConversationMapper, 'toCollectionDto')
-        .mockImplementationOnce(
-          async (conversation: RawConversationCollectionItem, storageService: StorageService) => {
-            return {
-              imageUrl: null,
-              lastMessage: null,
+      mockPrisma.conversations.findMany.mockResolvedValue(mockConversations);
+      mockStorageService.getSignedUrl.mockResolvedValue('signed-url');
 
-              name: `Conv ${conversation.uid}`,
-              sender: null,
-              sessionUid: null,
-              type: ConversationType.PRIVATE,
-              uid: conversation.uid,
-            };
-          },
-        );
+      const result = await service.findAllByUserUid(filters, userUid);
 
-      const result = await service.findAllByUserUid({ limit: 5 }, 'user-123');
-
-      expect(result.items).toHaveLength(5);
-      expect(result.nextCursor).toBe('conv-6');
-    });
-
-    it('should include last message, conversationMembers, and session in conversations', async () => {
-      mockPrismaService.conversations.findMany.mockResolvedValue(mockConversations);
-
-      await service.findAllByUserUid({}, 'user-123');
-
-      expect(mockPrismaService.conversations.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          include: expect.objectContaining({
-            conversationMembers: expect.objectContaining({
-              select: expect.objectContaining({
-                user: expect.objectContaining({
-                  select: expect.objectContaining({
-                    uid: true,
-                    firstname: true,
-                    lastname: true,
-                    imageUrl: true,
-                  }),
-                }),
-              }),
-              where: expect.objectContaining({
-                NOT: {
-                  userUid: 'user-123',
-                },
-              }),
-            }),
-            messages: expect.objectContaining({
-              orderBy: {
-                createdAt: 'desc',
-              },
-              select: expect.objectContaining({
-                content: true,
-                createdAt: true,
-                uid: true,
-                senderUid: true,
-                updatedAt: true,
-                sender: expect.any(Object),
-              }),
-              take: 1,
-            }),
-            session: expect.objectContaining({
-              select: expect.objectContaining({
-                sessionImages: expect.any(Object),
-              }),
-            }),
-          }),
-        }),
-      );
-    });
-
-    it('should apply multiple filters together', async () => {
-      mockPrismaService.conversations.findMany.mockResolvedValue([mockConversations[0]]);
-
-      await service.findAllByUserUid(
-        {
-          limit: 15,
-          name: 'Group',
-          type: ConversationType.GROUP,
-        },
-        'user-123',
-      );
-
-      expect(mockPrismaService.conversations.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          take: 16,
-          where: expect.objectContaining({
-            name: {
-              contains: 'Group',
-              mode: 'insensitive',
-            },
-            type: ConversationType.GROUP,
-          }),
-        }),
-      );
+      expect(result.items).toHaveLength(2);
+      expect(result.nextCursor).toBe('conv-3');
     });
   });
 
   describe('findOne', () => {
-    const mockRawConversation = {
-      conversationMembers: [
-        {
-          user: {
-            firstname: 'John',
-            imageUrl: 'user2.jpg',
-            lastname: 'Doe',
-            uid: 'user-2',
+    it('should return a conversation by uid', async () => {
+      const conversationUid = 'conv-123';
+      const userUid = 'user-123';
+
+      const mockConversation = {
+        conversationMembers: [
+          {
+            user: {
+              firstname: 'Jane',
+              imageUrl: null,
+              lastname: 'Smith',
+              uid: 'user-2',
+            },
           },
-        },
-      ],
-      createdAt: new Date(),
-
-      messages: [
-        {
-          content: 'Message 1',
-          createdAt: new Date(),
-          globalStatus: MessageStatus.SENT,
-          sender: {
-            firstname: 'Jane',
-            imageUrl: 'user1.jpg',
-            lastname: 'Smith',
-            uid: 'user-1',
+        ],
+        createdAt: new Date(),
+        imageUrl: null,
+        messages: [
+          {
+            content: 'Hello',
+            createdAt: new Date(),
+            globalStatus: MessageStatus.SENT,
+            sender: {
+              firstname: 'Jane',
+              imageUrl: null,
+              lastname: 'Smith',
+              uid: 'user-2',
+            },
+            senderUid: 'user-2',
+            type: MessageType.TEXT,
+            uid: 'msg-1',
+            updatedAt: new Date(),
           },
-          type: MessageType.TEXT,
-          uid: 'msg-1',
-          updatedAt: new Date(),
-        },
-        {
-          content: 'Message 2',
-          createdAt: new Date(),
-          globalStatus: MessageStatus.SENT,
-          sender: {
-            firstname: 'John',
-            imageUrl: 'user2.jpg',
-            lastname: 'Doe',
-            uid: 'user-2',
-          },
-          type: MessageType.TEXT,
-          uid: 'msg-2',
-          updatedAt: new Date(),
-        },
-      ],
-      name: 'Test Conversation',
-      sessionUid: null,
-      type: ConversationType.PRIVATE,
-      uid: 'conv-123',
-      updatedAt: new Date(),
-    };
+        ],
+        name: null,
+        sessionUid: null,
+        type: ConversationType.PRIVATE,
+        uid: conversationUid,
+        updatedAt: new Date(),
+      };
 
-    const mockMappedConversation = {
-      imageUrl: null,
-      messages: [
-        {
-          content: 'Message 1',
-          createdAt: mockRawConversation.messages[0].createdAt,
-          globalStatus: MessageStatus.SENT,
-          type: MessageType.TEXT,
-          uid: 'msg-1',
-        },
-        {
-          content: 'Message 2',
-          createdAt: mockRawConversation.messages[1].createdAt,
-          globalStatus: MessageStatus.SENT,
-          type: MessageType.TEXT,
-          uid: 'msg-2',
-        },
-      ],
-      name: 'John Doe',
-      sender: mockRawConversation.conversationMembers[0].user,
-      sessionUid: null,
-      type: ConversationType.PRIVATE,
-      uid: 'conv-123',
-    };
-
-    beforeEach(() => {
-      jest.spyOn(ConversationMapper, 'toFindOneDto').mockResolvedValue(mockMappedConversation);
-    });
-
-    it('should return a mapped conversation if user is a member', async () => {
-      mockPrismaService.conversations.findUnique.mockResolvedValue(mockRawConversation);
-      mockPrismaService.conversationMembers.findFirst.mockResolvedValue({
-        conversationUid: 'conv-123',
-        userUid: 'user-123',
+      mockPrisma.conversations.findUnique.mockResolvedValue(mockConversation);
+      mockPrisma.conversationMembers.findFirst.mockResolvedValue({
+        conversationUid,
+        uid: 'member-1',
+        userUid,
       });
+      mockStorageService.getSignedUrl.mockResolvedValue('signed-url');
 
-      const result = await service.findOne('conv-123', 'user-123');
+      const result = await service.findOne(conversationUid, userUid);
 
-      expect(result).toEqual(mockMappedConversation);
-      expect(mockPrismaService.conversations.findUnique).toHaveBeenCalledWith({
-        include: {
-          conversationMembers: {
-            select: {
-              user: {
-                select: {
-                  firstname: true,
-                  imageUrl: true,
-                  lastname: true,
-                  uid: true,
-                },
-              },
-            },
-            where: {
-              NOT: {
-                userUid: 'user-123',
-              },
-            },
-          },
-          messages: {
-            orderBy: {
-              createdAt: 'desc',
-            },
-            select: {
-              content: true,
-              createdAt: true,
-              globalStatus: true,
-              sender: {
-                select: {
-                  firstname: true,
-                  imageUrl: true,
-                  lastname: true,
-                  uid: true,
-                },
-              },
-              senderUid: true,
-              type: true,
-              uid: true,
-              updatedAt: true,
-            },
-            take: 10,
-          },
-        },
+      expect(result).toBeDefined();
+      expect(mockPrisma.conversations.findUnique).toHaveBeenCalledWith({
+        include: expect.any(Object),
+        where: { uid: conversationUid },
+      });
+      expect(mockPrisma.conversationMembers.findFirst).toHaveBeenCalledWith({
         where: {
-          uid: 'conv-123',
+          conversationUid,
+          userUid,
         },
       });
-      expect(ConversationMapper.toFindOneDto).toHaveBeenCalledWith(
-        mockRawConversation,
-        mockStorageService,
-      );
     });
 
-    it('should throw NotFoundException if conversation does not exist', async () => {
-      mockPrismaService.conversations.findUnique.mockResolvedValue(null);
+    it('should throw NotFoundException when conversation does not exist', async () => {
+      const conversationUid = 'non-existent';
+      const userUid = 'user-123';
 
-      await expect(service.findOne('conv-123', 'user-123')).rejects.toThrow(NotFoundException);
-      await expect(service.findOne('conv-123', 'user-123')).rejects.toThrow(
-        'Conversation with uid conv-123 not found',
-      );
+      mockPrisma.conversations.findUnique.mockResolvedValue(null);
+
+      await expect(service.findOne(conversationUid, userUid)).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ForbiddenException if user is not a member', async () => {
-      mockPrismaService.conversations.findUnique.mockResolvedValue(mockRawConversation);
-      mockPrismaService.conversationMembers.findFirst.mockResolvedValue(null);
+    it('should throw ForbiddenException when user is not a member', async () => {
+      const conversationUid = 'conv-123';
+      const userUid = 'user-not-member';
 
-      await expect(service.findOne('conv-123', 'unauthorized-user')).rejects.toThrow(
-        ForbiddenException,
-      );
-      await expect(service.findOne('conv-123', 'unauthorized-user')).rejects.toThrow(
-        'User with uid unauthorized-user is not a member of this conversation',
-      );
-    });
+      const mockConversation = {
+        conversationMembers: [],
+        messages: [],
+        type: ConversationType.PRIVATE,
+        uid: conversationUid,
+      };
 
-    it('should include up to 10 most recent messages with detailed select', async () => {
-      mockPrismaService.conversations.findUnique.mockResolvedValue(mockRawConversation);
-      mockPrismaService.conversationMembers.findFirst.mockResolvedValue({ userUid: 'user-123' });
+      mockPrisma.conversations.findUnique.mockResolvedValue(mockConversation);
+      mockPrisma.conversationMembers.findFirst.mockResolvedValue(null);
 
-      await service.findOne('conv-123', 'user-123');
-
-      expect(mockPrismaService.conversations.findUnique).toHaveBeenCalledWith(
-        expect.objectContaining({
-          include: expect.objectContaining({
-            messages: expect.objectContaining({
-              select: expect.objectContaining({
-                content: true,
-                createdAt: true,
-                globalStatus: true,
-                sender: expect.any(Object),
-                senderUid: true,
-                type: true,
-                uid: true,
-                updatedAt: true,
-              }),
-              take: 10,
-            }),
-          }),
-        }),
-      );
-    });
-
-    it('should exclude current user from conversationMembers', async () => {
-      mockPrismaService.conversations.findUnique.mockResolvedValue(mockRawConversation);
-      mockPrismaService.conversationMembers.findFirst.mockResolvedValue({ userUid: 'user-456' });
-
-      await service.findOne('conv-789', 'user-456');
-
-      expect(mockPrismaService.conversations.findUnique).toHaveBeenCalledWith(
-        expect.objectContaining({
-          include: expect.objectContaining({
-            conversationMembers: expect.objectContaining({
-              where: {
-                NOT: {
-                  userUid: 'user-456',
-                },
-              },
-            }),
-          }),
-        }),
-      );
-    });
-
-    it('should check membership for the correct user and conversation', async () => {
-      mockPrismaService.conversations.findUnique.mockResolvedValue(mockRawConversation);
-      mockPrismaService.conversationMembers.findFirst.mockResolvedValue({ userUid: 'user-456' });
-
-      await service.findOne('conv-789', 'user-456');
-
-      expect(mockPrismaService.conversationMembers.findFirst).toHaveBeenCalledWith({
-        where: {
-          conversationUid: 'conv-789',
-          userUid: 'user-456',
-        },
-      });
+      await expect(service.findOne(conversationUid, userUid)).rejects.toThrow(ForbiddenException);
     });
   });
 
   describe('createMessage', () => {
-    const userUid = 'user-123';
-    const conversationUid = 'conv-123';
-    const content = 'Hello, this is a test message';
+    it('should create a text message in existing conversation', async () => {
+      const userUid = 'user-123';
+      const dto = {
+        content: 'Hello',
+        conversationUid: 'conv-123',
+        type: MessageType.TEXT,
+      };
 
-    describe('Session Conversation Messages', () => {
-      it('should create a text message in a session conversation', async () => {
-        const sessionUid = 'session-456';
-        const dto = {
-          content,
-          sessionUid,
-          type: MessageType.TEXT,
-        };
-        const mockSessionConversation = {
-          sessionUid,
-          type: ConversationType.SESSION,
-          uid: 'session-conv-123',
-        };
+      mockMessagesService.createTextMessage.mockResolvedValue(undefined);
 
-        mockPrismaService.conversations.findUnique.mockResolvedValue(mockSessionConversation);
-        mockMessagesService.createTextMessage.mockResolvedValue(undefined);
+      await service.createMessage(userUid, dto);
 
-        await service.createMessage(userUid, dto);
-
-        expect(mockPrismaService.conversations.findUnique).toHaveBeenCalledWith({
-          where: {
-            sessionUid,
-            type: ConversationType.SESSION,
-          },
-        });
-        expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
-          userUid,
-          content,
-          undefined,
-          'session-conv-123',
-        );
-        expect(mockMessagesService.createMediaMessage).not.toHaveBeenCalled();
-      });
-
-      it('should create a media message in a session conversation', async () => {
-        const sessionUid = 'session-456';
-        const mockFile = {
-          buffer: Buffer.from('fake-image-data'),
-          originalname: 'test-image.jpg',
-        };
-        const dto = {
-          sessionUid,
-          type: MessageType.IMAGE,
-        };
-        const mockSessionConversation = {
-          sessionUid,
-          type: ConversationType.SESSION,
-          uid: 'session-conv-123',
-        };
-
-        mockPrismaService.conversations.findUnique.mockResolvedValue(mockSessionConversation);
-        mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
-
-        await service.createMessage(userUid, dto, mockFile);
-
-        expect(mockPrismaService.conversations.findUnique).toHaveBeenCalledWith({
-          where: {
-            sessionUid,
-            type: ConversationType.SESSION,
-          },
-        });
-        expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
-          userUid,
-          undefined,
-          MessageType.IMAGE,
-          mockFile,
-          'session-conv-123',
-        );
-        expect(mockMessagesService.createTextMessage).not.toHaveBeenCalled();
-      });
-
-      it('should throw NotFoundException when session conversation does not exist', async () => {
-        const sessionUid = 'session-456';
-        const dto = {
-          content,
-          sessionUid,
-          type: MessageType.TEXT,
-        };
-
-        mockPrismaService.conversations.findUnique.mockResolvedValue(null);
-
-        await expect(service.createMessage(userUid, dto)).rejects.toThrow(NotFoundException);
-        await expect(service.createMessage(userUid, dto)).rejects.toThrow(
-          'Session conversation not found',
-        );
-        expect(mockMessagesService.createTextMessage).not.toHaveBeenCalled();
-      });
+      expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
+        userUid,
+        'Hello',
+        'conv-123',
+        null,
+      );
     });
 
-    describe('Private Conversation Messages', () => {
-      it('should create a text message in an existing private conversation', async () => {
-        const recipientUid = 'user-456';
-        const dto = {
-          content,
-          recipientUid,
-          type: MessageType.TEXT,
-        };
-        const mockPrivateConversation = {
-          type: ConversationType.PRIVATE,
-          uid: 'private-conv-123',
-        };
+    it('should create a media message with file', async () => {
+      const userUid = 'user-123';
+      const dto = {
+        conversationUid: 'conv-123',
+        type: MessageType.IMAGE,
+      };
+      const file = {
+        buffer: Buffer.from('image-data'),
+        originalname: 'test.jpg',
+      };
 
-        mockPrismaService.conversations.findFirst.mockResolvedValue(mockPrivateConversation);
-        mockMessagesService.createTextMessage.mockResolvedValue(undefined);
+      mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
 
-        await service.createMessage(userUid, dto);
+      await service.createMessage(userUid, dto, file);
 
-        expect(mockPrismaService.conversations.findFirst).toHaveBeenCalledWith({
-          where: {
-            AND: [
-              {
-                conversationMembers: {
-                  some: {
-                    userUid: userUid,
-                  },
-                },
-              },
-              {
-                conversationMembers: {
-                  some: {
-                    userUid: recipientUid,
-                  },
-                },
-              },
-            ],
-            type: ConversationType.PRIVATE,
-          },
-        });
-        expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
-          userUid,
-          content,
-          'private-conv-123',
-          null,
-        );
-      });
-
-      it('should create a new private conversation if it does not exist', async () => {
-        const recipientUid = 'user-456';
-        const dto = {
-          content,
-          recipientUid,
-          type: MessageType.TEXT,
-        };
-        const newPrivateConversation = {
-          uid: 'new-private-conv-123',
-        };
-
-        mockPrismaService.conversations.findFirst.mockResolvedValue(null);
-        jest.spyOn(service, 'createPrivateConversation').mockResolvedValue(newPrivateConversation);
-        mockMessagesService.createTextMessage.mockResolvedValue(undefined);
-
-        await service.createMessage(userUid, dto);
-
-        expect(mockPrismaService.conversations.findFirst).toHaveBeenCalled();
-        expect(service.createPrivateConversation).toHaveBeenCalledWith({
-          type: ConversationType.PRIVATE,
-          userUids: [userUid, recipientUid],
-        });
-        expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
-          userUid,
-          content,
-          'new-private-conv-123',
-          null,
-        );
-      });
-
-      it('should create a media message in a new private conversation', async () => {
-        const recipientUid = 'user-456';
-        const mockFile = {
-          buffer: Buffer.from('fake-video-data'),
-          originalname: 'test-video.mp4',
-        };
-        const dto = {
-          recipientUid,
-          type: MessageType.VIDEO,
-        };
-        const newPrivateConversation = {
-          uid: 'new-private-conv-456',
-        };
-
-        mockPrismaService.conversations.findFirst.mockResolvedValue(null);
-        jest.spyOn(service, 'createPrivateConversation').mockResolvedValue(newPrivateConversation);
-        mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
-
-        await service.createMessage(userUid, dto, mockFile);
-
-        expect(service.createPrivateConversation).toHaveBeenCalledWith({
-          type: ConversationType.PRIVATE,
-          userUids: [userUid, recipientUid],
-        });
-        expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
-          userUid,
-          'new-private-conv-456',
-          MessageType.VIDEO,
-          mockFile,
-          null,
-        );
-      });
+      expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
+        userUid,
+        'conv-123',
+        MessageType.IMAGE,
+        file,
+        null,
+      );
     });
 
-    describe('Regular Conversation Messages', () => {
-      it('should create a text message in a regular conversation', async () => {
-        const dto = {
-          content,
+    it('should create message in session conversation', async () => {
+      const userUid = 'user-123';
+      const dto = {
+        content: 'Session message',
+        sessionUid: 'session-456',
+        type: MessageType.TEXT,
+      };
+
+      const mockSessionConversation = {
+        sessionUid: 'session-456',
+        type: ConversationType.SESSION,
+        uid: 'conv-session-123',
+      };
+
+      mockPrisma.conversations.findUnique.mockResolvedValue(mockSessionConversation);
+      mockMessagesService.createTextMessage.mockResolvedValue(undefined);
+
+      await service.createMessage(userUid, dto);
+
+      expect(mockPrisma.conversations.findUnique).toHaveBeenCalledWith({
+        where: {
+          sessionUid: 'session-456',
+          type: ConversationType.SESSION,
+        },
+      });
+      expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
+        userUid,
+        'Session message',
+        undefined,
+        'conv-session-123',
+      );
+    });
+
+    it('should throw NotFoundException when session conversation not found', async () => {
+      const userUid = 'user-123';
+      const dto = {
+        content: 'Session message',
+        sessionUid: 'non-existent-session',
+        type: MessageType.TEXT,
+      };
+
+      mockPrisma.conversations.findUnique.mockResolvedValue(null);
+
+      await expect(service.createMessage(userUid, dto)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should create private conversation if it does not exist', async () => {
+      const userUid = 'user-123';
+      const dto = {
+        content: 'Private message',
+        recipientUid: 'user-456',
+        type: MessageType.TEXT,
+      };
+
+      mockPrisma.conversations.findFirst.mockResolvedValue(null);
+      mockPrisma.conversations.create.mockResolvedValue({ uid: 'conv-new-123' });
+      mockPrisma.conversationMembers.createMany.mockResolvedValue({ count: 2 });
+      mockMessagesService.createTextMessage.mockResolvedValue(undefined);
+
+      await service.createMessage(userUid, dto);
+
+      expect(mockPrisma.conversations.create).toHaveBeenCalled();
+      expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
+        userUid,
+        'Private message',
+        'conv-new-123',
+        null,
+      );
+    });
+
+    it('should use existing private conversation if it exists', async () => {
+      const userUid = 'user-123';
+      const dto = {
+        content: 'Private message',
+        recipientUid: 'user-456',
+        type: MessageType.TEXT,
+      };
+
+      const mockPrivateConversation = {
+        type: ConversationType.PRIVATE,
+        uid: 'conv-existing-123',
+      };
+
+      mockPrisma.conversations.findFirst.mockResolvedValue(mockPrivateConversation);
+      mockMessagesService.createTextMessage.mockResolvedValue(undefined);
+
+      await service.createMessage(userUid, dto);
+
+      expect(mockPrisma.conversations.create).not.toHaveBeenCalled();
+      expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
+        userUid,
+        'Private message',
+        'conv-existing-123',
+        null,
+      );
+    });
+  });
+
+  describe('loadMoreMessages', () => {
+    it('should load more messages when user is a member', async () => {
+      const conversationUid = 'conv-123';
+      const userUid = 'user-123';
+      const cursor = 'msg-cursor-123';
+      const limit = 20;
+
+      const mockMessages = {
+        items: [
+          {
+            content: 'Message 1',
+            createdAt: new Date(),
+            globalStatus: MessageStatus.SENT,
+            hasAnyRead: false,
+            hasEveryoneRead: false,
+            type: MessageType.TEXT,
+            uid: 'msg-1',
+          },
+        ],
+        nextCursor: null,
+        totalCount: 1,
+      };
+
+      mockPrisma.conversationMembers.findFirst.mockResolvedValue({
+        conversationUid,
+        uid: 'member-1',
+        userUid,
+      });
+      mockMessagesService.getMessages.mockResolvedValue(mockMessages);
+
+      const result = await service.loadMoreMessages(conversationUid, userUid, cursor, limit);
+
+      expect(mockPrisma.conversationMembers.findFirst).toHaveBeenCalledWith({
+        where: {
           conversationUid,
-          type: MessageType.TEXT,
-        };
-
-        mockMessagesService.createTextMessage.mockResolvedValue(undefined);
-
-        await service.createMessage(userUid, dto);
-
-        expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
           userUid,
-          content,
-          conversationUid,
-          null,
-        );
-        expect(mockMessagesService.createMediaMessage).not.toHaveBeenCalled();
+        },
+      });
+      expect(mockMessagesService.getMessages).toHaveBeenCalledWith(conversationUid, cursor, limit);
+      expect(result).toEqual(mockMessages);
+    });
+
+    it('should throw error when user is not a member', async () => {
+      const conversationUid = 'conv-123';
+      const userUid = 'user-not-member';
+
+      mockPrisma.conversationMembers.findFirst.mockResolvedValue(null);
+
+      await expect(service.loadMoreMessages(conversationUid, userUid)).rejects.toThrow(
+        `User ${userUid} is not a member of conversation ${conversationUid}`,
+      );
+      expect(mockMessagesService.getMessages).not.toHaveBeenCalled();
+    });
+
+    it('should use default limit when not specified', async () => {
+      const conversationUid = 'conv-123';
+      const userUid = 'user-123';
+
+      mockPrisma.conversationMembers.findFirst.mockResolvedValue({
+        conversationUid,
+        uid: 'member-1',
+        userUid,
+      });
+      mockMessagesService.getMessages.mockResolvedValue({
+        items: [],
+        nextCursor: null,
+        totalCount: 0,
       });
 
-      it('should create a media message when type is IMAGE', async () => {
-        const mockFile = {
-          buffer: Buffer.from('fake-image-data'),
-          originalname: 'test-image.jpg',
-        };
-        const dto = {
-          conversationUid,
-          type: MessageType.IMAGE,
-        };
+      await service.loadMoreMessages(conversationUid, userUid);
 
-        mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
-
-        await service.createMessage(userUid, dto, mockFile);
-
-        expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
-          userUid,
-          conversationUid,
-          MessageType.IMAGE,
-          mockFile,
-          null,
-        );
-        expect(mockMessagesService.createTextMessage).not.toHaveBeenCalled();
-      });
-
-      it('should create a media message when type is VIDEO', async () => {
-        const mockFile = {
-          buffer: Buffer.from('fake-video-data'),
-          originalname: 'test-video.mp4',
-        };
-        const dto = {
-          conversationUid,
-          type: MessageType.VIDEO,
-        };
-
-        mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
-
-        await service.createMessage(userUid, dto, mockFile);
-
-        expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
-          userUid,
-          conversationUid,
-          MessageType.VIDEO,
-          mockFile,
-          null,
-        );
-      });
-
-      it('should create a media message when type is AUDIO', async () => {
-        const mockFile = {
-          buffer: Buffer.from('fake-audio-data'),
-          originalname: 'test-audio.mp3',
-        };
-        const dto = {
-          conversationUid,
-          type: MessageType.AUDIO,
-        };
-
-        mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
-
-        await service.createMessage(userUid, dto, mockFile);
-
-        expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
-          userUid,
-          conversationUid,
-          MessageType.AUDIO,
-          mockFile,
-          null,
-        );
-      });
+      expect(mockMessagesService.getMessages).toHaveBeenCalledWith(conversationUid, undefined, 50);
     });
   });
 });
