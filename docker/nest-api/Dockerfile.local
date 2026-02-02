@@ -27,11 +27,11 @@ RUN pnpm install
 COPY . ./
 
 # Copy envconsul config and vault-auth script
-COPY scripts/vault/envconsul-docker-dev.hcl /etc/envconsul/config.hcl
+COPY scripts/vault/envconsul-docker-local.hcl /etc/envconsul/config.hcl
 COPY scripts/vault/vault-auth.sh /usr/local/bin/vault-auth.sh
 RUN chmod +x /usr/local/bin/vault-auth.sh
 
 EXPOSE 2424
 
 # Le script start-dev.sh gère l'auth AppRole puis lance envconsul
-CMD ["sh", "scripts/start-dev.sh"]
+CMD ["sh", "scripts/start-local.sh"]

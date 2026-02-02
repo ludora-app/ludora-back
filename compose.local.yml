@@ -7,11 +7,11 @@ services:
       context: .
       dockerfile: docker/nest-api/Dockerfile.local
     container_name: ludora-api-local
-    restart: "no" # Don't restart in local for easier debugging
+    restart: 'no' # Don't restart in local for easier debugging
     ports:
-      - "2424:2424" # API port
-      - "51212:51212" # Prisma Studio port
-      - "9229:9229" # Node.js debugging port
+      - '2424:2424' # API port
+      - '51212:51212' # Prisma Studio port
+      - '9229:9229' # Node.js debugging port
     volumes:
       - ./src:/usr/src/app/src
       - ./prisma:/usr/src/app/prisma
@@ -19,34 +19,34 @@ services:
       - ./generated:/usr/src/app/generated
       - /usr/src/app/node_modules
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=debug
       # Vault AppRole configuration
       - VAULT_ADDR=${VAULT_ADDR:-https://vault.ludora.fr}
       - VAULT_ROLE_ID
       - VAULT_SECRET_ID
-    command: ["sh", "scripts/start-local.sh"]
+    command: ['sh', 'scripts/start-local.sh']
     networks:
       - ludora-network
     depends_on:
       - ludora-db
     # Add healthcheck to ensure API is ready
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:2424/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:2424/health']
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
     # Add local-specific labels
     labels:
-      - "dev.environment=local"
+      - 'dev.environment=local'
 
   ludora-db:
     build:
       context: .
       dockerfile: docker/postgres/Dockerfile
-    restart: "no"
+    restart: 'no'
     ports:
-      - "5432:5432"
+      - '5432:5432'
     environment:
       - POSTGRES_LOG_STATEMENT=all
       # Vault AppRole configuration
@@ -58,13 +58,11 @@ services:
       - ./scripts/vault/envconsul-docker-local.hcl:/etc/envconsul/config.hcl:ro
     networks:
       - ludora-network
-    labels:
-      - "traefik.enable=false"
 
   ludora-k6:
     image: grafana/k6:latest
     container_name: ludora-k6-local
-    restart: "no"
+    restart: 'no'
     volumes:
       - ./load-tests:/scripts
     networks:
