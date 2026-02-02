@@ -15,6 +15,7 @@ import { MessagesService } from './messages.service';
 import { CreateMessageDto } from '../dto/input/create-message.dto';
 import { ConversationMapper } from '../mappers/conversation.mapper';
 import { ConversationFilterDto } from '../dto/input/conversation-filter.dto';
+import { MessageCollectionItemDto } from '../dto/output/message-collection-response.dto';
 import { CreateSessionConversationDto } from '../dto/input/create-session-conversation.dto';
 import { CreatePrivateConversationDto } from '../dto/input/create-private-conversation.dto';
 import { FindOneConversationResponseData } from '../dto/output/find-one-conversation-response.dto';
@@ -424,5 +425,25 @@ export class ConversationsService {
         sessionConversation?.uid ?? null,
       );
     }
+  }
+
+  async loadMoreMessages(
+    conversationUid: string,
+    userUid: string,
+    cursor?: string,
+    limit = 50,
+  ): Promise<PaginatedDataDto<MessageCollectionItemDto>> {
+    const isMember = await this.prisma.conversationMembers.findFirst({
+      where: {
+        conversationUid,
+        userUid,
+      },
+    });
+
+    if (!isMember) {
+      throw new Error(`User ${userUid} is not a member of conversation ${conversationUid}`);
+    }
+
+    return await this.messagesService.getMessages(conversationUid, cursor, limit);
   }
 }

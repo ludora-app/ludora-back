@@ -16,6 +16,7 @@ describe('ConversationsController', () => {
       createSessionConversation: jest.fn(),
       findAllByUserUid: jest.fn(),
       findOne: jest.fn(),
+      loadMoreMessages: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -374,6 +375,181 @@ describe('ConversationsController', () => {
         dto,
         mockFile,
       );
+    });
+  });
+
+  describe('loadMoreMessages', () => {
+    it('should return paginated messages for a conversation', async () => {
+      const mockRequest = {
+        user: { uid: 'user-123' },
+      } as any;
+      const conversationUid = 'conv-123';
+
+      const mockMessages = {
+        items: [
+          {
+            content: 'Message 1',
+            createdAt: new Date(),
+            globalStatus: MessageStatus.SENT,
+            hasAnyRead: false,
+            hasEveryoneRead: false,
+            type: MessageType.TEXT,
+            uid: 'msg-1',
+          },
+          {
+            content: 'Message 2',
+            createdAt: new Date(),
+            globalStatus: MessageStatus.SENT,
+            hasAnyRead: true,
+            hasEveryoneRead: false,
+            type: MessageType.TEXT,
+            uid: 'msg-2',
+          },
+        ],
+        nextCursor: null,
+        totalCount: 2,
+      };
+
+      mockConversationsService.loadMoreMessages.mockResolvedValue(mockMessages);
+
+      const result = await controller.loadMoreMessages(conversationUid, mockRequest);
+
+      expect(result).toEqual({
+        data: mockMessages,
+        message: 'Messages fetched successfully',
+      });
+      expect(mockConversationsService.loadMoreMessages).toHaveBeenCalledWith(
+        conversationUid,
+        'user-123',
+        undefined,
+        undefined,
+      );
+    });
+
+    it('should handle cursor pagination', async () => {
+      const mockRequest = {
+        user: { uid: 'user-456' },
+      } as any;
+      const conversationUid = 'conv-456';
+      const cursor = 'msg-cursor-123';
+
+      const mockMessages = {
+        items: [],
+        nextCursor: 'msg-cursor-456',
+        totalCount: 0,
+      };
+
+      mockConversationsService.loadMoreMessages.mockResolvedValue(mockMessages);
+
+      const result = await controller.loadMoreMessages(conversationUid, mockRequest, cursor);
+
+      expect(mockConversationsService.loadMoreMessages).toHaveBeenCalledWith(
+        conversationUid,
+        'user-456',
+        cursor,
+        undefined,
+      );
+      expect(result.data.nextCursor).toBe('msg-cursor-456');
+    });
+
+    it('should respect custom limit parameter', async () => {
+      const mockRequest = {
+        user: { uid: 'user-789' },
+      } as any;
+      const conversationUid = 'conv-789';
+      const limit = 20;
+
+      mockConversationsService.loadMoreMessages.mockResolvedValue({
+        items: [],
+        nextCursor: null,
+        totalCount: 0,
+      });
+
+      await controller.loadMoreMessages(conversationUid, mockRequest, undefined, limit);
+
+      expect(mockConversationsService.loadMoreMessages).toHaveBeenCalledWith(
+        conversationUid,
+        'user-789',
+        undefined,
+        20,
+      );
+    });
+
+    it('should pass both cursor and limit parameters', async () => {
+      const mockRequest = {
+        user: { uid: 'user-111' },
+      } as any;
+      const conversationUid = 'conv-111';
+      const cursor = 'msg-cursor-999';
+      const limit = 10;
+
+      mockConversationsService.loadMoreMessages.mockResolvedValue({
+        items: [],
+        nextCursor: null,
+        totalCount: 0,
+      });
+
+      await controller.loadMoreMessages(conversationUid, mockRequest, cursor, limit);
+
+      expect(mockConversationsService.loadMoreMessages).toHaveBeenCalledWith(
+        conversationUid,
+        'user-111',
+        cursor,
+        10,
+      );
+    });
+
+    it('should extract user uid from request', async () => {
+      const mockRequest = {
+        user: { uid: 'different-user-123' },
+      } as any;
+      const conversationUid = 'conv-different';
+
+      mockConversationsService.loadMoreMessages.mockResolvedValue({
+        items: [],
+        nextCursor: null,
+        totalCount: 0,
+      });
+
+      await controller.loadMoreMessages(conversationUid, mockRequest);
+
+      expect(mockConversationsService.loadMoreMessages).toHaveBeenCalledWith(
+        conversationUid,
+        'different-user-123',
+        undefined,
+        undefined,
+      );
+    });
+
+    it('should return correct response format', async () => {
+      const mockRequest = {
+        user: { uid: 'user-format' },
+      } as any;
+      const conversationUid = 'conv-format';
+
+      const mockMessages = {
+        items: [
+          {
+            content: 'Test message',
+            createdAt: new Date(),
+            globalStatus: MessageStatus.SENT,
+            hasAnyRead: false,
+            hasEveryoneRead: false,
+            type: MessageType.TEXT,
+            uid: 'msg-test',
+          },
+        ],
+        nextCursor: 'msg-next',
+        totalCount: 1,
+      };
+
+      mockConversationsService.loadMoreMessages.mockResolvedValue(mockMessages);
+
+      const result = await controller.loadMoreMessages(conversationUid, mockRequest);
+
+      expect(result).toHaveProperty('data');
+      expect(result).toHaveProperty('message', 'Messages fetched successfully');
+      expect(result.data).toEqual(mockMessages);
     });
   });
 });

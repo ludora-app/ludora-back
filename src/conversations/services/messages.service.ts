@@ -1,5 +1,4 @@
 import { PinoLogger } from 'nestjs-pino';
-import { Messages } from 'generated/prisma/browser';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageFolderName } from 'src/shared/constants/constants';
@@ -7,6 +6,10 @@ import { MessageStatus, MessageType } from 'generated/prisma/enums';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { EventTypes } from 'src/notifications/constants/event.types';
 import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+
+import { MessageMapper } from '../mappers/message.mapper';
+import { MessageCollectionItemDto } from '../dto/output/message-collection-response.dto';
 
 @Injectable()
 export class MessagesService {
@@ -166,29 +169,24 @@ export class MessagesService {
    */
   async getMessages(
     conversationUid: string,
-    userUid: string,
     cursor?: string,
     limit = 50,
-  ): Promise<Messages[]> {
+  ): Promise<PaginatedDataDto<MessageCollectionItemDto>> {
     // Verify user is a member of the conversation
-    const isMember = await this.prisma.conversationMembers.findFirst({
-      where: {
-        conversationUid,
-        userUid,
-      },
-    });
 
-    if (!isMember) {
-      throw new Error(`User ${userUid} is not a member of conversation ${conversationUid}`);
-    }
-
-    const query: any = {
+    const messages = await this.prisma.messages.findMany({
       include: {
+        messageReceipts: {
+          select: {
+            status: true,
+            userUid: true,
+          },
+        },
         sender: {
           select: {
             firstname: true,
+            imageUrl: true,
             lastname: true,
-            profilePicture: true,
             uid: true,
           },
         },
@@ -200,16 +198,21 @@ export class MessagesService {
       where: {
         conversationUid,
       },
+      ...(cursor && {
+        cursor: {
+          uid: cursor,
+        },
+        skip: 1,
+      }),
+    });
+
+    return {
+      items: await Promise.all(
+        messages.map((message) => MessageMapper.toCollectionItemDto(message, this.storageService)),
+      ),
+      nextCursor: messages.length > limit ? messages[limit].uid : null,
+      totalCount: messages.length,
     };
-
-    if (cursor) {
-      query.cursor = {
-        uid: cursor,
-      };
-      query.skip = 1;
-    }
-
-    return this.prisma.messages.findMany(query);
   }
 
   /**
