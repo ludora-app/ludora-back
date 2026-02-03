@@ -7,8 +7,8 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { UserHourPreferences, UserHourPreferenceType } from 'generated/prisma/client';
 
-import { CheckHourPreferenceDto } from './dto/input/check-hour-preference.dto';
-import { CreateUserHourPreferenceDto } from './dto/input/create-user-hour-preference.dto';
+import { CheckHourPreferenceDto } from '../dto/input/check-hour-preference.dto';
+import { CreateUserHourPreferenceDto } from '../dto/input/create-user-hour-preference.dto';
 
 @Injectable()
 export class UserHourPreferencesService {

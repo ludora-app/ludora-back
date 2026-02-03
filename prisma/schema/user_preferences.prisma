@@ -17,14 +17,14 @@ enum TimePeriod {
   @@schema("user_preferences")
 }
 
-model UserSports {
+model UserSportPreferences {
   uid       String   @id @default(cuid())
   userUid   String   @map("user_uid")
   sport     String
   level     Int      @map("level")
   createdAt DateTime @default(now()) @map("created_at")
 
-  user          Users  @relation(fields: [userUid], references: [uid])
+  user          Users  @relation(fields: [userUid], references: [uid], onDelete: Cascade)
   sportRelation Sports @relation(fields: [sport], references: [name])
 
   @@unique([userUid, sport])
@@ -43,11 +43,28 @@ model UserHourPreferences {
   date       DateTime?              @map("date")
   createdAt  DateTime               @default(now()) @map("created_at")
 
-  user Users @relation(fields: [userUid], references: [uid])
+  user Users @relation(fields: [userUid], references: [uid], onDelete: Cascade)
 
   @@index([userUid])
   @@index([timePeriod])
   @@index([dayOfWeek])
   @@map("User_hour_preferences")
+  @@schema("user_preferences")
+}
+
+model UserGameModePreferences {
+  uid       String    @id @default(cuid())
+  userUid   String    @map("user_uid")
+  gameMode  GameModes
+  sport     String
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user          Users  @relation(fields: [userUid], references: [uid], onDelete: Cascade)
+  sportRelation Sports @relation(fields: [sport], references: [name])
+
+  @@unique([userUid, gameMode])
+  @@index([userUid])
+  @@index([gameMode])
+  @@map("User_game_mode_preferences")
   @@schema("user_preferences")
 }

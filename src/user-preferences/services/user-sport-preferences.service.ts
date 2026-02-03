@@ -6,8 +6,8 @@ import { USERSELECT } from 'src/shared/constants/select-user';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
-import { CreateUserSportPreferenceDto } from './dto/input/create-user-sport-preference.dto';
-import { UserSportPreferenceResponseDto } from './dto/output/user-sport-preference.response.dto';
+import { CreateUserSportPreferenceDto } from '../dto/input/create-user-sport-preference.dto';
+import { UserSportPreferenceResponseDto } from '../dto/output/user-sport-preference.response.dto';
 
 @Injectable()
 export class UserSportPreferencesService {

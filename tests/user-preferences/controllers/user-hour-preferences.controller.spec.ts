@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TimePeriod, UserHourPreferenceType } from 'generated/prisma/client';
-import { AuthB2CGuard } from '../../src/auth/guards/auth-b2c.guard';
-import { UserHourPreferencesController } from '../../src/user-hour-preferences/user-hour-preferences.controller';
-import { UserHourPreferencesService } from '../../src/user-hour-preferences/user-hour-preferences.service';
-import { CreateUserHourPreferenceDto } from '../../src/user-hour-preferences/dto/input/create-user-hour-preference.dto';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { UserHourPreferencesController } from 'src/user-preferences/controllers/user-hour-preferences.controller';
+import { UserHourPreferencesService } from 'src/user-preferences/services/user-hour-preferences.service';
+import { CreateUserHourPreferenceDto } from 'src/user-preferences/dto/input/create-user-hour-preference.dto';
 
 describe('UserHourPreferencesController', () => {
   let controller: UserHourPreferencesController;

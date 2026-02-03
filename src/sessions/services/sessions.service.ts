@@ -12,8 +12,8 @@ import { SessionPlayersService } from 'src/sessions/services/session-players.ser
 import { ConversationsService } from 'src/conversations/services/conversations.service';
 import { SessionScope, Sport, StorageFolderName } from 'src/shared/constants/constants';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
-import { UserHourPreferencesService } from 'src/user-hour-preferences/user-hour-preferences.service';
-import { UserSportPreferencesService } from 'src/user-sport-preferences/user-sport-preferences.service';
+import { UserHourPreferencesService } from 'src/user-preferences/services/user-hour-preferences.service';
+import { UserSportPreferencesService } from 'src/user-preferences/services/user-sport-preferences.service';
 import {
   FieldSlots,
   FieldType,

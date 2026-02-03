@@ -26,12 +26,12 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { UserSportPreferencesService } from './user-sport-preferences.service';
-import { CreateUserSportPreferenceDtoFromRequest } from './dto/input/create-user-sport-preference.dto';
+import { UserSportPreferencesService } from '../services/user-sport-preferences.service';
+import { CreateUserSportPreferenceDtoFromRequest } from '../dto/input/create-user-sport-preference.dto';
 import {
   PaginatedUserSportPreferenceResponseDto,
   UserSportPreferenceResponseDto,
-} from './dto/output/user-sport-preference.response.dto';
+} from '../dto/output/user-sport-preference.response.dto';
 
 @Controller('user-sport-preferences')
 @UseGuards(AuthB2CGuard)

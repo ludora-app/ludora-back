@@ -27,12 +27,12 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { UserHourPreferencesService } from './user-hour-preferences.service';
-import { CreateUserHourPreferenceDto } from './dto/input/create-user-hour-preference.dto';
+import { UserHourPreferencesService } from '../services/user-hour-preferences.service';
+import { CreateUserHourPreferenceDto } from '../dto/input/create-user-hour-preference.dto';
 import {
   PaginatedUserHourPreferenceResponseDto,
   UserHourPreferenceResponseDto,
-} from './dto/output/user-hour-preference-response.dto';
+} from '../dto/output/user-hour-preference-response.dto';
 
 @Controller('user-hour-preferences')
 @UseGuards(AuthB2CGuard)

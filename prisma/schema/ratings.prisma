@@ -12,7 +12,7 @@ model UserRatings {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   evaluator Users @relation(fields: [evaluatorUid], references: [uid], name: "EvaluatorRelation")
-  evaluated Users @relation(fields: [evaluatedUid], references: [uid], name: "EvaluatedRelation")
+  evaluated Users @relation(fields: [evaluatedUid], references: [uid], name: "EvaluatedRelation", onDelete: Cascade)
 
   @@id([evaluatorUid, evaluatedUid])
   @@unique([evaluatorUid, evaluatedUid])
@@ -28,7 +28,7 @@ model UserGlobalRatings {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user  Users  @relation(fields: [userUid], references: [uid])
+  user  Users  @relation(fields: [userUid], references: [uid], onDelete: Cascade)
   sport Sports @relation(fields: [sportName], references: [name])
 
   @@unique([userUid, sportName])

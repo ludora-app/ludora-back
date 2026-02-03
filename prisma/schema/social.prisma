@@ -106,8 +106,8 @@ model Friends {
   status    InvitationStatus @map("status")
   createdAt DateTime         @default(now()) @map("created_at")
   updatedAt DateTime         @updatedAt @map("updated_at")
-  user1     Users            @relation("friend1", fields: [userUid1], references: [uid])
-  user2     Users            @relation("friend2", fields: [userUid2], references: [uid])
+  user1     Users            @relation("friend1", fields: [userUid1], references: [uid], onDelete: Cascade)
+  user2     Users            @relation("friend2", fields: [userUid2], references: [uid], onDelete: Cascade)
 
   @@id([userUid1, userUid2])
   @@unique([userUid1, userUid2])

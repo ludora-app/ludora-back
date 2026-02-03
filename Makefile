@@ -8,6 +8,9 @@ local-up:
 
 # Stop dev containers
 local-down:
+	docker compose -f compose.local.yml --env-file .env.local down
+
+local-reset:
 	docker compose -f compose.local.yml --env-file .env.local down --remove-orphans --volumes
 
 # Reset PostgreSQL (remove volume and rebuild)
