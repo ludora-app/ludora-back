@@ -3,9 +3,9 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TimePeriod, UserHourPreferenceType } from 'generated/prisma/client';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UserHourPreferencesService } from 'src/user-preferences/services/user-hour-preferences.service';
+import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
 import { PinoLogger } from 'nestjs-pino';
-import { CreateUserHourPreferenceDto } from 'src/user-preferences/dto/input/create-user-hour-preference.dto';
+import { CreateHourPreferenceDto } from 'src/user-preferences/dto/input/create-hour-preference.dto';
 import { DateUtils } from 'src/shared/utils/date.utils';
 
 jest.mock('src/shared/utils/date.utils', () => ({
@@ -14,8 +14,8 @@ jest.mock('src/shared/utils/date.utils', () => ({
   },
 }));
 
-describe('UserHourPreferencesService', () => {
-  let service: UserHourPreferencesService;
+describe('HourPreferencesService', () => {
+  let service: HourPreferencesService;
   let prismaService: PrismaService;
   let usersService: UsersService;
   let logger: PinoLogger;
@@ -55,14 +55,14 @@ describe('UserHourPreferencesService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UserHourPreferencesService,
+        HourPreferencesService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: UsersService, useValue: mockUsersService },
         { provide: PinoLogger, useValue: mockPinoLogger },
       ],
     }).compile();
 
-    service = module.get<UserHourPreferencesService>(UserHourPreferencesService);
+    service = module.get<HourPreferencesService>(HourPreferencesService);
     prismaService = module.get<PrismaService>(PrismaService);
     usersService = module.get<UsersService>(UsersService);
     logger = module.get<PinoLogger>(PinoLogger);
@@ -81,7 +81,7 @@ describe('UserHourPreferencesService', () => {
     const mockUser = { uid: 'user-uid-1', email: 'test@example.com' };
 
     describe('RECURRENT preference', () => {
-      const createRecurrentDto: CreateUserHourPreferenceDto = {
+      const createRecurrentDto: CreateHourPreferenceDto = {
         dayOfWeek: 2,
         timePeriod: TimePeriod.MORNING,
         preferenceType: UserHourPreferenceType.RECURRENT,
@@ -156,7 +156,7 @@ describe('UserHourPreferencesService', () => {
     });
 
     describe('ONE_TIME preference', () => {
-      const createOneTimeDto: CreateUserHourPreferenceDto = {
+      const createOneTimeDto: CreateHourPreferenceDto = {
         timePeriod: TimePeriod.AFTERNOON,
         preferenceType: UserHourPreferenceType.ONE_TIME,
         date: mockFutureDate.toISOString(),
@@ -198,7 +198,7 @@ describe('UserHourPreferencesService', () => {
 
       it('should throw BadRequestException when date is in the past', async () => {
         const pastDate = new Date('2022-01-01T12:00:00Z');
-        const pastDateDto: CreateUserHourPreferenceDto = {
+        const pastDateDto: CreateHourPreferenceDto = {
           timePeriod: TimePeriod.AFTERNOON,
           preferenceType: UserHourPreferenceType.ONE_TIME,
           date: pastDate.toISOString(),

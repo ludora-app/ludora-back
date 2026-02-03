@@ -2,7 +2,7 @@ import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { Sport, UserSportLevel } from 'src/shared/constants/constants';
 import { IsEnum, IsNotEmpty, IsString, Max, Min } from 'class-validator';
 
-export class CreateUserSportPreferenceDto {
+export class CreateSportPreferenceDto {
   @IsString()
   @IsNotEmpty()
   @IsEnum(Sport)
@@ -34,7 +34,6 @@ export class CreateUserSportPreferenceDto {
   userUid: string;
 }
 
-export class CreateUserSportPreferenceDtoFromRequest extends OmitType(
-  CreateUserSportPreferenceDto,
-  ['userUid'],
-) {}
+export class CreateSportPreferenceDtoFromRequest extends OmitType(CreateSportPreferenceDto, [
+  'userUid',
+]) {}

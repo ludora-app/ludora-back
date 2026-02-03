@@ -27,33 +27,33 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { UserHourPreferencesService } from '../services/user-hour-preferences.service';
-import { CreateUserHourPreferenceDto } from '../dto/input/create-user-hour-preference.dto';
+import { HourPreferencesService } from '../services/hour-preferences.service';
+import { CreateHourPreferenceDto } from '../dto/input/create-hour-preference.dto';
 import {
-  PaginatedUserHourPreferenceResponseDto,
-  UserHourPreferenceResponseDto,
-} from '../dto/output/user-hour-preference-response.dto';
+  PaginatedHourPreferenceResponseDto,
+  HourPreferenceResponseDto,
+} from '../dto/output/hour-preference-response.dto';
 
-@Controller('user-hour-preferences')
+@Controller('hour-preferences')
 @UseGuards(AuthB2CGuard)
-export class UserHourPreferencesController {
-  constructor(private readonly userHourPreferencesService: UserHourPreferencesService) {}
+export class HourPreferencesController {
+  constructor(private readonly hourPreferencesService: HourPreferencesService) {}
 
   @Post()
   @Protected()
   @ApiOperation({ summary: 'Create a new user hour preference' })
-  @ApiCreatedResponse({ type: ResponseTypeDto<UserHourPreferenceResponseDto> })
+  @ApiCreatedResponse({ type: ResponseTypeDto<HourPreferenceResponseDto> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Req() request: Request,
-    @Body() createUserHourPreferenceDto: CreateUserHourPreferenceDto,
-  ): Promise<ResponseTypeDto<UserHourPreferenceResponseDto>> {
+    @Body() createHourPreferenceDto: CreateHourPreferenceDto,
+  ): Promise<ResponseTypeDto<HourPreferenceResponseDto>> {
     const uid = request['user'].uid;
 
-    const data = await this.userHourPreferencesService.create(uid, createUserHourPreferenceDto);
+    const data = await this.hourPreferencesService.create(uid, createHourPreferenceDto);
 
     return { data, message: 'User hour preference created successfully' };
   }
@@ -61,14 +61,14 @@ export class UserHourPreferencesController {
   @Get('list-by-user/:userUid')
   @Protected()
   @ApiOperation({ summary: 'Get all user hour preferences by user ID' })
-  @ApiOkResponse({ type: PaginatedUserHourPreferenceResponseDto })
+  @ApiOkResponse({ type: PaginatedHourPreferenceResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findAllByUserUid(
     @Param('userUid') userUid: string,
-  ): Promise<PaginationResponseTypeDto<UserHourPreferenceResponseDto>> {
-    const data = await this.userHourPreferencesService.findAllByUserUid(userUid);
+  ): Promise<PaginationResponseTypeDto<HourPreferenceResponseDto>> {
+    const data = await this.hourPreferencesService.findAllByUserUid(userUid);
     return {
       data,
       message: 'User hour preferences fetched successfully',
@@ -78,15 +78,15 @@ export class UserHourPreferencesController {
   @Get('/my-list')
   @Protected()
   @ApiOperation({ summary: 'Get the hour preferences of the connected user' })
-  @ApiOkResponse({ type: PaginatedUserHourPreferenceResponseDto })
+  @ApiOkResponse({ type: PaginatedHourPreferenceResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findMyHourPreferences(
     @Req() request: Request,
-  ): Promise<PaginationResponseTypeDto<UserHourPreferenceResponseDto>> {
+  ): Promise<PaginationResponseTypeDto<HourPreferenceResponseDto>> {
     const uid = request['user'].uid;
-    const data = await this.userHourPreferencesService.findAllByUserUid(uid);
+    const data = await this.hourPreferencesService.findAllByUserUid(uid);
 
     if (data.items.length === 0) {
       return {
@@ -110,6 +110,6 @@ export class UserHourPreferencesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('uid') uid: string, @Req() request: Request): Promise<void> {
     const userUid = request['user'].uid;
-    await this.userHourPreferencesService.remove(uid, userUid);
+    await this.hourPreferencesService.remove(uid, userUid);
   }
 }

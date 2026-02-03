@@ -2,13 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { UserSports } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
-import { UserSportPreferencesService } from 'src/user-preferences/services/user-sport-preferences.service';
+import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Sport, UserSportLevel } from 'src/shared/constants/constants';
 
-describe('UserSportPreferencesService', () => {
-  let service: UserSportPreferencesService;
+describe('SportPreferencesService', () => {
+  let service: SportPreferencesService;
   let prismaService: PrismaService;
   let usersService: UsersService;
   let logger: PinoLogger;
@@ -40,14 +40,14 @@ describe('UserSportPreferencesService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UserSportPreferencesService,
+        SportPreferencesService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: UsersService, useValue: mockUsersService },
         { provide: PinoLogger, useValue: mockPinoLogger },
       ],
     }).compile();
 
-    service = module.get<UserSportPreferencesService>(UserSportPreferencesService);
+    service = module.get<SportPreferencesService>(SportPreferencesService);
     prismaService = module.get<PrismaService>(PrismaService);
     usersService = module.get<UsersService>(UsersService);
     logger = module.get<PinoLogger>(PinoLogger);

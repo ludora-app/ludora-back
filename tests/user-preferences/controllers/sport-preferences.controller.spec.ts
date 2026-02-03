@@ -2,14 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { UserSports } from 'generated/prisma/client';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
-import { UserSportPreferencesController } from 'src/user-preferences/controllers/user-sport-preferences.controller';
-import { UserSportPreferencesService } from 'src/user-preferences/services/user-sport-preferences.service';
-import { CreateUserSportPreferenceDto } from 'src/user-preferences/dto/input/create-user-sport-preference.dto';
+import { SportPreferencesController } from 'src/user-preferences/controllers/sport-preferences.controller';
+import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
+import { CreateSportPreferenceDto } from 'src/user-preferences/dto/input/create-sport-preference.dto';
 import { Sport, UserSportLevel } from 'src/shared/constants/constants';
 
-describe('UserSportPreferencesController', () => {
-  let controller: UserSportPreferencesController;
-  let service: UserSportPreferencesService;
+describe('SportPreferencesController', () => {
+  let controller: SportPreferencesController;
+  let service: SportPreferencesService;
 
   const mockUserSportPreferencesService = {
     create: jest.fn(),
@@ -25,17 +25,15 @@ describe('UserSportPreferencesController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [UserSportPreferencesController],
-      providers: [
-        { provide: UserSportPreferencesService, useValue: mockUserSportPreferencesService },
-      ],
+      controllers: [SportPreferencesController],
+      providers: [{ provide: SportPreferencesService, useValue: mockUserSportPreferencesService }],
     })
       .overrideGuard(AuthB2CGuard)
       .useValue(mockAuthGuard)
       .compile();
 
-    controller = module.get<UserSportPreferencesController>(UserSportPreferencesController);
-    service = module.get<UserSportPreferencesService>(UserSportPreferencesService);
+    controller = module.get<SportPreferencesController>(SportPreferencesController);
+    service = module.get<SportPreferencesService>(SportPreferencesService);
   });
 
   afterEach(() => {
@@ -52,7 +50,7 @@ describe('UserSportPreferencesController', () => {
     } as any;
 
     it('should create a sport preference successfully', async () => {
-      const createDto: CreateUserSportPreferenceDto = {
+      const createDto: CreateSportPreferenceDto = {
         sport: Sport.BASKETBALL,
         level: UserSportLevel.BEGINNER,
         userUid: 'user-uid-1',
@@ -85,7 +83,7 @@ describe('UserSportPreferencesController', () => {
       const sports = [Sport.BASKETBALL, Sport.FOOTBALL, Sport.TENNIS, Sport.VOLLEYBALL];
 
       for (const sport of sports) {
-        const createDto: CreateUserSportPreferenceDto = {
+        const createDto: CreateSportPreferenceDto = {
           sport,
           level: UserSportLevel.BEGINNER,
           userUid: 'user-uid-1',
@@ -118,7 +116,7 @@ describe('UserSportPreferencesController', () => {
     });
 
     it('should propagate NotFoundException when user does not exist', async () => {
-      const createDto: CreateUserSportPreferenceDto = {
+      const createDto: CreateSportPreferenceDto = {
         sport: Sport.BASKETBALL,
         level: UserSportLevel.BEGINNER,
         userUid: 'user-uid-1',
@@ -137,7 +135,7 @@ describe('UserSportPreferencesController', () => {
     });
 
     it('should propagate BadRequestException when sport preference already exists', async () => {
-      const createDto: CreateUserSportPreferenceDto = {
+      const createDto: CreateSportPreferenceDto = {
         sport: Sport.BASKETBALL,
         level: UserSportLevel.BEGINNER,
         userUid: 'user-uid-1',
@@ -156,7 +154,7 @@ describe('UserSportPreferencesController', () => {
     });
 
     it('should extract userUid from request object', async () => {
-      const createDto: CreateUserSportPreferenceDto = {
+      const createDto: CreateSportPreferenceDto = {
         sport: Sport.FOOTBALL,
         level: UserSportLevel.INTERMEDIATE,
         userUid: 'different-user-uid',

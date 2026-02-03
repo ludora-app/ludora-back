@@ -3,15 +3,26 @@ import { UsersModule } from 'src/users/users.module';
 import { UsersService } from 'src/users/users.service';
 import { SharedModule } from 'src/shared/shared.module';
 
-import { UserHourPreferencesService } from './services/user-hour-preferences.service';
-import { UserSportPreferencesService } from './services/user-sport-preferences.service';
-import { UserHourPreferencesController } from './controllers/user-hour-preferences.controller';
-import { UserSportPreferencesController } from './controllers/user-sport-preferences.controller';
+import { HourPreferencesService } from './services/hour-preferences.service';
+import { SportPreferencesService } from './services/sport-preferences.service';
+import { HourPreferencesController } from './controllers/hour-preferences.controller';
+import { GameModePreferencesService } from './services/game-mode-preferences.service';
+import { SportPreferencesController } from './controllers/sport-preferences.controller';
+import { GameModePreferencesController } from './controllers/game-mode-preferences.controller';
 
 @Module({
-  controllers: [UserHourPreferencesController, UserSportPreferencesController],
-  exports: [UserHourPreferencesService, UserSportPreferencesService],
+  controllers: [
+    HourPreferencesController,
+    SportPreferencesController,
+    GameModePreferencesController,
+  ],
+  exports: [HourPreferencesService, SportPreferencesService],
   imports: [UsersModule, SharedModule],
-  providers: [UserHourPreferencesService, UserSportPreferencesService, UsersService],
+  providers: [
+    HourPreferencesService,
+    SportPreferencesService,
+    UsersService,
+    GameModePreferencesService,
+  ],
 })
 export class UserPreferencesModule {}

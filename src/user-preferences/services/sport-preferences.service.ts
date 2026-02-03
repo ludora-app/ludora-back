@@ -6,20 +6,20 @@ import { USERSELECT } from 'src/shared/constants/select-user';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
-import { CreateUserSportPreferenceDto } from '../dto/input/create-user-sport-preference.dto';
-import { UserSportPreferenceResponseDto } from '../dto/output/user-sport-preference.response.dto';
+import { CreateSportPreferenceDto } from '../dto/input/create-sport-preference.dto';
+import { SportPreferenceResponseDto } from '../dto/output/sport-preference.response.dto';
 
 @Injectable()
-export class UserSportPreferencesService {
+export class SportPreferencesService {
   constructor(
     private readonly usersService: UsersService,
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
   ) {
-    this.logger.setContext(UserSportPreferencesService.name);
+    this.logger.setContext(SportPreferencesService.name);
   }
-  async create(createUserSportPreferenceDto: CreateUserSportPreferenceDto): Promise<UserSports> {
-    const { level, sport, userUid } = createUserSportPreferenceDto;
+  async create(createSportPreferenceDto: CreateSportPreferenceDto): Promise<UserSports> {
+    const { level, sport, userUid } = createSportPreferenceDto;
     const existingUser = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
 
     if (!existingUser) {
@@ -43,15 +43,19 @@ export class UserSportPreferencesService {
     return newSportPreference;
   }
 
-  async findAllByUserUid(
-    userUid: string,
-  ): Promise<PaginatedDataDto<UserSportPreferenceResponseDto>> {
+  async findAllByUserUid(userUid: string): Promise<PaginatedDataDto<SportPreferenceResponseDto>> {
     const existingUser = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
     if (!existingUser) {
       this.logger.error(`User not found: ${userUid}`);
       throw new NotFoundException('User not found');
     }
     const sportPreferences = await this.prisma.userSports.findMany({
+      select: {
+        createdAt: true,
+        level: true,
+        sport: true,
+        uid: true,
+      },
       where: { userUid },
     });
     return { items: sportPreferences, nextCursor: null, totalCount: sportPreferences.length };

@@ -8,24 +8,24 @@ import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-t
 import { UserHourPreferences, UserHourPreferenceType } from 'generated/prisma/client';
 
 import { CheckHourPreferenceDto } from '../dto/input/check-hour-preference.dto';
-import { CreateUserHourPreferenceDto } from '../dto/input/create-user-hour-preference.dto';
+import { CreateHourPreferenceDto } from '../dto/input/create-hour-preference.dto';
 
 @Injectable()
-export class UserHourPreferencesService {
+export class HourPreferencesService {
   constructor(
     private readonly usersService: UsersService,
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
   ) {
-    this.logger.setContext(UserHourPreferencesService.name);
+    this.logger.setContext(HourPreferencesService.name);
   }
 
   async create(
     userUid: string,
-    createUserHourPreferenceDto: CreateUserHourPreferenceDto,
+    createHourPreferenceDto: CreateHourPreferenceDto,
   ): Promise<UserHourPreferences> {
     const existingUser = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
-    const { date, dayOfWeek, preferenceType, timePeriod } = createUserHourPreferenceDto;
+    const { date, dayOfWeek, preferenceType, timePeriod } = createHourPreferenceDto;
 
     if (!existingUser) {
       this.logger.error(`User not found: ${userUid}`);

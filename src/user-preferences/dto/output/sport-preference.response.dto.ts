@@ -5,15 +5,12 @@ import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-re
 /**
  * @description standard response for a userSportPreference resource
  */
-export class UserSportPreferenceResponseDto {
+export class SportPreferenceResponseDto {
   @ApiProperty({ description: 'The unique identifier of the user sport preference' })
   uid: string;
 
   @ApiProperty({ description: 'The sport of the user sport preference' })
   sport: string;
-
-  @ApiProperty({ description: 'The user ID of the user sport preference' })
-  userUid: string;
 
   @ApiProperty({
     description: 'The level of the user sport preference',
@@ -29,6 +26,6 @@ export class UserSportPreferenceResponseDto {
 /**
  * @description standard response for a paginated userSportPreference resource, used to type swagger return
  */
-export const PaginatedUserSportPreferenceResponseDto = toPaginationResponseType(
-  UserSportPreferenceResponseDto,
+export const PaginatedSportPreferenceResponseDto = toPaginationResponseType(
+  SportPreferenceResponseDto,
 );

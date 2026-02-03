@@ -26,32 +26,32 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { UserSportPreferencesService } from '../services/user-sport-preferences.service';
-import { CreateUserSportPreferenceDtoFromRequest } from '../dto/input/create-user-sport-preference.dto';
+import { SportPreferencesService } from '../services/sport-preferences.service';
+import { CreateSportPreferenceDtoFromRequest } from '../dto/input/create-sport-preference.dto';
 import {
-  PaginatedUserSportPreferenceResponseDto,
-  UserSportPreferenceResponseDto,
-} from '../dto/output/user-sport-preference.response.dto';
+  PaginatedSportPreferenceResponseDto,
+  SportPreferenceResponseDto,
+} from '../dto/output/sport-preference.response.dto';
 
-@Controller('user-sport-preferences')
+@Controller('sport-preferences')
 @UseGuards(AuthB2CGuard)
-export class UserSportPreferencesController {
-  constructor(private readonly userSportPreferencesService: UserSportPreferencesService) {}
+export class SportPreferencesController {
+  constructor(private readonly sportPreferencesService: SportPreferencesService) {}
 
   @Post()
   @Protected()
   @ApiOperation({ summary: 'Create a user sport preference' })
-  @ApiCreatedResponse({ type: ResponseTypeDto<UserSportPreferenceResponseDto> })
+  @ApiCreatedResponse({ type: ResponseTypeDto<SportPreferenceResponseDto> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.CREATED)
   async create(
-    @Body() dto: CreateUserSportPreferenceDtoFromRequest,
+    @Body() dto: CreateSportPreferenceDtoFromRequest,
     @Req() request: Request,
-  ): Promise<ResponseTypeDto<UserSportPreferenceResponseDto>> {
+  ): Promise<ResponseTypeDto<SportPreferenceResponseDto>> {
     const userUid = request['user'].uid;
-    const data = await this.userSportPreferencesService.create({
+    const data = await this.sportPreferencesService.create({
       ...dto,
       userUid,
     });
@@ -64,13 +64,13 @@ export class UserSportPreferencesController {
   @Get('list-by-user/:userUid')
   @Protected()
   @ApiOperation({ summary: 'Get all user sport preferences by user ID' })
-  @ApiOkResponse({ type: PaginatedUserSportPreferenceResponseDto })
+  @ApiOkResponse({ type: PaginatedSportPreferenceResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.OK)
   async findAllByUserUid(@Param('userUid') userUid: string) {
-    const data = await this.userSportPreferencesService.findAllByUserUid(userUid);
+    const data = await this.sportPreferencesService.findAllByUserUid(userUid);
     return {
       data,
       message: 'User sport preferences fetched successfully',
@@ -80,14 +80,14 @@ export class UserSportPreferencesController {
   @Get('my-list')
   @Protected()
   @ApiOperation({ summary: 'Get the sport preferences of the connected user' })
-  @ApiOkResponse({ type: PaginatedUserSportPreferenceResponseDto })
+  @ApiOkResponse({ type: PaginatedSportPreferenceResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.OK)
   async findMySportPreferences(@Req() request: Request) {
     const userUid = request['user'].uid;
-    const data = await this.userSportPreferencesService.findAllByUserUid(userUid);
+    const data = await this.sportPreferencesService.findAllByUserUid(userUid);
 
     if (data.items.length === 0) {
       return {
@@ -111,6 +111,6 @@ export class UserSportPreferencesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('uid') uid: string, @Req() request: Request): Promise<void> {
     const userUid = request['user'].uid;
-    await this.userSportPreferencesService.remove(uid, userUid);
+    await this.sportPreferencesService.remove(uid, userUid);
   }
 }

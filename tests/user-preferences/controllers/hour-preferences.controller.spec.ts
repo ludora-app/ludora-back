@@ -2,13 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TimePeriod, UserHourPreferenceType } from 'generated/prisma/client';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
-import { UserHourPreferencesController } from 'src/user-preferences/controllers/user-hour-preferences.controller';
-import { UserHourPreferencesService } from 'src/user-preferences/services/user-hour-preferences.service';
-import { CreateUserHourPreferenceDto } from 'src/user-preferences/dto/input/create-user-hour-preference.dto';
+import { HourPreferencesController } from 'src/user-preferences/controllers/hour-preferences.controller';
+import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
+import { CreateHourPreferenceDto } from 'src/user-preferences/dto/input/create-hour-preference.dto';
 
-describe('UserHourPreferencesController', () => {
-  let controller: UserHourPreferencesController;
-  let service: UserHourPreferencesService;
+describe('HourPreferencesController', () => {
+  let controller: HourPreferencesController;
+  let service: HourPreferencesService;
 
   const mockUserHourPreferencesService = {
     findAllByUserUid: jest.fn(),
@@ -25,17 +25,15 @@ describe('UserHourPreferencesController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [UserHourPreferencesController],
-      providers: [
-        { provide: UserHourPreferencesService, useValue: mockUserHourPreferencesService },
-      ],
+      controllers: [HourPreferencesController],
+      providers: [{ provide: HourPreferencesService, useValue: mockUserHourPreferencesService }],
     })
       .overrideGuard(AuthB2CGuard)
       .useValue(mockAuthGuard)
       .compile();
 
-    controller = module.get<UserHourPreferencesController>(UserHourPreferencesController);
-    service = module.get<UserHourPreferencesService>(UserHourPreferencesService);
+    controller = module.get<HourPreferencesController>(HourPreferencesController);
+    service = module.get<HourPreferencesService>(HourPreferencesService);
   });
 
   afterEach(() => {
@@ -52,7 +50,7 @@ describe('UserHourPreferencesController', () => {
     } as any;
 
     describe('RECURRENT preference', () => {
-      const createRecurrentDto: CreateUserHourPreferenceDto = {
+      const createRecurrentDto: CreateHourPreferenceDto = {
         dayOfWeek: 2,
         timePeriod: TimePeriod.MORNING,
         preferenceType: UserHourPreferenceType.RECURRENT,
@@ -105,7 +103,7 @@ describe('UserHourPreferencesController', () => {
     });
 
     describe('ONE_TIME preference', () => {
-      const createOneTimeDto: CreateUserHourPreferenceDto = {
+      const createOneTimeDto: CreateHourPreferenceDto = {
         timePeriod: TimePeriod.AFTERNOON,
         preferenceType: UserHourPreferenceType.ONE_TIME,
         date: mockFutureDate.toISOString(),
