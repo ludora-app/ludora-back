@@ -10,6 +10,9 @@ local-up:
 local-down:
 	docker compose -f compose.local.yml --env-file .env.local down
 
+local-reset:
+	docker compose -f compose.local.yml --env-file .env.local down --remove-orphans --volumes
+
 # Reset PostgreSQL (remove volume and rebuild)
 local-postgres-reset:
 	docker compose -f compose.local.yml --env-file .env.local down -v

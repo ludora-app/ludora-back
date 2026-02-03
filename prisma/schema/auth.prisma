@@ -61,16 +61,17 @@ model Users {
 
   evaluatedRating UserRatings[] @relation(name: "EvaluatedRelation")
 
-  sessions            Sessions[]
-  userGlobalRatings   UserGlobalRatings[]
-  emailVerifications  EmailVerification[]
-  userTokens          UserTokens[]
-  refreshTokens       RefreshTokens[]
-  userSports          UserSports[]
-  userHourPreferences UserHourPreferences[]
-  messageReceipts     MessageReceipts[]
-  notifications       Notifications[]
-  devices             Devices[]
+  sessions                Sessions[]
+  userGlobalRatings       UserGlobalRatings[]
+  emailVerifications      EmailVerification[]
+  userTokens              UserTokens[]
+  refreshTokens           RefreshTokens[]
+  userSportPreferences    UserSportPreferences[]
+  userHourPreferences     UserHourPreferences[]
+  messageReceipts         MessageReceipts[]
+  notifications           Notifications[]
+  devices                 Devices[]
+  userGameModePreferences UserGameModePreferences[]
 
   @@index([createdAt])
   @@index([isConnected])
@@ -100,7 +101,7 @@ model UserTokens {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  user    Users     @relation(fields: [userUid], references: [uid])
+  user    Users     @relation(fields: [userUid], references: [uid], onDelete: Cascade)
   partner Partners? @relation(fields: [organisationUid], references: [uid], onDelete: SetNull)
 
   @@index([userUid])

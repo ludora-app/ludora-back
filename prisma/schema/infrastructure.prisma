@@ -58,7 +58,7 @@ model Fields {
 
   fieldImages   FieldImages[]
   fieldSlots    FieldSlots[]
-  partner       Partners?     @relation(fields: [partnerUid], references: [uid])
+  partner       Partners?     @relation(fields: [partnerUid], references: [uid], onDelete: SetNull)
   sportRelation Sports        @relation(fields: [sport], references: [name])
   sessions      Sessions[]
 
@@ -96,7 +96,7 @@ model PartnerSports {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  partner       Partners @relation(fields: [partnerUid], references: [uid])
+  partner       Partners @relation(fields: [partnerUid], references: [uid], onDelete: Cascade)
   sportRelation Sports   @relation(fields: [sport], references: [name])
 
   @@unique([partnerUid, sport])
@@ -115,10 +115,11 @@ model Sports {
 
   fields Fields[]
 
-  userGlobalRatings UserGlobalRatings[]
-  partnerSports     PartnerSports[]
-  userSports        UserSports[]
-  sessions          Sessions[]
+  userGlobalRatings       UserGlobalRatings[]
+  partnerSports           PartnerSports[]
+  userSportPreferences    UserSportPreferences[]
+  userGameModePreferences UserGameModePreferences[]
+  sessions                Sessions[]
 
   @@schema("infrastructure")
 }
@@ -131,7 +132,7 @@ model FieldImages {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  field Fields @relation(fields: [fieldUid], references: [uid])
+  field Fields @relation(fields: [fieldUid], references: [uid], onDelete: Cascade)
 
   @@index([fieldUid])
   @@map("Field_images")

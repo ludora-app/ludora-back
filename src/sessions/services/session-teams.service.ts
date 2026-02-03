@@ -73,7 +73,7 @@ export class SessionTeamsService {
                 firstname: true,
                 imageUrl: true,
                 lastname: true,
-                userSports: {
+                userSportPreferences: {
                   select: {
                     level: true,
                   },

@@ -77,7 +77,7 @@ model SessionInvitations {
   createdAt   DateTime         @default(now()) @map("created_at")
   updatedAt   DateTime         @updatedAt @map("updated_at")
 
-  session  Sessions @relation(fields: [sessionUid], references: [uid])
+  session  Sessions @relation(fields: [sessionUid], references: [uid], onDelete: Cascade)
   sender   Users    @relation(fields: [senderUid], references: [uid], name: "senderRelation")
   receiver Users    @relation(fields: [receiverUid], references: [uid], name: "receiverRelation")
 
@@ -96,7 +96,7 @@ model SessionImages {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  session Sessions @relation(fields: [sessionUid], references: [uid])
+  session Sessions @relation(fields: [sessionUid], references: [uid], onDelete: Cascade)
 
   @@map("Session_images")
   @@schema("sessions")
@@ -110,7 +110,7 @@ model SessionTeams {
   createdAt  DateTime   @default(now()) @map("created_at")
   updatedAt  DateTime   @updatedAt @map("updated_at")
 
-  session Sessions @relation(fields: [sessionUid], references: [uid])
+  session Sessions @relation(fields: [sessionUid], references: [uid], onDelete: Cascade)
 
   sessionPlayers SessionPlayers[]
 
@@ -126,7 +126,7 @@ model SessionPlayers {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  session Sessions     @relation(fields: [sessionUid], references: [uid])
+  session Sessions     @relation(fields: [sessionUid], references: [uid], onDelete: Cascade)
   team    SessionTeams @relation(fields: [teamUid], references: [uid])
   user    Users        @relation(fields: [userUid], references: [uid])
 

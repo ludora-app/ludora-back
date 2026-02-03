@@ -22,8 +22,6 @@ import { PartnersModule } from './partners/partners.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ConversationsModule } from './conversations/conversations.module';
-import { UserHourPreferencesModule } from './user-hour-preferences/user-hour-preferences.module';
-import { UserSportPreferencesModule } from './user-sport-preferences/user-sport-preferences.module';
 
 const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV === 'development';
 
@@ -113,8 +111,6 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
     PrismaModule,
     SessionsModule,
     SharedModule,
-    UserHourPreferencesModule,
-    UserSportPreferencesModule,
     UsersModule,
     FirebaseModule,
     DevicesModule,

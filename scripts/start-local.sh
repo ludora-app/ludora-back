@@ -6,8 +6,9 @@ set -e
 
 pnpm prisma generate
 
-envconsul -config=/etc/envconsul/config.hcl -once -- pnpm exec prisma db push --force-reset 
+# Run migrations in non-interactive mode for Docker
+envconsul -config=/etc/envconsul/config.hcl -once -- pnpm exec prisma migrate deploy
 
-envconsul -config=/etc/envconsul/config.hcl -once -- pnpm run seed
+# envconsul -config=/etc/envconsul/config.hcl -once -- pnpm run seed
 
 exec envconsul -config=/etc/envconsul/config.hcl -- pnpm exec nest start --watch --preserveWatchOutput

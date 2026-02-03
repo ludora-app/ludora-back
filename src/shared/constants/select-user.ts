@@ -45,7 +45,7 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     stripeAccountId: true,
     type: true,
     uid: true,
-    userSports: {
+    userSportPreferences: {
       select: {
         sport: true,
       },
@@ -58,7 +58,7 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     imageUrl: true,
     lastname: true,
     uid: true,
-    userSports: {
+    userSportPreferences: {
       select: {
         sport: true,
       },

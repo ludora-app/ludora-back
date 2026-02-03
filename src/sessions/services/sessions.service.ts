@@ -12,8 +12,8 @@ import { SessionPlayersService } from 'src/sessions/services/session-players.ser
 import { ConversationsService } from 'src/conversations/services/conversations.service';
 import { SessionScope, Sport, StorageFolderName } from 'src/shared/constants/constants';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
-import { UserHourPreferencesService } from 'src/user-hour-preferences/user-hour-preferences.service';
-import { UserSportPreferencesService } from 'src/user-sport-preferences/user-sport-preferences.service';
+import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
+import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 import {
   FieldSlots,
   FieldType,
@@ -50,8 +50,8 @@ export class SessionsService {
     private readonly playersService: SessionPlayersService,
     private readonly storageService: StorageService,
     private readonly conversationsService: ConversationsService,
-    private readonly userHourPreferencesService: UserHourPreferencesService,
-    private readonly userSportPreferencesService: UserSportPreferencesService,
+    private readonly hourPreferencesService: HourPreferencesService,
+    private readonly sportPreferencesService: SportPreferencesService,
     private readonly fieldSlotsService: FieldSlotsService,
     private readonly logger: PinoLogger,
   ) {
@@ -222,11 +222,10 @@ export class SessionsService {
     userUid,
   }: FindAllSessionsDto): Promise<PaginatedDataDto<SessionCollectionItemDto>> {
     const userSportPreferencesResponse =
-      await this.userSportPreferencesService.findAllByUserUid(userUid);
+      await this.sportPreferencesService.findAllByUserUid(userUid);
     const userSportPreferences = userSportPreferencesResponse.items || [];
 
-    const userTimePreferencesResponse =
-      await this.userHourPreferencesService.findAllByUserUid(userUid);
+    const userTimePreferencesResponse = await this.hourPreferencesService.findAllByUserUid(userUid);
     const userTimePreferences = userTimePreferencesResponse.items || [];
 
     // ---------------------------------------------------------

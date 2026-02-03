@@ -12,8 +12,8 @@ import { SessionsService } from 'src/sessions/services/sessions.service';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
 import { FindAllSessionsDto, SessionFilterDto } from 'src/sessions/dto/input/session-filter.dto';
 import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
-import { UserHourPreferencesService } from 'src/user-hour-preferences/user-hour-preferences.service';
-import { UserSportPreferencesService } from 'src/user-sport-preferences/user-sport-preferences.service';
+import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
+import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 import { CreateSessionDto } from 'src/sessions/dto/input/create-session.dto';
 import { SessionOwnnership } from 'src/sessions/dto/input/my-session-filter.dto';
 import { FieldSlotsService } from 'src/fields/services/field-slots.service';
@@ -132,11 +132,11 @@ describe('SessionsService', () => {
           },
         },
         {
-          provide: UserHourPreferencesService,
+          provide: HourPreferencesService,
           useValue: mockUserHourPreferencesService,
         },
         {
-          provide: UserSportPreferencesService,
+          provide: SportPreferencesService,
           useValue: mockUserSportPreferencesService,
         },
         {

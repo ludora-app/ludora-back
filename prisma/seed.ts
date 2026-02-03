@@ -1368,7 +1368,7 @@ async function seed() {
       const level = Math.floor(Math.random() * 3) + 1;
 
       try {
-        const userSport = await prisma.userSports.upsert({
+        const userSport = await prisma.userSportPreferences.upsert({
           where: {
             userUid_sport: {
               userUid: user.uid,
