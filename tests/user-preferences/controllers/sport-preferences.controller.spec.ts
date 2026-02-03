@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { UserSports } from 'generated/prisma/client';
+import { UserSportPreferences } from 'generated/prisma/browser';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { SportPreferencesController } from 'src/user-preferences/controllers/sport-preferences.controller';
 import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
@@ -56,7 +56,7 @@ describe('SportPreferencesController', () => {
         userUid: 'user-uid-1',
       };
 
-      const mockCreatedPreference: UserSports = {
+      const mockCreatedPreference: UserSportPreferences = {
         uid: 'sport-pref-uid-1',
         sport: Sport.BASKETBALL,
         userUid: 'user-uid-1',
@@ -89,7 +89,7 @@ describe('SportPreferencesController', () => {
           userUid: 'user-uid-1',
         };
 
-        const mockCreatedPreference: UserSports = {
+        const mockCreatedPreference: UserSportPreferences = {
           uid: `sport-pref-uid-${sport}`,
           sport,
           userUid: 'user-uid-1',
@@ -164,7 +164,7 @@ describe('SportPreferencesController', () => {
         user: { uid: 'different-user-uid' },
       } as any;
 
-      const mockCreatedPreference: UserSports = {
+      const mockCreatedPreference: UserSportPreferences = {
         uid: 'sport-pref-uid-2',
         sport: Sport.FOOTBALL,
         userUid: 'different-user-uid',
@@ -188,7 +188,7 @@ describe('SportPreferencesController', () => {
     const userUid = 'user-uid-1';
 
     it('should return all sport preferences for a user', async () => {
-      const mockPreferences: UserSports[] = [
+      const mockPreferences: UserSportPreferences[] = [
         {
           uid: 'sport-pref-uid-1',
           sport: Sport.BASKETBALL,
@@ -262,7 +262,7 @@ describe('SportPreferencesController', () => {
       const userIds = ['user-uid-1', 'user-uid-2', 'user-uid-3'];
 
       for (const uid of userIds) {
-        const mockPreferences: UserSports[] = [
+        const mockPreferences: UserSportPreferences[] = [
           {
             uid: `sport-pref-${uid}`,
             sport: Sport.BASKETBALL,

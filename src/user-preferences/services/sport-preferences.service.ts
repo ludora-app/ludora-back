@@ -1,8 +1,8 @@
 import { PinoLogger } from 'nestjs-pino';
-import { UserSports } from 'generated/prisma/client';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
+import { UserSportPreferences } from 'generated/prisma/browser';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
@@ -18,7 +18,7 @@ export class SportPreferencesService {
   ) {
     this.logger.setContext(SportPreferencesService.name);
   }
-  async create(createSportPreferenceDto: CreateSportPreferenceDto): Promise<UserSports> {
+  async create(createSportPreferenceDto: CreateSportPreferenceDto): Promise<UserSportPreferences> {
     const { level, sport, userUid } = createSportPreferenceDto;
     const existingUser = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
 
@@ -27,7 +27,7 @@ export class SportPreferencesService {
       throw new NotFoundException('User not found');
     }
 
-    const existingSportPreference = await this.prisma.userSports.findFirst({
+    const existingSportPreference = await this.prisma.userSportPreferences.findFirst({
       where: { sport, userUid },
     });
 
@@ -36,7 +36,7 @@ export class SportPreferencesService {
       throw new BadRequestException('Sport preference already exists');
     }
 
-    const newSportPreference = await this.prisma.userSports.create({
+    const newSportPreference = await this.prisma.userSportPreferences.create({
       data: { level, sport, userUid },
     });
 
@@ -49,7 +49,7 @@ export class SportPreferencesService {
       this.logger.error(`User not found: ${userUid}`);
       throw new NotFoundException('User not found');
     }
-    const sportPreferences = await this.prisma.userSports.findMany({
+    const sportPreferences = await this.prisma.userSportPreferences.findMany({
       select: {
         createdAt: true,
         level: true,
@@ -61,8 +61,8 @@ export class SportPreferencesService {
     return { items: sportPreferences, nextCursor: null, totalCount: sportPreferences.length };
   }
 
-  async findOne(uid: string): Promise<UserSports> {
-    const existingSportPreference = await this.prisma.userSports.findUnique({
+  async findOne(uid: string): Promise<UserSportPreferences> {
+    const existingSportPreference = await this.prisma.userSportPreferences.findUnique({
       where: { uid },
     });
 
@@ -70,7 +70,7 @@ export class SportPreferencesService {
   }
 
   async remove(uid: string, userUid: string): Promise<void> {
-    const existingSportPreference = await this.prisma.userSports.findUnique({
+    const existingSportPreference = await this.prisma.userSportPreferences.findUnique({
       where: { uid },
     });
 
@@ -79,7 +79,7 @@ export class SportPreferencesService {
       throw new NotFoundException('Sport preference not found');
     }
 
-    await this.prisma.userSports.delete({ where: { uid } });
+    await this.prisma.userSportPreferences.delete({ where: { uid } });
     this.logger.info(`Sport preference deleted: ${uid}`);
   }
 }

@@ -358,7 +358,7 @@ describe('SessionTeamsService', () => {
                   lastname: true,
                   imageUrl: true,
                   bio: true,
-                  userSports: {
+                  userSportPreferences: {
                     select: {
                       level: true,
                     },
@@ -408,7 +408,7 @@ describe('SessionTeamsService', () => {
                   lastname: true,
                   imageUrl: true,
                   bio: true,
-                  userSports: {
+                  userSportPreferences: {
                     select: {
                       level: true,
                     },

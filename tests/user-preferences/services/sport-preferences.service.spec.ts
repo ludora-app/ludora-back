@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { UserSports } from 'generated/prisma/client';
+import { UserSportPreferences } from 'generated/prisma/browser';
 import { PinoLogger } from 'nestjs-pino';
 import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 import { UsersService } from 'src/users/users.service';
@@ -21,7 +21,7 @@ describe('SportPreferencesService', () => {
     };
 
     const mockPrismaService = {
-      userSports: {
+      userSportPreferences: {
         findFirst: jest.fn(),
         findMany: jest.fn(),
         findUnique: jest.fn(),
@@ -67,7 +67,7 @@ describe('SportPreferencesService', () => {
     const userUid = 'user-uid-1';
 
     it('should create a sport preference successfully', async () => {
-      const mockCreatedPreference: UserSports = {
+      const mockCreatedPreference: UserSportPreferences = {
         uid: 'sport-pref-uid-1',
         sport,
         userUid,
@@ -76,17 +76,19 @@ describe('SportPreferencesService', () => {
       };
 
       (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
-      (prismaService.userSports.findFirst as jest.Mock).mockResolvedValue(null);
-      (prismaService.userSports.create as jest.Mock).mockResolvedValue(mockCreatedPreference);
+      (prismaService.userSportPreferences.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.userSportPreferences.create as jest.Mock).mockResolvedValue(
+        mockCreatedPreference,
+      );
 
       const result = await service.create({ sport, userUid, level: UserSportLevel.BEGINNER });
 
       expect(result).toEqual(mockCreatedPreference);
       expect(usersService.findOne).toHaveBeenCalledWith(userUid, expect.any(Object));
-      expect(prismaService.userSports.findFirst).toHaveBeenCalledWith({
+      expect(prismaService.userSportPreferences.findFirst).toHaveBeenCalledWith({
         where: { sport, userUid },
       });
-      expect(prismaService.userSports.create).toHaveBeenCalledWith({
+      expect(prismaService.userSportPreferences.create).toHaveBeenCalledWith({
         data: { sport, userUid, level: UserSportLevel.BEGINNER },
       });
     });
@@ -98,12 +100,12 @@ describe('SportPreferencesService', () => {
         service.create({ sport, userUid, level: UserSportLevel.BEGINNER }),
       ).rejects.toThrow(new NotFoundException('User not found'));
       expect(logger.error).toHaveBeenCalledWith(`User not found: ${userUid}`);
-      expect(prismaService.userSports.findFirst).not.toHaveBeenCalled();
-      expect(prismaService.userSports.create).not.toHaveBeenCalled();
+      expect(prismaService.userSportPreferences.findFirst).not.toHaveBeenCalled();
+      expect(prismaService.userSportPreferences.create).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when sport preference already exists', async () => {
-      const existingPreference: UserSports = {
+      const existingPreference: UserSportPreferences = {
         uid: 'existing-sport-pref-uid',
         sport,
         userUid,
@@ -112,7 +114,9 @@ describe('SportPreferencesService', () => {
       };
 
       (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
-      (prismaService.userSports.findFirst as jest.Mock).mockResolvedValue(existingPreference);
+      (prismaService.userSportPreferences.findFirst as jest.Mock).mockResolvedValue(
+        existingPreference,
+      );
 
       await expect(
         service.create({ sport, userUid, level: UserSportLevel.BEGINNER }),
@@ -120,14 +124,14 @@ describe('SportPreferencesService', () => {
       expect(logger.error).toHaveBeenCalledWith(
         `Sport preference already exists: ${sport} for user: ${userUid}`,
       );
-      expect(prismaService.userSports.create).not.toHaveBeenCalled();
+      expect(prismaService.userSportPreferences.create).not.toHaveBeenCalled();
     });
 
     it('should create sport preferences for different sports', async () => {
       const sports = [Sport.BASKETBALL, Sport.FOOTBALL, Sport.TENNIS];
 
       for (const sportType of sports) {
-        const mockCreatedPreference: UserSports = {
+        const mockCreatedPreference: UserSportPreferences = {
           uid: `sport-pref-uid-${sportType}`,
           sport: sportType,
           userUid,
@@ -136,8 +140,10 @@ describe('SportPreferencesService', () => {
         };
 
         (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
-        (prismaService.userSports.findFirst as jest.Mock).mockResolvedValue(null);
-        (prismaService.userSports.create as jest.Mock).mockResolvedValue(mockCreatedPreference);
+        (prismaService.userSportPreferences.findFirst as jest.Mock).mockResolvedValue(null);
+        (prismaService.userSportPreferences.create as jest.Mock).mockResolvedValue(
+          mockCreatedPreference,
+        );
 
         const result = await service.create({
           sport: sportType,
@@ -146,7 +152,7 @@ describe('SportPreferencesService', () => {
         });
 
         expect(result).toEqual(mockCreatedPreference);
-        expect(prismaService.userSports.create).toHaveBeenCalledWith({
+        expect(prismaService.userSportPreferences.create).toHaveBeenCalledWith({
           data: { sport: sportType, userUid, level: UserSportLevel.BEGINNER },
         });
       }
@@ -158,7 +164,7 @@ describe('SportPreferencesService', () => {
     const userUid = 'user-uid-1';
 
     it('should return all sport preferences for a user', async () => {
-      const mockPreferences: UserSports[] = [
+      const mockPreferences: UserSportPreferences[] = [
         {
           uid: 'sport-pref-uid-1',
           sport: Sport.BASKETBALL,
@@ -183,7 +189,7 @@ describe('SportPreferencesService', () => {
       ];
 
       (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
-      (prismaService.userSports.findMany as jest.Mock).mockResolvedValue(mockPreferences);
+      (prismaService.userSportPreferences.findMany as jest.Mock).mockResolvedValue(mockPreferences);
 
       const result = await service.findAllByUserUid(userUid);
 
@@ -193,14 +199,20 @@ describe('SportPreferencesService', () => {
         totalCount: mockPreferences.length,
       });
       expect(usersService.findOne).toHaveBeenCalledWith(userUid, expect.any(Object));
-      expect(prismaService.userSports.findMany).toHaveBeenCalledWith({
+      expect(prismaService.userSportPreferences.findMany).toHaveBeenCalledWith({
+        select: {
+          createdAt: true,
+          level: true,
+          sport: true,
+          uid: true,
+        },
         where: { userUid },
       });
     });
 
     it('should return empty array when user has no sport preferences', async () => {
       (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
-      (prismaService.userSports.findMany as jest.Mock).mockResolvedValue([]);
+      (prismaService.userSportPreferences.findMany as jest.Mock).mockResolvedValue([]);
 
       const result = await service.findAllByUserUid(userUid);
 
@@ -209,7 +221,13 @@ describe('SportPreferencesService', () => {
         nextCursor: null,
         totalCount: 0,
       });
-      expect(prismaService.userSports.findMany).toHaveBeenCalledWith({
+      expect(prismaService.userSportPreferences.findMany).toHaveBeenCalledWith({
+        select: {
+          createdAt: true,
+          level: true,
+          sport: true,
+          uid: true,
+        },
         where: { userUid },
       });
     });
@@ -221,7 +239,7 @@ describe('SportPreferencesService', () => {
         new NotFoundException('User not found'),
       );
       expect(logger.error).toHaveBeenCalledWith(`User not found: ${userUid}`);
-      expect(prismaService.userSports.findMany).not.toHaveBeenCalled();
+      expect(prismaService.userSportPreferences.findMany).not.toHaveBeenCalled();
     });
   });
 
@@ -229,7 +247,7 @@ describe('SportPreferencesService', () => {
     const uid = 'sport-pref-uid-1';
 
     it('should return a sport preference by uid', async () => {
-      const mockPreference: UserSports = {
+      const mockPreference: UserSportPreferences = {
         uid,
         sport: Sport.BASKETBALL,
         userUid: 'user-uid-1',
@@ -237,23 +255,25 @@ describe('SportPreferencesService', () => {
         level: UserSportLevel.BEGINNER,
       };
 
-      (prismaService.userSports.findUnique as jest.Mock).mockResolvedValue(mockPreference);
+      (prismaService.userSportPreferences.findUnique as jest.Mock).mockResolvedValue(
+        mockPreference,
+      );
 
       const result = await service.findOne(uid);
 
       expect(result).toEqual(mockPreference);
-      expect(prismaService.userSports.findUnique).toHaveBeenCalledWith({
+      expect(prismaService.userSportPreferences.findUnique).toHaveBeenCalledWith({
         where: { uid },
       });
     });
 
     it('should return null when sport preference not found', async () => {
-      (prismaService.userSports.findUnique as jest.Mock).mockResolvedValue(null);
+      (prismaService.userSportPreferences.findUnique as jest.Mock).mockResolvedValue(null);
 
       const result = await service.findOne('non-existent-uid');
 
       expect(result).toBeNull();
-      expect(prismaService.userSports.findUnique).toHaveBeenCalledWith({
+      expect(prismaService.userSportPreferences.findUnique).toHaveBeenCalledWith({
         where: { uid: 'non-existent-uid' },
       });
     });
@@ -263,7 +283,7 @@ describe('SportPreferencesService', () => {
     const uid = 'sport-pref-uid-1';
     const userUid = 'user-uid-1';
 
-    const mockPreference: UserSports = {
+    const mockPreference: UserSportPreferences = {
       uid,
       sport: Sport.BASKETBALL,
       userUid,
@@ -272,42 +292,46 @@ describe('SportPreferencesService', () => {
     };
 
     it('should delete a sport preference successfully', async () => {
-      (prismaService.userSports.findUnique as jest.Mock).mockResolvedValue(mockPreference);
-      (prismaService.userSports.delete as jest.Mock).mockResolvedValue(mockPreference);
+      (prismaService.userSportPreferences.findUnique as jest.Mock).mockResolvedValue(
+        mockPreference,
+      );
+      (prismaService.userSportPreferences.delete as jest.Mock).mockResolvedValue(mockPreference);
 
       await service.remove(uid, userUid);
 
-      expect(prismaService.userSports.findUnique).toHaveBeenCalledWith({
+      expect(prismaService.userSportPreferences.findUnique).toHaveBeenCalledWith({
         where: { uid },
       });
-      expect(prismaService.userSports.delete).toHaveBeenCalledWith({
+      expect(prismaService.userSportPreferences.delete).toHaveBeenCalledWith({
         where: { uid },
       });
       expect(logger.info).toHaveBeenCalledWith(`Sport preference deleted: ${uid}`);
     });
 
     it('should throw NotFoundException when sport preference does not exist', async () => {
-      (prismaService.userSports.findUnique as jest.Mock).mockResolvedValue(null);
+      (prismaService.userSportPreferences.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.remove(uid, userUid)).rejects.toThrow(
         new NotFoundException('Sport preference not found'),
       );
       expect(logger.error).toHaveBeenCalledWith(`Sport preference not found: ${uid}`);
-      expect(prismaService.userSports.delete).not.toHaveBeenCalled();
+      expect(prismaService.userSportPreferences.delete).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when userUid does not match', async () => {
-      (prismaService.userSports.findUnique as jest.Mock).mockResolvedValue(mockPreference);
+      (prismaService.userSportPreferences.findUnique as jest.Mock).mockResolvedValue(
+        mockPreference,
+      );
 
       await expect(service.remove(uid, 'different-user-uid')).rejects.toThrow(
         new NotFoundException('Sport preference not found'),
       );
       expect(logger.error).toHaveBeenCalledWith(`Sport preference not found: ${uid}`);
-      expect(prismaService.userSports.delete).not.toHaveBeenCalled();
+      expect(prismaService.userSportPreferences.delete).not.toHaveBeenCalled();
     });
 
     it('should allow user to delete their own sport preference', async () => {
-      const anotherPreference: UserSports = {
+      const anotherPreference: UserSportPreferences = {
         uid: 'sport-pref-uid-2',
         sport: Sport.FOOTBALL,
         userUid: 'user-uid-2',
@@ -315,12 +339,14 @@ describe('SportPreferencesService', () => {
         level: UserSportLevel.INTERMEDIATE,
       };
 
-      (prismaService.userSports.findUnique as jest.Mock).mockResolvedValue(anotherPreference);
+      (prismaService.userSportPreferences.findUnique as jest.Mock).mockResolvedValue(
+        anotherPreference,
+      );
 
       await expect(service.remove('sport-pref-uid-2', 'user-uid-1')).rejects.toThrow(
         new NotFoundException('Sport preference not found'),
       );
-      expect(prismaService.userSports.delete).not.toHaveBeenCalled();
+      expect(prismaService.userSportPreferences.delete).not.toHaveBeenCalled();
     });
   });
 });
