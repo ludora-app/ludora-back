@@ -3,12 +3,13 @@ import { UsersService } from 'src/users/users.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
+import { UserHourPreferenceType } from 'generated/prisma/client';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
-import { UserHourPreferences, UserHourPreferenceType } from 'generated/prisma/client';
 
 import { CheckHourPreferenceDto } from '../dto/input/check-hour-preference.dto';
 import { CreateHourPreferenceDto } from '../dto/input/create-hour-preference.dto';
+import { HourPreferenceResponseData } from '../dto/output/hour-preference-response.dto';
 
 @Injectable()
 export class HourPreferencesService {
@@ -23,7 +24,7 @@ export class HourPreferencesService {
   async create(
     userUid: string,
     createHourPreferenceDto: CreateHourPreferenceDto,
-  ): Promise<UserHourPreferences> {
+  ): Promise<HourPreferenceResponseData> {
     const existingUser = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
     const { date, dayOfWeek, preferenceType, timePeriod } = createHourPreferenceDto;
 
@@ -61,6 +62,14 @@ export class HourPreferencesService {
           type: preferenceType,
           userUid,
         },
+        select: {
+          createdAt: true,
+          date: true,
+          dayOfWeek: true,
+          timePeriod: true,
+          type: true,
+          uid: true,
+        },
       });
     } else {
       newHourPreference = await this.prisma.userHourPreferences.create({
@@ -76,7 +85,7 @@ export class HourPreferencesService {
     return newHourPreference;
   }
 
-  async findAllByUserUid(userUid: string): Promise<PaginatedDataDto<UserHourPreferences>> {
+  async findAllByUserUid(userUid: string): Promise<PaginatedDataDto<HourPreferenceResponseData>> {
     const existingUser = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
     if (!existingUser) {
       this.logger.error(`User not found: ${userUid}`);
@@ -84,6 +93,14 @@ export class HourPreferencesService {
     }
     this.logger.debug(`Finding all hour preferences for user: ${userUid}`);
     const hourPreferences = await this.prisma.userHourPreferences.findMany({
+      select: {
+        createdAt: true,
+        date: true,
+        dayOfWeek: true,
+        timePeriod: true,
+        type: true,
+        uid: true,
+      },
       where: {
         OR: [
           { type: UserHourPreferenceType.RECURRENT, userUid },

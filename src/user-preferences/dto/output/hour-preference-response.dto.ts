@@ -1,11 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { TimePeriod, UserHourPreferenceType } from 'generated/prisma/client';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 /**
  * @description standard response for a userHourPreference resource
  */
-export class HourPreferenceResponseDto {
+export class HourPreferenceResponseData {
   @ApiProperty({
     description: "Entity's creation date",
     example: '2025-05-10T22:30:32.525Z',
@@ -33,9 +34,6 @@ export class HourPreferenceResponseDto {
   })
   readonly dayOfWeek: number;
 
-  @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
-  readonly userUid: string;
-
   @ApiProperty({
     description: 'Applicable date for a ONE_TIME preference, null for a RECURRENT preference',
     example: '2025-05-10T22:30:32.525Z',
@@ -45,8 +43,14 @@ export class HourPreferenceResponseDto {
   readonly date: Date | null;
 }
 
+export class HourPreferenceResponseDto extends ResponseTypeDto<HourPreferenceResponseData> {
+  @ApiProperty({ type: HourPreferenceResponseData })
+  readonly data: HourPreferenceResponseData;
+}
+
 /**
  * @description standard response for a paginated userHourPreference resource, used to type swagger return
  */
-export const PaginatedHourPreferenceResponseDto =
-  toPaginationResponseType(HourPreferenceResponseDto);
+export const PaginatedHourPreferenceResponseDto = toPaginationResponseType(
+  HourPreferenceResponseData,
+);
