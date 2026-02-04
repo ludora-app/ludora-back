@@ -114,6 +114,12 @@ export class FindOneSessionResponseData extends OmitType(SessionCollectionItemDt
     required: false,
   })
   remainingPlayers?: number;
+
+  @ApiProperty({
+    description: 'Number of views of the session',
+    example: 10,
+  })
+  viewCount: number;
 }
 
 export class FindOneSessionWithDistanceResponseData extends FindOneSessionResponseData {

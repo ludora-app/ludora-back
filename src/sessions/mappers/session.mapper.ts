@@ -44,6 +44,7 @@ export interface RawSessionFindOneItem {
   level: number;
   startDate: Date;
   gameMode: string;
+  viewCount: number;
   isJoined: boolean;
   creatorUid: string;
   description: string;
@@ -108,6 +109,8 @@ export class SessionMapper {
       startDate: session.startDate,
       title: session.title,
       uid: session.uid,
+      //? Increment the view count by 1 because the update is done after the fetching
+      viewCount: session.viewCount + 1,
       visibility: session.visibility as SessionVisibility,
     };
 

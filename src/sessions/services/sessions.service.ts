@@ -736,6 +736,7 @@ export class SessionsService {
           startDate: true,
           title: true,
           uid: true,
+          viewCount: true,
           visibility: true,
         },
         where: { uid },
@@ -758,6 +759,8 @@ export class SessionsService {
     if (!session) {
       throw new NotFoundException('Session not found');
     }
+
+    await this.incrementViewCount(uid);
 
     const isJoined = session.sessionTeams.some((team) =>
       team.sessionPlayers.some((player) => player.userUid === userUid),
@@ -970,6 +973,13 @@ export class SessionsService {
       case GameModes.ELEVEN_V_ELEVEN:
         return { maxPlayersPerTeam: 11, minPlayersPerTeam: 8, teamsPerGame: 1 };
     }
+  }
+
+  async incrementViewCount(sessionUid: string): Promise<void> {
+    await this.prisma.sessions.update({
+      data: { viewCount: { increment: 1 } },
+      where: { uid: sessionUid },
+    });
   }
 
   /**
