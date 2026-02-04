@@ -2,12 +2,11 @@ import { PinoLogger } from 'nestjs-pino';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
-import { UserSportPreferences } from 'generated/prisma/browser';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
 import { CreateSportPreferenceDto } from '../dto/input/create-sport-preference.dto';
-import { SportPreferenceResponseDto } from '../dto/output/sport-preference.response.dto';
+import { SportPreferenceResponseData } from '../dto/output/sport-preference.response.dto';
 
 @Injectable()
 export class SportPreferencesService {
@@ -18,7 +17,9 @@ export class SportPreferencesService {
   ) {
     this.logger.setContext(SportPreferencesService.name);
   }
-  async create(createSportPreferenceDto: CreateSportPreferenceDto): Promise<UserSportPreferences> {
+  async create(
+    createSportPreferenceDto: CreateSportPreferenceDto,
+  ): Promise<SportPreferenceResponseData> {
     const { level, sport, userUid } = createSportPreferenceDto;
     const existingUser = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
 
@@ -43,7 +44,7 @@ export class SportPreferencesService {
     return newSportPreference;
   }
 
-  async findAllByUserUid(userUid: string): Promise<PaginatedDataDto<SportPreferenceResponseDto>> {
+  async findAllByUserUid(userUid: string): Promise<PaginatedDataDto<SportPreferenceResponseData>> {
     const existingUser = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
     if (!existingUser) {
       this.logger.error(`User not found: ${userUid}`);
@@ -61,8 +62,14 @@ export class SportPreferencesService {
     return { items: sportPreferences, nextCursor: null, totalCount: sportPreferences.length };
   }
 
-  async findOne(uid: string): Promise<UserSportPreferences> {
+  async findOne(uid: string): Promise<SportPreferenceResponseData> {
     const existingSportPreference = await this.prisma.userSportPreferences.findUnique({
+      select: {
+        createdAt: true,
+        level: true,
+        sport: true,
+        uid: true,
+      },
       where: { uid },
     });
 

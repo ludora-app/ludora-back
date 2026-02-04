@@ -1,9 +1,9 @@
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
-import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   Controller,
   Get,
@@ -30,6 +30,7 @@ import { SportPreferencesService } from '../services/sport-preferences.service';
 import { CreateSportPreferenceDtoFromRequest } from '../dto/input/create-sport-preference.dto';
 import {
   PaginatedSportPreferenceResponseDto,
+  SportPreferenceResponseData,
   SportPreferenceResponseDto,
 } from '../dto/output/sport-preference.response.dto';
 
@@ -41,7 +42,7 @@ export class SportPreferencesController {
   @Post()
   @Protected()
   @ApiOperation({ summary: 'Create a user sport preference' })
-  @ApiCreatedResponse({ type: ResponseTypeDto<SportPreferenceResponseDto> })
+  @ApiCreatedResponse({ type: SportPreferenceResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
@@ -49,7 +50,7 @@ export class SportPreferencesController {
   async create(
     @Body() dto: CreateSportPreferenceDtoFromRequest,
     @Req() request: Request,
-  ): Promise<ResponseTypeDto<SportPreferenceResponseDto>> {
+  ): Promise<SportPreferenceResponseDto> {
     const userUid = request['user'].uid;
     const data = await this.sportPreferencesService.create({
       ...dto,
@@ -69,7 +70,9 @@ export class SportPreferencesController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.OK)
-  async findAllByUserUid(@Param('userUid') userUid: string) {
+  async findAllByUserUid(
+    @Param('userUid') userUid: string,
+  ): Promise<PaginationResponseTypeDto<SportPreferenceResponseData>> {
     const data = await this.sportPreferencesService.findAllByUserUid(userUid);
     return {
       data,
@@ -85,7 +88,9 @@ export class SportPreferencesController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.OK)
-  async findMySportPreferences(@Req() request: Request) {
+  async findMySportPreferences(
+    @Req() request: Request,
+  ): Promise<PaginationResponseTypeDto<SportPreferenceResponseData>> {
     const userUid = request['user'].uid;
     const data = await this.sportPreferencesService.findAllByUserUid(userUid);
 
