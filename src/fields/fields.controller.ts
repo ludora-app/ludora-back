@@ -59,6 +59,11 @@ export class FieldsController {
   @Post('field-slots')
   @UseGuards(AuthB2BGuard)
   @Protected()
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiConflictResponse({ type: ConflictResponseDto })
+  @ApiOperation({ summary: 'Create a field slot' })
+  @HttpCode(HttpStatus.CREATED)
   async createFieldSlot(@Body() dto: CreateFieldSlotDto, @Req() request: FastifyRequest) {
     const partnerUid = request['user'].organisationUid;
     return this.fieldSlotsService.create(dto, partnerUid);

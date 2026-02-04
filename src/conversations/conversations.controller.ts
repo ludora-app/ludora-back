@@ -25,6 +25,7 @@ import {
   ApiBadRequestResponse,
   ApiConsumes,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -55,6 +56,26 @@ export class ConversationsController {
   // create(@Body() createConversationDto: CreatePrivateConversationDto) {
   //   return this.conversationsService.create(createConversationDto);
   // }
+
+  @Post()
+  @Protected()
+  @UseInterceptors(new FastifyFilesInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiNoContentResponse({ description: 'Message created successfully' })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @ApiOperation({ summary: 'Create a message' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async createMessage(
+    @Req() request: Request,
+    @Body() dto: CreateMessageDto,
+    @UploadedFilesCustom() files: { buffer: Buffer; originalname: string }[],
+  ) {
+    const userUid = request['user'].uid;
+    const file = files && files.length > 0 ? files[0] : undefined;
+    return this.conversationsService.createMessage(userUid, dto, file);
+  }
 
   @Get('/list/collection')
   @Protected()
@@ -118,20 +139,6 @@ export class ConversationsController {
       data: messages,
       message: 'Messages fetched successfully',
     };
-  }
-
-  @Post()
-  @Protected()
-  @UseInterceptors(new FastifyFilesInterceptor('file'))
-  @ApiConsumes('multipart/form-data')
-  async createMessage(
-    @Req() request: Request,
-    @Body() dto: CreateMessageDto,
-    @UploadedFilesCustom() files: { buffer: Buffer; originalname: string }[],
-  ) {
-    const userUid = request['user'].uid;
-    const file = files && files.length > 0 ? files[0] : undefined;
-    return this.conversationsService.createMessage(userUid, dto, file);
   }
 
   // @Patch(':id')
