@@ -263,6 +263,12 @@ describe('SportPreferencesService', () => {
 
       expect(result).toEqual(mockPreference);
       expect(prismaService.userSportPreferences.findUnique).toHaveBeenCalledWith({
+        select: {
+          createdAt: true,
+          level: true,
+          sport: true,
+          uid: true,
+        },
         where: { uid },
       });
     });
@@ -274,6 +280,12 @@ describe('SportPreferencesService', () => {
 
       expect(result).toBeNull();
       expect(prismaService.userSportPreferences.findUnique).toHaveBeenCalledWith({
+        select: {
+          createdAt: true,
+          level: true,
+          sport: true,
+          uid: true,
+        },
         where: { uid: 'non-existent-uid' },
       });
     });

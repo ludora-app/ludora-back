@@ -1,3 +1,4 @@
+import { ApiOperation } from '@nestjs/swagger';
 import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { Protected } from 'src/shared/decorators/protected.decorator';
@@ -12,6 +13,7 @@ export class PartnersController {
   @UseGuards(AuthB2BGuard)
   @Post()
   @Protected()
+  @ApiOperation({ summary: 'Create a partner entity' })
   create(@Body() createPartnerDto: CreatePartnerDto) {
     return this.partnersService.create(createPartnerDto);
   }

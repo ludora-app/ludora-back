@@ -193,6 +193,14 @@ describe('HourPreferencesService', () => {
             type: UserHourPreferenceType.ONE_TIME,
             userUid: 'user-uid-1',
           },
+          select: {
+            createdAt: true,
+            date: true,
+            dayOfWeek: true,
+            timePeriod: true,
+            type: true,
+            uid: true,
+          },
         });
       });
 
@@ -276,6 +284,14 @@ describe('HourPreferencesService', () => {
         'Finding all hour preferences for user: user-uid-1',
       );
       expect(prismaService.userHourPreferences.findMany).toHaveBeenCalledWith({
+        select: {
+          createdAt: true,
+          date: true,
+          dayOfWeek: true,
+          timePeriod: true,
+          type: true,
+          uid: true,
+        },
         where: {
           OR: [
             { type: UserHourPreferenceType.RECURRENT, userUid: 'user-uid-1' },

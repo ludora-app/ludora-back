@@ -1,11 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { UserSportLevel } from 'src/shared/constants/constants';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 /**
  * @description standard response for a userSportPreference resource
  */
-export class SportPreferenceResponseDto {
+export class SportPreferenceResponseData {
   @ApiProperty({ description: 'The unique identifier of the user sport preference' })
   uid: string;
 
@@ -23,9 +24,14 @@ export class SportPreferenceResponseDto {
   createdAt: Date;
 }
 
+export class SportPreferenceResponseDto extends ResponseTypeDto<SportPreferenceResponseData> {
+  @ApiProperty({ type: SportPreferenceResponseData })
+  readonly data: SportPreferenceResponseData;
+}
+
 /**
  * @description standard response for a paginated userSportPreference resource, used to type swagger return
  */
 export const PaginatedSportPreferenceResponseDto = toPaginationResponseType(
-  SportPreferenceResponseDto,
+  SportPreferenceResponseData,
 );

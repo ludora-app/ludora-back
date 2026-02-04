@@ -1,6 +1,5 @@
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
-import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
@@ -32,6 +31,7 @@ import { CreateHourPreferenceDto } from '../dto/input/create-hour-preference.dto
 import {
   PaginatedHourPreferenceResponseDto,
   HourPreferenceResponseDto,
+  HourPreferenceResponseData,
 } from '../dto/output/hour-preference-response.dto';
 
 @Controller('hour-preferences')
@@ -42,7 +42,7 @@ export class HourPreferencesController {
   @Post()
   @Protected()
   @ApiOperation({ summary: 'Create a new user hour preference' })
-  @ApiCreatedResponse({ type: ResponseTypeDto<HourPreferenceResponseDto> })
+  @ApiCreatedResponse({ type: HourPreferenceResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
@@ -50,7 +50,7 @@ export class HourPreferencesController {
   async create(
     @Req() request: Request,
     @Body() createHourPreferenceDto: CreateHourPreferenceDto,
-  ): Promise<ResponseTypeDto<HourPreferenceResponseDto>> {
+  ): Promise<HourPreferenceResponseDto> {
     const uid = request['user'].uid;
 
     const data = await this.hourPreferencesService.create(uid, createHourPreferenceDto);
@@ -67,7 +67,7 @@ export class HourPreferencesController {
   @HttpCode(HttpStatus.OK)
   async findAllByUserUid(
     @Param('userUid') userUid: string,
-  ): Promise<PaginationResponseTypeDto<HourPreferenceResponseDto>> {
+  ): Promise<PaginationResponseTypeDto<HourPreferenceResponseData>> {
     const data = await this.hourPreferencesService.findAllByUserUid(userUid);
     return {
       data,
@@ -84,7 +84,7 @@ export class HourPreferencesController {
   @HttpCode(HttpStatus.OK)
   async findMyHourPreferences(
     @Req() request: Request,
-  ): Promise<PaginationResponseTypeDto<HourPreferenceResponseDto>> {
+  ): Promise<PaginationResponseTypeDto<HourPreferenceResponseData>> {
     const uid = request['user'].uid;
     const data = await this.hourPreferencesService.findAllByUserUid(uid);
 
