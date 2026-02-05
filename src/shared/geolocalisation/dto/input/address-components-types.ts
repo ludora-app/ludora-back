@@ -4,7 +4,8 @@
 export enum AddressComponentsTypes {
   STREET_NUMBER = 'street_number',
   ROUTE = 'route',
-  LOCALITY = 'locality',
+  CITY = 'locality',
   ADMINISTRATIVE_AREA_LEVEL_1 = 'administrative_area_level_1',
   COUNTRY = 'country',
+  POSTAL_CODE = 'postal_code',
 }

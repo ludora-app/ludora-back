@@ -6,6 +6,16 @@ export interface GeolocalisationDetailsResponseDto {
   navigation_points: NavigationPoint[];
   address_components: AddressComponent[];
 }
+export interface GeoDetails {
+  city: string;
+  zipCode: string;
+  country: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  department: string;
+  shortAddress: string;
+}
 
 export interface AddressComponent {
   types: string[];

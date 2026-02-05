@@ -39,6 +39,7 @@ describe('FieldsService', () => {
   };
 
   const mockGeolocalisationService = {
+    getDetailsFromAddress: jest.fn(),
     getCoordinatesAndShortAddressFromAddress: jest.fn(),
     getLatitudeAndLongitude: jest.fn(),
   };
@@ -93,6 +94,16 @@ describe('FieldsService', () => {
       };
 
       const coordinates = { lat: 48.8566, lng: 2.3522, shortAddress: '123 Main St' };
+      const geoDetails = {
+        address: '123 Main St, Paris',
+        city: 'Paris',
+        country: 'France',
+        department: 'Île-de-France',
+        latitude: 48.8566,
+        longitude: 2.3522,
+        shortAddress: '123 Main St',
+        zipCode: '75001',
+      };
       const newField = {
         uid: 'field-uid-1',
         address: createDto.address,
@@ -112,9 +123,7 @@ describe('FieldsService', () => {
         { uid: 'img-2', url: 'https://storage/image2.jpg', order: 1 },
       ];
 
-      mockGeolocalisationService.getCoordinatesAndShortAddressFromAddress.mockResolvedValue(
-        coordinates,
-      );
+      mockGeolocalisationService.getDetailsFromAddress.mockResolvedValue(geoDetails);
       mockPrismaService.fields.findFirst.mockResolvedValue(null);
       mockPrismaService.$transaction.mockImplementation(async (callback) => {
         return callback({
@@ -133,9 +142,9 @@ describe('FieldsService', () => {
 
       await service.create(createDto);
 
-      expect(
-        mockGeolocalisationService.getCoordinatesAndShortAddressFromAddress,
-      ).toHaveBeenCalledWith(createDto.address);
+      expect(mockGeolocalisationService.getDetailsFromAddress).toHaveBeenCalledWith(
+        createDto.address,
+      );
       expect(mockPrismaService.fields.findFirst).toHaveBeenCalledWith({
         where: {
           address: createDto.address,
@@ -155,12 +164,19 @@ describe('FieldsService', () => {
         images: [],
       };
 
-      const coordinates = { lat: 48.8566, lng: 2.3522, shortAddress: '123 Main St' };
+      const geoDetails = {
+        address: '123 Main St, Paris',
+        city: 'Paris',
+        country: 'France',
+        department: 'Île-de-France',
+        latitude: 48.8566,
+        longitude: 2.3522,
+        shortAddress: '123 Main St',
+        zipCode: '75001',
+      };
       const existingField = { uid: 'existing-uid' };
 
-      mockGeolocalisationService.getCoordinatesAndShortAddressFromAddress.mockResolvedValue(
-        coordinates,
-      );
+      mockGeolocalisationService.getDetailsFromAddress.mockResolvedValue(geoDetails);
       mockPrismaService.fields.findFirst.mockResolvedValue(existingField);
 
       await expect(service.create(createDto)).rejects.toThrow(ConflictException);
