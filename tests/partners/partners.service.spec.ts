@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PartnersService } from 'src/partners/partners.service';
+import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 
 describe('PartnersService', () => {
   let service: PartnersService;
@@ -15,6 +16,12 @@ describe('PartnersService', () => {
     },
   };
 
+  const mockGeolocalisationService = {
+    getDetailsFromAddress: jest.fn(),
+    getCoordinatesAndShortAddressFromAddress: jest.fn(),
+    getLatitudeAndLongitude: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -22,6 +29,10 @@ describe('PartnersService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: GeolocalisationService,
+          useValue: mockGeolocalisationService,
         },
       ],
     }).compile();

@@ -36,16 +36,15 @@ export class FieldsService {
     let finalLng = lng;
     let finalShortAddress = shortAddress;
 
+    const geo = await this.geolocalisationService.getDetailsFromAddress(address);
+
     if (!finalLat || !finalLng || !finalShortAddress) {
       this.logger.debug(
         `Missing geo data for address: ${address}. Fetching from geolocalisation service...`,
       );
 
-      const geo =
-        await this.geolocalisationService.getCoordinatesAndShortAddressFromAddress(address);
-
-      finalLat = finalLat ?? geo.lat;
-      finalLng = finalLng ?? geo.lng;
+      finalLat = finalLat ?? geo.latitude;
+      finalLng = finalLng ?? geo.longitude;
       finalShortAddress = finalShortAddress ?? geo.shortAddress;
     }
 
@@ -61,13 +60,17 @@ export class FieldsService {
       const newField = await tx.fields.create({
         data: {
           address,
+          city: geo.city,
+          country: geo.country,
+          department: geo.department,
           latitude: numericLat,
           longitude: numericLng,
           name: name,
           shortAddress: finalShortAddress,
-          sport: sport,
+          sportRelation: { connect: { name: sport } },
           status: VerificationStatus.PENDING,
           type: FieldType.PUBLIC,
+          zipCode: geo.zipCode,
         },
       });
 
@@ -99,35 +102,30 @@ export class FieldsService {
     const { address, images, lat, lng, name, partnerUid, shortAddress, sport } =
       createPrivateFieldDto;
 
-    let finalLat = lat;
-    let finalLng = lng;
-    let finalShortAddress = shortAddress;
+    // Always fetch full geo details from address to get all required fields
+    const geo = await this.geolocalisationService.getDetailsFromAddress(address);
 
-    if (!finalLat || !finalLng || !finalShortAddress) {
-      this.logger.debug(
-        `Missing geo data for address: ${address}. Fetching from geolocalisation service...`,
-      );
-
-      const geo =
-        await this.geolocalisationService.getCoordinatesAndShortAddressFromAddress(address);
-
-      finalLat = finalLat ?? geo.lat;
-      finalLng = finalLng ?? geo.lng;
-      finalShortAddress = finalShortAddress ?? geo.shortAddress;
-    }
+    // Use provided coordinates and shortAddress if available, otherwise use from geo service
+    const finalLat = lat ?? geo.latitude;
+    const finalLng = lng ?? geo.longitude;
+    const finalShortAddress = shortAddress ?? geo.shortAddress;
 
     await this.prisma.$transaction(async (tx) => {
       const newField = await tx.fields.create({
         data: {
           address,
+          city: geo.city,
+          country: geo.country,
+          department: geo.department,
           latitude: finalLat,
           longitude: finalLng,
           name: name,
-          partnerUid: partnerUid,
+          partner: { connect: { uid: partnerUid } },
           shortAddress: finalShortAddress,
-          sport: sport,
+          sportRelation: { connect: { name: sport } },
           status: VerificationStatus.APPROVED,
           type: FieldType.PRIVATE,
+          zipCode: geo.zipCode,
         },
       });
 

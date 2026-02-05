@@ -25,7 +25,7 @@ model Partners {
   zipCode    String  @map("zip_code")
   city       String
   department String?
-  country    String  @default("France")
+  country    String  @default("FR")
   address    String
   latitude   Float
   longitude  Float
@@ -59,7 +59,7 @@ model Fields {
   zipCode      String  @map("zip_code")
   city         String
   department   String?
-  country      String  @default("France")
+  country      String  @default("FR")
   address      String
   shortAddress String  @map("short_address")
   latitude     Float

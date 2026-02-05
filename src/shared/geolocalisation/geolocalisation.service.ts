@@ -5,6 +5,7 @@ import { AddressComponentsTypes } from './dto/input/address-components-types';
 import {
   AddressResult,
   Coordinates,
+  GeoDetails,
   GeolocalisationDetailsResponseDto,
   ShortAddressLocation,
 } from './dto/output/geolocalisation-details.response.dto';
@@ -178,15 +179,63 @@ export class GeolocalisationService {
       component.types.includes(AddressComponentsTypes.ROUTE),
     )?.long_name;
 
-    const locality = details.address_components.find((component) =>
-      component.types.includes(AddressComponentsTypes.LOCALITY),
+    const city = details.address_components.find((component) =>
+      component.types.includes(AddressComponentsTypes.CITY),
     )?.long_name;
 
-    const shortAddress = `${streetNumber} ${route}, ${locality}`;
+    const shortAddress = `${streetNumber} ${route}, ${city}`;
     return {
       lat: coordinates.lat,
       lng: coordinates.lng,
       shortAddress: shortAddress,
+    };
+  }
+
+  async getDetailsFromAddress(address: string): Promise<GeoDetails> {
+    // ? fetch the coordinates from the address
+    const coordinates = await this.getLatitudeAndLongitude(address);
+    // ? fetch the details used to form the short address from the coordinates
+    const details = await this.getDetailedAddressFromCoordinates(coordinates.lat, coordinates.lng);
+
+    // //? ensures that addresses from google maps API are used
+    if (address !== details.formatted_address) {
+      // throw new BadRequestException('The address is not the same as the formatted address');
+    }
+
+    const streetNumber = details.address_components.find((component) =>
+      component.types.includes(AddressComponentsTypes.STREET_NUMBER),
+    )?.long_name;
+
+    const route = details.address_components.find((component) =>
+      component.types.includes(AddressComponentsTypes.ROUTE),
+    )?.long_name;
+
+    const city = details.address_components.find((component) =>
+      component.types.includes(AddressComponentsTypes.CITY),
+    )?.long_name;
+
+    const department = details.address_components.find((component) =>
+      component.types.includes(AddressComponentsTypes.ADMINISTRATIVE_AREA_LEVEL_1),
+    )?.long_name;
+
+    const zipCode = details.address_components.find((component) =>
+      component.types.includes(AddressComponentsTypes.POSTAL_CODE),
+    )?.long_name;
+
+    const country = details.address_components.find((component) =>
+      component.types.includes(AddressComponentsTypes.COUNTRY),
+    )?.long_name;
+
+    const shortAddress = `${streetNumber} ${route}, ${city}`;
+    return {
+      address: details.formatted_address,
+      city,
+      country,
+      department,
+      latitude: details.geometry.location.lat,
+      longitude: details.geometry.location.lng,
+      shortAddress,
+      zipCode,
     };
   }
 
