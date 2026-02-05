@@ -18,14 +18,19 @@ enum VerificationStatus {
 }
 
 model Partners {
-  uid       String  @id @default(cuid())
-  name      String  @unique
-  imageUrl  String? @map("image_url")
-  address   String
-  latitude  Float
-  longitude Float
-  phone     String
-  email     String  @unique
+  uid      String  @id @default(cuid())
+  name     String  @unique
+  imageUrl String? @map("image_url")
+
+  zipCode    String  @map("zip_code")
+  city       String
+  department String?
+  country    String  @default("France")
+  address    String
+  latitude   Float
+  longitude  Float
+  phone      String
+  email      String  @unique
 
   rank Int @default(0) @map("rank")
 
@@ -38,18 +43,25 @@ model Partners {
   fields        Fields[]
   partnerSports PartnerSports[]
 
+  @@index([city])
+  @@index([zipCode])
   @@schema("infrastructure")
 }
 
 model Fields {
-  uid          String             @id @default(cuid())
-  type         FieldType          @default(PUBLIC)
-  status       VerificationStatus @default(PENDING) @map("status")
-  sport        String             @map("sport")
-  partnerUid   String?            @map("partner_uid")
-  name         String?
+  uid        String             @id @default(cuid())
+  type       FieldType          @default(PUBLIC)
+  status     VerificationStatus @default(PENDING) @map("status")
+  sport      String             @map("sport")
+  partnerUid String?            @map("partner_uid")
+  name       String?
+
+  zipCode      String  @map("zip_code")
+  city         String
+  department   String?
+  country      String  @default("France")
   address      String
-  shortAddress String             @map("short_address")
+  shortAddress String  @map("short_address")
   latitude     Float
   longitude    Float
 
@@ -67,6 +79,8 @@ model Fields {
   @@index([sport])
   @@index([type])
   @@index([status])
+  @@index([city])
+  @@index([zipCode])
   @@schema("infrastructure")
 }
 
