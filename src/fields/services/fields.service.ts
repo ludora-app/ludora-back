@@ -30,7 +30,7 @@ export class FieldsService {
   }
 
   async create(createPublicFieldDto: CreatePublicFieldDto): Promise<void> {
-    const { address, images, lat, lng, name, shortAddress, sport } = createPublicFieldDto;
+    const { address, images, lat, lng, name, shortAddress, sports } = createPublicFieldDto;
 
     let finalLat = lat;
     let finalLng = lng;
@@ -53,7 +53,7 @@ export class FieldsService {
     const numericLng = Number(finalLng);
 
     // --- VÉRIFICATION D'EXISTENCE ---
-    await this.verifyFieldLocation(numericLat, numericLng, address, sport);
+    await this.verifyFieldLocation(numericLat, numericLng, address, sports);
 
     // --- TRANSACTION DATABASE ---
     await this.prisma.$transaction(async (tx) => {
@@ -67,12 +67,19 @@ export class FieldsService {
           longitude: numericLng,
           name: name,
           shortAddress: finalShortAddress,
-          sportRelation: { connect: { name: sport } },
           status: VerificationStatus.PENDING,
           type: FieldType.PUBLIC,
           zipCode: geo.zipCode,
         },
       });
+
+      await Promise.all(
+        sports.map(async (sport) => {
+          await tx.fieldSports.create({
+            data: { fieldUid: newField.uid, sport },
+          });
+        }),
+      );
 
       const fieldImages = await Promise.all(
         images.map(async (image, index) => {
@@ -99,7 +106,7 @@ export class FieldsService {
   }
 
   async createPrivateField(createPrivateFieldDto: CreatePrivateFieldDto): Promise<void> {
-    const { address, images, lat, lng, name, partnerUid, shortAddress, sport } =
+    const { address, images, lat, lng, name, partnerUid, shortAddress, sports } =
       createPrivateFieldDto;
 
     // Always fetch full geo details from address to get all required fields
@@ -122,12 +129,19 @@ export class FieldsService {
           name: name,
           partner: { connect: { uid: partnerUid } },
           shortAddress: finalShortAddress,
-          sportRelation: { connect: { name: sport } },
           status: VerificationStatus.APPROVED,
           type: FieldType.PRIVATE,
           zipCode: geo.zipCode,
         },
       });
+
+      await Promise.all(
+        sports.map(async (sport) => {
+          await tx.fieldSports.create({
+            data: { fieldUid: newField.uid, sport },
+          });
+        }),
+      );
 
       const fieldImages =
         images && images.length > 0
@@ -166,6 +180,11 @@ export class FieldsService {
             url: true,
           },
         },
+        fieldSports: {
+          select: {
+            sport: true,
+          },
+        },
         partner: {
           select: {
             rank: true,
@@ -178,29 +197,7 @@ export class FieldsService {
 
     if (!field) return null;
 
-    return {
-      address: field.address,
-      fieldImages: field.fieldImages.map((image) => ({
-        order: image.order,
-        uid: image.uid,
-        url: image.url,
-      })),
-      latitude: field.latitude,
-      longitude: field.longitude,
-      name: field.name ?? undefined,
-      partner: field.partner
-        ? {
-            rank: field.partner.rank,
-            uid: field.partner.uid,
-          }
-        : undefined,
-      partnerUid: field.partnerUid,
-      shortAddress: field.shortAddress,
-      sport: field.sport as Sport,
-      status: field.status,
-      type: field.type,
-      uid: field.uid,
-    } as FindOneFieldResponseData;
+    return FieldMapper.toFindOneDto(field);
   }
 
   /**
@@ -213,23 +210,25 @@ export class FieldsService {
     latitude: number,
     longitude: number,
     address: string,
-    sport: Sport,
+    sports: Sport[],
   ): Promise<void> {
     const field = await this.prisma.fields.findFirst({
       where: {
         address,
+        fieldSports: { some: { sport: { in: sports } } },
         latitude,
         longitude,
         partnerUid: null,
-        sport,
       },
     });
 
     if (field) {
-      this.logger.error(`Field location ${address} already exists for sport ${sport}`);
-      throw new ConflictException(`Field location ${address} already exists for sport ${sport}`);
+      this.logger.error(`Field location ${address} already exists for sports ${sports.join(', ')}`);
+      throw new ConflictException(
+        `Field location ${address} already exists for sports ${sports.join(', ')}`,
+      );
     }
-    this.logger.debug(`Field location ${address} does not exist for sport ${sport}`);
+    this.logger.debug(`Field location ${address} does not exist for sports ${sports.join(', ')}`);
   }
 
   // TODO : verify this method
@@ -237,7 +236,7 @@ export class FieldsService {
     const { address, images, lat, lng, name, shortAddress } = updateFieldDto;
 
     const existingField = await this.prisma.fields.findUnique({
-      include: { fieldImages: true },
+      include: { fieldImages: true, fieldSports: true },
       where: { uid },
     });
 
@@ -252,12 +251,8 @@ export class FieldsService {
 
     if (address) {
       coordinates = await this.geolocalisationService.getLatitudeAndLongitude(address);
-      await this.verifyFieldLocation(
-        coordinates.lat,
-        coordinates.lng,
-        address,
-        existingField.sport as Sport,
-      );
+      const sports = existingField.fieldSports.map((fieldSport) => fieldSport.sport as Sport);
+      await this.verifyFieldLocation(coordinates.lat, coordinates.lng, address, sports);
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -310,7 +305,7 @@ export class FieldsService {
     const { address, images, lat, lng, name, shortAddress } = updatePrivateFieldDto;
 
     const existingField = await this.prisma.fields.findUnique({
-      include: { fieldImages: true },
+      include: { fieldImages: true, fieldSports: true },
       where: { uid },
     });
 
@@ -334,12 +329,8 @@ export class FieldsService {
 
     if (address) {
       coordinates = await this.geolocalisationService.getLatitudeAndLongitude(address);
-      await this.verifyFieldLocation(
-        coordinates.lat,
-        coordinates.lng,
-        address,
-        existingField.sport as Sport,
-      );
+      const sports = existingField.fieldSports.map((fieldSport) => fieldSport.sport as Sport);
+      await this.verifyFieldLocation(coordinates.lat, coordinates.lng, address, sports);
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -472,7 +463,7 @@ export class FieldsService {
     const availabilityScoreSql = Prisma.sql`CASE WHEN ${hasActiveSlotsSql} THEN ${SCORES.AVAILABILITY_BONUS} ELSE 0 END`;
     const partnerScoreSql = Prisma.sql`CASE WHEN f.partner_uid IS NOT NULL THEN ${SCORES.PARTNER_BONUS} + (COALESCE(p.rank, 0) * ${SCORES.RANK_MULTIPLIER}) ELSE 0 END`;
     const sportWhereSql = sports?.length
-      ? Prisma.sql`AND f.sport IN (${Prisma.join(sports)})`
+      ? Prisma.sql`AND EXISTS (SELECT 1 FROM infrastructure."Field_sports" fs WHERE fs.field_uid = f.uid AND fs.sport IN (${Prisma.join(sports)}))`
       : Prisma.empty;
 
     // --- 6. EXECUTION ---
@@ -504,6 +495,11 @@ export class FieldsService {
           orderBy: { startTime: 'asc' },
           where: { isReserved: false, startTime: { gte: searchStartTime, lte: searchEndTime } },
         },
+        fieldSports: {
+          select: {
+            sport: true,
+          },
+        },
         sessions: {
           include: { sessionPlayers: true },
           where: { startDate: { gte: searchStartTime, lte: searchEndTime } },
@@ -526,7 +522,16 @@ export class FieldsService {
           );
         }
 
-        return FieldMapper.toDto({ ...field, distance: rawData.distance_val }, duration);
+        return FieldMapper.toCollectionDto(
+          {
+            ...field,
+            distance: rawData.distance_val,
+            fieldSports: field.fieldSports.map((fieldSport) => ({
+              sport: fieldSport.sport as Sport,
+            })),
+          },
+          duration,
+        );
       }),
     ).then((res) => res.filter((i) => i !== null));
 
@@ -590,7 +595,7 @@ export class FieldsService {
     }
 
     if (sports?.length) {
-      query.where.sport = { in: sports };
+      query.where.fieldSports = { some: { sport: { in: sports } } };
     }
 
     if (gameModes?.length) {
@@ -604,6 +609,11 @@ export class FieldsService {
         fieldSlots: {
           orderBy: { startTime: 'asc' },
           where: { startTime: { gte: searchStartTime, lte: searchEndTime } },
+        },
+        fieldSports: {
+          select: {
+            sport: true,
+          },
         },
       },
       skip: currentOffset,
@@ -633,7 +643,19 @@ export class FieldsService {
     );
 
     return {
-      items: fieldsWithImageUrl.map((f) => FieldMapper.toDto(f)),
+      items: fieldsWithImageUrl.map((f) =>
+        FieldMapper.toCollectionDto(
+          {
+            ...f,
+            fieldImages: f.fieldImages.map((fieldImage) => ({
+              order: fieldImage.order,
+              url: fieldImage.url,
+            })),
+            fieldSports: f.fieldSports.map((fieldSport) => ({ sport: fieldSport.sport as Sport })),
+          },
+          undefined,
+        ),
+      ),
       nextCursor,
       totalCount: fields.length,
     };

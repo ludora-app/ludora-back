@@ -63,3 +63,5 @@ STRIPE_TESTING.md
 
 /generated
 /config
+prisma/seedFields.ts
+/prisma/seeds

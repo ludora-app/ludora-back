@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
-import { SessionSportLevel } from 'src/shared/constants/constants';
 import { GameModes, SessionVisibility } from 'generated/prisma/client';
+import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
 import {
   IsDateString,
   IsEnum,
@@ -134,6 +134,16 @@ export class CreateSessionDto {
     required: false,
   })
   teamBName?: string;
+
+  @IsEnum(Sport)
+  @IsNotEmpty()
+  @ApiProperty({
+    description: 'The sport of the session',
+    enum: Sport,
+    example: Sport.BADMINTON,
+    required: true,
+  })
+  sport: Sport;
 }
 
 export class CreateSessionFromRequestDto extends OmitType(CreateSessionDto, ['userUid']) {}
