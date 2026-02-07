@@ -67,7 +67,7 @@ describe('FieldsController', () => {
     it('should create a new field with images', async () => {
       const createFieldDto: Omit<CreatePublicFieldDto, 'images'> = {
         address: '123 Main St',
-        sport: Sport.FOOTBALL,
+        sports: [Sport.FOOTBALL],
         name: 'Test Field',
       };
 
@@ -103,7 +103,7 @@ describe('FieldsController', () => {
     it('should create a new field without images (undefined)', async () => {
       const createFieldDto: Omit<CreatePublicFieldDto, 'images'> = {
         address: '123 Main St',
-        sport: Sport.FOOTBALL,
+        sports: [Sport.FOOTBALL],
         name: 'Test Field',
       };
 
@@ -132,7 +132,7 @@ describe('FieldsController', () => {
     it('should create a new field without images (empty array)', async () => {
       const createFieldDto: Omit<CreatePublicFieldDto, 'images'> = {
         address: '123 Main St',
-        sport: Sport.FOOTBALL,
+        sports: [Sport.FOOTBALL],
         name: 'Test Field',
       };
 
@@ -161,7 +161,7 @@ describe('FieldsController', () => {
     it('should handle non-array images gracefully', async () => {
       const createFieldDto: Omit<CreatePublicFieldDto, 'images'> = {
         address: '123 Main St',
-        sport: Sport.FOOTBALL,
+        sports: [Sport.FOOTBALL],
         name: 'Test Field',
       };
 

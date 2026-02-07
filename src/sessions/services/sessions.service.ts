@@ -2,15 +2,16 @@ import { PinoLogger } from 'nestjs-pino';
 import { Prisma } from 'generated/prisma/client';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { FieldsService } from 'src/fields/services/fields.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, Sessions } from 'generated/prisma/client';
 import { FieldSlotsService } from 'src/fields/services/field-slots.service';
+import { SessionScope, StorageFolderName } from 'src/shared/constants/constants';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
 import { ConversationsService } from 'src/conversations/services/conversations.service';
-import { SessionScope, Sport, StorageFolderName } from 'src/shared/constants/constants';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
 import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
@@ -53,6 +54,7 @@ export class SessionsService {
     private readonly hourPreferencesService: HourPreferencesService,
     private readonly sportPreferencesService: SportPreferencesService,
     private readonly fieldSlotsService: FieldSlotsService,
+    private readonly fieldsService: FieldsService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(SessionsService.name);
@@ -64,6 +66,7 @@ export class SessionsService {
       fieldUid,
       level,
       slotUid,
+      sport,
       startDate,
       teamAName,
       teamBName,
@@ -74,12 +77,16 @@ export class SessionsService {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    const field = await this.prisma.fields.findUnique({
-      where: { uid: fieldUid },
-    });
+    const field = await this.fieldsService.findOne(fieldUid);
 
     if (!field) {
-      throw new BadRequestException('Field not found');
+      this.logger.error(`Field not found: ${fieldUid}`);
+      throw new NotFoundException('Field not found');
+    }
+
+    if (!field.sports.includes(sport)) {
+      this.logger.error(`Sport not found: ${sport} on field: ${fieldUid}`);
+      throw new BadRequestException('This sport is not available on this field');
     }
 
     if (field.type === FieldType.PRIVATE && !slotUid) {
@@ -129,7 +136,7 @@ export class SessionsService {
     let autoTitle = '';
 
     if (!createSessionDto.title) {
-      autoTitle = `Session de ${field.sport} le ${DateUtils.formatDate(startDate)}`;
+      // autoTitle = `Session de ${field.sport} le ${DateUtils.formatDate(startDate)}`;
     }
     const { maxPlayersPerTeam, minPlayersPerTeam, teamsPerGame } = this.getPlayersPerTeamData(
       createSessionDto.gameMode,
@@ -150,7 +157,7 @@ export class SessionsService {
           maxPlayersPerTeam,
           minPlayersPerTeam,
           slotUid: existingSlot?.uid,
-          sport: field.sport as Sport,
+          sport,
           startDate: startDate,
           teamsPerGame,
           title: createSessionDto.title ? createSessionDto.title : autoTitle,
@@ -878,9 +885,7 @@ export class SessionsService {
     }
 
     // todo: use the field service when created
-    const field = await this.prisma.fields.findUnique({
-      where: { uid: session.fieldUid },
-    });
+    const field = await this.fieldsService.findOne(session.fieldUid);
     if (!field) {
       throw new NotFoundException('Field not found');
     }
@@ -892,7 +897,6 @@ export class SessionsService {
         gameMode: updateSessionDto.gameMode,
         maxPlayersPerTeam: updateSessionDto.maxPlayersPerTeam,
         minPlayersPerTeam: updateSessionDto.minPlayersPerTeam,
-        sport: field.sport,
         startDate: startDate,
         teamsPerGame: updateSessionDto.teamsPerGame,
         title: updateSessionDto.title,

@@ -12,14 +12,15 @@ import {
 } from 'class-validator';
 
 export class CreatePrivateFieldDto {
-  @IsEnum(Sport)
+  @IsEnum(Sport, { each: true })
   @IsNotEmpty()
   @ApiProperty({
     description: 'The sport of the field',
     enum: Sport,
-    example: Sport.BASKETBALL,
+    example: [Sport.BASKETBALL, Sport.FOOTBALL],
+    isArray: true,
   })
-  sport: Sport;
+  sports: Sport[];
 
   @IsString()
   @IsNotEmpty()

@@ -79,6 +79,7 @@ describe('SessionsController', () => {
       description: 'Test session',
       title: 'Test Session Title',
       gameMode: GameModes.FIVE_V_FIVE,
+      sport: Sport.FOOTBALL,
     };
 
     const mockRequest = {

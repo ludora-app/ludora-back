@@ -85,7 +85,7 @@ describe('FieldsService', () => {
     it('should create a public field with images', async () => {
       const createDto: CreatePublicFieldDto = {
         address: '123 Main St',
-        sport: Sport.FOOTBALL,
+        sports: [Sport.FOOTBALL],
         name: 'Test Field',
         images: [
           { file: Buffer.from('test'), name: 'image1.jpg', order: 0 },
@@ -107,7 +107,7 @@ describe('FieldsService', () => {
       const newField = {
         uid: 'field-uid-1',
         address: createDto.address,
-        sport: createDto.sport,
+        sports: createDto.sports,
         latitude: coordinates.lat,
         longitude: coordinates.lng,
         shortAddress: coordinates.shortAddress,
@@ -136,6 +136,9 @@ describe('FieldsService', () => {
               .mockResolvedValueOnce(fieldImages[0])
               .mockResolvedValueOnce(fieldImages[1]),
           },
+          fieldSports: {
+            create: jest.fn().mockResolvedValue({ fieldUid: 'field-uid-1', sport: 'FOOTBALL' }),
+          },
         });
       });
       mockStorageService.upload.mockResolvedValue({ data: 'https://storage/image1.jpg' });
@@ -151,7 +154,13 @@ describe('FieldsService', () => {
           latitude: coordinates.lat,
           longitude: coordinates.lng,
           partnerUid: null,
-          sport: createDto.sport,
+          fieldSports: {
+            some: {
+              sport: {
+                in: createDto.sports,
+              },
+            },
+          },
         },
       });
     });
@@ -159,7 +168,7 @@ describe('FieldsService', () => {
     it('should throw ConflictException if field location already exists', async () => {
       const createDto: CreatePublicFieldDto = {
         address: '123 Main St',
-        sport: Sport.FOOTBALL,
+        sports: [Sport.FOOTBALL],
         name: 'Test Field',
         images: [],
       };
@@ -191,7 +200,7 @@ describe('FieldsService', () => {
         uid,
         name: 'Test Field',
         address: '123 Main St',
-        sport: Sport.FOOTBALL,
+        fieldSports: [{ sport: Sport.FOOTBALL }],
         latitude: 48.8566,
         longitude: 2.3522,
         shortAddress: '123 Main St Short',
@@ -213,7 +222,7 @@ describe('FieldsService', () => {
         expect.objectContaining({
           uid,
           name: 'Test Field',
-          sport: Sport.FOOTBALL,
+          sports: [Sport.FOOTBALL],
           fieldImages: expect.arrayContaining([
             expect.objectContaining({
               url: 'image1.jpg',
@@ -235,7 +244,7 @@ describe('FieldsService', () => {
       mockPrismaService.fields.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.verifyFieldLocation(48.8566, 2.3522, '123 Main St', Sport.FOOTBALL),
+        service.verifyFieldLocation(48.8566, 2.3522, '123 Main St', [Sport.FOOTBALL]),
       ).resolves.not.toThrow();
 
       expect(mockLogger.debug).toHaveBeenCalled();
@@ -246,7 +255,7 @@ describe('FieldsService', () => {
       mockPrismaService.fields.findFirst.mockResolvedValue(existingField);
 
       await expect(
-        service.verifyFieldLocation(48.8566, 2.3522, '123 Main St', Sport.FOOTBALL),
+        service.verifyFieldLocation(48.8566, 2.3522, '123 Main St', [Sport.FOOTBALL]),
       ).rejects.toThrow(ConflictException);
 
       expect(mockLogger.error).toHaveBeenCalled();

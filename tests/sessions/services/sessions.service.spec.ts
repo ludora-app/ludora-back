@@ -17,6 +17,7 @@ import { SportPreferencesService } from 'src/user-preferences/services/sport-pre
 import { CreateSessionDto } from 'src/sessions/dto/input/create-session.dto';
 import { SessionOwnnership } from 'src/sessions/dto/input/my-session-filter.dto';
 import { FieldSlotsService } from 'src/fields/services/field-slots.service';
+import { FieldsService } from 'src/fields/services/fields.service';
 
 jest.mock('src/shared/utils/date.utils', () => ({
   DateUtils: {
@@ -65,6 +66,7 @@ describe('SessionsService', () => {
   let sessionPlayersService: SessionPlayersService;
   let conversationsService: ConversationsService;
   let fieldSlotsService: FieldSlotsService;
+  let fieldsService: FieldsService;
 
   // Mock dates for consistent testing
   const mockCurrentDate = new Date('2023-01-01T12:00:00Z');
@@ -147,6 +149,12 @@ describe('SessionsService', () => {
           },
         },
         {
+          provide: FieldsService,
+          useValue: {
+            findOne: jest.fn(),
+          },
+        },
+        {
           provide: PinoLogger,
           useValue: {
             setContext: jest.fn(),
@@ -166,6 +174,7 @@ describe('SessionsService', () => {
     sessionPlayersService = module.get<SessionPlayersService>(SessionPlayersService);
     conversationsService = module.get<ConversationsService>(ConversationsService);
     fieldSlotsService = module.get<FieldSlotsService>(FieldSlotsService);
+    fieldsService = module.get<FieldsService>(FieldsService);
   });
 
   afterEach(() => {
@@ -187,11 +196,12 @@ describe('SessionsService', () => {
       gameMode: GameModes.FIVE_V_FIVE,
       userUid: 'user-uid-1',
       level: SessionSportLevel.BEGINNER,
+      sport: Sport.FOOTBALL,
     };
 
     const mockPublicField = {
       uid: 'field-uid-1',
-      sport: Sport.FOOTBALL,
+      sports: [Sport.FOOTBALL],
       gameMode: '5v5',
       partnerUid: 'partner-uid-1',
       type: FieldType.PUBLIC,
@@ -199,7 +209,7 @@ describe('SessionsService', () => {
 
     const mockPrivateField = {
       uid: 'field-uid-2',
-      sport: Sport.FOOTBALL,
+      sports: [Sport.FOOTBALL],
       gameMode: '5v5',
       partnerUid: 'partner-uid-1',
       type: FieldType.PRIVATE,
@@ -279,7 +289,7 @@ describe('SessionsService', () => {
     describe('PUBLIC fields', () => {
       it('should create a session successfully on a public field', async () => {
         // Arrange
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPublicField);
         (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
         (prismaService.sessions.create as jest.Mock).mockResolvedValue(mockCreatedSession);
         setupTransactionMock();
@@ -294,9 +304,7 @@ describe('SessionsService', () => {
             title: 'Test Session Title',
           }),
         );
-        expect(prismaService.fields.findUnique).toHaveBeenCalledWith({
-          where: { uid: 'field-uid-1' },
-        });
+        expect(fieldsService.findOne).toHaveBeenCalledWith('field-uid-1');
         expect(fieldSlotsService.findOne).not.toHaveBeenCalled();
         expect(fieldSlotsService.markAsReserved).not.toHaveBeenCalled();
         expect(prismaService.sessions.create).toHaveBeenCalledWith({
@@ -308,14 +316,14 @@ describe('SessionsService', () => {
         });
       });
 
-      it('should auto-generate a title if none provided', async () => {
+      it('should create a session with empty title when none provided', async () => {
         // Arrange
         const dtoWithoutTitle = { ...createSessionDto, title: undefined };
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPublicField);
         (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
         (prismaService.sessions.create as jest.Mock).mockResolvedValue({
           ...mockCreatedSession,
-          title: `Session de FOOTBALL le 2023-01-01`,
+          title: '',
         });
         setupTransactionMock();
 
@@ -323,21 +331,20 @@ describe('SessionsService', () => {
         await service.create(dtoWithoutTitle);
 
         // Assert
-        expect(DateUtils.formatDate).toHaveBeenCalledWith(mockFutureDate.toISOString());
         expect(prismaService.sessions.create).toHaveBeenCalledWith({
           data: expect.objectContaining({
-            title: `Session de FOOTBALL le 2023-01-01`,
+            title: '',
           }),
         });
       });
 
       it('should throw BadRequestException if field not found', async () => {
         // Arrange
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(null);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(null);
 
         // Act & Assert
         await expect(service.create(createSessionDto)).rejects.toThrow(
-          new BadRequestException('Field not found'),
+          new NotFoundException('Field not found'),
         );
       });
 
@@ -351,7 +358,7 @@ describe('SessionsService', () => {
           endDate: pastEndDate.toISOString(),
         };
 
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPublicField);
 
         // Act & Assert
         await expect(service.create(pastSessionDto)).rejects.toThrow(
@@ -366,7 +373,7 @@ describe('SessionsService', () => {
           endDate: new Date('2023-01-09T14:00:00Z').toISOString(), // End before start
         };
 
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPublicField);
 
         // Act & Assert
         await expect(service.create(invalidDateSessionDto)).rejects.toThrow(
@@ -381,7 +388,7 @@ describe('SessionsService', () => {
           fieldUid: 'field-uid-2',
           slotUid: 'slot-uid-1',
         };
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPrivateField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPrivateField);
         (fieldSlotsService.findOne as jest.Mock).mockResolvedValue(mockFieldSlot);
         (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue({
           uid: 'existing-session-uid',
@@ -399,7 +406,7 @@ describe('SessionsService', () => {
     describe('PRIVATE fields', () => {
       it('should throw BadRequestException if private field requires slotUid but none provided', async () => {
         // Arrange
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPrivateField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPrivateField);
 
         const dtoWithoutSlot = { ...createSessionDto, fieldUid: 'field-uid-2' };
 
@@ -411,7 +418,7 @@ describe('SessionsService', () => {
 
       it('should throw BadRequestException if field slot not found', async () => {
         // Arrange
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPrivateField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPrivateField);
         (fieldSlotsService.findOne as jest.Mock).mockResolvedValue(null);
 
         const dtoWithSlot = {
@@ -428,7 +435,7 @@ describe('SessionsService', () => {
 
       it('should throw BadRequestException if slot is already reserved', async () => {
         // Arrange
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPrivateField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPrivateField);
         (fieldSlotsService.findOne as jest.Mock).mockResolvedValue({
           ...mockFieldSlot,
           isReserved: true,
@@ -454,7 +461,7 @@ describe('SessionsService', () => {
           endTime: new Date('2023-01-10T12:00:00Z'),
         };
 
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPrivateField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPrivateField);
         (fieldSlotsService.findOne as jest.Mock).mockResolvedValue(differentSlotTimes);
 
         const dtoWithSlot = {
@@ -471,7 +478,7 @@ describe('SessionsService', () => {
 
       it('should create a session successfully on a private field with valid slot', async () => {
         // Arrange
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPrivateField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPrivateField);
         (fieldSlotsService.findOne as jest.Mock).mockResolvedValue(mockFieldSlot);
         (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
         (prismaService.sessions.create as jest.Mock).mockResolvedValue({
@@ -510,7 +517,7 @@ describe('SessionsService', () => {
 
       it('should mark slot as reserved after session creation', async () => {
         // Arrange
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPrivateField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPrivateField);
         (fieldSlotsService.findOne as jest.Mock).mockResolvedValue(mockFieldSlot);
         (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
         (prismaService.sessions.create as jest.Mock).mockResolvedValue({
@@ -543,7 +550,7 @@ describe('SessionsService', () => {
           ...createSessionDto,
           level: SessionSportLevel.ADVANCED,
         };
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPublicField);
         (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
         (prismaService.sessions.create as jest.Mock).mockResolvedValue({
           ...mockCreatedSession,
@@ -566,7 +573,7 @@ describe('SessionsService', () => {
       it('should create a session without level if not provided', async () => {
         // Arrange
         const dtoWithoutLevel = { ...createSessionDto, level: undefined };
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPublicField);
         (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
         (prismaService.sessions.create as jest.Mock).mockResolvedValue({
           ...mockCreatedSession,
@@ -596,7 +603,7 @@ describe('SessionsService', () => {
           teamAName: customTeamAName,
           teamBName: customTeamBName,
         };
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPublicField);
         (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
         (prismaService.sessions.create as jest.Mock).mockResolvedValue(mockCreatedSession);
         setupTransactionMock(customTeamAName, customTeamBName);
@@ -616,7 +623,7 @@ describe('SessionsService', () => {
       it('should use default team names when not provided', async () => {
         // Arrange
         const dtoWithoutTeamNames = { ...createSessionDto };
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPublicField);
         (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
         (prismaService.sessions.create as jest.Mock).mockResolvedValue(mockCreatedSession);
         setupTransactionMock('Equipe A', 'Equipe B');
@@ -640,7 +647,7 @@ describe('SessionsService', () => {
           ...createSessionDto,
           teamAName: customTeamAName,
         };
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPublicField);
         (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
         (prismaService.sessions.create as jest.Mock).mockResolvedValue(mockCreatedSession);
         setupTransactionMock(customTeamAName, 'Equipe B');
@@ -664,7 +671,7 @@ describe('SessionsService', () => {
           ...createSessionDto,
           teamBName: customTeamBName,
         };
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPublicField);
         (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
         (prismaService.sessions.create as jest.Mock).mockResolvedValue(mockCreatedSession);
         setupTransactionMock('Equipe A', customTeamBName);
@@ -690,7 +697,7 @@ describe('SessionsService', () => {
           teamAName: customTeamAName,
           teamBName: customTeamBName,
         };
-        (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockPublicField);
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPublicField);
         (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
         (prismaService.sessions.create as jest.Mock).mockResolvedValue(mockCreatedSession);
         setupTransactionMock(customTeamAName, customTeamBName);
@@ -1161,7 +1168,7 @@ describe('SessionsService', () => {
 
     const mockField = {
       uid: 'field-uid-1',
-      sport: Sport.FOOTBALL,
+      sports: [Sport.FOOTBALL],
       gameMode: '5v5',
       partnerUid: 'partner-uid-1',
       type: FieldType.PUBLIC,
@@ -1187,7 +1194,7 @@ describe('SessionsService', () => {
       // Arrange
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSessionForFindOne);
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
-      (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(mockField);
+      (fieldsService.findOne as jest.Mock).mockResolvedValue(mockField);
       (prismaService.sessions.update as jest.Mock).mockResolvedValue(mockUpdatedSession);
       (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
         async (folder: string, url: string) => `https://signed-url.com/${url}`,
@@ -1220,7 +1227,7 @@ describe('SessionsService', () => {
       // Arrange
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSessionForFindOne);
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
-      (prismaService.fields.findUnique as jest.Mock).mockResolvedValue(null);
+      (fieldsService.findOne as jest.Mock).mockResolvedValue(null);
       (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
         async (folder: string, url: string) => `https://signed-url.com/${url}`,
       );

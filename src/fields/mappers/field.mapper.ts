@@ -1,8 +1,8 @@
-import { FieldType } from 'generated/prisma/client';
 import { Sport } from 'src/shared/constants/constants';
+import { FieldType, VerificationStatus } from 'generated/prisma/client';
 
-import { FieldResponseDto } from '../dto/output/field-response.dto';
 import { GAME_MODE_PLAYERS_COUNT } from '../constants/fields.constants';
+import { FieldResponseDto, FindOneFieldResponseData } from '../dto/output/field-response.dto';
 
 interface FieldInput {
   uid: string;
@@ -12,7 +12,7 @@ interface FieldInput {
   longitude: number;
   distance?: number;
   shortAddress: string;
-  sport: Sport | string;
+  fieldSports?: Array<{ sport: string }>;
   fieldImages?: Array<{ order: number; url: string }>;
   fieldSlots?: Array<{
     uid: string;
@@ -31,8 +31,33 @@ interface FieldInput {
   }>;
 }
 
+interface RawFindOneField {
+  uid: string;
+  name: string;
+  type: FieldType;
+  address: string;
+  latitude: number;
+  longitude: number;
+  distance?: number;
+  partnerUid: string;
+  shortAddress: string;
+  status: VerificationStatus;
+  fieldSports: {
+    sport: string;
+  }[];
+  partner: {
+    rank: number;
+    uid: string;
+  };
+  fieldImages: {
+    order: number;
+    uid: string;
+    url: string;
+  }[];
+}
+
 export class FieldMapper {
-  static toDto(field: FieldInput, requestedDuration?: number): FieldResponseDto {
+  static toCollectionDto(field: FieldInput, requestedDuration?: number): FieldResponseDto {
     const calculateDuration = (start: Date, end: Date) =>
       Math.round((end.getTime() - start.getTime()) / 60000);
 
@@ -75,7 +100,7 @@ export class FieldMapper {
       longitude: field.longitude,
       name: field.name,
       shortAddress: field.shortAddress,
-      sport: field.sport as Sport,
+      sports: field.fieldSports?.map((fieldSport) => fieldSport.sport as Sport),
       type: field.type,
 
       uid: field.uid,
@@ -84,7 +109,29 @@ export class FieldMapper {
     };
   }
 
-  static toCollectionDto(fields: FieldInput[], duration?: number): FieldResponseDto[] {
-    return fields.map((f) => FieldMapper.toDto(f, duration));
+  static toFindOneDto(field: RawFindOneField): FindOneFieldResponseData {
+    return {
+      address: field.address,
+      fieldImages: field.fieldImages.map((image) => ({
+        order: image.order,
+        uid: image.uid,
+        url: image.url,
+      })),
+      latitude: field.latitude,
+      longitude: field.longitude,
+      name: field.name ?? undefined,
+      partner: field.partner
+        ? {
+            rank: field.partner.rank,
+            uid: field.partner.uid,
+          }
+        : undefined,
+      partnerUid: field.partnerUid,
+      shortAddress: field.shortAddress,
+      sports: field.fieldSports.map((fieldSport) => fieldSport.sport as Sport),
+      status: field.status,
+      type: field.type,
+      uid: field.uid,
+    };
   }
 }
