@@ -1,11 +1,14 @@
+import { CreateImageDto } from 'src/auth/dto';
 import { Users } from 'generated/prisma/client';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Public } from 'src/shared/decorators/public.decorator';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   Body,
@@ -21,10 +24,12 @@ import {
   Query,
   Req,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiConsumes,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -182,6 +187,8 @@ export class UsersController {
   }
 
   @Patch('/update')
+  @UseInterceptors(new FastifyFilesInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
   @Protected()
   @ApiOperation({
     summary: 'update user requires to be connected, does not update the password',
@@ -200,9 +207,20 @@ export class UsersController {
   })
   @ApiNoContentResponse({ description: 'User updated successfully' })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async update(@Req() request: Request, @Body() updateUserDto: UpdateUserDto): Promise<void> {
+  async update(
+    @Req() request: Request,
+    @Body() updateUserDto: UpdateUserDto,
+    @UploadedFilesCustom() files?: { buffer: Buffer; originalname: string }[],
+  ): Promise<void> {
+    let createImageDto: CreateImageDto | undefined;
+    if (files && files.length > 0) {
+      createImageDto = {
+        file: files[0].buffer,
+        name: files[0].originalname,
+      };
+    }
     const uid = request['user'].uid;
-    await this.usersService.update(uid, updateUserDto);
+    await this.usersService.update(uid, updateUserDto, createImageDto);
     return;
   }
 

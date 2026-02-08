@@ -213,14 +213,28 @@ export class UsersService {
     });
   }
 
-  async update(uid: string, updateUserDto: UpdateUserDto): Promise<void> {
+  async update(
+    uid: string,
+    updateUserDto: UpdateUserDto,
+    createImageDto?: CreateImageDto,
+  ): Promise<void> {
     const existingUser = await this.findOne(uid, USERSELECT.findMe);
 
     if (!existingUser) throw new NotFoundException('User not found');
+    let imageUrl = existingUser.imageUrl;
+    if (createImageDto) {
+      const uploadResult = await this.storageService.upload(
+        StorageFolderName.USERS,
+        createImageDto.name,
+        createImageDto.file,
+      );
+      imageUrl = uploadResult.data;
+    }
 
     const updatedUser = await this.prismaService.users.update({
       data: {
         ...updateUserDto,
+        imageUrl: imageUrl,
       },
       where: { uid },
     });
@@ -228,6 +242,7 @@ export class UsersService {
     if (!updatedUser) {
       throw new BadRequestException('User not updated');
     }
+    this.logger.debug('User updated successfully');
     return;
   }
 

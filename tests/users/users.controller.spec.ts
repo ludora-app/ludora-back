@@ -122,7 +122,7 @@ describe('UsersController', () => {
   });
 
   describe('update', () => {
-    it('should update a user', async () => {
+    it('should update a user without image', async () => {
       const mockRequest = {
         user: { uid: '1' },
       };
@@ -134,7 +134,26 @@ describe('UsersController', () => {
       const result = await controller.update(mockRequest as any, updateDto);
 
       expect(result).toBeUndefined();
-      expect(service.update).toHaveBeenCalledWith('1', updateDto);
+      expect(service.update).toHaveBeenCalledWith('1', updateDto, undefined);
+    });
+
+    it('should update a user with image', async () => {
+      const mockRequest = {
+        user: { uid: '1' },
+      };
+      const updateDto: UpdateUserDto = {
+        firstname: 'Updated Name',
+      };
+      const mockFiles = [{ buffer: Buffer.from('image1'), originalname: 'profile.jpg' }];
+      mockUsersService.update.mockResolvedValue(undefined);
+
+      const result = await controller.update(mockRequest as any, updateDto, mockFiles);
+
+      expect(result).toBeUndefined();
+      expect(service.update).toHaveBeenCalledWith('1', updateDto, {
+        file: mockFiles[0].buffer,
+        name: mockFiles[0].originalname,
+      });
     });
   });
 
