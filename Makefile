@@ -32,3 +32,6 @@ local-k6:
 
 dev-up:
 	docker compose -f compose.dev.yml --env-file .env.local up --build
+
+pg-sh:
+	docker compose -f compose.local.yml --env-file .env.local exec ludora-db sh
