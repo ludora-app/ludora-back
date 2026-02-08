@@ -15,8 +15,13 @@ import { FieldFilterDto } from '../dto/input/field-filter.dto';
 import { MyFieldsFilterDto } from '../dto/input/my-fields-filter.dto';
 import { FIELD_SUGGESTION_CONFIG } from '../constants/fields.constants';
 import { CreatePublicFieldDto } from '../dto/input/create-public-field.dto';
+import { PublicFieldFilterDto } from '../dto/input/public-field-filter.dto';
 import { CreatePrivateFieldDto } from '../dto/input/create-private-field.dto';
-import { FieldResponseDto, FindOneFieldResponseData } from '../dto/output/field-response.dto';
+import {
+  FieldResponseDto,
+  FindOneFieldResponseData,
+  PublicFieldResponseData,
+} from '../dto/output/field-response.dto';
 
 @Injectable()
 export class FieldsService {
@@ -659,5 +664,56 @@ export class FieldsService {
       nextCursor,
       totalCount: fields.length,
     };
+  }
+
+  async findAllPublicFields(
+    filters: PublicFieldFilterDto,
+  ): Promise<PaginatedDataDto<PublicFieldResponseData>> {
+    const { cursor, limit = 10, search, sports } = filters;
+
+    const query: {
+      take: number;
+      skip?: number;
+      cursor?: {
+        uid: string;
+      };
+      where: Prisma.FieldsWhereInput;
+    } = {
+      take: limit + 1,
+      where: { partnerUid: null },
+    };
+
+    if (cursor) {
+      query.cursor = { uid: cursor };
+      query.skip = 1;
+    }
+    if (search) {
+      query.where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { address: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    if (sports?.length) {
+      query.where.fieldSports = { some: { sport: { in: sports } } };
+    }
+
+    const fields = await this.prisma.fields.findMany({
+      ...query,
+      include: {
+        fieldImages: { select: { order: true, url: true }, take: 1 },
+        fieldSports: { select: { sport: true } },
+      },
+    });
+
+    const actualLimit = limit || 10;
+    let nextCursor: string | null = null;
+    if (fields.length > actualLimit) {
+      const nextItem = fields.pop();
+      nextCursor = nextItem!.uid;
+    }
+
+    const items = fields.map((field) => FieldMapper.toPublicFieldDto(field));
+
+    return { items, nextCursor, totalCount: fields.length };
   }
 }

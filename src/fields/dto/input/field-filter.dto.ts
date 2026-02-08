@@ -2,7 +2,16 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { Sport } from 'src/shared/constants/constants';
 import { FieldType, GameModes } from 'generated/prisma/enums';
-import { IsDateString, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 /**
  * @description DTO for filtering the fields in most use cases (findAll methods)
@@ -101,6 +110,7 @@ export class FieldFilterDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(100)
   @ApiProperty({
     description: 'Limit of fields to return',
     example: 10,

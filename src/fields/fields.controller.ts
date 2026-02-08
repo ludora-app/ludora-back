@@ -40,12 +40,15 @@ import { FieldFilterDto } from './dto/input/field-filter.dto';
 import { FieldSlotsService } from './services/field-slots.service';
 import { CreateFieldSlotDto } from './dto/input/create-field-slot.dto';
 import { CreatePublicFieldDto } from './dto/input/create-public-field.dto';
+import { PublicFieldFilterDto } from './dto/input/public-field-filter.dto';
 import { CreatePrivateFieldDto } from './dto/input/create-private-field.dto';
 import {
   FieldResponseDto,
   FindOneFieldResponseData,
   FindOneFieldResponseDto,
   PaginatedFieldResponse,
+  PaginatedPublicFieldResponse,
+  PublicFieldResponseData,
 } from './dto/output/field-response.dto';
 
 // ? Guards at endpoint level for the whole controller because some routes will be accessible by both B2C and B2B users.
@@ -194,6 +197,21 @@ export class FieldsController {
     };
   }
 
+  @Get('list-public/collection')
+  @ApiOkResponse({ type: PaginatedPublicFieldResponse })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all public fields' })
+  async findAllPublicFields(
+    @Query() filters: PublicFieldFilterDto,
+  ): Promise<PaginationResponseTypeDto<PublicFieldResponseData>> {
+    const data = await this.fieldsService.findAllPublicFields(filters);
+    return {
+      data,
+      message: 'Public fields fetched successfully',
+    };
+  }
   // @Patch('update-public/:uid')
   // @UseGuards(AuthB2CGuard)
   // @Protected()
