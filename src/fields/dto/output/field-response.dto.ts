@@ -1,7 +1,7 @@
 import { Sport } from 'src/shared/constants/constants';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { FieldType, VerificationStatus } from 'generated/prisma/client';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 export class FieldImageResponseDto {
@@ -87,6 +87,12 @@ export class FieldResponseDto {
   readonly userDistance?: number;
 }
 
+export class PublicFieldResponseData extends OmitType(FieldResponseDto, [
+  'availabilities',
+  'userDistance',
+  'type',
+]) {}
+
 export class FindOneFieldResponseData {
   @ApiProperty({ description: 'uid of the field', example: 'cmjzyy8k1000e4jt31vpr30yv' })
   readonly uid: string;
@@ -147,3 +153,5 @@ export class FindOneFieldResponseDto extends ResponseTypeDto<FindOneFieldRespons
 }
 
 export const PaginatedFieldResponse = toPaginationResponseType(FieldResponseDto);
+
+export const PaginatedPublicFieldResponse = toPaginationResponseType(PublicFieldResponseData);

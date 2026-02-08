@@ -8,6 +8,7 @@ import { Sport } from '../../src/shared/constants/constants';
 import { CreatePublicFieldDto } from '../../src/fields/dto/input/create-public-field.dto';
 import { UpdateFieldDto } from '../../src/fields/dto/input/update-field.dto';
 import { FieldFilterDto } from '../../src/fields/dto/input/field-filter.dto';
+import { PublicFieldFilterDto } from '../../src/fields/dto/input/public-field-filter.dto';
 import { FieldsService } from 'src/fields/services/fields.service';
 import { FieldSlotsService } from 'src/fields/services/field-slots.service';
 
@@ -19,6 +20,7 @@ describe('FieldsController', () => {
     create: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
+    findAllPublicFields: jest.fn(),
   };
 
   const mockFieldSlotsService = {
@@ -311,6 +313,228 @@ describe('FieldsController', () => {
 
       await expect(controller.findOne(uid)).rejects.toThrow(NotFoundException);
       expect(mockFieldsService.findOne).toHaveBeenCalledWith(uid);
+    });
+  });
+
+  describe('findAllPublicFields', () => {
+    it('should return all public fields without filters', async () => {
+      const filters: PublicFieldFilterDto = {
+        limit: 10,
+      };
+
+      const mockResponse = {
+        items: [
+          {
+            uid: 'field-1',
+            name: 'Public Field 1',
+            latitude: 48.8566,
+            longitude: 2.3522,
+            shortAddress: '123 Main St',
+            sports: [Sport.FOOTBALL],
+          },
+          {
+            uid: 'field-2',
+            name: 'Public Field 2',
+            latitude: 48.857,
+            longitude: 2.353,
+            shortAddress: '456 Oak Ave',
+            sports: [Sport.BASKETBALL],
+          },
+        ],
+        nextCursor: null,
+        totalCount: 2,
+      };
+
+      mockFieldsService.findAllPublicFields.mockResolvedValue(mockResponse);
+
+      const result = await controller.findAllPublicFields(filters);
+
+      expect(result).toEqual({
+        data: mockResponse,
+        message: 'Public fields fetched successfully',
+      });
+      expect(mockFieldsService.findAllPublicFields).toHaveBeenCalledWith(filters);
+    });
+
+    it('should filter public fields by sports', async () => {
+      const filters: PublicFieldFilterDto = {
+        limit: 10,
+        sports: [Sport.BASKETBALL],
+      };
+
+      const mockResponse = {
+        items: [
+          {
+            uid: 'field-2',
+            name: 'Basketball Court',
+            latitude: 48.857,
+            longitude: 2.353,
+            shortAddress: '456 Oak Ave',
+            sports: [Sport.BASKETBALL],
+          },
+        ],
+        nextCursor: null,
+        totalCount: 1,
+      };
+
+      mockFieldsService.findAllPublicFields.mockResolvedValue(mockResponse);
+
+      const result = await controller.findAllPublicFields(filters);
+
+      expect(result.data.items).toHaveLength(1);
+      expect(result.data.items[0].sports).toContain(Sport.BASKETBALL);
+      expect(mockFieldsService.findAllPublicFields).toHaveBeenCalledWith(filters);
+    });
+
+    it('should filter public fields by search term', async () => {
+      const filters: PublicFieldFilterDto = {
+        limit: 10,
+        search: 'Stade',
+      };
+
+      const mockResponse = {
+        items: [
+          {
+            uid: 'field-1',
+            name: 'Stade de France',
+            latitude: 48.8566,
+            longitude: 2.3522,
+            shortAddress: '123 Main St',
+            sports: [Sport.FOOTBALL],
+          },
+        ],
+        nextCursor: null,
+        totalCount: 1,
+      };
+
+      mockFieldsService.findAllPublicFields.mockResolvedValue(mockResponse);
+
+      const result = await controller.findAllPublicFields(filters);
+
+      expect(result.data.items).toHaveLength(1);
+      expect(result.data.items[0].name).toContain('Stade');
+      expect(mockFieldsService.findAllPublicFields).toHaveBeenCalledWith(filters);
+    });
+
+    it('should handle cursor pagination', async () => {
+      const filters: PublicFieldFilterDto = {
+        limit: 10,
+        cursor: 'field-1',
+      };
+
+      const mockResponse = {
+        items: [
+          {
+            uid: 'field-2',
+            name: 'Public Field 2',
+            latitude: 48.857,
+            longitude: 2.353,
+            shortAddress: '456 Oak Ave',
+            sports: [Sport.BASKETBALL],
+          },
+        ],
+        nextCursor: 'field-3',
+        totalCount: 1,
+      };
+
+      mockFieldsService.findAllPublicFields.mockResolvedValue(mockResponse);
+
+      const result = await controller.findAllPublicFields(filters);
+
+      expect(result.data.nextCursor).toBe('field-3');
+      expect(mockFieldsService.findAllPublicFields).toHaveBeenCalledWith(filters);
+    });
+
+    it('should combine multiple filters (sports + search)', async () => {
+      const filters: PublicFieldFilterDto = {
+        limit: 10,
+        sports: [Sport.BASKETBALL],
+        search: 'Court',
+      };
+
+      const mockResponse = {
+        items: [
+          {
+            uid: 'field-1',
+            name: 'Basketball Court',
+            latitude: 48.8566,
+            longitude: 2.3522,
+            shortAddress: '123 Main St',
+            sports: [Sport.BASKETBALL],
+          },
+        ],
+        nextCursor: null,
+        totalCount: 1,
+      };
+
+      mockFieldsService.findAllPublicFields.mockResolvedValue(mockResponse);
+
+      const result = await controller.findAllPublicFields(filters);
+
+      expect(result.data.items).toHaveLength(1);
+      expect(result.data.items[0].sports).toContain(Sport.BASKETBALL);
+      expect(result.data.items[0].name).toContain('Court');
+      expect(mockFieldsService.findAllPublicFields).toHaveBeenCalledWith(filters);
+    });
+
+    it('should handle empty results', async () => {
+      const filters: PublicFieldFilterDto = {
+        limit: 10,
+        sports: [Sport.VOLLEYBALL],
+      };
+
+      const mockResponse = {
+        items: [],
+        nextCursor: null,
+        totalCount: 0,
+      };
+
+      mockFieldsService.findAllPublicFields.mockResolvedValue(mockResponse);
+
+      const result = await controller.findAllPublicFields(filters);
+
+      expect(result).toEqual({
+        data: mockResponse,
+        message: 'Public fields fetched successfully',
+      });
+      expect(result.data.items).toHaveLength(0);
+    });
+
+    it('should return nextCursor when more items exist', async () => {
+      const filters: PublicFieldFilterDto = {
+        limit: 2,
+      };
+
+      const mockResponse = {
+        items: [
+          {
+            uid: 'field-1',
+            name: 'Public Field 1',
+            latitude: 48.8566,
+            longitude: 2.3522,
+            shortAddress: '123 Main St',
+            sports: [Sport.FOOTBALL],
+          },
+          {
+            uid: 'field-2',
+            name: 'Public Field 2',
+            latitude: 48.857,
+            longitude: 2.353,
+            shortAddress: '456 Oak Ave',
+            sports: [Sport.BASKETBALL],
+          },
+        ],
+        nextCursor: 'field-3',
+        totalCount: 2,
+      };
+
+      mockFieldsService.findAllPublicFields.mockResolvedValue(mockResponse);
+
+      const result = await controller.findAllPublicFields(filters);
+
+      expect(result.data.items).toHaveLength(2);
+      expect(result.data.nextCursor).toBe('field-3');
+      expect(result.data.nextCursor).not.toBeNull();
     });
   });
 });

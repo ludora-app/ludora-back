@@ -2,7 +2,11 @@ import { Sport } from 'src/shared/constants/constants';
 import { FieldType, VerificationStatus } from 'generated/prisma/client';
 
 import { GAME_MODE_PLAYERS_COUNT } from '../constants/fields.constants';
-import { FieldResponseDto, FindOneFieldResponseData } from '../dto/output/field-response.dto';
+import {
+  FieldResponseDto,
+  FindOneFieldResponseData,
+  PublicFieldResponseData,
+} from '../dto/output/field-response.dto';
 
 interface FieldInput {
   uid: string;
@@ -131,6 +135,17 @@ export class FieldMapper {
       sports: field.fieldSports.map((fieldSport) => fieldSport.sport as Sport),
       status: field.status,
       type: field.type,
+      uid: field.uid,
+    };
+  }
+
+  static toPublicFieldDto(field: FieldInput): PublicFieldResponseData {
+    return {
+      latitude: field.latitude,
+      longitude: field.longitude,
+      name: field.name,
+      shortAddress: field.shortAddress,
+      sports: field.fieldSports?.map((fieldSport) => fieldSport.sport as Sport),
       uid: field.uid,
     };
   }

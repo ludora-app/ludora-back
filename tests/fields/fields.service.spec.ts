@@ -261,4 +261,327 @@ describe('FieldsService', () => {
       expect(mockLogger.error).toHaveBeenCalled();
     });
   });
+
+  describe('findAllPublicFields', () => {
+    it('should return all public fields without filters', async () => {
+      const mockFields = [
+        {
+          uid: 'field-1',
+          name: 'Field 1',
+          address: '123 Main St',
+          shortAddress: '123 Main St',
+          latitude: 48.8566,
+          longitude: 2.3522,
+          partnerUid: null,
+          fieldImages: [{ url: 'image1.jpg', order: 0 }],
+          fieldSports: [{ sport: Sport.FOOTBALL }],
+        },
+        {
+          uid: 'field-2',
+          name: 'Field 2',
+          address: '456 Oak Ave',
+          shortAddress: '456 Oak Ave',
+          latitude: 48.857,
+          longitude: 2.353,
+          partnerUid: null,
+          fieldImages: [{ url: 'image2.jpg', order: 0 }],
+          fieldSports: [{ sport: Sport.BASKETBALL }],
+        },
+      ];
+
+      mockPrismaService.fields.findMany.mockResolvedValue(mockFields);
+
+      const result = await service.findAllPublicFields({ limit: 10 });
+
+      expect(result).toEqual({
+        items: expect.arrayContaining([
+          expect.objectContaining({
+            uid: 'field-1',
+            name: 'Field 1',
+            sports: [Sport.FOOTBALL],
+          }),
+          expect.objectContaining({
+            uid: 'field-2',
+            name: 'Field 2',
+            sports: [Sport.BASKETBALL],
+          }),
+        ]),
+        nextCursor: null,
+        totalCount: 2,
+      });
+
+      expect(mockPrismaService.fields.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 11,
+          where: { partnerUid: null },
+          include: {
+            fieldImages: { select: { order: true, url: true }, take: 1 },
+            fieldSports: { select: { sport: true } },
+          },
+        }),
+      );
+    });
+
+    it('should filter by sports', async () => {
+      const mockFields = [
+        {
+          uid: 'field-1',
+          name: 'Field 1',
+          address: '123 Main St',
+          shortAddress: '123 Main St',
+          latitude: 48.8566,
+          longitude: 2.3522,
+          partnerUid: null,
+          fieldImages: [{ url: 'image1.jpg', order: 0 }],
+          fieldSports: [{ sport: Sport.BASKETBALL }],
+        },
+      ];
+
+      mockPrismaService.fields.findMany.mockResolvedValue(mockFields);
+
+      const result = await service.findAllPublicFields({
+        limit: 10,
+        sports: [Sport.BASKETBALL],
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]).toEqual(
+        expect.objectContaining({
+          uid: 'field-1',
+          sports: [Sport.BASKETBALL],
+        }),
+      );
+
+      expect(mockPrismaService.fields.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 11,
+          where: {
+            partnerUid: null,
+            fieldSports: { some: { sport: { in: [Sport.BASKETBALL] } } },
+          },
+          include: {
+            fieldImages: { select: { order: true, url: true }, take: 1 },
+            fieldSports: { select: { sport: true } },
+          },
+        }),
+      );
+    });
+
+    it('should filter by search term', async () => {
+      const mockFields = [
+        {
+          uid: 'field-1',
+          name: 'Stade de France',
+          address: '123 Main St',
+          shortAddress: '123 Main St',
+          latitude: 48.8566,
+          longitude: 2.3522,
+          partnerUid: null,
+          fieldImages: [{ url: 'image1.jpg', order: 0 }],
+          fieldSports: [{ sport: Sport.FOOTBALL }],
+        },
+      ];
+
+      mockPrismaService.fields.findMany.mockResolvedValue(mockFields);
+
+      const result = await service.findAllPublicFields({
+        limit: 10,
+        search: 'Stade',
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]).toEqual(
+        expect.objectContaining({
+          uid: 'field-1',
+          name: 'Stade de France',
+        }),
+      );
+
+      expect(mockPrismaService.fields.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 11,
+          where: {
+            partnerUid: null,
+            OR: [
+              { name: { contains: 'Stade', mode: 'insensitive' } },
+              { address: { contains: 'Stade', mode: 'insensitive' } },
+            ],
+          },
+          include: {
+            fieldImages: { select: { order: true, url: true }, take: 1 },
+            fieldSports: { select: { sport: true } },
+          },
+        }),
+      );
+    });
+
+    it('should handle cursor-based pagination', async () => {
+      const mockFields = [
+        {
+          uid: 'field-2',
+          name: 'Field 2',
+          address: '456 Oak Ave',
+          shortAddress: '456 Oak Ave',
+          latitude: 48.857,
+          longitude: 2.353,
+          partnerUid: null,
+          fieldImages: [{ url: 'image2.jpg', order: 0 }],
+          fieldSports: [{ sport: Sport.BASKETBALL }],
+        },
+        {
+          uid: 'field-3',
+          name: 'Field 3',
+          address: '789 Pine St',
+          shortAddress: '789 Pine St',
+          latitude: 48.858,
+          longitude: 2.354,
+          partnerUid: null,
+          fieldImages: [{ url: 'image3.jpg', order: 0 }],
+          fieldSports: [{ sport: Sport.FOOTBALL }],
+        },
+      ];
+
+      mockPrismaService.fields.findMany.mockResolvedValue(mockFields);
+
+      const result = await service.findAllPublicFields({
+        limit: 10,
+        cursor: 'field-1',
+      });
+
+      expect(result.items).toHaveLength(2);
+
+      expect(mockPrismaService.fields.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 11,
+          skip: 1,
+          cursor: { uid: 'field-1' },
+          where: { partnerUid: null },
+          include: {
+            fieldImages: { select: { order: true, url: true }, take: 1 },
+            fieldSports: { select: { sport: true } },
+          },
+        }),
+      );
+    });
+
+    it('should return nextCursor when more items exist', async () => {
+      const mockFields = [
+        {
+          uid: 'field-1',
+          name: 'Field 1',
+          address: '123 Main St',
+          shortAddress: '123 Main St',
+          latitude: 48.8566,
+          longitude: 2.3522,
+          partnerUid: null,
+          fieldImages: [{ url: 'image1.jpg', order: 0 }],
+          fieldSports: [{ sport: Sport.FOOTBALL }],
+        },
+        {
+          uid: 'field-2',
+          name: 'Field 2',
+          address: '456 Oak Ave',
+          shortAddress: '456 Oak Ave',
+          latitude: 48.857,
+          longitude: 2.353,
+          partnerUid: null,
+          fieldImages: [{ url: 'image2.jpg', order: 0 }],
+          fieldSports: [{ sport: Sport.BASKETBALL }],
+        },
+        {
+          uid: 'field-3',
+          name: 'Field 3',
+          address: '789 Pine St',
+          shortAddress: '789 Pine St',
+          latitude: 48.858,
+          longitude: 2.354,
+          partnerUid: null,
+          fieldImages: [{ url: 'image3.jpg', order: 0 }],
+          fieldSports: [{ sport: Sport.FOOTBALL }],
+        },
+      ];
+
+      mockPrismaService.fields.findMany.mockResolvedValue(mockFields);
+
+      const result = await service.findAllPublicFields({ limit: 2 });
+
+      expect(result.items).toHaveLength(2);
+      expect(result.nextCursor).toBe('field-3');
+      expect(result.totalCount).toBe(2);
+
+      expect(mockPrismaService.fields.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 3,
+          where: { partnerUid: null },
+          include: {
+            fieldImages: { select: { order: true, url: true }, take: 1 },
+            fieldSports: { select: { sport: true } },
+          },
+        }),
+      );
+    });
+
+    it('should combine multiple filters', async () => {
+      const mockFields = [
+        {
+          uid: 'field-1',
+          name: 'Stade de Basket',
+          address: '123 Main St',
+          shortAddress: '123 Main St',
+          latitude: 48.8566,
+          longitude: 2.3522,
+          partnerUid: null,
+          fieldImages: [{ url: 'image1.jpg', order: 0 }],
+          fieldSports: [{ sport: Sport.BASKETBALL }],
+        },
+      ];
+
+      mockPrismaService.fields.findMany.mockResolvedValue(mockFields);
+
+      const result = await service.findAllPublicFields({
+        limit: 10,
+        sports: [Sport.BASKETBALL],
+        search: 'Basket',
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]).toEqual(
+        expect.objectContaining({
+          uid: 'field-1',
+          name: 'Stade de Basket',
+          sports: [Sport.BASKETBALL],
+        }),
+      );
+
+      expect(mockPrismaService.fields.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 11,
+          where: {
+            partnerUid: null,
+            fieldSports: { some: { sport: { in: [Sport.BASKETBALL] } } },
+            OR: [
+              { name: { contains: 'Basket', mode: 'insensitive' } },
+              { address: { contains: 'Basket', mode: 'insensitive' } },
+            ],
+          },
+          include: {
+            fieldImages: { select: { order: true, url: true }, take: 1 },
+            fieldSports: { select: { sport: true } },
+          },
+        }),
+      );
+    });
+
+    it('should return empty array when no fields found', async () => {
+      mockPrismaService.fields.findMany.mockResolvedValue([]);
+
+      const result = await service.findAllPublicFields({ limit: 10 });
+
+      expect(result).toEqual({
+        items: [],
+        nextCursor: null,
+        totalCount: 0,
+      });
+    });
+  });
 });
