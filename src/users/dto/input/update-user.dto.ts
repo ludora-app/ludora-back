@@ -1,7 +1,7 @@
 import { Sex } from 'generated/prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { PartialType } from '@nestjs/mapped-types';
-import { IsDateString, IsEnum, IsOptional, IsPhoneNumber, IsString, IsUrl } from 'class-validator';
+import { IsDateString, IsEnum, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
 
 import { CreateUserDto } from './create-user.dto';
 
@@ -56,16 +56,6 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   })
   phone?: string;
 
-  @IsUrl()
-  @IsOptional()
-  @ApiProperty({
-    description: 'The image url of the user',
-    example: 'https://www.example.com/image.jpg',
-    required: false,
-    type: String,
-  })
-  imageUrl?: string;
-
   @IsString()
   @IsOptional()
   @ApiProperty({
@@ -75,4 +65,12 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
     type: String,
   })
   bio?: string;
+
+  @ApiProperty({
+    description: 'File image (avatar)',
+    format: 'binary',
+    required: false,
+    type: 'string',
+  })
+  file?: any;
 }
