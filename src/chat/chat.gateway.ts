@@ -1,8 +1,9 @@
 import { PinoLogger } from 'nestjs-pino';
-import { UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
+import { CreateMessageDto } from 'src/conversations/dto/input/create-message.dto';
 import {
   ConnectedSocket,
   MessageBody,
@@ -15,6 +16,7 @@ import {
 
 import { TypingIndicatorDto } from './dto/input/typing-indicator.dto';
 import { MessagesService } from '../conversations/services/messages.service';
+import { ConversationsService } from '../conversations/services/conversations.service';
 
 /**
  * ChatGateway handles real-time chat messaging using Socket.io
@@ -35,6 +37,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(
     private readonly messagesService: MessagesService,
+    private readonly conversationsService: ConversationsService,
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
   ) {
@@ -111,53 +114,66 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /**
    * Handle incoming chat messages
    * - Validates message data
-   * - Creates message in database
+   * - Creates message in database (or finds/creates conversation if recipientUid is provided)
    * - Broadcasts to all users in the conversation room
    */
-  // @SubscribeMessage('sendMessage')
-  // async handleSendMessage(
-  //   @ConnectedSocket() client: Socket,
-  //   @MessageBody() data: SendMessageDto,
-  // ): Promise<void> {
-  //   try {
-  //     const userUid = client.data.userUid;
+  @UsePipes(
+    new ValidationPipe({
+      exceptionFactory: (errors) => {
+        console.log('Erreurs de validation:', JSON.stringify(errors, null, 2));
+        return errors;
+      },
+      transform: true,
+    }),
+  )
+  @SubscribeMessage('sendMessage')
+  async handleSendMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: CreateMessageDto,
+  ): Promise<void> {
+    try {
+      const userUid = client.data.userUid;
 
-  //     if (!userUid) {
-  //       client.emit('error', {
-  //         code: 'UNAUTHORIZED',
-  //         message: 'Unauthorized',
-  //       });
-  //       return;
-  //     }
+      if (!userUid) {
+        client.emit('error', {
+          code: 'UNAUTHORIZED',
+          message: 'Unauthorized',
+        });
+        return;
+      }
 
-  //     const { content, conversationUid, type } = data;
+      console.log('data', data);
+      this.logger.warn('content', data.content);
 
-  //     // Create message in database
-  //     const message = await this.messagesService.createTextMessage(
-  //       userUid,
-  //       content,
-  //       conversationUid,
-  //       type || MessageType.TEXT,
-  //     );
+      // Create message - the service handles finding/creating conversations
+      const { conversationUid } = await this.conversationsService.createMessage(userUid, data);
 
-  //     // Broadcast to all users in the conversation room
-  //     const conversationRoom = `conversation:${conversationUid}`;
-  //     this.server.to(conversationRoom).emit('newMessage', {
-  //       conversationUid,
-  //       message,
-  //     });
+      // If a new private conversation was created, join both users to the room
+      if (data.recipientUid && !data.conversationUid) {
+        const conversationRoom = `conversation:${conversationUid}`;
+        const sockets = await this.server.fetchSockets();
+        for (const socket of sockets) {
+          if (socket.data.userUid === userUid || socket.data.userUid === data.recipientUid) {
+            await socket.join(conversationRoom);
+          }
+        }
+      }
 
-  //     this.logger.debug(
-  //       `Message ${message.uid} sent to conversation ${conversationUid} by user ${userUid}`,
-  //     );
-  //   } catch (error) {
-  //     this.logger.error(`Error sending message: ${error.message}`);
-  //     client.emit('error', {
-  //       code: 'MESSAGE_SEND_FAILED',
-  //       message: error.message || 'Failed to send message',
-  //     });
-  //   }
-  // }
+      // Broadcast to all users in the conversation room
+      const conversationRoom = `conversation:${conversationUid}`;
+      this.server.to(conversationRoom).emit('newMessage', {
+        conversationUid,
+      });
+
+      this.logger.debug(`Message sent to conversation ${conversationUid} by user ${userUid}`);
+    } catch (error) {
+      this.logger.error(`Error sending message: ${error.message}`);
+      client.emit('error', {
+        code: 'MESSAGE_SEND_FAILED',
+        message: error.message || 'Failed to send message',
+      });
+    }
+  }
 
   /**
    * Handle joining a new conversation room

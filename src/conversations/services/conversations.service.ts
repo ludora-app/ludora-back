@@ -357,7 +357,11 @@ export class ConversationsService {
     return conversation;
   }
 
-  async createMessage(userUid: string, dto: CreateMessageDto, file?: any): Promise<void> {
+  async createMessage(
+    userUid: string,
+    dto: CreateMessageDto,
+    file?: any,
+  ): Promise<{ conversationUid: string }> {
     const { content, conversationUid, recipientUid, type } = dto;
     // const existingConversation = await this.findOne(conversationUid, userUid);
 
@@ -409,22 +413,26 @@ export class ConversationsService {
       }
     }
 
-    if (type === MessageType.TEXT) {
-      return this.messagesService.createTextMessage(
+    const actualConversationUid = privateConversation?.uid ?? conversationUid;
+
+    if ((type as MessageType) === MessageType.TEXT) {
+      await this.messagesService.createTextMessage(
         userUid,
         content,
-        privateConversation?.uid ?? conversationUid,
+        actualConversationUid,
         sessionConversation?.uid ?? null,
       );
     } else {
-      return this.messagesService.createMediaMessage(
+      await this.messagesService.createMediaMessage(
         userUid,
-        privateConversation?.uid ?? conversationUid,
+        actualConversationUid,
         type,
         file,
         sessionConversation?.uid ?? null,
       );
     }
+
+    return { conversationUid: actualConversationUid };
   }
 
   async loadMoreMessages(
