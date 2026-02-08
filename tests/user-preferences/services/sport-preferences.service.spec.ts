@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { UserSportPreferences } from 'generated/prisma/browser';
+import { GameModes } from 'generated/prisma/enums';
 import { PinoLogger } from 'nestjs-pino';
 import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 import { UsersService } from 'src/users/users.service';
@@ -28,6 +29,11 @@ describe('SportPreferencesService', () => {
         create: jest.fn(),
         delete: jest.fn(),
       },
+      userGameModePreferences: {
+        findFirst: jest.fn(),
+        create: jest.fn(),
+      },
+      $transaction: jest.fn(),
     };
 
     const mockPinoLogger = {
@@ -359,6 +365,313 @@ describe('SportPreferencesService', () => {
         new NotFoundException('Sport preference not found'),
       );
       expect(prismaService.userSportPreferences.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('createManyWithGameModes', () => {
+    const userUid = 'user-uid-1';
+
+    it('should create sport preferences with game modes successfully', async () => {
+      const preferences = [
+        {
+          sport: Sport.BASKETBALL,
+          level: UserSportLevel.INTERMEDIATE,
+          gameModes: [GameModes.FIVE_V_FIVE, GameModes.THREE_V_THREE],
+        },
+        {
+          sport: Sport.VOLLEYBALL,
+          level: UserSportLevel.ADVANCED,
+          gameModes: [GameModes.SIX_V_SIX],
+        },
+      ];
+
+      const mockCreate = jest.fn().mockResolvedValue({});
+      const mockUpdate = jest.fn().mockResolvedValue({});
+
+      (prismaService.$transaction as jest.Mock).mockImplementation(async (callback) => {
+        const mockTx = {
+          userSportPreferences: {
+            findFirst: jest.fn().mockResolvedValue(null),
+            create: mockCreate,
+            update: mockUpdate,
+          },
+          userGameModePreferences: {
+            findFirst: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue({}),
+          },
+        };
+        return callback(mockTx);
+      });
+
+      await service.createManyWithGameModes(preferences, userUid);
+
+      expect(prismaService.$transaction).toHaveBeenCalledTimes(2);
+      expect(logger.debug).toHaveBeenCalledWith('2 sport preferences created');
+    });
+
+    it('should handle existing sport preferences with different levels', async () => {
+      const preferences = [
+        {
+          sport: Sport.BASKETBALL,
+          level: UserSportLevel.ADVANCED,
+          gameModes: [GameModes.FIVE_V_FIVE],
+        },
+      ];
+
+      const mockUpdate = jest.fn().mockResolvedValue({});
+      const mockCreate = jest.fn().mockResolvedValue({});
+
+      (prismaService.$transaction as jest.Mock).mockImplementation(async (callback) => {
+        const mockTx = {
+          userSportPreferences: {
+            findFirst: jest.fn().mockResolvedValue({
+              uid: 'existing-uid',
+              sport: Sport.BASKETBALL,
+              level: UserSportLevel.BEGINNER,
+              userUid,
+            }),
+            create: mockCreate,
+            update: mockUpdate,
+          },
+          userGameModePreferences: {
+            findFirst: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue({}),
+          },
+        };
+        return callback(mockTx);
+      });
+
+      await service.createManyWithGameModes(preferences, userUid);
+
+      expect(prismaService.$transaction).toHaveBeenCalledTimes(1);
+      expect(mockUpdate).toHaveBeenCalledWith({
+        data: { level: UserSportLevel.ADVANCED },
+        where: { uid: 'existing-uid' },
+      });
+    });
+
+    it('should handle existing sport preferences with same level', async () => {
+      const preferences = [
+        {
+          sport: Sport.BASKETBALL,
+          level: UserSportLevel.INTERMEDIATE,
+          gameModes: [GameModes.FIVE_V_FIVE],
+        },
+      ];
+
+      (prismaService.$transaction as jest.Mock).mockImplementation(async (callback) => {
+        const mockTx = {
+          userSportPreferences: {
+            findFirst: jest.fn().mockResolvedValue({
+              uid: 'existing-uid',
+              sport: Sport.BASKETBALL,
+              level: UserSportLevel.INTERMEDIATE,
+              userUid,
+            }),
+            create: jest.fn().mockResolvedValue({}),
+            update: jest.fn().mockResolvedValue({}),
+          },
+          userGameModePreferences: {
+            findFirst: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue({}),
+          },
+        };
+        return callback(mockTx);
+      });
+
+      await service.createManyWithGameModes(preferences, userUid);
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        `Sport preference already exists: ${Sport.BASKETBALL} for user: ${userUid}`,
+      );
+    });
+
+    it('should handle existing game mode preferences', async () => {
+      const preferences = [
+        {
+          sport: Sport.BASKETBALL,
+          level: UserSportLevel.INTERMEDIATE,
+          gameModes: [GameModes.FIVE_V_FIVE, GameModes.THREE_V_THREE],
+        },
+      ];
+
+      const mockGameModeCreate = jest.fn().mockResolvedValue({});
+
+      (prismaService.$transaction as jest.Mock).mockImplementation(async (callback) => {
+        const mockTx = {
+          userSportPreferences: {
+            findFirst: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue({}),
+            update: jest.fn().mockResolvedValue({}),
+          },
+          userGameModePreferences: {
+            findFirst: jest
+              .fn()
+              .mockResolvedValueOnce({ gameMode: GameModes.FIVE_V_FIVE })
+              .mockResolvedValueOnce(null),
+            create: mockGameModeCreate,
+          },
+        };
+        return callback(mockTx);
+      });
+
+      await service.createManyWithGameModes(preferences, userUid);
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        `Game mode preference already exists: ${GameModes.FIVE_V_FIVE} for user: ${userUid}`,
+      );
+      expect(mockGameModeCreate).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle empty game modes array', async () => {
+      const preferences = [
+        {
+          sport: Sport.BASKETBALL,
+          level: UserSportLevel.INTERMEDIATE,
+          gameModes: [],
+        },
+      ];
+
+      const mockGameModeCreate = jest.fn();
+
+      (prismaService.$transaction as jest.Mock).mockImplementation(async (callback) => {
+        const mockTx = {
+          userSportPreferences: {
+            findFirst: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue({}),
+            update: jest.fn().mockResolvedValue({}),
+          },
+          userGameModePreferences: {
+            findFirst: jest.fn(),
+            create: mockGameModeCreate,
+          },
+        };
+        return callback(mockTx);
+      });
+
+      await service.createManyWithGameModes(preferences, userUid);
+
+      expect(mockGameModeCreate).not.toHaveBeenCalled();
+    });
+
+    it('should create multiple sports with multiple game modes each', async () => {
+      const preferences = [
+        {
+          sport: Sport.BASKETBALL,
+          level: UserSportLevel.INTERMEDIATE,
+          gameModes: [GameModes.FIVE_V_FIVE, GameModes.THREE_V_THREE],
+        },
+        {
+          sport: Sport.FOOTBALL,
+          level: UserSportLevel.BEGINNER,
+          gameModes: [GameModes.ELEVEN_V_ELEVEN, GameModes.FIVE_V_FIVE],
+        },
+      ];
+
+      const mockSportCreate = jest.fn().mockResolvedValue({});
+      const mockGameModeCreate = jest.fn().mockResolvedValue({});
+
+      (prismaService.$transaction as jest.Mock).mockImplementation(async (callback) => {
+        const mockTx = {
+          userSportPreferences: {
+            findFirst: jest.fn().mockResolvedValue(null),
+            create: mockSportCreate,
+            update: jest.fn().mockResolvedValue({}),
+          },
+          userGameModePreferences: {
+            findFirst: jest.fn().mockResolvedValue(null),
+            create: mockGameModeCreate,
+          },
+        };
+        return callback(mockTx);
+      });
+
+      await service.createManyWithGameModes(preferences, userUid);
+
+      expect(prismaService.$transaction).toHaveBeenCalledTimes(2);
+      expect(mockSportCreate).toHaveBeenCalledTimes(2);
+      expect(mockGameModeCreate).toHaveBeenCalledTimes(4);
+    });
+
+    it('should not update sport preference when level is same', async () => {
+      const preferences = [
+        {
+          sport: Sport.TENNIS,
+          level: UserSportLevel.ADVANCED,
+          gameModes: [GameModes.ONE_V_ONE],
+        },
+      ];
+
+      const mockUpdate = jest.fn();
+      const mockCreate = jest.fn();
+
+      (prismaService.$transaction as jest.Mock).mockImplementation(async (callback) => {
+        const mockTx = {
+          userSportPreferences: {
+            findFirst: jest.fn().mockResolvedValue({
+              uid: 'existing-uid',
+              sport: Sport.TENNIS,
+              level: UserSportLevel.ADVANCED,
+              userUid,
+            }),
+            create: mockCreate,
+            update: mockUpdate,
+          },
+          userGameModePreferences: {
+            findFirst: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue({}),
+          },
+        };
+        return callback(mockTx);
+      });
+
+      await service.createManyWithGameModes(preferences, userUid);
+
+      expect(mockUpdate).not.toHaveBeenCalled();
+      expect(mockCreate).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith(
+        `Sport preference already exists: ${Sport.TENNIS} for user: ${userUid}`,
+      );
+    });
+
+    it('should handle transactions correctly for each preference', async () => {
+      const preferences = [
+        {
+          sport: Sport.BASKETBALL,
+          level: UserSportLevel.INTERMEDIATE,
+          gameModes: [GameModes.FIVE_V_FIVE],
+        },
+        {
+          sport: Sport.VOLLEYBALL,
+          level: UserSportLevel.ADVANCED,
+          gameModes: [GameModes.SIX_V_SIX],
+        },
+        {
+          sport: Sport.FOOTBALL,
+          level: UserSportLevel.BEGINNER,
+          gameModes: [GameModes.ELEVEN_V_ELEVEN],
+        },
+      ];
+
+      (prismaService.$transaction as jest.Mock).mockImplementation(async (callback) => {
+        const mockTx = {
+          userSportPreferences: {
+            findFirst: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue({}),
+            update: jest.fn().mockResolvedValue({}),
+          },
+          userGameModePreferences: {
+            findFirst: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue({}),
+          },
+        };
+        return callback(mockTx);
+      });
+
+      await service.createManyWithGameModes(preferences, userUid);
+
+      expect(prismaService.$transaction).toHaveBeenCalledTimes(3);
+      expect(logger.debug).toHaveBeenCalledWith('3 sport preferences created');
     });
   });
 });

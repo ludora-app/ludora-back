@@ -62,7 +62,7 @@ model UserGameModePreferences {
   user          Users  @relation(fields: [userUid], references: [uid], onDelete: Cascade)
   sportRelation Sports @relation(fields: [sport], references: [name])
 
-  @@unique([userUid, gameMode])
+  @@unique([userUid, gameMode, sport])
   @@index([userUid])
   @@index([gameMode])
   @@map("User_game_mode_preferences")

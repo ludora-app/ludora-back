@@ -1,3 +1,4 @@
+import { GameModes } from 'generated/prisma/enums';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { Sport, UserSportLevel } from 'src/shared/constants/constants';
 import { IsEnum, IsNotEmpty, IsString, Max, Min } from 'class-validator';
@@ -16,6 +17,8 @@ export class CreateSportPreferenceDto {
   @IsEnum(UserSportLevel)
   @Min(UserSportLevel.BEGINNER)
   @Max(UserSportLevel.ADVANCED)
+  // @Transform(({ value }) => Number(value))
+  // @Type(() => Number)
   @IsNotEmpty()
   @ApiProperty({
     description: 'The level of the user for the sport, from 1 to 3',
@@ -37,3 +40,15 @@ export class CreateSportPreferenceDto {
 export class CreateSportPreferenceDtoFromRequest extends OmitType(CreateSportPreferenceDto, [
   'userUid',
 ]) {}
+
+export class CreateSportWithGameModePreferenceDto extends CreateSportPreferenceDtoFromRequest {
+  @IsEnum(GameModes)
+  @IsNotEmpty()
+  @ApiProperty({
+    description: 'The game mode which the user prefers',
+    enum: GameModes,
+    example: GameModes.THREE_V_THREE,
+    isArray: true,
+  })
+  gameModes: GameModes[];
+}
