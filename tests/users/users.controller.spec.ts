@@ -60,6 +60,23 @@ describe('UsersController', () => {
     },
   };
 
+  const mockUserFindMe = {
+    bio: 'test bio',
+    birthdate: new Date('1990-01-01'),
+    email: 'test@test.com',
+    firstname: 'John',
+    imageUrl: 'test-url',
+    isConnected: true,
+    isEmailVerified: true,
+    lastname: 'Doe',
+    phone: '+33612345678',
+    stripeAccountId: 'stripe_123',
+    type: 'PLAYER',
+    uid: '1',
+    userHourPreferences: [],
+    userSportPreferences: [],
+  };
+
   const mockAuthGuard = {
     canActivate: jest.fn(() => true),
   };

@@ -39,6 +39,7 @@ import {
 
 import { UsersService } from './users.service';
 import { USERSELECT } from '../shared/constants/select-user';
+import { UserMapper, RawUserFindMe } from './mappers/user.mapper';
 import { PasswordResetRequestDto } from './dto/input/password-reset-request.dto';
 import { UserMapper, RawUserFindMe, RawUserFindOne } from './mappers/user.mapper';
 import {
