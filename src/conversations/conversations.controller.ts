@@ -29,6 +29,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
@@ -126,6 +127,18 @@ export class ConversationsController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiForbiddenResponse({ type: ForbiddenResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+    description: 'Cursor for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Limit of messages to return',
+  })
   @HttpCode(HttpStatus.OK)
   async loadMoreMessages(
     @Param('uid') uid: string,
