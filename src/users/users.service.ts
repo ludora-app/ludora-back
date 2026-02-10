@@ -241,6 +241,11 @@ export class UsersService {
    */
   async updatePassword(uid: string, updatePasswordDto: UpdatePasswordDto): Promise<void> {
     const { newPassword, oldPassword } = updatePasswordDto;
+
+    if (oldPassword === newPassword) {
+      throw new BadRequestException('New password cannot be the same as the old password');
+    }
+
     const existingUser = await this.prismaService.users.findUnique({
       where: { uid },
     });
