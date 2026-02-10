@@ -45,10 +45,6 @@ describe('ConversationsService', () => {
       createMediaMessage: jest.fn(),
     };
 
-    mockStorageService = {
-      getSignedUrl: jest.fn().mockResolvedValue('https://signed-url.example.com/image.jpg'),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ConversationsService,
@@ -63,10 +59,6 @@ describe('ConversationsService', () => {
         {
           provide: MessagesService,
           useValue: mockMessagesService,
-        },
-        {
-          provide: StorageService,
-          useValue: mockStorageService,
         },
       ],
     }).compile();
@@ -282,32 +274,9 @@ describe('ConversationsService', () => {
       },
     ];
 
-    beforeEach(() => {
-      jest
-        .spyOn(ConversationMapper, 'toCollectionDto')
-        .mockImplementation(async (conversation: RawConversationCollectionItem) => {
-          const user = conversation.conversationMembers?.[0]?.user;
-          const message = conversation.messages?.[0];
-          return {
-            imageUrl: user?.imageUrl ? 'https://signed-url.example.com/' + user.imageUrl : null,
-            lastMessage: message
-              ? {
-                  content: message.content,
-                  createdAt: message.createdAt,
-                  uid: message.uid,
-                }
-              : null,
-            name: conversation.name || (user ? `${user.firstname} ${user.lastname}` : ''),
-            sender: message?.sender || null,
-            sessionUid: conversation.sessionUid || null,
-            type: conversation.type,
-            uid: conversation.uid,
-          } as any;
-        });
-    });
-
     it('should return paginated conversations with default limit', async () => {
       mockPrismaService.conversations.findMany.mockResolvedValue(mockConversations);
+      const toCollectionDtoSpy = jest.spyOn(ConversationMapper, 'toCollectionDto');
 
       const result = await service.findAllByUserUid({}, 'user-123');
 
@@ -330,11 +299,8 @@ describe('ConversationsService', () => {
           }),
         }),
       );
-      expect(ConversationMapper.toCollectionDto).toHaveBeenCalledTimes(2);
-      expect(ConversationMapper.toCollectionDto).toHaveBeenCalledWith(
-        mockConversations[0],
-        mockStorageService,
-      );
+      expect(toCollectionDtoSpy).toHaveBeenCalledTimes(2);
+      expect(toCollectionDtoSpy).toHaveBeenCalledWith(mockConversations[0]);
     });
 
     it('should filter conversations by type', async () => {
@@ -442,19 +408,15 @@ describe('ConversationsService', () => {
       mockPrismaService.conversations.findMany.mockResolvedValue(manyConversations);
       jest
         .spyOn(ConversationMapper, 'toCollectionDto')
-        .mockImplementationOnce(
-          async (conversation: RawConversationCollectionItem, storageService: StorageService) => {
-            return {
-              imageUrl: null,
-              lastMessage: null,
-              name: `Conv ${conversation.uid}`,
-              sender: null,
-              sessionUid: null,
-              type: ConversationType.PRIVATE,
-              uid: conversation.uid,
-            };
-          },
-        );
+        .mockImplementationOnce((conversation: RawConversationCollectionItem) => ({
+          imageUrl: null,
+          lastMessage: null,
+          name: `Conv ${conversation.uid}`,
+          sender: null,
+          sessionUid: null,
+          type: ConversationType.PRIVATE,
+          uid: conversation.uid,
+        }));
 
       const result = await service.findAllByUserUid({ limit: 5 }, 'user-123');
 
@@ -614,7 +576,7 @@ describe('ConversationsService', () => {
     };
 
     beforeEach(() => {
-      jest.spyOn(ConversationMapper, 'toFindOneDto').mockResolvedValue(mockMappedConversation);
+      jest.spyOn(ConversationMapper, 'toFindOneDto').mockReturnValue(mockMappedConversation);
     });
 
     it('should return a mapped conversation if user is a member', async () => {
@@ -674,10 +636,7 @@ describe('ConversationsService', () => {
           uid: 'conv-123',
         },
       });
-      expect(ConversationMapper.toFindOneDto).toHaveBeenCalledWith(
-        mockRawConversation,
-        mockStorageService,
-      );
+      expect(ConversationMapper.toFindOneDto).toHaveBeenCalledWith(mockRawConversation);
     });
 
     it('should throw NotFoundException if conversation does not exist', async () => {

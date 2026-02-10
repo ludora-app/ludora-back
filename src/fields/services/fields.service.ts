@@ -520,13 +520,6 @@ export class FieldsService {
         const field = fieldMap.get(rawData.uid);
         if (!field) return null;
 
-        if (field.fieldImages?.[0]?.url) {
-          field.fieldImages[0].url = await this.storageService.getSignedUrl(
-            StorageFolderName.FIELDS,
-            field.fieldImages[0].url,
-          );
-        }
-
         return FieldMapper.toCollectionDto(
           {
             ...field,
@@ -633,16 +626,9 @@ export class FieldsService {
 
     const fieldsWithImageUrl = await Promise.all(
       fields.map(async (field) => {
-        const imageUrl =
-          field.fieldImages.length > 0
-            ? await this.storageService.getSignedUrl(
-                StorageFolderName.FIELDS,
-                field.fieldImages[0].url,
-              )
-            : '';
         return {
           ...field,
-          fieldImages: field.fieldImages.map((image) => ({ ...image, url: imageUrl })),
+          fieldImages: field.fieldImages.map((image) => ({ ...image, url: image.url })),
         };
       }),
     );

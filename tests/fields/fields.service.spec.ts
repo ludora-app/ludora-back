@@ -35,7 +35,6 @@ describe('FieldsService', () => {
 
   const mockStorageService = {
     upload: jest.fn(),
-    getSignedUrl: jest.fn(),
   };
 
   const mockGeolocalisationService = {

@@ -15,6 +15,7 @@ export class StorageService {
   });
 
   constructor(private readonly configService: ConfigService) {}
+  private readonly publicUrl = this.configService.getOrThrow('CLOUDFLARE_R2_PUBLIC_URL');
 
   /**
    * @description send/update un fichier dans le bucket S3
@@ -28,7 +29,7 @@ export class StorageService {
 
       const key = `${folder}/${processedFilename}`;
 
-      await this.s3.send(
+      const res = await this.s3.send(
         new PutObjectCommand({
           Body: file,
           Bucket: this.configService.getOrThrow('CLOUDFLARE_R2_BUCKET'),
@@ -36,7 +37,9 @@ export class StorageService {
         }),
       );
 
-      const response = { data: processedFilename };
+      console.log(res);
+
+      const response = { data: `${this.publicUrl}/${key}` };
       return response;
     } catch (error) {
       console.error('Erreur upload:', error);
@@ -45,6 +48,7 @@ export class StorageService {
   }
 
   /**
+   * @deprecated Use getUnsignedUrl instead
    * @description Génère une URL signée pour un fichier dans le bucket S3
    * @param filename
    * @param expiresIn : valeur à laquelle l'URL signée expire (604800 valeur max)

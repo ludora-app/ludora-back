@@ -40,8 +40,8 @@ describe('MessagesService', () => {
     };
 
     mockStorageService = {
-      getSignedUrl: jest.fn(),
       upload: jest.fn(),
+      getSignedUrl: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({

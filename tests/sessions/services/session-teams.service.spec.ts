@@ -1,4 +1,3 @@
-import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SessionTeams, TeamLabels } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
@@ -33,7 +32,9 @@ describe('SessionTeamsService', () => {
     log: jest.fn(),
   };
   const mockStorageService = {
+    upload: jest.fn(),
     getSignedUrl: jest.fn(),
+    delete: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -307,9 +308,6 @@ describe('SessionTeamsService', () => {
       mockPrismaService.sessions.findUnique.mockResolvedValue({ maxPlayersPerTeam: 5 });
       mockPrismaService.sessionPlayers.count.mockResolvedValue(0);
       mockPrismaService.sessionTeams.findMany.mockResolvedValue(mockTeams);
-      mockStorageService.getSignedUrl.mockImplementation(
-        async (folder, url) => `https://signed-url.com/${url}`,
-      );
 
       // Act
       const result = await service.findTeamsBySessionUid(sessionUid, 'test-user-uid');
@@ -379,9 +377,6 @@ describe('SessionTeamsService', () => {
       mockPrismaService.sessions.findUnique.mockResolvedValue({ maxPlayersPerTeam: 5 });
       mockPrismaService.sessionPlayers.count.mockResolvedValue(0);
       mockPrismaService.sessionTeams.findMany.mockResolvedValue([]);
-      mockStorageService.getSignedUrl.mockImplementation(
-        async (folder, url) => `https://signed-url.com/${url}`,
-      );
 
       // Act
       const result = await service.findTeamsBySessionUid(sessionUid, 'test-user-uid');
@@ -435,9 +430,6 @@ describe('SessionTeamsService', () => {
       mockPrismaService.sessions.findUnique.mockResolvedValue({ maxPlayersPerTeam: 5 });
       mockPrismaService.sessionPlayers.count.mockResolvedValue(0);
       mockPrismaService.sessionTeams.findMany.mockResolvedValue(singleTeam);
-      mockStorageService.getSignedUrl.mockImplementation(
-        async (folder, url) => `https://signed-url.com/${url}`,
-      );
 
       // Act
       const result = await service.findTeamsBySessionUid(sessionUid, 'test-user-uid');
@@ -453,9 +445,6 @@ describe('SessionTeamsService', () => {
       mockPrismaService.sessions.findUnique.mockResolvedValue({ maxPlayersPerTeam: 5 });
       mockPrismaService.sessionPlayers.count.mockResolvedValue(0);
       mockPrismaService.sessionTeams.findMany.mockResolvedValue(mockTeams);
-      mockStorageService.getSignedUrl.mockImplementation(
-        async (folder, url) => `https://signed-url.com/${url}`,
-      );
 
       // Act
       const result = await service.findTeamsBySessionUid(sessionUid, 'test-user-uid');

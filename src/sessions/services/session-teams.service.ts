@@ -1,7 +1,6 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { StorageFolderName } from 'src/shared/constants/constants';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { Prisma, SessionTeams, TeamLabels } from 'generated/prisma/client';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
@@ -105,12 +104,7 @@ export class SessionTeamsService {
               sportLevel: player.user.userSports?.[0]?.level ?? null,
               user: {
                 ...player.user,
-                imageUrl: player.user.imageUrl
-                  ? await this.storageService.getSignedUrl(
-                      StorageFolderName.USERS,
-                      player.user.imageUrl,
-                    )
-                  : null,
+                imageUrl: player.user.imageUrl ?? null,
               },
             })),
           ),
