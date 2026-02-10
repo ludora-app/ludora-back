@@ -1,9 +1,9 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { GameModes } from 'generated/prisma/enums';
-import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { Sport, UserSportLevel } from 'src/shared/constants/constants';
-import { IsEnum, IsNotEmpty, IsString, Max, Min } from 'class-validator';
+import { IsArray, IsEnum, IsNotEmpty, IsString, Max, Min } from 'class-validator';
 
-export class CreateSportPreferenceDto {
+export class CreateSportPreferenceData {
   @IsString()
   @IsNotEmpty()
   @IsEnum(Sport)
@@ -27,21 +27,6 @@ export class CreateSportPreferenceDto {
   })
   readonly level: UserSportLevel;
 
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty({
-    description: 'The uid of the user',
-    example: 'cmajhjkjf000bq77q4b5ugn8b',
-    required: true,
-  })
-  userUid: string;
-}
-
-export class CreateSportPreferenceDtoFromRequest extends OmitType(CreateSportPreferenceDto, [
-  'userUid',
-]) {}
-
-export class CreateSportWithGameModePreferenceDto extends CreateSportPreferenceDtoFromRequest {
   @IsEnum(GameModes)
   @IsNotEmpty()
   @ApiProperty({
@@ -51,4 +36,14 @@ export class CreateSportWithGameModePreferenceDto extends CreateSportPreferenceD
     isArray: true,
   })
   gameModes: GameModes[];
+}
+
+export class CreateSportPreferenceDto {
+  @IsArray()
+  @IsNotEmpty({ each: true })
+  @ApiProperty({
+    description: 'The sport preferences of the user',
+    type: [CreateSportPreferenceData],
+  })
+  sportPreferences: CreateSportPreferenceData[];
 }

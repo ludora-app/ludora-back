@@ -6,15 +6,16 @@ import { SportPreferencesController } from 'src/user-preferences/controllers/spo
 import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 import { CreateSportPreferenceDto } from 'src/user-preferences/dto/input/create-sport-preference.dto';
 import { Sport, UserSportLevel } from 'src/shared/constants/constants';
+import { GameModes } from 'generated/prisma/enums';
 
 describe('SportPreferencesController', () => {
   let controller: SportPreferencesController;
   let service: SportPreferencesService;
 
   const mockUserSportPreferencesService = {
-    create: jest.fn(),
+    createManyWithGameModes: jest.fn(),
     findAllByUserUid: jest.fn(),
-    remove: jest.fn(),
+    clearPreferences: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -44,143 +45,100 @@ describe('SportPreferencesController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('create', () => {
+  describe('createManyWithGameModes', () => {
     const mockRequest = {
       user: { uid: 'user-uid-1' },
     } as any;
 
-    it('should create a sport preference successfully', async () => {
-      const createDto: CreateSportPreferenceDto = {
-        sport: Sport.BASKETBALL,
-        level: UserSportLevel.BEGINNER,
-        userUid: 'user-uid-1',
+    it('should call service.createManyWithGameModes with dto.sportPreferences and user uid', async () => {
+      const dto: CreateSportPreferenceDto = {
+        sportPreferences: [
+          {
+            sport: Sport.BASKETBALL,
+            level: UserSportLevel.INTERMEDIATE,
+            gameModes: [GameModes.FIVE_V_FIVE, GameModes.THREE_V_THREE],
+          },
+          {
+            sport: Sport.VOLLEYBALL,
+            level: UserSportLevel.ADVANCED,
+            gameModes: [GameModes.SIX_V_SIX],
+          },
+        ],
       };
 
-      const mockCreatedPreference: UserSportPreferences = {
-        uid: 'sport-pref-uid-1',
-        sport: Sport.BASKETBALL,
-        userUid: 'user-uid-1',
-        createdAt: mockCurrentDate,
-        level: UserSportLevel.BEGINNER,
-      };
+      mockUserSportPreferencesService.createManyWithGameModes.mockResolvedValue(undefined);
 
-      mockUserSportPreferencesService.create.mockResolvedValue(mockCreatedPreference);
+      await controller.createManyWithGameModes(mockRequest, dto);
 
-      const result = await controller.create(createDto, mockRequest);
-
-      expect(result).toEqual({
-        data: mockCreatedPreference,
-        message: 'User sport preference created successfully',
-      });
-      expect(service.create).toHaveBeenCalledWith({
-        sport: Sport.BASKETBALL,
-        level: UserSportLevel.BEGINNER,
-        userUid: 'user-uid-1',
-      });
-    });
-
-    it('should create sport preferences for different sports', async () => {
-      const sports = [Sport.BASKETBALL, Sport.FOOTBALL, Sport.TENNIS, Sport.VOLLEYBALL];
-
-      for (const sport of sports) {
-        const createDto: CreateSportPreferenceDto = {
-          sport,
-          level: UserSportLevel.BEGINNER,
-          userUid: 'user-uid-1',
-        };
-
-        const mockCreatedPreference: UserSportPreferences = {
-          uid: `sport-pref-uid-${sport}`,
-          sport,
-          userUid: 'user-uid-1',
-          createdAt: mockCurrentDate,
-          level: UserSportLevel.BEGINNER,
-        };
-
-        mockUserSportPreferencesService.create.mockResolvedValue(mockCreatedPreference);
-
-        const result = await controller.create(createDto, mockRequest);
-
-        expect(result).toEqual({
-          data: mockCreatedPreference,
-          message: 'User sport preference created successfully',
-        });
-        expect(service.create).toHaveBeenCalledWith({
-          sport,
-          level: UserSportLevel.BEGINNER,
-          userUid: 'user-uid-1',
-        });
-
-        jest.clearAllMocks();
-      }
-    });
-
-    it('should propagate NotFoundException when user does not exist', async () => {
-      const createDto: CreateSportPreferenceDto = {
-        sport: Sport.BASKETBALL,
-        level: UserSportLevel.BEGINNER,
-        userUid: 'user-uid-1',
-      };
-
-      mockUserSportPreferencesService.create.mockRejectedValue(
-        new NotFoundException('User not found'),
+      expect(service.createManyWithGameModes).toHaveBeenCalledTimes(1);
+      expect(service.createManyWithGameModes).toHaveBeenCalledWith(
+        dto.sportPreferences,
+        'user-uid-1',
       );
-
-      await expect(controller.create(createDto, mockRequest)).rejects.toThrow(NotFoundException);
-      expect(service.create).toHaveBeenCalledWith({
-        sport: Sport.BASKETBALL,
-        level: UserSportLevel.BEGINNER,
-        userUid: 'user-uid-1',
-      });
     });
 
-    it('should propagate BadRequestException when sport preference already exists', async () => {
-      const createDto: CreateSportPreferenceDto = {
-        sport: Sport.BASKETBALL,
-        level: UserSportLevel.BEGINNER,
-        userUid: 'user-uid-1',
-      };
-
-      mockUserSportPreferencesService.create.mockRejectedValue(
-        new BadRequestException('Sport preference already exists'),
-      );
-
-      await expect(controller.create(createDto, mockRequest)).rejects.toThrow(BadRequestException);
-      expect(service.create).toHaveBeenCalledWith({
-        sport: Sport.BASKETBALL,
-        level: UserSportLevel.BEGINNER,
-        userUid: 'user-uid-1',
-      });
-    });
-
-    it('should extract userUid from request object', async () => {
-      const createDto: CreateSportPreferenceDto = {
-        sport: Sport.FOOTBALL,
-        level: UserSportLevel.INTERMEDIATE,
-        userUid: 'different-user-uid',
+    it('should extract userUid from request and pass to service', async () => {
+      const dto: CreateSportPreferenceDto = {
+        sportPreferences: [
+          {
+            sport: Sport.FOOTBALL,
+            level: UserSportLevel.BEGINNER,
+            gameModes: [GameModes.ELEVEN_V_ELEVEN],
+          },
+        ],
       };
 
       const differentMockRequest = {
-        user: { uid: 'different-user-uid' },
+        user: { uid: 'another-user-uid' },
       } as any;
 
-      const mockCreatedPreference: UserSportPreferences = {
-        uid: 'sport-pref-uid-2',
-        sport: Sport.FOOTBALL,
-        userUid: 'different-user-uid',
-        createdAt: mockCurrentDate,
-        level: UserSportLevel.INTERMEDIATE,
+      mockUserSportPreferencesService.createManyWithGameModes.mockResolvedValue(undefined);
+
+      await controller.createManyWithGameModes(differentMockRequest, dto);
+
+      expect(service.createManyWithGameModes).toHaveBeenCalledWith(
+        dto.sportPreferences,
+        'another-user-uid',
+      );
+    });
+
+    it('should propagate BadRequestException when service throws', async () => {
+      const dto: CreateSportPreferenceDto = {
+        sportPreferences: [
+          { sport: Sport.BASKETBALL, level: UserSportLevel.BEGINNER, gameModes: [] },
+          { sport: Sport.BASKETBALL, level: UserSportLevel.INTERMEDIATE, gameModes: [] },
+        ],
       };
 
-      mockUserSportPreferencesService.create.mockResolvedValue(mockCreatedPreference);
+      mockUserSportPreferencesService.createManyWithGameModes.mockRejectedValue(
+        new BadRequestException('Each sport preference must have a unique sport.'),
+      );
 
-      await controller.create(createDto, differentMockRequest);
+      await expect(controller.createManyWithGameModes(mockRequest, dto)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(service.createManyWithGameModes).toHaveBeenCalledWith(
+        dto.sportPreferences,
+        'user-uid-1',
+      );
+    });
 
-      expect(service.create).toHaveBeenCalledWith({
-        sport: Sport.FOOTBALL,
-        level: UserSportLevel.INTERMEDIATE,
-        userUid: 'different-user-uid',
-      });
+    it('should resolve with void when service succeeds', async () => {
+      const dto: CreateSportPreferenceDto = {
+        sportPreferences: [
+          {
+            sport: Sport.TENNIS,
+            level: UserSportLevel.ADVANCED,
+            gameModes: [GameModes.ONE_V_ONE],
+          },
+        ],
+      };
+
+      mockUserSportPreferencesService.createManyWithGameModes.mockResolvedValue(undefined);
+
+      const result = await controller.createManyWithGameModes(mockRequest, dto);
+
+      expect(result).toBeUndefined();
     });
   });
 
@@ -297,37 +255,14 @@ describe('SportPreferencesController', () => {
     const mockRequest = {
       user: { uid: 'user-uid-1' },
     } as any;
-    const sportPreferenceUid = 'sport-pref-uid-1';
 
-    it('should remove a sport preference successfully', async () => {
-      mockUserSportPreferencesService.remove.mockResolvedValue(undefined);
+    it('should call service.clearPreferences with user uid from request', async () => {
+      mockUserSportPreferencesService.clearPreferences.mockResolvedValue(undefined);
 
-      const result = await controller.remove(sportPreferenceUid, mockRequest);
+      await controller.remove(mockRequest);
 
-      expect(result).toBeUndefined();
-      expect(service.remove).toHaveBeenCalledWith(sportPreferenceUid, 'user-uid-1');
-    });
-
-    it('should propagate NotFoundException when sport preference does not exist', async () => {
-      mockUserSportPreferencesService.remove.mockRejectedValue(
-        new NotFoundException('Sport preference not found'),
-      );
-
-      await expect(controller.remove('non-existent-uid', mockRequest)).rejects.toThrow(
-        NotFoundException,
-      );
-      expect(service.remove).toHaveBeenCalledWith('non-existent-uid', 'user-uid-1');
-    });
-
-    it('should propagate NotFoundException when userUid does not match', async () => {
-      mockUserSportPreferencesService.remove.mockRejectedValue(
-        new NotFoundException('Sport preference not found'),
-      );
-
-      await expect(controller.remove(sportPreferenceUid, mockRequest)).rejects.toThrow(
-        NotFoundException,
-      );
-      expect(service.remove).toHaveBeenCalledWith(sportPreferenceUid, 'user-uid-1');
+      expect(service.clearPreferences).toHaveBeenCalledTimes(1);
+      expect(service.clearPreferences).toHaveBeenCalledWith('user-uid-1');
     });
 
     it('should extract userUid from request object', async () => {
@@ -335,25 +270,11 @@ describe('SportPreferencesController', () => {
         user: { uid: 'different-user-uid' },
       } as any;
 
-      mockUserSportPreferencesService.remove.mockResolvedValue(undefined);
+      mockUserSportPreferencesService.clearPreferences.mockResolvedValue(undefined);
 
-      await controller.remove(sportPreferenceUid, differentMockRequest);
+      await controller.remove(differentMockRequest);
 
-      expect(service.remove).toHaveBeenCalledWith(sportPreferenceUid, 'different-user-uid');
-    });
-
-    it('should handle removal of multiple sport preferences', async () => {
-      const sportPreferenceUids = ['sport-pref-uid-1', 'sport-pref-uid-2', 'sport-pref-uid-3'];
-
-      for (const uid of sportPreferenceUids) {
-        mockUserSportPreferencesService.remove.mockResolvedValue(undefined);
-
-        await controller.remove(uid, mockRequest);
-
-        expect(service.remove).toHaveBeenCalledWith(uid, 'user-uid-1');
-
-        jest.clearAllMocks();
-      }
+      expect(service.clearPreferences).toHaveBeenCalledWith('different-user-uid');
     });
   });
 });
