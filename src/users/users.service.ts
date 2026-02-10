@@ -150,7 +150,9 @@ export class UsersService {
 
   async findOne(uid: string, select: Prisma.UsersSelect): Promise<Users> {
     const existingUser = await this.prismaService.users.findUnique({
-      select,
+      select: {
+        ...select,
+      },
       where: { uid },
     });
 
@@ -158,11 +160,7 @@ export class UsersService {
       return null;
     }
 
-    const imageUrl = existingUser.imageUrl
-      ? await this.storageService.getSignedUrl(StorageFolderName.USERS, existingUser.imageUrl)
-      : '';
-
-    return { ...existingUser, imageUrl };
+    return existingUser;
   }
 
   /**

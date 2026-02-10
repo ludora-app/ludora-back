@@ -128,16 +128,16 @@ export class ConversationsController {
   @ApiForbiddenResponse({ type: ForbiddenResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @ApiQuery({
+    description: 'Cursor for pagination',
     name: 'cursor',
     required: false,
     type: String,
-    description: 'Cursor for pagination',
   })
   @ApiQuery({
+    description: 'Limit of messages to return',
     name: 'limit',
     required: false,
     type: Number,
-    description: 'Limit of messages to return',
   })
   @HttpCode(HttpStatus.OK)
   async loadMoreMessages(

@@ -308,10 +308,7 @@ export class PaymentService {
 
   async getBankAccount(userUid: string, bankAccountId: string): Promise<Stripe.ExternalAccount> {
     try {
-      const user = await this.prismaService.users.findUnique({
-        select: { stripeAccountId: true },
-        where: { uid: userUid },
-      });
+      const user = await this.usersService.findOne(userUid, USERSELECT.stripeAccountId);
 
       if (!user) {
         throw new NotFoundException('User not found');
@@ -337,10 +334,7 @@ export class PaymentService {
     bankDetails: UpdateBankDetailsDto,
   ): Promise<void> {
     try {
-      const user = await this.prismaService.users.findUnique({
-        select: { stripeAccountId: true },
-        where: { uid: userUid },
-      });
+      const user = await this.usersService.findOne(userUid, USERSELECT.stripeAccountId);
 
       if (!user) {
         throw new NotFoundException('User not found');
@@ -360,10 +354,7 @@ export class PaymentService {
 
   async deleteBankAccount(userUid: string, bankAccountId: string): Promise<void> {
     try {
-      const user = await this.prismaService.users.findUnique({
-        select: { stripeAccountId: true },
-        where: { uid: userUid },
-      });
+      const user = await this.usersService.findOne(userUid, USERSELECT.stripeAccountId);
 
       if (!user) {
         throw new NotFoundException('User not found');

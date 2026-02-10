@@ -455,7 +455,7 @@ describe('PaymentService', () => {
           status: 'verified',
         };
 
-        mockPrismaService.users.findUnique.mockResolvedValue(mockUser);
+        mockUsersService.findOne.mockResolvedValue(mockUser);
         mockStripe.accounts.retrieveExternalAccount.mockResolvedValue(mockBankAccount);
 
         const result = await service.getBankAccount(userId, bankAccountId);
@@ -477,7 +477,7 @@ describe('PaymentService', () => {
           defaultForCurrency: true,
         };
 
-        mockPrismaService.users.findUnique.mockResolvedValue(mockUser);
+        mockUsersService.findOne.mockResolvedValue(mockUser);
         mockStripe.accounts.updateExternalAccount.mockResolvedValue({ id: bankAccountId });
 
         await service.updateDefaultBankAccount(userId, bankAccountId, updateDetails);
@@ -496,7 +496,7 @@ describe('PaymentService', () => {
           stripeAccountId: 'account-1',
         };
 
-        mockPrismaService.users.findUnique.mockResolvedValue(mockUser);
+        mockUsersService.findOne.mockResolvedValue(mockUser);
         mockStripe.accounts.deleteExternalAccount.mockResolvedValue({ deleted: true });
 
         await service.deleteBankAccount(userId, bankAccountId);

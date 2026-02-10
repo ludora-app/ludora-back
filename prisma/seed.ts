@@ -2151,8 +2151,12 @@ async function seed() {
     });
 
     // Créer la conversation de session
-    const groupConversation = await prisma.conversations.create({
-      data: {
+    const groupConversation = await prisma.conversations.upsert({
+      where: { sessionUid: session.uid },
+      update: {
+        name: session.title || `Session ${session.sport}`,
+      },
+      create: {
         type: ConversationType.SESSION,
         sessionUid: session.uid,
         name: session.title || `Session ${session.sport}`,
@@ -2161,8 +2165,17 @@ async function seed() {
 
     // Ajouter tous les participants comme membres de la conversation
     for (const userUid of participantUids) {
-      await prisma.conversationMembers.create({
-        data: {
+      await prisma.conversationMembers.upsert({
+        where: {
+          conversationUid_userUid: {
+            conversationUid: groupConversation.uid,
+            userUid: userUid,
+          },
+        },
+        update: {
+          isAdmin: userUid === session.creatorUid,
+        },
+        create: {
           conversationUid: groupConversation.uid,
           userUid: userUid,
           isAdmin: userUid === session.creatorUid, // Le créateur est admin

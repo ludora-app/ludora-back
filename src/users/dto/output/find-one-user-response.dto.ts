@@ -3,7 +3,7 @@ import { Sex, UserType } from 'generated/prisma/client';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { SimpleSportPreferenceResponseDto } from 'src/user-preferences/dto/output/simple-sport-preference-response.dto';
 
-export class FindOneUserResponseDataDto {
+export class FindOneUserResponseData {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
   readonly uid: string;
 
@@ -22,29 +22,22 @@ export class FindOneUserResponseDataDto {
   @ApiProperty({ example: 'https://example.com/image.jpg', nullable: true, readOnly: true })
   readonly imageUrl?: string;
 
-  @ApiProperty({ example: [{ sport: 'BASKETBALL' }], nullable: true, readOnly: true })
-  readonly userSports?: { sport: string }[];
+  @ApiProperty({
+    example: [{ sport: 'BASKETBALL' }],
+    isArray: true,
+    nullable: true,
+    readOnly: true,
+  })
+  readonly sportPreferences?: SimpleSportPreferenceResponseDto[];
+
+  @ApiProperty({ example: 42, readOnly: true })
+  readonly friendsCount?: number;
+
+  @ApiProperty({ example: 12, readOnly: true })
+  readonly matchesCount?: number;
 }
 
-export class FindMeUserResponseData {
-  @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
-  readonly uid: string;
-
-  @ApiProperty({ example: 'Toto', readOnly: true })
-  readonly firstname: string;
-
-  @ApiProperty({ example: 'Lolo', readOnly: true })
-  readonly lastname: string;
-
-  @ApiProperty({ example: null, nullable: true, readOnly: true })
-  readonly name?: string;
-
-  @ApiProperty({ example: 'I am a good person', nullable: true, readOnly: true })
-  readonly bio?: string;
-
-  @ApiProperty({ example: 'https://example.com/image.jpg', nullable: true, readOnly: true })
-  readonly imageUrl?: string;
-
+export class FindMeUserResponseData extends FindOneUserResponseData {
   @ApiProperty({ example: 'toto@gmail.com', nullable: true, readOnly: true })
   readonly email?: string;
 
@@ -64,10 +57,7 @@ export class FindMeUserResponseData {
   readonly type: UserType;
 
   @ApiProperty({ example: null, nullable: true, readOnly: true })
-  readonly stripeAccountUid?: string;
-
-  @ApiProperty({ example: [{ sport: 'BASKETBALL' }], nullable: true, readOnly: true })
-  readonly sportPreferences?: SimpleSportPreferenceResponseDto[];
+  readonly stripeAccountId?: string;
 
   @ApiProperty({ example: true, nullable: false, readOnly: true, required: false })
   readonly isEmailVerified?: boolean;
@@ -81,7 +71,7 @@ export class FindMeUserResponseDto extends ResponseTypeDto<FindMeUserResponseDat
   readonly data: FindMeUserResponseData;
 }
 
-export class FindOneUserResponseDto extends ResponseTypeDto<FindOneUserResponseDataDto> {
-  @ApiProperty({ type: FindOneUserResponseDataDto })
-  readonly data: FindOneUserResponseDataDto;
+export class FindOneUserResponseDto extends ResponseTypeDto<FindOneUserResponseData> {
+  @ApiProperty({ type: FindOneUserResponseData })
+  readonly data: FindOneUserResponseData;
 }
