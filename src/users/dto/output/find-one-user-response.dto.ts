@@ -1,7 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Sport } from 'src/shared/constants/constants';
 import { Sex, UserType } from 'generated/prisma/client';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { SimpleSportPreferenceResponseDto } from 'src/user-preferences/dto/output/simple-sport-preference-response.dto';
+
+export class UserSportPreferencesDto {
+  @ApiProperty({ enum: Sport, example: Sport.BASKETBALL, readOnly: true })
+  readonly sport: Sport;
+}
 
 export class FindOneUserResponseDataDto {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
@@ -22,8 +28,19 @@ export class FindOneUserResponseDataDto {
   @ApiProperty({ example: 'https://example.com/image.jpg', nullable: true, readOnly: true })
   readonly imageUrl?: string;
 
-  @ApiProperty({ example: [{ sport: 'BASKETBALL' }], nullable: true, readOnly: true })
-  readonly userSports?: { sport: string }[];
+  @ApiProperty({
+    example: [{ sport: 'BASKETBALL' }],
+    nullable: true,
+    readOnly: true,
+    type: [UserSportPreferencesDto],
+  })
+  readonly userSportPreferences?: UserSportPreferencesDto[];
+
+  @ApiProperty({ example: 42, readOnly: true })
+  readonly friendsCount?: number;
+
+  @ApiProperty({ example: 12, readOnly: true })
+  readonly matchesCount?: number;
 }
 
 export class FindMeUserResponseData {
@@ -66,7 +83,12 @@ export class FindMeUserResponseData {
   @ApiProperty({ example: null, nullable: true, readOnly: true })
   readonly stripeAccountUid?: string;
 
-  @ApiProperty({ example: [{ sport: 'BASKETBALL' }], nullable: true, readOnly: true })
+  @ApiProperty({
+    example: [{ sport: 'BASKETBALL' }],
+    isArray: true,
+    nullable: true,
+    readOnly: true,
+  })
   readonly sportPreferences?: SimpleSportPreferenceResponseDto[];
 
   @ApiProperty({ example: true, nullable: false, readOnly: true, required: false })
@@ -74,6 +96,11 @@ export class FindMeUserResponseData {
 
   @ApiProperty({ example: 'INCOMPLETE', nullable: false, readOnly: true })
   readonly profileStatus: 'COMPLETE' | 'INCOMPLETE';
+  @ApiProperty({ example: 42, readOnly: true })
+  readonly friendsCount?: number;
+
+  @ApiProperty({ example: 12, readOnly: true })
+  readonly matchesCount?: number;
 }
 
 export class FindMeUserResponseDto extends ResponseTypeDto<FindMeUserResponseData> {

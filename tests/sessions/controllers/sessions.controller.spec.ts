@@ -445,7 +445,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
 
-      const result = await controller.findAllByUserUid(mockRequest, filters);
+      const result = await controller.findAllByUserUid('user-uid-1', filters);
 
       expect(result).toEqual({
         data: {
@@ -471,7 +471,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
 
-      const result = await controller.findAllByUserUid(mockRequest, filters);
+      const result = await controller.findAllByUserUid('user-uid-1', filters);
 
       expect(result).toEqual({
         data: {
@@ -495,7 +495,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
 
-      const result = await controller.findAllByUserUid(mockRequest, filters);
+      const result = await controller.findAllByUserUid('user-uid-1', filters);
 
       expect(result).toEqual({
         data: {
@@ -522,7 +522,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
 
-      const result = await controller.findAllByUserUid(mockRequest, filters);
+      const result = await controller.findAllByUserUid('user-uid-1', filters);
 
       expect(result).toEqual({
         data: {
@@ -548,7 +548,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
 
-      const result = await controller.findAllByUserUid(mockRequest, filters);
+      const result = await controller.findAllByUserUid('user-uid-1', filters);
 
       expect(result).toEqual({
         data: {
@@ -574,7 +574,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
 
-      const result = await controller.findAllByUserUid(mockRequest, filters);
+      const result = await controller.findAllByUserUid('user-uid-1', filters);
 
       expect(result).toEqual({
         data: {
@@ -600,7 +600,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
 
-      const result = await controller.findAllByUserUid(mockRequest, filters);
+      const result = await controller.findAllByUserUid('user-uid-1', filters);
 
       expect(result).toEqual({
         data: {
@@ -626,7 +626,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
 
-      const result = await controller.findAllByUserUid(mockRequest, filters);
+      const result = await controller.findAllByUserUid('user-uid-1', filters);
 
       expect(result).toEqual({
         data: {
@@ -652,7 +652,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
 
-      const result = await controller.findAllByUserUid(mockRequest, filters);
+      const result = await controller.findAllByUserUid('user-uid-1', filters);
 
       expect(result).toEqual({
         data: {
@@ -681,7 +681,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
 
-      const result = await controller.findAllByUserUid(mockRequest, filters);
+      const result = await controller.findAllByUserUid('user-uid-1', filters);
 
       expect(result).toEqual({
         data: {
@@ -707,7 +707,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.findAllByUserUid.mockResolvedValue(sessionsData);
 
-      const result = await controller.findAllByUserUid(mockRequest, filters);
+      const result = await controller.findAllByUserUid('user-uid-1', filters);
 
       expect(result).toEqual({
         data: {

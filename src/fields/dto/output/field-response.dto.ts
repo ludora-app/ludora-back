@@ -53,7 +53,12 @@ export class FieldResponseDto {
   @ApiPropertyOptional({ description: 'name of the field', example: 'Hoopsfactory - Court 2' })
   readonly name?: string;
 
-  @ApiProperty({ description: 'sports of the field', example: [Sport.BASKETBALL, Sport.FOOTBALL] })
+  @ApiProperty({
+    description: 'sports of the field',
+    enum: Sport,
+    example: [Sport.BASKETBALL, Sport.FOOTBALL],
+    isArray: true,
+  })
   readonly sports: Sport[];
 
   @ApiProperty({
@@ -107,7 +112,12 @@ export class FindOneFieldResponseData {
   })
   readonly status: VerificationStatus;
 
-  @ApiProperty({ description: 'sports of the field', example: [Sport.BASKETBALL, Sport.FOOTBALL] })
+  @ApiProperty({
+    description: 'sports of the field',
+    enum: Sport,
+    example: [Sport.BASKETBALL, Sport.FOOTBALL],
+    isArray: true,
+  })
   readonly sports: Sport[];
 
   @ApiPropertyOptional({ description: 'uid of the partner', example: 'cmjzyy8j300084jt3dc8pswsu' })

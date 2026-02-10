@@ -120,7 +120,7 @@ export class UsersController {
     type: NotFoundResponseDto,
   })
   @Public()
-  async findOne(@Param('uid') uid: string): Promise<ResponseTypeDto<Users>> {
+  async findOne(@Param('uid') uid: string): Promise<ResponseTypeDto<FindMeUserResponseData>> {
     const data = await this.usersService.findOne(uid, USERSELECT.findOne);
 
     if (!data) {
