@@ -53,7 +53,7 @@ export class AuthB2CService {
     registerDto: RegisterB2CDto,
     createImageDto?: CreateImageDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    const { deviceUid, type } = registerDto;
+    const { type } = registerDto;
 
     const result = await this.prismaService.$transaction(async (tx) => {
       let newUser;
@@ -86,10 +86,9 @@ export class AuthB2CService {
         throw new BadRequestException('Invalid user type');
       }
 
-      const payload: { uid: string; deviceUid?: string; type?: 'access' | 'refresh' | 'reset' } = {
+      const payload: { uid: string; type?: 'access' | 'refresh' | 'reset' } = {
         uid: newUser.uid,
       };
-      if (deviceUid) payload.deviceUid = deviceUid;
 
       const accessToken = this.jwt.sign(
         { ...payload, type: TokenType.ACCESS },
@@ -103,7 +102,6 @@ export class AuthB2CService {
       // Create the access token
       await tx.userTokens.create({
         data: {
-          deviceUid,
           token: accessToken,
           userUid: newUser.uid,
         },
@@ -112,7 +110,6 @@ export class AuthB2CService {
       // Create the refresh token
       await tx.refreshTokens.create({
         data: {
-          deviceUid,
           expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
           token: refreshToken,
           userUid: newUser.uid,
@@ -216,7 +213,7 @@ export class AuthB2CService {
 
   async login(loginDto: LoginDto): Promise<{ accessToken: string; refreshToken: string }> {
     try {
-      const { deviceUid, email, password } = loginDto;
+      const { email, password } = loginDto;
       const formattedEmail = email.toLowerCase();
 
       const user = await this.userService.findOneByEmail(formattedEmail, USERSELECT.login);
@@ -229,7 +226,7 @@ export class AuthB2CService {
         throw new BadRequestException('Invalid credentials');
       }
 
-      const payload = { uid: user.uid, ...(deviceUid && { deviceUid }) };
+      const payload = { uid: user.uid };
       const accessToken = this.jwt.sign(
         { ...payload, type: TokenType.ACCESS },
         { expiresIn: this.TOKEN_EXPIRATION_TIME },
@@ -239,118 +236,23 @@ export class AuthB2CService {
         { expiresIn: '1year' },
       );
 
-      // Optimisation: Paralléliser les requêtes DB indépendantes
-      const [existingTokens, existingRefreshTokens] = await Promise.all([
-        this.prismaService.userTokens.findMany({
-          orderBy: { createdAt: 'asc' },
-          where: { userUid: user.uid },
-        }),
-        this.prismaService.refreshTokens.findMany({
-          orderBy: { createdAt: 'asc' },
-          where: { userUid: user.uid },
-        }),
-      ]);
-
-      const tokenWithDeviceUid = existingTokens.find((token) => token.deviceUid !== null);
-      const tokensWithoutDeviceUid = existingTokens.filter((token) => !token.deviceUid);
-      const refreshTokenWithDeviceUid = existingRefreshTokens.find(
-        (token) => token.deviceUid !== null,
-      );
-      const refreshTokensWithoutDeviceUid = existingRefreshTokens.filter(
-        (token) => !token.deviceUid,
-      );
-
       // Token management with transaction to ensure atomicity
       await this.prismaService.$transaction(async (prisma) => {
-        if (deviceUid) {
-          if (tokenWithDeviceUid) {
-            // Update existing token with deviceUid
-            await prisma.userTokens.update({
-              data: { token: accessToken },
-              where: { uid: tokenWithDeviceUid.uid },
-            });
-          } else {
-            // Create a new token with deviceUid
-            await prisma.userTokens.create({
-              data: {
-                deviceUid,
-                token: accessToken,
-                userUid: user.uid,
-              },
-            });
-          }
-        } else {
-          // Token management without deviceUid
-          if (tokensWithoutDeviceUid.length >= 1) {
-            // Delete the oldest token without deviceUid
-            // Use try/catch to avoid race condition errors
-            // If the token has already been deleted by another request, ignore the error
-            try {
-              await prisma.userTokens.delete({
-                where: { uid: tokensWithoutDeviceUid[0].uid },
-              });
-            } catch {
-              // If the token no longer exists (already deleted by another concurrent request),
-              // continue without error
-              // This can happen during load tests with multiple simultaneous requests
-            }
-          }
+        await prisma.userTokens.create({
+          data: {
+            token: accessToken,
+            userUid: user.uid,
+          },
+        });
 
-          // Create new token without deviceUid
-          await prisma.userTokens.create({
-            data: {
-              token: accessToken,
-              userUid: user.uid,
-            },
-          });
-        }
-
-        if (deviceUid) {
-          if (refreshTokenWithDeviceUid) {
-            // Update existing refresh token with deviceUid
-            await prisma.refreshTokens.update({
-              data: {
-                expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
-                token: refreshToken,
-              },
-              where: { uid: refreshTokenWithDeviceUid.uid },
-            });
-          } else {
-            // Create a new refresh token with deviceUid
-            await prisma.refreshTokens.create({
-              data: {
-                deviceUid,
-                expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
-                token: refreshToken,
-                userUid: user.uid,
-              },
-            });
-          }
-        } else {
-          // Refresh token management without deviceUid
-          if (refreshTokensWithoutDeviceUid.length >= 1) {
-            // Delete the oldest refresh token without deviceUid
-            // Use try/catch to avoid race condition errors
-            try {
-              await prisma.refreshTokens.delete({
-                where: { uid: refreshTokensWithoutDeviceUid[0].uid },
-              });
-            } catch {
-              // If the token no longer exists (already deleted by another concurrent request),
-              // continue without error
-              // This can happen during load tests with multiple simultaneous requests
-            }
-          }
-
-          // Create new refresh token without deviceUid
-          await prisma.refreshTokens.create({
-            data: {
-              expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
-              token: refreshToken,
-              userUid: user.uid,
-            },
-          });
-        }
+        // Create new refresh token
+        await prisma.refreshTokens.create({
+          data: {
+            expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
+            token: refreshToken,
+            userUid: user.uid,
+          },
+        });
       });
 
       return { accessToken, refreshToken };
@@ -520,7 +422,7 @@ export class AuthB2CService {
     try {
       // Verify and decode the refresh token
       const payload = await this.jwt.verifyAsync(refreshToken);
-      const { deviceUid, uid: userUid } = payload;
+      const { uid: userUid } = payload;
 
       if (!userUid) {
         throw new UnauthorizedException('Invalid refresh token');
@@ -552,7 +454,7 @@ export class AuthB2CService {
       }
 
       // Generate new tokens
-      const newPayload = { uid: userUid, ...(deviceUid && { deviceUid }) };
+      const newPayload = { uid: userUid };
       const newAccessToken = this.jwt.sign(
         { ...newPayload, type: TokenType.ACCESS },
         { expiresIn: this.TOKEN_EXPIRATION_TIME },
@@ -572,7 +474,6 @@ export class AuthB2CService {
         // Create the new refresh token
         await tx.refreshTokens.create({
           data: {
-            deviceUid,
             expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
             token: newRefreshToken,
             userUid: userUid,
@@ -581,7 +482,7 @@ export class AuthB2CService {
 
         // Update the access token
         const existingAccessToken = await tx.userTokens.findFirst({
-          where: { deviceUid: deviceUid || null, userUid: userUid },
+          where: { userUid: userUid },
         });
 
         if (existingAccessToken) {
@@ -592,7 +493,6 @@ export class AuthB2CService {
         } else {
           await tx.userTokens.create({
             data: {
-              deviceUid,
               token: newAccessToken,
               userUid: userUid,
             },
@@ -612,27 +512,15 @@ export class AuthB2CService {
   /**
    * Logout user by invalidating all tokens
    * @param userUid - The user uid
-   * @param deviceUid - Optional device uid for device-specific logout
    */
-  async logout(userUid: string, deviceUid?: string): Promise<void> {
+  async logout(userUid: string): Promise<void> {
     await this.prismaService.$transaction(async (tx) => {
-      if (deviceUid) {
-        // Device-specific logout
-        await tx.userTokens.deleteMany({
-          where: { deviceUid, userUid },
-        });
-        await tx.refreshTokens.deleteMany({
-          where: { deviceUid, userUid },
-        });
-      } else {
-        // Logout from all devices
-        await tx.userTokens.deleteMany({
-          where: { userUid },
-        });
-        await tx.refreshTokens.deleteMany({
-          where: { userUid },
-        });
-      }
+      await tx.userTokens.deleteMany({
+        where: { userUid },
+      });
+      await tx.refreshTokens.deleteMany({
+        where: { userUid },
+      });
     });
   }
 

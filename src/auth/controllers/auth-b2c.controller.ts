@@ -262,8 +262,8 @@ export class AuthB2CController {
   })
   @HttpCode(HttpStatus.OK)
   async logout(@Request() req): Promise<LogoutResponseDto> {
-    const { deviceUid, uid } = req.user;
-    await this.authService.logout(uid, deviceUid);
+    const { uid } = req.user;
+    await this.authService.logout(uid);
 
     return {
       message: 'Logged out successfully',
