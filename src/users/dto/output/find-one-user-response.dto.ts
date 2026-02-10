@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Sex, UserType } from 'generated/prisma/client';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { SimpleSportPreferenceResponseDto } from 'src/user-preferences/dto/output/simple-sport-preference-response.dto';
 
 export class FindOneUserResponseDataDto {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
@@ -63,13 +64,16 @@ export class FindMeUserResponseDataDto {
   readonly type: UserType;
 
   @ApiProperty({ example: null, nullable: true, readOnly: true })
-  readonly stripe_account_uid?: string;
+  readonly stripeAccountUid?: string;
 
   @ApiProperty({ example: [{ sport: 'BASKETBALL' }], nullable: true, readOnly: true })
-  readonly userSports?: { sport: string }[];
+  readonly sportPreferences?: SimpleSportPreferenceResponseDto[];
 
   @ApiProperty({ example: true, nullable: false, readOnly: true, required: false })
   readonly isEmailVerified?: boolean;
+
+  @ApiProperty({ example: 'INCOMPLETE', nullable: false, readOnly: true })
+  readonly profileStatus: 'COMPLETE' | 'INCOMPLETE';
 }
 
 export class FindMeUserResponseDto extends ResponseTypeDto<FindMeUserResponseDataDto> {

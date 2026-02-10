@@ -319,6 +319,57 @@ describe('UsersService', () => {
     });
   });
 
+  describe('updateEmail', () => {
+    it('should update email successfully', async () => {
+      const newEmail = 'newemail@test.com';
+
+      mockPrismaService.users.findUnique.mockResolvedValueOnce({
+        uid: '1',
+        email: 'oldemail@test.com',
+        firstname: 'John',
+      });
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
+      mockPrismaService.users.update.mockResolvedValueOnce({
+        uid: '1',
+        email: newEmail,
+      });
+
+      const result = await service.updateEmail('1', newEmail);
+
+      expect(result).toBeUndefined();
+      expect(mockPrismaService.users.update).toHaveBeenCalledWith({
+        data: { email: newEmail },
+        where: { uid: '1' },
+      });
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      const newEmail = 'newemail@test.com';
+
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
+
+      await expect(service.updateEmail('1', newEmail)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ConflictException if email already exists', async () => {
+      const newEmail = 'existing@test.com';
+
+      mockPrismaService.users.findUnique.mockResolvedValueOnce({
+        uid: '1',
+        email: 'oldemail@test.com',
+        firstname: 'John',
+      });
+      mockPrismaService.users.findUnique.mockResolvedValueOnce({
+        uid: '2',
+        email: newEmail,
+        firstname: 'Jane',
+      });
+
+      await expect(service.updateEmail('1', newEmail)).rejects.toThrow(ConflictException);
+      expect(mockPrismaService.users.update).not.toHaveBeenCalled();
+    });
+  });
+
   describe('deactivate', () => {
     it('should deactivate user successfully', async () => {
       mockPrismaService.users.findUnique.mockResolvedValueOnce({ uid: '1' });

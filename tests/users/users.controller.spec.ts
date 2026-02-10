@@ -5,6 +5,7 @@ import { UsersController } from 'src/users/users.controller';
 import { UsersService } from 'src/users/users.service';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { PasswordResetRequestDto } from 'src/users/dto/input/password-reset-request.dto';
+import { UpdateUserEmailDto } from 'src/users/dto/input/update-user.dto';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -18,6 +19,7 @@ describe('UsersController', () => {
     remove: jest.fn(),
     update: jest.fn(),
     updatePassword: jest.fn(),
+    updateEmail: jest.fn(),
     sendCodeForPasswordResetRequest: jest.fn(),
   };
 
@@ -28,6 +30,23 @@ describe('UsersController', () => {
     imageUrl: 'test-url',
     lastname: 'Doe',
     name: 'Test User',
+  };
+
+  const mockUserFindMe = {
+    bio: 'test bio',
+    birthdate: new Date('1990-01-01'),
+    email: 'test@test.com',
+    firstname: 'John',
+    imageUrl: 'test-url',
+    isConnected: true,
+    isEmailVerified: true,
+    lastname: 'Doe',
+    phone: '+33612345678',
+    stripeAccountId: 'stripe_123',
+    type: 'PLAYER',
+    uid: '1',
+    userHourPreferences: [],
+    userSportPreferences: [],
   };
 
   const mockAuthGuard = {
@@ -95,14 +114,15 @@ describe('UsersController', () => {
         user: { uid: '1' },
       };
 
-      mockUsersService.findOne.mockResolvedValue(mockUser);
+      mockUsersService.findOne.mockResolvedValue(mockUserFindMe);
 
       const result = await controller.findMe(mockRequest as any);
 
-      expect(result).toEqual({
-        data: mockUser,
-        message: 'User fetched successfully',
-      });
+      expect(result.data).toBeDefined();
+      expect(result.data.uid).toBe('1');
+      expect(result.data.email).toBe('test@test.com');
+      expect(result.data.profileStatus).toBe('INCOMPLETE');
+      expect(result.message).toBe('User fetched successfully');
       expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findMe);
     });
   });
@@ -176,6 +196,38 @@ describe('UsersController', () => {
         message: 'User password updated successfully',
       });
       expect(service.updatePassword).toHaveBeenCalledWith('1', updatePasswordDto);
+    });
+  });
+
+  describe('updateEmail', () => {
+    it('should update user email', async () => {
+      const mockRequest = {
+        user: { uid: '1' },
+      };
+      const updateEmailDto: UpdateUserEmailDto = {
+        email: 'newemail@test.com',
+      };
+      mockUsersService.updateEmail.mockResolvedValue(undefined);
+
+      const result = await controller.updateEmail(mockRequest as any, updateEmailDto);
+
+      expect(result).toBeUndefined();
+      expect(service.updateEmail).toHaveBeenCalledWith('1', 'newemail@test.com');
+    });
+
+    it('should handle errors from service', async () => {
+      const mockRequest = {
+        user: { uid: '1' },
+      };
+      const updateEmailDto: UpdateUserEmailDto = {
+        email: 'newemail@test.com',
+      };
+      mockUsersService.updateEmail.mockRejectedValue(new Error('Email update failed'));
+
+      await expect(controller.updateEmail(mockRequest as any, updateEmailDto)).rejects.toThrow(
+        'Email update failed',
+      );
+      expect(service.updateEmail).toHaveBeenCalledWith('1', 'newemail@test.com');
     });
   });
 
