@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class UserFilterDto {
   @IsOptional()
@@ -11,6 +11,7 @@ export class UserFilterDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(50)
   @ApiProperty({
     description: 'Limit of users to return',
     example: 10,

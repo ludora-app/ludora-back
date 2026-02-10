@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { InvitationStatus } from 'generated/prisma/client';
-import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class SessionInvitationFilterDto {
   @IsString()
@@ -16,6 +16,7 @@ export class SessionInvitationFilterDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(50)
   @ApiProperty({
     description: 'Limit of session invitations to return',
     example: 10,
