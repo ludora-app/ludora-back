@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { GameModes } from 'generated/prisma/enums';
 import { UserSportLevel } from 'src/shared/constants/constants';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
@@ -20,8 +21,13 @@ export class SportPreferenceResponseData {
   })
   level: UserSportLevel;
 
-  @ApiProperty({ description: 'The creation date of the user sport preference' })
-  createdAt: Date;
+  @ApiProperty({
+    description: 'The game modes for this sport',
+    enum: GameModes,
+    example: [GameModes.THREE_V_THREE, GameModes.FIVE_V_FIVE],
+    isArray: true,
+  })
+  gameModes: GameModes[];
 }
 
 export class SportPreferenceResponseDto extends ResponseTypeDto<SportPreferenceResponseData> {

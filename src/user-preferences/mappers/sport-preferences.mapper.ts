@@ -9,7 +9,6 @@ export interface SportPreferenceWithGameModes {
   level: number;
   userGameModePreferences: {
     gameMode: GameModes;
-    sport: string;
     uid: string;
   }[];
 }

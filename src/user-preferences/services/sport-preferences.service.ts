@@ -5,11 +5,9 @@ import { USERSELECT } from 'src/shared/constants/select-user';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
+import { SportPreferencesMapper } from '../mappers/sport-preferences.mapper';
+import { CreateSportPreferenceData } from '../dto/input/create-sport-preference.dto';
 import { SportPreferenceResponseData } from '../dto/output/sport-preference.response.dto';
-import {
-  CreateSportPreferenceDto,
-  CreateSportWithGameModePreferenceDto,
-} from '../dto/input/create-sport-preference.dto';
 
 @Injectable()
 export class SportPreferencesService {
@@ -20,32 +18,6 @@ export class SportPreferencesService {
   ) {
     this.logger.setContext(SportPreferencesService.name);
   }
-  async create(
-    createSportPreferenceDto: CreateSportPreferenceDto,
-  ): Promise<SportPreferenceResponseData> {
-    const { level, sport, userUid } = createSportPreferenceDto;
-    const existingUser = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
-
-    if (!existingUser) {
-      this.logger.error(`User not found: ${userUid}`);
-      throw new NotFoundException('User not found');
-    }
-
-    const existingSportPreference = await this.prisma.userSportPreferences.findFirst({
-      where: { sport, userUid },
-    });
-
-    if (existingSportPreference) {
-      this.logger.error(`Sport preference already exists: ${sport} for user: ${userUid}`);
-      throw new BadRequestException('Sport preference already exists');
-    }
-
-    const newSportPreference = await this.prisma.userSportPreferences.create({
-      data: { level, sport, userUid },
-    });
-
-    return newSportPreference;
-  }
 
   async findAllByUserUid(userUid: string): Promise<PaginatedDataDto<SportPreferenceResponseData>> {
     const existingUser = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
@@ -55,95 +27,82 @@ export class SportPreferencesService {
     }
     const sportPreferences = await this.prisma.userSportPreferences.findMany({
       select: {
-        createdAt: true,
         level: true,
         sport: true,
         uid: true,
+        userGameModePreferences: {
+          select: {
+            gameMode: true,
+            uid: true,
+          },
+        },
       },
       where: { userUid },
     });
-    return { items: sportPreferences, nextCursor: null, totalCount: sportPreferences.length };
+
+    const sportPreferencesWithGameModes = sportPreferences.map((sportPreference) =>
+      SportPreferencesMapper.toSimpleDisplay(sportPreference),
+    );
+    return {
+      items: sportPreferencesWithGameModes,
+      nextCursor: null,
+      totalCount: sportPreferences.length,
+    };
   }
 
   async findOne(uid: string): Promise<SportPreferenceResponseData> {
     const existingSportPreference = await this.prisma.userSportPreferences.findUnique({
       select: {
-        createdAt: true,
         level: true,
         sport: true,
         uid: true,
+        userGameModePreferences: {
+          select: {
+            gameMode: true,
+            uid: true,
+          },
+        },
       },
       where: { uid },
     });
 
-    return existingSportPreference;
-  }
-
-  async remove(uid: string, userUid: string): Promise<void> {
-    const existingSportPreference = await this.prisma.userSportPreferences.findUnique({
-      where: { uid },
-    });
-
-    if (!existingSportPreference || existingSportPreference.userUid !== userUid) {
-      this.logger.error(`Sport preference not found: ${uid}`);
+    if (!existingSportPreference) {
       throw new NotFoundException('Sport preference not found');
     }
-
-    await this.prisma.userSportPreferences.delete({ where: { uid } });
-    this.logger.info(`Sport preference deleted: ${uid}`);
+    return SportPreferencesMapper.toSimpleDisplay(existingSportPreference);
   }
 
-  async createManyWithGameModes(
-    preferences: CreateSportWithGameModePreferenceDto[],
-    userUid: string,
-  ) {
-    for (const pref of preferences) {
-      await this.prisma.$transaction(async (tx) => {
-        const existingSportPreference = await tx.userSportPreferences.findFirst({
-          where: { sport: pref.sport, userUid },
-        });
-        // if the sport preference already exists and the level is the same, we don't need to create it again
-        if (existingSportPreference && existingSportPreference.level === pref.level) {
-          this.logger.warn(`Sport preference already exists: ${pref.sport} for user: ${userUid}`);
-          return;
-        }
-        // if the sport preference already exists and the level is different, we need to update it
-        if (existingSportPreference && existingSportPreference.level !== pref.level) {
-          await tx.userSportPreferences.update({
-            data: { level: pref.level },
-            where: { uid: existingSportPreference.uid },
-          });
-        }
-        // if the sport preference does not exist, we need to create it
-        await tx.userSportPreferences.create({
-          data: {
-            level: pref.level,
-            sport: pref.sport,
-            userUid,
-          },
-        });
+  /**
+   * Clears all the sport/game mode preferences of the connected user.
+   * UserGameModePreferences are deleted by DB cascade when UserSportPreferences are removed.
+   */
+  async clearPreferences(userUid: string): Promise<void> {
+    await this.prisma.userSportPreferences.deleteMany({ where: { userUid } });
+    this.logger.debug(`All sport preferences cleared for user: ${userUid}`);
+  }
 
+  async createManyWithGameModes(preferences: CreateSportPreferenceData[], userUid: string) {
+    await this.clearPreferences(userUid);
+    // Validate that each preference has a unique sport
+    const sports = preferences.map((pref) => pref.sport);
+    const uniqueSports = new Set(sports);
+
+    if (uniqueSports.size !== sports.length) {
+      this.logger.error(`Each sport preference must have a unique sport.`);
+      throw new BadRequestException('Each sport preference must have a unique sport.');
+    }
+    await this.prisma.$transaction(async (tx) => {
+      for (const pref of preferences) {
+        await tx.userSportPreferences.create({
+          data: { level: pref.level, sport: pref.sport, userUid },
+        });
         for (const gameMode of pref.gameModes) {
-          const existingGameModePreference = await tx.userGameModePreferences.findFirst({
-            where: { gameMode, sport: pref.sport, userUid },
-          });
-          // if the game mode preference already exists, we don't need to create it again
-          if (existingGameModePreference) {
-            this.logger.warn(
-              `Game mode preference already exists: ${gameMode} for user: ${userUid}`,
-            );
-            continue;
-          }
           await tx.userGameModePreferences.create({
-            data: {
-              gameMode,
-              sport: pref.sport,
-              userUid,
-            },
+            data: { gameMode, sport: pref.sport, userUid },
           });
         }
-      });
-    }
+      }
+    });
     this.logger.debug(`${preferences.length} sport preferences created`);
   }
 }

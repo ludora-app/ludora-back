@@ -1,3 +1,4 @@
+import { FastifyRequest } from 'fastify';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
@@ -7,18 +8,17 @@ import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-r
 import {
   Controller,
   Get,
-  Post,
-  Body,
   Param,
   Delete,
   Req,
   HttpCode,
   HttpStatus,
   UseGuards,
+  Put,
+  Body,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
-  ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -27,40 +27,16 @@ import {
 } from '@nestjs/swagger';
 
 import { SportPreferencesService } from '../services/sport-preferences.service';
-import { CreateSportPreferenceDtoFromRequest } from '../dto/input/create-sport-preference.dto';
+import { CreateSportPreferenceDto } from '../dto/input/create-sport-preference.dto';
 import {
   PaginatedSportPreferenceResponseDto,
   SportPreferenceResponseData,
-  SportPreferenceResponseDto,
 } from '../dto/output/sport-preference.response.dto';
 
 @Controller('sport-preferences')
 @UseGuards(AuthB2CGuard)
 export class SportPreferencesController {
   constructor(private readonly sportPreferencesService: SportPreferencesService) {}
-
-  @Post()
-  @Protected()
-  @ApiOperation({ summary: 'Create a user sport preference' })
-  @ApiCreatedResponse({ type: SportPreferenceResponseDto })
-  @ApiBadRequestResponse({ type: BadRequestResponseDto })
-  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  @ApiNotFoundResponse({ type: NotFoundResponseDto })
-  @HttpCode(HttpStatus.CREATED)
-  async create(
-    @Body() dto: CreateSportPreferenceDtoFromRequest,
-    @Req() request: Request,
-  ): Promise<SportPreferenceResponseDto> {
-    const userUid = request['user'].uid;
-    const data = await this.sportPreferencesService.create({
-      ...dto,
-      userUid,
-    });
-    return {
-      data,
-      message: 'User sport preference created successfully',
-    };
-  }
 
   @Get('list-by-user/:userUid')
   @Protected()
@@ -107,6 +83,17 @@ export class SportPreferencesController {
     };
   }
 
+  @Put()
+  @Protected()
+  @ApiOperation({ summary: 'Saves the sport preferences of the connected user' })
+  async createManyWithGameModes(
+    @Req() req: FastifyRequest,
+    @Body() dto: CreateSportPreferenceDto,
+  ): Promise<void> {
+    const userUid = req['user'].uid;
+    await this.sportPreferencesService.createManyWithGameModes(dto.sportPreferences, userUid);
+  }
+
   @Delete(':uid')
   @Protected()
   @ApiOperation({ summary: 'Delete a user sport preference by uid' })
@@ -114,8 +101,8 @@ export class SportPreferencesController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('uid') uid: string, @Req() request: Request): Promise<void> {
+  async remove(@Req() request: Request): Promise<void> {
     const userUid = request['user'].uid;
-    await this.sportPreferencesService.remove(uid, userUid);
+    await this.sportPreferencesService.clearPreferences(userUid);
   }
 }
