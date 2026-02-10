@@ -39,14 +39,17 @@ import {
 
 import { UsersService } from './users.service';
 import { USERSELECT } from '../shared/constants/select-user';
+import { UserMapper, RawUserFindMe } from './mappers/user.mapper';
 import { PasswordResetRequestDto } from './dto/input/password-reset-request.dto';
 import {
   FindAllUsersResponseDataDto,
   FindAllUsersResponseDto,
+  FindMeUserResponseData,
   FindMeUserResponseDto,
   FindOneUserResponseDto,
   UpdatePasswordDto,
   UpdateUserDto,
+  UpdateUserEmailDto,
   UserFilterDto,
 } from './dto';
 
@@ -148,7 +151,7 @@ export class UsersController {
     description: 'Token invalid: user missing',
     type: UnauthorizedResponseDto,
   })
-  async findMe(@Req() request: Request): Promise<ResponseTypeDto<Users>> {
+  async findMe(@Req() request: Request): Promise<ResponseTypeDto<FindMeUserResponseData>> {
     const uid = request['user'].uid;
 
     const data = await this.usersService.findOne(uid, USERSELECT.findMe);
@@ -156,8 +159,9 @@ export class UsersController {
     if (!data) {
       throw new NotFoundException('User not found');
     }
+    const user = UserMapper.toFindMeResponseDto(data as unknown as RawUserFindMe);
 
-    return { data, message: 'User fetched successfully' };
+    return { data: user, message: 'User fetched successfully' };
   }
 
   @Get('/email/:email')
@@ -249,6 +253,33 @@ export class UsersController {
   ): Promise<void> {
     const uid = request['user'].uid;
     return this.usersService.updatePassword(uid, updatePasswordDto);
+  }
+
+  @Patch('/update-email')
+  @Protected()
+  @ApiOperation({
+    summary: 'update email requires to be connected',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error updating email',
+    type: BadRequestResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
+  })
+  @ApiNoContentResponse({ description: 'Email updated successfully' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  updateEmail(
+    @Req() request: Request,
+    @Body() updateUserEmailDto: UpdateUserEmailDto,
+  ): Promise<void> {
+    const uid = request['user'].uid;
+    return this.usersService.updateEmail(uid, updateUserEmailDto.email);
   }
 
   @Patch('/deactivate')

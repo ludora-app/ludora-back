@@ -1,6 +1,6 @@
 import { Sex } from 'generated/prisma/client';
-import { ApiProperty } from '@nestjs/swagger';
 import { PartialType } from '@nestjs/mapped-types';
+import { ApiProperty, PickType } from '@nestjs/swagger';
 import { IsDateString, IsEnum, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
 
 import { CreateUserDto } from './create-user.dto';
@@ -74,3 +74,5 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   })
   file?: any;
 }
+
+export class UpdateUserEmailDto extends PickType(CreateUserDto, ['email']) {}

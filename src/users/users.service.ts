@@ -161,6 +161,7 @@ export class UsersService {
     const imageUrl = existingUser.imageUrl
       ? await this.storageService.getSignedUrl(StorageFolderName.USERS, existingUser.imageUrl)
       : '';
+
     return { ...existingUser, imageUrl };
   }
 
@@ -289,6 +290,22 @@ export class UsersService {
     } else {
       throw new BadRequestException('User not updated');
     }
+  }
+
+  async updateEmail(uid: string, email: string): Promise<void> {
+    const existingUser = await this.findOne(uid, USERSELECT.checkIfUserExistsByEmail);
+    if (!existingUser) throw new NotFoundException('User not found');
+
+    const existingUserWithEmail = await this.findOneByEmail(
+      email,
+      USERSELECT.checkIfUserExistsByEmail,
+    );
+    if (existingUserWithEmail) throw new ConflictException('Email already exists');
+
+    await this.prismaService.users.update({
+      data: { email },
+      where: { uid },
+    });
   }
 
   async deactivate(uid: string): Promise<void> {

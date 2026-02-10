@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Sex, UserType } from 'generated/prisma/client';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { SimpleSportPreferenceResponseDto } from 'src/user-preferences/dto/output/simple-sport-preference-response.dto';
 
 export class FindOneUserResponseDataDto {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
@@ -25,7 +26,7 @@ export class FindOneUserResponseDataDto {
   readonly userSports?: { sport: string }[];
 }
 
-export class FindMeUserResponseDataDto {
+export class FindMeUserResponseData {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
   readonly uid: string;
 
@@ -63,18 +64,21 @@ export class FindMeUserResponseDataDto {
   readonly type: UserType;
 
   @ApiProperty({ example: null, nullable: true, readOnly: true })
-  readonly stripe_account_uid?: string;
+  readonly stripeAccountUid?: string;
 
   @ApiProperty({ example: [{ sport: 'BASKETBALL' }], nullable: true, readOnly: true })
-  readonly userSports?: { sport: string }[];
+  readonly sportPreferences?: SimpleSportPreferenceResponseDto[];
 
   @ApiProperty({ example: true, nullable: false, readOnly: true, required: false })
   readonly isEmailVerified?: boolean;
+
+  @ApiProperty({ example: 'INCOMPLETE', nullable: false, readOnly: true })
+  readonly profileStatus: 'COMPLETE' | 'INCOMPLETE';
 }
 
-export class FindMeUserResponseDto extends ResponseTypeDto<FindMeUserResponseDataDto> {
-  @ApiProperty({ type: FindMeUserResponseDataDto })
-  readonly data: FindMeUserResponseDataDto;
+export class FindMeUserResponseDto extends ResponseTypeDto<FindMeUserResponseData> {
+  @ApiProperty({ type: FindMeUserResponseData })
+  readonly data: FindMeUserResponseData;
 }
 
 export class FindOneUserResponseDto extends ResponseTypeDto<FindOneUserResponseDataDto> {

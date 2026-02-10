@@ -45,9 +45,24 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     stripeAccountId: true,
     type: true,
     uid: true,
+    userHourPreferences: {
+      select: {
+        date: true,
+        dayOfWeek: true,
+        timePeriod: true,
+        type: true,
+      },
+    },
     userSportPreferences: {
       select: {
+        level: true,
         sport: true,
+        uid: true,
+        userGameModePreferences: {
+          select: {
+            gameMode: true,
+          },
+        },
       },
     },
   },

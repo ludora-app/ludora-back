@@ -10,6 +10,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Max,
   Min,
 } from 'class-validator';
 
@@ -101,6 +102,7 @@ export class SessionFilterDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(50)
   @ApiProperty({
     description: 'Number of results to return',
     example: 10,
