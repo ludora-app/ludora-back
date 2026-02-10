@@ -189,7 +189,6 @@ describe('AuthB2BService', () => {
         {
           uid: mockUser.uid,
           organisationUid: mockPartner.uid,
-          deviceUid: 'device-123',
         },
         { expiresIn: '1d' },
       );
@@ -198,7 +197,6 @@ describe('AuthB2BService', () => {
         {
           uid: mockUser.uid,
           organisationUid: mockPartner.uid,
-          deviceUid: 'device-123',
         },
         { expiresIn: '7d' },
       );

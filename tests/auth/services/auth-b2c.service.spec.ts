@@ -367,13 +367,7 @@ describe('AuthB2CService', () => {
   });
 
   describe('logout', () => {
-    it('should logout from current device', async () => {
-      await service.logout('1', 'device123');
-
-      expect(mockPrismaService.$transaction).toHaveBeenCalled();
-    });
-
-    it('should logout from all devices', async () => {
+    it('should logout user by invalidating all tokens', async () => {
       await service.logout('1');
 
       expect(mockPrismaService.$transaction).toHaveBeenCalled();
