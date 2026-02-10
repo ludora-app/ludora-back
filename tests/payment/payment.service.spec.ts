@@ -225,7 +225,7 @@ describe('PaymentService', () => {
         email: 'john@example.com',
         birthdate: new Date('1990-01-01'),
         phone: '+1234567890',
-        stripe_account_uid: 'existing-account',
+        stripeAccountId: 'existing-account',
       };
 
       mockUsersService.findOne.mockResolvedValue(mockUser);
@@ -242,7 +242,7 @@ describe('PaymentService', () => {
 
     it('should retrieve Stripe Connect account successfully', async () => {
       const mockUser = {
-        stripe_account_uid: 'account-1',
+        stripeAccountId: 'account-1',
       };
       const mockStripeAccount = {
         id: 'account-1',
@@ -259,7 +259,7 @@ describe('PaymentService', () => {
     });
 
     it('should throw NotFoundException if Stripe account not found', async () => {
-      mockUsersService.findOne.mockResolvedValue({ stripe_account_uid: null });
+      mockUsersService.findOne.mockResolvedValue({ stripeAccountId: null });
 
       await expect(service.getStripeConnectAccount(userId)).rejects.toThrow(NotFoundException);
     });
@@ -270,7 +270,7 @@ describe('PaymentService', () => {
 
     it('should delete Stripe Connect account successfully', async () => {
       const mockUser = {
-        stripe_account_uid: 'account-1',
+        stripeAccountId: 'account-1',
       };
 
       mockUsersService.findOne.mockResolvedValue(mockUser);
@@ -284,14 +284,14 @@ describe('PaymentService', () => {
     });
 
     it('should throw BadRequestException if Stripe account not found', async () => {
-      mockUsersService.findOne.mockResolvedValue({ stripe_account_uid: null });
+      mockUsersService.findOne.mockResolvedValue({ stripeAccountId: null });
 
       await expect(service.deleteStripeConnectAccount(userId)).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException if deletion fails', async () => {
       const mockUser = {
-        stripe_account_uid: 'account-1',
+        stripeAccountId: 'account-1',
       };
 
       mockUsersService.findOne.mockResolvedValue(mockUser);
@@ -352,7 +352,7 @@ describe('PaymentService', () => {
     describe('addBankAccount', () => {
       it('should add bank account successfully', async () => {
         const mockUser = {
-          stripe_account_uid: 'account-1',
+          stripeAccountId: 'account-1',
         };
 
         mockUsersService.findOne.mockResolvedValue(mockUser);
@@ -376,7 +376,7 @@ describe('PaymentService', () => {
 
       it('should throw BadRequestException if maximum bank accounts reached', async () => {
         const mockUser = {
-          stripe_account_uid: 'account-1',
+          stripeAccountId: 'account-1',
         };
 
         mockUsersService.findOne.mockResolvedValue(mockUser);
@@ -393,7 +393,7 @@ describe('PaymentService', () => {
     describe('getBankAccountsList', () => {
       it('should get bank accounts list successfully', async () => {
         const mockUser = {
-          stripe_account_uid: 'account-1',
+          stripeAccountId: 'account-1',
         };
         const mockBankAccounts = [
           {
@@ -443,7 +443,7 @@ describe('PaymentService', () => {
     describe('getBankAccount', () => {
       it('should get bank account successfully', async () => {
         const mockUser = {
-          stripe_account_uid: 'account-1',
+          stripeAccountId: 'account-1',
         };
         const mockBankAccount = {
           id: bankAccountId,
@@ -471,7 +471,7 @@ describe('PaymentService', () => {
     describe('updateDefaultBankAccount', () => {
       it('should update bank account successfully', async () => {
         const mockUser = {
-          stripe_account_uid: 'account-1',
+          stripeAccountId: 'account-1',
         };
         const updateDetails: UpdateBankDetailsDto = {
           defaultForCurrency: true,
@@ -493,7 +493,7 @@ describe('PaymentService', () => {
     describe('deleteBankAccount', () => {
       it('should delete bank account successfully', async () => {
         const mockUser = {
-          stripe_account_uid: 'account-1',
+          stripeAccountId: 'account-1',
         };
 
         mockUsersService.findOne.mockResolvedValue(mockUser);

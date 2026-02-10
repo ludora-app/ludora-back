@@ -1,27 +1,19 @@
 import { SportPreferencesMapper } from 'src/user-preferences/mappers/sport-preferences.mapper';
 import { GameModes, TimePeriod, UserHourPreferenceType, UserType } from 'generated/prisma/enums';
 
-import { FindMeUserResponseData } from '../dto';
+import { FindMeUserResponseData, FindOneUserResponseData } from '../dto';
 
-export interface RawUserFindMe {
+export interface RawUserFindOne {
   bio: string;
   uid: string;
-  email: string;
-  phone: string;
-  type: UserType;
-  birthdate: Date;
   imageUrl: string;
   lastname: string;
   firstname: string;
-  isConnected: boolean;
-  stripeAccountId: string;
-  isEmailVerified: boolean;
-  userHourPreferences: {
-    date: Date;
-    dayOfWeek: number;
-    timePeriod: TimePeriod;
-    type: UserHourPreferenceType;
-  }[];
+  _count: {
+    friendsReceived: number;
+    friendsSent: number;
+    sessionPlayers: number;
+  };
 
   userSportPreferences: {
     sport: string;
@@ -34,8 +26,40 @@ export interface RawUserFindMe {
     }[];
   }[];
 }
+export interface RawUserFindMe extends RawUserFindOne {
+  email: string;
+  phone: string;
+  type: UserType;
+  birthdate: Date;
+  isConnected: boolean;
+  stripeAccountId: string;
+  isEmailVerified: boolean;
+
+  userHourPreferences: {
+    date: Date;
+    dayOfWeek: number;
+    timePeriod: TimePeriod;
+    type: UserHourPreferenceType;
+  }[];
+}
 
 export class UserMapper {
+  static toFindOneResponseDto(user: RawUserFindOne): FindOneUserResponseData {
+    return {
+      bio: user.bio,
+      firstname: user.firstname,
+      friendsCount: user._count.friendsReceived + user._count.friendsSent,
+      imageUrl: user.imageUrl,
+      lastname: user.lastname,
+      matchesCount: user._count.sessionPlayers,
+      name: `${user.firstname} ${user.lastname}`,
+      sportPreferences: user.userSportPreferences.map((sportPreference) =>
+        SportPreferencesMapper.toSimpleDisplay(sportPreference),
+      ),
+      uid: user.uid,
+    };
+  }
+
   static toFindMeResponseDto(user: RawUserFindMe): FindMeUserResponseData {
     return {
       active: user.isConnected,
@@ -43,16 +67,18 @@ export class UserMapper {
       birthdate: user.birthdate,
       email: user.email,
       firstname: user.firstname,
+      friendsCount: user._count.friendsReceived + user._count.friendsSent,
       imageUrl: user.imageUrl,
       isEmailVerified: user.isEmailVerified,
       lastname: user.lastname,
+      matchesCount: user._count.sessionPlayers,
       name: `${user.firstname} ${user.lastname}`,
       phone: user.phone,
       profileStatus: user.userSportPreferences.length > 0 ? 'COMPLETE' : 'INCOMPLETE',
       sportPreferences: user.userSportPreferences.map((sportPreference) =>
         SportPreferencesMapper.toSimpleDisplay(sportPreference),
       ),
-      stripeAccountUid: user.stripeAccountId,
+      stripeAccountId: user.stripeAccountId,
       type: user.type,
       uid: user.uid,
     };

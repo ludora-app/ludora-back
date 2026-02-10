@@ -21,7 +21,6 @@ import { USERSELECT } from '../shared/constants/select-user';
 import {
   CreateUserDto,
   FindAllUsersResponseDataDto,
-  FindOneUserResponseDataDto,
   UpdatePasswordDto,
   UpdateUserDto,
   UserFilterDto,
@@ -149,17 +148,10 @@ export class UsersService {
     };
   }
 
-  async findOne(uid: string, select: Prisma.UsersSelect): Promise<FindOneUserResponseDataDto> {
+  async findOne(uid: string, select: Prisma.UsersSelect): Promise<Users> {
     const existingUser = await this.prismaService.users.findUnique({
       select: {
         ...select,
-        _count: {
-          select: {
-            friendsReceived: { where: { status: 'ACCEPTED' } },
-            friendsSent: { where: { status: 'ACCEPTED' } },
-            sessionPlayers: true,
-          },
-        },
       },
       where: { uid },
     });
@@ -168,22 +160,7 @@ export class UsersService {
       return null;
     }
 
-    const jsonUser = existingUser as any;
-    const friendsCount =
-      (jsonUser._count?.friendsSent || 0) + (jsonUser._count?.friendsReceived || 0);
-    const matchesCount = jsonUser._count?.sessionPlayers || 0;
-
-    const imageUrl = existingUser.imageUrl
-      ? await this.storageService.getSignedUrl(StorageFolderName.USERS, existingUser.imageUrl)
-      : '';
-
-    const { _count, ...userWithoutCount } = jsonUser;
-    return {
-      ...userWithoutCount,
-      friendsCount,
-      imageUrl,
-      matchesCount,
-    };
+    return existingUser;
   }
 
   /**

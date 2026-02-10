@@ -112,7 +112,7 @@ export class SessionsController {
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
-  async findAllMe(
+  async findAllMySessions(
     @Req() request: Request,
     @Query() filters: MySessionFilterDto,
   ): Promise<PaginationResponseTypeDto<SessionCollectionItemDto>> {

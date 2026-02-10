@@ -39,13 +39,14 @@ import {
 
 import { UsersService } from './users.service';
 import { USERSELECT } from '../shared/constants/select-user';
-import { UserMapper, RawUserFindMe } from './mappers/user.mapper';
 import { PasswordResetRequestDto } from './dto/input/password-reset-request.dto';
+import { UserMapper, RawUserFindMe, RawUserFindOne } from './mappers/user.mapper';
 import {
   FindAllUsersResponseDataDto,
   FindAllUsersResponseDto,
   FindMeUserResponseData,
   FindMeUserResponseDto,
+  FindOneUserResponseData,
   FindOneUserResponseDto,
   UpdatePasswordDto,
   UpdateUserDto,
@@ -120,14 +121,14 @@ export class UsersController {
     type: NotFoundResponseDto,
   })
   @Public()
-  async findOne(@Param('uid') uid: string): Promise<ResponseTypeDto<FindMeUserResponseData>> {
+  async findOne(@Param('uid') uid: string): Promise<ResponseTypeDto<FindOneUserResponseData>> {
     const data = await this.usersService.findOne(uid, USERSELECT.findOne);
 
     if (!data) {
       throw new NotFoundException('User not found');
     }
-
-    return { data, message: 'User fetched successfully' };
+    const user = UserMapper.toFindOneResponseDto(data as unknown as RawUserFindOne);
+    return { data: user, message: 'User fetched successfully' };
   }
 
   @Get('/')

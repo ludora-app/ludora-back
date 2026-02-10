@@ -1,4 +1,4 @@
-import { Prisma } from 'generated/prisma/client';
+import { InvitationStatus, Prisma } from 'generated/prisma/client';
 /**
  * This object contains the common select objects for the users service
  * @example
@@ -33,6 +33,13 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
   },
 
   findMe: {
+    _count: {
+      select: {
+        friendsReceived: { where: { status: InvitationStatus.ACCEPTED } },
+        friendsSent: { where: { status: InvitationStatus.ACCEPTED } },
+        sessionPlayers: true,
+      },
+    },
     bio: true,
     birthdate: true,
     email: true,
@@ -69,6 +76,13 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
   },
 
   findOne: {
+    _count: {
+      select: {
+        friendsReceived: { where: { status: InvitationStatus.ACCEPTED } },
+        friendsSent: { where: { status: InvitationStatus.ACCEPTED } },
+        sessionPlayers: true,
+      },
+    },
     bio: true,
     firstname: true,
     imageUrl: true,
@@ -76,7 +90,14 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     uid: true,
     userSportPreferences: {
       select: {
+        level: true,
         sport: true,
+        uid: true,
+        userGameModePreferences: {
+          select: {
+            gameMode: true,
+          },
+        },
       },
     },
   },

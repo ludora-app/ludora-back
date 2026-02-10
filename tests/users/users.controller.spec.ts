@@ -30,6 +30,12 @@ describe('UsersController', () => {
     imageUrl: 'test-url',
     lastname: 'Doe',
     name: 'Test User',
+    _count: {
+      friendsReceived: 0,
+      friendsSent: 0,
+      sessionPlayers: 0,
+    },
+    userSportPreferences: [],
   };
 
   const mockUserFindMe = {
@@ -47,6 +53,11 @@ describe('UsersController', () => {
     uid: '1',
     userHourPreferences: [],
     userSportPreferences: [],
+    _count: {
+      friendsReceived: 0,
+      friendsSent: 0,
+      sessionPlayers: 0,
+    },
   };
 
   const mockAuthGuard = {
@@ -101,7 +112,17 @@ describe('UsersController', () => {
       const result = await controller.findOne('1');
 
       expect(result).toEqual({
-        data: mockUser,
+        data: {
+          bio: 'test bio',
+          firstname: 'John',
+          friendsCount: 0,
+          imageUrl: 'test-url',
+          lastname: 'Doe',
+          matchesCount: 0,
+          name: 'John Doe',
+          sportPreferences: [],
+          uid: '1',
+        },
         message: 'User fetched successfully',
       });
       expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findOne);
