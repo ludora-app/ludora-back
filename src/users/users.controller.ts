@@ -44,7 +44,7 @@ import { PasswordResetRequestDto } from './dto/input/password-reset-request.dto'
 import {
   FindAllUsersResponseDataDto,
   FindAllUsersResponseDto,
-  FindMeUserResponseDataDto,
+  FindMeUserResponseData,
   FindMeUserResponseDto,
   FindOneUserResponseDto,
   UpdatePasswordDto,
@@ -151,7 +151,7 @@ export class UsersController {
     description: 'Token invalid: user missing',
     type: UnauthorizedResponseDto,
   })
-  async findMe(@Req() request: Request): Promise<ResponseTypeDto<FindMeUserResponseDataDto>> {
+  async findMe(@Req() request: Request): Promise<ResponseTypeDto<FindMeUserResponseData>> {
     const uid = request['user'].uid;
 
     const data = await this.usersService.findOne(uid, USERSELECT.findMe);

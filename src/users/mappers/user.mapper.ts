@@ -1,7 +1,7 @@
 import { SportPreferencesMapper } from 'src/user-preferences/mappers/sport-preferences.mapper';
 import { GameModes, TimePeriod, UserHourPreferenceType, UserType } from 'generated/prisma/enums';
 
-import { FindMeUserResponseDataDto } from '../dto';
+import { FindMeUserResponseData } from '../dto';
 
 export interface RawUserFindMe {
   bio: string;
@@ -36,7 +36,7 @@ export interface RawUserFindMe {
 }
 
 export class UserMapper {
-  static toFindMeResponseDto(user: RawUserFindMe): FindMeUserResponseDataDto {
+  static toFindMeResponseDto(user: RawUserFindMe): FindMeUserResponseData {
     return {
       active: user.isConnected,
       bio: user.bio,

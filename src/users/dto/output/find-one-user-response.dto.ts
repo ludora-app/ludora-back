@@ -26,7 +26,7 @@ export class FindOneUserResponseDataDto {
   readonly userSports?: { sport: string }[];
 }
 
-export class FindMeUserResponseDataDto {
+export class FindMeUserResponseData {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
   readonly uid: string;
 
@@ -76,9 +76,9 @@ export class FindMeUserResponseDataDto {
   readonly profileStatus: 'COMPLETE' | 'INCOMPLETE';
 }
 
-export class FindMeUserResponseDto extends ResponseTypeDto<FindMeUserResponseDataDto> {
-  @ApiProperty({ type: FindMeUserResponseDataDto })
-  readonly data: FindMeUserResponseDataDto;
+export class FindMeUserResponseDto extends ResponseTypeDto<FindMeUserResponseData> {
+  @ApiProperty({ type: FindMeUserResponseData })
+  readonly data: FindMeUserResponseData;
 }
 
 export class FindOneUserResponseDto extends ResponseTypeDto<FindOneUserResponseDataDto> {
