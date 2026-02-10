@@ -1,6 +1,4 @@
-import { StorageFolderName } from 'src/shared/constants/constants';
 import { MessageStatus, MessageType } from 'generated/prisma/enums';
-import { StorageService } from 'src/shared/storage/storage.service';
 
 import { RawMessage } from './conversation.mapper';
 import { MessageDto } from '../dto/output/basic-conversation-response.dto';
@@ -26,15 +24,9 @@ export interface RawMessageCollectionItem {
 }
 
 export class MessageMapper {
-  static async toLastMessageDto(
-    message: RawMessage,
-    storageService: StorageService,
-  ): Promise<MessageDto> {
+  static toLastMessageDto(message: RawMessage): MessageDto {
     return {
-      content:
-        message.type !== MessageType.TEXT
-          ? await storageService.getSignedUrl(StorageFolderName.CONVERSATIONS, message.content)
-          : message.content,
+      content: message.content,
       createdAt: message.createdAt,
       globalStatus: message.globalStatus,
       type: message.type,
@@ -42,15 +34,9 @@ export class MessageMapper {
     };
   }
 
-  static async toCollectionItemDto(
-    message: RawMessageCollectionItem,
-    storageService: StorageService,
-  ): Promise<MessageCollectionItemDto> {
+  static toCollectionItemDto(message: RawMessageCollectionItem): MessageCollectionItemDto {
     return {
-      content:
-        message.type !== MessageType.TEXT
-          ? await storageService.getSignedUrl(StorageFolderName.CONVERSATIONS, message.content)
-          : message.content,
+      content: message.content,
       createdAt: message.createdAt,
       globalStatus: message.globalStatus,
       hasAnyRead: this.calculateGlobalStatus(message.messageReceipts).hasAnyRead,

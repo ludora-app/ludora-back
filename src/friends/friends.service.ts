@@ -6,8 +6,6 @@ import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { InvitationStatus } from 'generated/prisma/enums';
 import { USERSELECT } from 'src/shared/constants/select-user';
-import { StorageFolderName } from 'src/shared/constants/constants';
-import { StorageService } from 'src/shared/storage/storage.service';
 import { EventTypes } from 'src/notifications/constants/event.types';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
@@ -33,7 +31,6 @@ export class FriendsService {
     private readonly usersService: UsersService,
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
-    private readonly storageService: StorageService,
     private readonly eventEmitter: EventEmitter2,
   ) {
     this.logger.setContext(FriendsService.name);
@@ -180,25 +177,8 @@ export class FriendsService {
       nextCursor = nextItem!.friendUid;
     }
 
-    // Get signed URLs for profile pictures
-    const friendsWithImageUrl = await Promise.all(
-      friends.map(async (friend) => {
-        if (!friend.avatarUrl) {
-          return friend;
-        }
-        const friendImageUrl = await this.storageService.getSignedUrl(
-          StorageFolderName.USERS,
-          friend.avatarUrl,
-        );
-        return {
-          ...friend,
-          avatarUrl: friendImageUrl,
-        };
-      }),
-    );
-
     return {
-      items: friendsWithImageUrl,
+      items: friends,
       nextCursor,
       totalCount: friends.length,
     };
@@ -264,25 +244,8 @@ export class FriendsService {
       nextCursor = nextItem!.senderUid;
     }
 
-    // Get signed URLs for profile pictures
-    const friendsWithImageUrl = await Promise.all(
-      friends.map(async (friend) => {
-        if (!friend.avatarUrl) {
-          return friend;
-        }
-        const friendImageUrl = await this.storageService.getSignedUrl(
-          StorageFolderName.USERS,
-          friend.avatarUrl,
-        );
-        return {
-          ...friend,
-          avatarUrl: friendImageUrl,
-        };
-      }),
-    );
-
     return {
-      items: friendsWithImageUrl,
+      items: friends,
       nextCursor,
       totalCount: friends.length,
     };
@@ -327,14 +290,8 @@ export class FriendsService {
       );
     }
     const friendDto = FriendMapper.toDto(existingFriend, connectedUserUid);
-    if (!friendDto.avatarUrl) {
-      return friendDto;
-    }
-    const friendImageUrl = await this.storageService.getSignedUrl(
-      StorageFolderName.USERS,
-      friendDto.avatarUrl,
-    );
-    return { ...friendDto, avatarUrl: friendImageUrl };
+
+    return friendDto;
   }
 
   async update(

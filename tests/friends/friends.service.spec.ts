@@ -13,7 +13,6 @@ describe('FriendsService', () => {
   let service: FriendsService;
   let usersService: any;
   let prismaService: any;
-  let storageService: any;
   let eventEmitter: any;
   let logger: any;
 
@@ -66,10 +65,6 @@ describe('FriendsService', () => {
       $queryRaw: jest.fn(),
     } as any;
 
-    const mockStorageService = {
-      getSignedUrl: jest.fn(),
-    };
-
     const mockEventEmitter = {
       emit: jest.fn(),
     };
@@ -86,7 +81,6 @@ describe('FriendsService', () => {
         FriendsService,
         { provide: UsersService, useValue: mockUsersService },
         { provide: PrismaService, useValue: mockPrismaService },
-        { provide: StorageService, useValue: mockStorageService },
         { provide: EventEmitter2, useValue: mockEventEmitter },
         { provide: PinoLogger, useValue: mockLogger },
       ],
@@ -95,7 +89,6 @@ describe('FriendsService', () => {
     service = module.get<FriendsService>(FriendsService);
     usersService = module.get(UsersService) as any;
     prismaService = module.get(PrismaService) as any;
-    storageService = module.get(StorageService) as any;
     eventEmitter = module.get(EventEmitter2) as any;
     logger = module.get(PinoLogger) as any;
   });
@@ -203,7 +196,6 @@ describe('FriendsService', () => {
       ];
       prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
       prismaService.$queryRaw.mockResolvedValue(mockFriends as any);
-      storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile2.jpg');
 
       const result = await service.findAllMyFriends(mockFilters, 'user-123');
 
@@ -214,7 +206,7 @@ describe('FriendsService', () => {
             createdAt: mockFriendRequest.createdAt,
             firstname: 'Jane',
             lastname: 'Smith',
-            avatarUrl: 'https://signed-url.com/profile2.jpg',
+            avatarUrl: 'profile2.jpg',
             isInvited: false,
           },
         ],
@@ -239,7 +231,6 @@ describe('FriendsService', () => {
       ];
       prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
       prismaService.$queryRaw.mockResolvedValue(mockFriends as any);
-      storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile2.jpg');
 
       await service.findAllMyFriends(filtersWithName, 'user-123');
 
@@ -261,7 +252,6 @@ describe('FriendsService', () => {
       ];
       prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
       prismaService.$queryRaw.mockResolvedValue(mockFriends as any);
-      storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile2.jpg');
 
       await service.findAllMyFriends(filtersWithCursor, 'user-123');
 
@@ -280,7 +270,6 @@ describe('FriendsService', () => {
       });
       prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
       prismaService.$queryRaw.mockResolvedValue(mockFriends as any);
-      storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile2.jpg');
 
       const result = await service.findAllMyFriends(mockFilters, 'user-123');
 
@@ -308,7 +297,6 @@ describe('FriendsService', () => {
       const mockRequests = [mockPendingRequest];
       prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
       prismaService.$queryRaw.mockResolvedValue(mockRequests as any);
-      storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile3.jpg');
 
       const result = await service.findAllMyRequests(mockFilters, 'user-123');
 
@@ -319,7 +307,7 @@ describe('FriendsService', () => {
             createdAt: mockPendingRequest.createdAt,
             firstname: 'Alice',
             lastname: 'Johnson',
-            avatarUrl: 'https://signed-url.com/profile3.jpg',
+            avatarUrl: 'profile3.jpg',
           },
         ],
         nextCursor: null,
@@ -333,7 +321,6 @@ describe('FriendsService', () => {
       const filtersWithName = { ...mockFilters, name: 'Alice' };
       prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
       prismaService.$queryRaw.mockResolvedValue([mockPendingRequest] as any);
-      storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile3.jpg');
 
       await service.findAllMyRequests(filtersWithName, 'user-123');
 
@@ -345,7 +332,6 @@ describe('FriendsService', () => {
       const filtersWithCursor = { ...mockFilters, cursor: 'user-789' };
       prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
       prismaService.$queryRaw.mockResolvedValue([mockPendingRequest] as any);
-      storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile3.jpg');
 
       await service.findAllMyRequests(filtersWithCursor, 'user-123');
 
@@ -357,7 +343,6 @@ describe('FriendsService', () => {
       const mockRequests = Array(11).fill(mockPendingRequest);
       prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
       prismaService.$queryRaw.mockResolvedValue(mockRequests as any);
-      storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile3.jpg');
 
       const result = await service.findAllMyRequests(mockFilters, 'user-123');
 
@@ -369,7 +354,6 @@ describe('FriendsService', () => {
       const mockRequests = [mockPendingRequest];
       prismaService.$executeRawUnsafe.mockResolvedValue(undefined);
       prismaService.$queryRaw.mockResolvedValue(mockRequests as any);
-      storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile3.jpg');
 
       const result = await service.findAllMyRequests(mockFilters, 'user-123');
 
@@ -389,7 +373,6 @@ describe('FriendsService', () => {
       const result = await service.findAllMyRequests(mockFilters, 'user-123');
 
       expect(result.items[0].avatarUrl).toBeNull();
-      expect(storageService.getSignedUrl).not.toHaveBeenCalled();
     });
 
     it('should return empty list when no requests found', async () => {
@@ -409,7 +392,6 @@ describe('FriendsService', () => {
   describe('findOne', () => {
     it('should find a friend request successfully', async () => {
       prismaService.friends.findFirst.mockResolvedValue(mockFriendRequest as any);
-      storageService.getSignedUrl.mockResolvedValue('https://signed-url.com/profile2.jpg');
 
       const result = await service.findOne('user-123', 'user-456');
 
@@ -420,7 +402,7 @@ describe('FriendsService', () => {
         friendUid: 'user-456',
         firstname: 'Jane',
         lastname: 'Smith',
-        avatarUrl: 'https://signed-url.com/profile2.jpg',
+        avatarUrl: 'profile2.jpg',
       });
       expect(prismaService.friends.findFirst).toHaveBeenCalled();
     });
@@ -435,7 +417,6 @@ describe('FriendsService', () => {
       const result = await service.findOne('user-123', 'user-456');
 
       expect(result.avatarUrl).toBeNull();
-      expect(storageService.getSignedUrl).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when friend request not found', async () => {

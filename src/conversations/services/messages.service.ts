@@ -207,9 +207,7 @@ export class MessagesService {
     });
 
     return {
-      items: await Promise.all(
-        messages.map((message) => MessageMapper.toCollectionItemDto(message, this.storageService)),
-      ),
+      items: messages.map((message) => MessageMapper.toCollectionItemDto(message)),
       nextCursor: messages.length > limit ? messages[limit].uid : null,
       totalCount: messages.length,
     };

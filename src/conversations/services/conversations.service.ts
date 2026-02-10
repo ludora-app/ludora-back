@@ -1,7 +1,6 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Prisma } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, MessageType } from 'generated/prisma/browser';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
@@ -27,7 +26,6 @@ export class ConversationsService {
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
     private readonly messagesService: MessagesService,
-    private readonly storageService: StorageService,
   ) {
     this.logger.setContext(ConversationsService.name);
   }
@@ -271,9 +269,7 @@ export class ConversationsService {
     }
 
     const conversations = await Promise.all(
-      rawConversations.map((conversation) =>
-        ConversationMapper.toCollectionDto(conversation, this.storageService),
-      ),
+      rawConversations.map((conversation) => ConversationMapper.toCollectionDto(conversation)),
     );
 
     return {
@@ -349,10 +345,7 @@ export class ConversationsService {
       throw new ForbiddenException(`User with uid ${userUid} is not a member of this conversation`);
     }
 
-    const conversation = await ConversationMapper.toFindOneDto(
-      existingConversation,
-      this.storageService,
-    );
+    const conversation = await ConversationMapper.toFindOneDto(existingConversation);
 
     return conversation;
   }

@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { StorageService } from 'src/shared/storage/storage.service';
 import { MessagesService } from 'src/conversations/services/messages.service';
 import { ConversationsService } from 'src/conversations/services/conversations.service';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
@@ -12,7 +11,6 @@ describe('ConversationsService', () => {
   let mockPrisma: any;
   let mockLogger: any;
   let mockMessagesService: any;
-  let mockStorageService: any;
 
   beforeEach(async () => {
     mockPrisma = {
@@ -41,10 +39,6 @@ describe('ConversationsService', () => {
       getMessages: jest.fn(),
     };
 
-    mockStorageService = {
-      getSignedUrl: jest.fn(),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ConversationsService,
@@ -59,10 +53,6 @@ describe('ConversationsService', () => {
         {
           provide: MessagesService,
           useValue: mockMessagesService,
-        },
-        {
-          provide: StorageService,
-          useValue: mockStorageService,
         },
       ],
     }).compile();
@@ -261,7 +251,6 @@ describe('ConversationsService', () => {
       ];
 
       mockPrisma.conversations.findMany.mockResolvedValue(mockConversations);
-      mockStorageService.getSignedUrl.mockResolvedValue('signed-url');
 
       const result = await service.findAllByUserUid(filters, userUid);
 
@@ -280,7 +269,6 @@ describe('ConversationsService', () => {
       };
 
       mockPrisma.conversations.findMany.mockResolvedValue([]);
-      mockStorageService.getSignedUrl.mockResolvedValue('signed-url');
 
       await service.findAllByUserUid(filters, userUid);
 
@@ -298,7 +286,6 @@ describe('ConversationsService', () => {
       };
 
       mockPrisma.conversations.findMany.mockResolvedValue([]);
-      mockStorageService.getSignedUrl.mockResolvedValue('signed-url');
 
       await service.findAllByUserUid(filters, userUid);
 
@@ -339,7 +326,6 @@ describe('ConversationsService', () => {
       ];
 
       mockPrisma.conversations.findMany.mockResolvedValue(mockConversations);
-      mockStorageService.getSignedUrl.mockResolvedValue('signed-url');
 
       const result = await service.findAllByUserUid(filters, userUid);
 
@@ -396,7 +382,6 @@ describe('ConversationsService', () => {
         uid: 'member-1',
         userUid,
       });
-      mockStorageService.getSignedUrl.mockResolvedValue('signed-url');
 
       const result = await service.findOne(conversationUid, userUid);
 

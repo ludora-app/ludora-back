@@ -2,11 +2,11 @@ import { PinoLogger } from 'nestjs-pino';
 import { Prisma } from 'generated/prisma/client';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { SessionScope } from 'src/shared/constants/constants';
 import { FieldsService } from 'src/fields/services/fields.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, Sessions } from 'generated/prisma/client';
 import { FieldSlotsService } from 'src/fields/services/field-slots.service';
-import { SessionScope, StorageFolderName } from 'src/shared/constants/constants';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
@@ -773,23 +773,7 @@ export class SessionsService {
       team.sessionPlayers.some((player) => player.userUid === userUid),
     );
 
-    const unlockedFieldImages = await Promise.all(
-      session.field.fieldImages.map(async (image) => ({
-        order: image.order,
-        url: await this.storageService.getSignedUrl(StorageFolderName.SESSIONS, image.url),
-      })),
-    );
-
-    session.field.fieldImages = unlockedFieldImages;
-
-    if (session.creator && session.creator.imageUrl) {
-      session.creator.imageUrl = await this.storageService.getSignedUrl(
-        StorageFolderName.USERS,
-        session.creator.imageUrl,
-      );
-    }
-
-    const teamsWithIsJoinedAndSignedUrls = await Promise.all(
+    const teamsWithIsJoined = await Promise.all(
       session.sessionTeams.map(async (team) => {
         const totalPlayersInTeam = team.sessionPlayers.length;
 
@@ -807,31 +791,16 @@ export class SessionsService {
           playersToProcess = team.sessionPlayers.slice(0, 3);
         }
 
-        const playersWithSignedUrls = await Promise.all(
-          playersToProcess.map(async (player) => ({
-            ...player,
-            user: {
-              ...player.user,
-              imageUrl: player.user.imageUrl
-                ? await this.storageService.getSignedUrl(
-                    StorageFolderName.USERS,
-                    player.user.imageUrl,
-                  )
-                : null,
-            },
-          })),
-        );
-
         return {
           ...team,
           isJoined: currentPlayerIndex !== -1,
-          sessionPlayers: playersWithSignedUrls,
+          sessionPlayers: playersToProcess,
           totalPlayersInTeam,
         };
       }),
     );
 
-    const totalPlayersInSession = teamsWithIsJoinedAndSignedUrls.reduce(
+    const totalPlayersInSession = teamsWithIsJoined.reduce(
       (sum, team) => sum + team.totalPlayersInTeam,
       0,
     );
@@ -845,7 +814,7 @@ export class SessionsService {
       creatorSessionsCount,
       isJoined: isJoined,
       remainingPlayers,
-      sessionTeams: teamsWithIsJoinedAndSignedUrls,
+      sessionTeams: teamsWithIsJoined,
     });
   }
 
@@ -920,14 +889,8 @@ export class SessionsService {
     if (!images || images.length === 0) {
       return [];
     }
-    const response = await Promise.all(
-      images.map(async (image) => {
-        const url = await this.storageService.getSignedUrl(StorageFolderName.SESSIONS, image.url);
-        return { order: image.order, url };
-      }),
-    );
 
-    return response;
+    return images.map((image) => ({ order: image.order, url: image.url }));
   }
 
   async getFirstImageBySessionUid(sessionUid: string): Promise<ImageResponseDto | null> {
@@ -942,9 +905,7 @@ export class SessionsService {
       return null;
     }
 
-    const url = await this.storageService.getSignedUrl(StorageFolderName.SESSIONS, image.url);
-
-    return { order: image.order, url };
+    return image;
   }
 
   /**

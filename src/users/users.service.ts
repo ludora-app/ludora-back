@@ -129,20 +129,10 @@ export class UsersService {
       nextCursor = nextItem.uid;
     }
 
-    const usersWithImageUrl = await Promise.all(
-      users.map(async (user) => {
-        const imageUrl = await this.storageService.getSignedUrl(
-          StorageFolderName.USERS,
-          user.imageUrl,
-        );
-        return { ...user, imageUrl };
-      }),
-    );
-
     const totalCount = await this.prismaService.users.count();
 
     return {
-      items: usersWithImageUrl,
+      items: users,
       nextCursor,
       totalCount,
     };
@@ -176,10 +166,8 @@ export class UsersService {
     });
 
     if (!user) return null;
-    const imageUrl = user.imageUrl
-      ? await this.storageService.getSignedUrl(StorageFolderName.USERS, user.imageUrl)
-      : '';
-    return { ...user, imageUrl };
+
+    return user;
   }
 
   async findOneByStripeAccountId(stripeAccountId: string): Promise<{ stripeAccountId: string }> {

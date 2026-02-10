@@ -48,7 +48,6 @@ jest.mock('src/shared/utils/date.utils', () => ({
 }));
 const mockStorageService = {
   upload: jest.fn(),
-  getSignedUrl: jest.fn(),
 };
 
 const mockUserHourPreferencesService = {
@@ -956,9 +955,6 @@ describe('SessionsService', () => {
       // Arrange
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
-      (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
-        async (folder: string, url: string) => `https://signed-url.com/${url}`,
-      );
 
       // Act
       const result = await service.findOne('session-uid-1');
@@ -1042,9 +1038,6 @@ describe('SessionsService', () => {
 
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
-      (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
-        async (folder: string, url: string) => `https://signed-url.com/${url}`,
-      );
 
       // Act
       const result = await service.findOneWithDistance(
@@ -1085,9 +1078,6 @@ describe('SessionsService', () => {
 
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
-      (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
-        async (folder: string, url: string) => `https://signed-url.com/${url}`,
-      );
 
       // Act
       const result = await service.findOneWithDistance(
@@ -1111,9 +1101,6 @@ describe('SessionsService', () => {
 
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
-      (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
-        async (folder: string, url: string) => `https://signed-url.com/${url}`,
-      );
 
       // Act
       const result = await service.findOneWithDistance(
@@ -1196,9 +1183,6 @@ describe('SessionsService', () => {
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
       (fieldsService.findOne as jest.Mock).mockResolvedValue(mockField);
       (prismaService.sessions.update as jest.Mock).mockResolvedValue(mockUpdatedSession);
-      (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
-        async (folder: string, url: string) => `https://signed-url.com/${url}`,
-      );
 
       // Act
       const result = await service.update('session-uid-1', updateSessionDto);
@@ -1228,9 +1212,6 @@ describe('SessionsService', () => {
       (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSessionForFindOne);
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
       (fieldsService.findOne as jest.Mock).mockResolvedValue(null);
-      (mockStorageService.getSignedUrl as jest.Mock).mockImplementation(
-        async (folder: string, url: string) => `https://signed-url.com/${url}`,
-      );
 
       // Act & Assert
       await expect(service.update('session-uid-1', updateSessionDto)).rejects.toThrow(

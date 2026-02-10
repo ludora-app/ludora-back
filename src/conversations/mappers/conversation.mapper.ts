@@ -1,5 +1,3 @@
-import { StorageFolderName } from 'src/shared/constants/constants';
-import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
 
 import { MessageMapper } from './message.mapper';
@@ -68,10 +66,9 @@ export interface RawMessage {
 }
 
 export class ConversationMapper {
-  static async toCollectionDto(
+  static toCollectionDto(
     conversation: RawConversationCollectionItem,
-    storageService: StorageService,
-  ): Promise<ConversationCollectionResponseData> {
+  ): ConversationCollectionResponseData {
     const firstMessage = conversation.messages?.[0];
     const firstSessionImage = conversation.session?.sessionImages?.[0];
     const otherUser = conversation.conversationMembers?.[0]?.user;
@@ -79,22 +76,14 @@ export class ConversationMapper {
     let signedImageUrl: string | null = null;
 
     if (conversation.type === ConversationType.PRIVATE && otherUser?.imageUrl) {
-      signedImageUrl = await storageService.getSignedUrl(
-        StorageFolderName.USERS,
-        otherUser.imageUrl,
-      );
+      signedImageUrl = otherUser.imageUrl;
     } else if (conversation.type === ConversationType.SESSION && firstSessionImage?.url) {
-      signedImageUrl = await storageService.getSignedUrl(
-        StorageFolderName.SESSIONS,
-        firstSessionImage.url,
-      );
+      signedImageUrl = firstSessionImage.url;
     }
 
     return {
       imageUrl: signedImageUrl,
-      lastMessage: firstMessage
-        ? await MessageMapper.toLastMessageDto(firstMessage, storageService)
-        : null,
+      lastMessage: firstMessage ? MessageMapper.toLastMessageDto(firstMessage) : null,
       name:
         conversation.type === ConversationType.PRIVATE && otherUser
           ? `${otherUser.firstname} ${otherUser.lastname}`
@@ -106,18 +95,12 @@ export class ConversationMapper {
     };
   }
 
-  static async toFindOneDto(
-    conversation: RawFindOneConversation,
-    storageService: StorageService,
-  ): Promise<FindOneConversationResponseData> {
+  static toFindOneDto(conversation: RawFindOneConversation): FindOneConversationResponseData {
     const otherUser = conversation.conversationMembers?.[0]?.user;
     return {
       imageUrl: conversation.session?.sessionImages?.[0]?.url || null,
-      messages: await Promise.all(
-        conversation.messages.map((message) =>
-          MessageMapper.toLastMessageDto(message, storageService),
-        ),
-      ),
+      messages: conversation.messages.map((message) => MessageMapper.toLastMessageDto(message)),
+
       name:
         conversation.type === ConversationType.PRIVATE && otherUser
           ? `${otherUser.firstname} ${otherUser.lastname}`
