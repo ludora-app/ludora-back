@@ -23,13 +23,6 @@ export class RegisterB2CDto {
   readonly type: UserType;
 
   // Propriétés communes
-  @IsString()
-  @IsOptional()
-  @ApiProperty({
-    description: 'device uid, only for phones',
-    example: '123456',
-  })
-  readonly deviceUid?: string;
 
   @IsString()
   @IsEmail()

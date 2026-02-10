@@ -244,7 +244,7 @@ describe('AuthB2CController', () => {
       expect(result).toEqual({
         message: 'Logged out successfully',
       });
-      expect(mockAuthB2CService.logout).toHaveBeenCalledWith('1', 'device123');
+      expect(mockAuthB2CService.logout).toHaveBeenCalledWith('1');
     });
   });
 

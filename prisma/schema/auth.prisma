@@ -95,7 +95,6 @@ model EmailVerification {
 model UserTokens {
   uid             String   @id @default(cuid())
   userUid         String   @map("user_uid")
-  deviceUid       String?  @map("device_uid")
   organisationUid String?  @map("organisation_uid")
   token           String
   createdAt       DateTime @default(now()) @map("created_at")
@@ -112,7 +111,6 @@ model UserTokens {
 model RefreshTokens {
   uid             String   @id @default(cuid())
   userUid         String   @map("user_uid")
-  deviceUid       String?  @map("device_uid")
   organisationUid String?  @map("organisation_uid")
   token           String   @unique
   expiresAt       DateTime @map("expires_at")

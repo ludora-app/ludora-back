@@ -116,7 +116,7 @@ export class AuthB2BService {
   }
 
   async login(loginDto: LoginDto): Promise<{ accessToken: string; refreshToken: string }> {
-    const { deviceUid, email, password } = loginDto;
+    const { email, password } = loginDto;
     const formattedEmail = email.toLowerCase();
 
     const user = await this.userService.findOneByEmail(formattedEmail, USERSELECT.login);
@@ -142,7 +142,6 @@ export class AuthB2BService {
     const payload = {
       organisationUid: partner.uid,
       uid: user.uid,
-      ...(deviceUid && { deviceUid }),
     };
     const accessToken = this.jwt.sign(payload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
     const refreshToken = this.jwt.sign(payload, { expiresIn: '7d' });
