@@ -135,7 +135,7 @@ describe('FriendsService', () => {
       expect(eventEmitter.emit).toHaveBeenCalledWith(EventTypes.FRIEND_REQUEST, {
         recipientId: 'user-456',
         senderId: 'user-123',
-        senderName: 'Jane Smith',
+        senderName: 'John Doe',
       });
     });
 
