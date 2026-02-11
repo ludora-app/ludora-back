@@ -7,13 +7,6 @@ import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-re
  * @description standard response for a userHourPreference resource
  */
 export class HourPreferenceResponseData {
-  @ApiProperty({
-    description: "Entity's creation date",
-    example: '2025-05-10T22:30:32.525Z',
-    readOnly: true,
-  })
-  createdAt: Date;
-
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
   readonly uid: string;
 

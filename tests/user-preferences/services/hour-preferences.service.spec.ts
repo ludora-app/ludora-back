@@ -258,7 +258,6 @@ describe('HourPreferencesService', () => {
       );
       expect(prismaService.userHourPreferences.findMany).toHaveBeenCalledWith({
         select: {
-          createdAt: true,
           date: true,
           dayOfWeek: true,
           timePeriod: true,

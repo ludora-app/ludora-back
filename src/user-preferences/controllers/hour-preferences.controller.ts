@@ -8,7 +8,6 @@ import {
   Controller,
   Get,
   Body,
-  Param,
   Delete,
   Req,
   HttpCode,
@@ -36,23 +35,6 @@ import {
 @UseGuards(AuthB2CGuard)
 export class HourPreferencesController {
   constructor(private readonly hourPreferencesService: HourPreferencesService) {}
-
-  @Get('list-by-user/:userUid')
-  @Protected()
-  @ApiOperation({ summary: 'Get all user hour preferences by user ID' })
-  @ApiOkResponse({ type: PaginatedHourPreferenceResponseDto })
-  @ApiBadRequestResponse({ type: BadRequestResponseDto })
-  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  @HttpCode(HttpStatus.OK)
-  async findAllByUserUid(
-    @Param('userUid') userUid: string,
-  ): Promise<PaginationResponseTypeDto<HourPreferenceResponseData>> {
-    const data = await this.hourPreferencesService.findAllByUserUid(userUid);
-    return {
-      data,
-      message: 'User hour preferences fetched successfully',
-    };
-  }
 
   @Get('/my-list')
   @Protected()

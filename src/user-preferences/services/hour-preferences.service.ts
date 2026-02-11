@@ -48,7 +48,6 @@ export class HourPreferencesService {
     this.logger.debug(`Finding all hour preferences for user: ${userUid}`);
     const hourPreferences = await this.prisma.userHourPreferences.findMany({
       select: {
-        createdAt: true,
         date: true,
         dayOfWeek: true,
         timePeriod: true,
