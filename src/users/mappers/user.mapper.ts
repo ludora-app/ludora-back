@@ -1,5 +1,11 @@
 import { SportPreferencesMapper } from 'src/user-preferences/mappers/sport-preferences.mapper';
-import { GameModes, TimePeriod, UserHourPreferenceType, UserType } from 'generated/prisma/enums';
+import {
+  GameModes,
+  Sex,
+  TimePeriod,
+  UserHourPreferenceType,
+  UserType,
+} from 'generated/prisma/enums';
 
 import { FindMeUserResponseData, FindOneUserResponseData } from '../dto';
 
@@ -27,6 +33,7 @@ export interface RawUserFindOne {
   }[];
 }
 export interface RawUserFindMe extends RawUserFindOne {
+  sex: Sex;
   email: string;
   phone: string;
   type: UserType;
@@ -34,7 +41,6 @@ export interface RawUserFindMe extends RawUserFindOne {
   isConnected: boolean;
   stripeAccountId: string;
   isEmailVerified: boolean;
-
   userHourPreferences: {
     date: Date;
     dayOfWeek: number;
@@ -75,6 +81,7 @@ export class UserMapper {
       name: `${user.firstname} ${user.lastname}`,
       phone: user.phone,
       profileStatus: user.userSportPreferences.length > 0 ? 'COMPLETE' : 'INCOMPLETE',
+      sex: user.sex,
       sportPreferences: user.userSportPreferences.map((sportPreference) =>
         SportPreferencesMapper.toSimpleDisplay(sportPreference),
       ),

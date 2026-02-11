@@ -94,7 +94,7 @@ export class SportPreferencesController {
     await this.sportPreferencesService.createManyWithGameModes(dto.sportPreferences, userUid);
   }
 
-  @Delete(':uid')
+  @Delete()
   @Protected()
   @ApiOperation({ summary: 'Delete a user sport preference by uid' })
   @ApiNoContentResponse({ description: 'User sport preference deleted successfully' })

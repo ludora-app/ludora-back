@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { GameModes } from 'generated/prisma/enums';
-import { UserSportLevel } from 'src/shared/constants/constants';
+import { Sport, UserSportLevel } from 'src/shared/constants/constants';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
@@ -11,8 +11,12 @@ export class SportPreferenceResponseData {
   @ApiProperty({ description: 'The unique identifier of the user sport preference' })
   uid: string;
 
-  @ApiProperty({ description: 'The sport of the user sport preference' })
-  sport: string;
+  @ApiProperty({
+    description: 'The sport of the user sport preference',
+    enum: Sport,
+    example: Sport.BASKETBALL,
+  })
+  sport: Sport;
 
   @ApiProperty({
     description: 'The level of the user sport preference',

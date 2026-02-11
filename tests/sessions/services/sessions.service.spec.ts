@@ -1457,6 +1457,7 @@ describe('SessionsService', () => {
 
     it('should return sessions where user is creator when ownership is CREATOR', async () => {
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession1]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       const result = await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1465,15 +1466,18 @@ describe('SessionsService', () => {
       expect(result.items).toHaveLength(1);
       expect(result.totalCount).toBe(1);
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
-        where: { creatorUid: userUid },
-        orderBy: undefined,
+        cursor: undefined,
+        orderBy: [{ uid: 'asc' }],
         select: expect.any(Object),
+        skip: 0,
         take: 11,
+        where: { creatorUid: userUid },
       });
     });
 
     it('should return sessions where user is a player when ownership is PLAYER', async () => {
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession2]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       const result = await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.PLAYER,
@@ -1482,10 +1486,12 @@ describe('SessionsService', () => {
       expect(result.items).toHaveLength(1);
       expect(result.totalCount).toBe(1);
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
-        where: { sessionPlayers: { some: { userUid } } },
-        orderBy: undefined,
+        cursor: undefined,
+        orderBy: [{ uid: 'asc' }],
         select: expect.any(Object),
+        skip: 0,
         take: 11,
+        where: { sessionPlayers: { some: { userUid } } },
       });
     });
 
@@ -1494,24 +1500,28 @@ describe('SessionsService', () => {
         mockSession1,
         mockSession2,
       ]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(2);
 
       const result = await service.findAllByUserUid(userUid, {});
 
       expect(result.items).toHaveLength(2);
       expect(result.totalCount).toBe(2);
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
+        cursor: undefined,
+        orderBy: [{ uid: 'asc' }],
+        select: expect.any(Object),
+        skip: 0,
+        take: 11,
         where: {
           OR: [{ creatorUid: userUid }, { sessionPlayers: { some: { userUid } } }],
         },
-        orderBy: undefined,
-        select: expect.any(Object),
-        take: 11,
       });
     });
 
     it('should filter sessions by minStart date', async () => {
       const minStart = new Date('2023-01-08T00:00:00Z');
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession2]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       const result = await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1519,19 +1529,22 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
+        cursor: undefined,
+        orderBy: [{ uid: 'asc' }],
+        select: expect.any(Object),
+        skip: 0,
+        take: 11,
         where: {
           creatorUid: userUid,
           startDate: { gte: minStart },
         },
-        orderBy: undefined,
-        select: expect.any(Object),
-        take: 11,
       });
     });
 
     it('should filter sessions by maxStart date', async () => {
       const maxStart = new Date('2023-01-11T00:00:00Z');
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession1]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       const result = await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1539,13 +1552,15 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
+        cursor: undefined,
+        orderBy: [{ uid: 'asc' }],
+        select: expect.any(Object),
+        skip: 0,
+        take: 11,
         where: {
           creatorUid: userUid,
           startDate: { lte: maxStart },
         },
-        orderBy: undefined,
-        select: expect.any(Object),
-        take: 11,
       });
     });
 
@@ -1553,6 +1568,7 @@ describe('SessionsService', () => {
       const minStart = new Date('2023-01-08T00:00:00Z');
       const maxStart = new Date('2023-01-11T00:00:00Z');
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession1]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1561,19 +1577,22 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
+        cursor: undefined,
+        orderBy: [{ uid: 'asc' }],
+        select: expect.any(Object),
+        skip: 0,
+        take: 11,
         where: {
           creatorUid: userUid,
           startDate: { gte: minStart, lte: maxStart },
         },
-        orderBy: undefined,
-        select: expect.any(Object),
-        take: 11,
       });
     });
 
     it('should filter sessions by endDate', async () => {
       const endDate = new Date('2023-01-11T00:00:00Z');
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession1]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1581,13 +1600,15 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
+        cursor: undefined,
+        orderBy: [{ uid: 'asc' }],
+        select: expect.any(Object),
+        skip: 0,
+        take: 11,
         where: {
           creatorUid: userUid,
           endDate: { lte: endDate },
         },
-        orderBy: undefined,
-        select: expect.any(Object),
-        take: 11,
       });
     });
 
@@ -1596,6 +1617,7 @@ describe('SessionsService', () => {
         mockSession1,
         mockSession2,
       ]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(2);
 
       await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1603,22 +1625,25 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
-        where: {
-          creatorUid: userUid,
-          startDate: { gte: mockCurrentDate },
-        },
-        orderBy: undefined,
+        cursor: undefined,
+        orderBy: [{ uid: 'asc' }],
         select: expect.objectContaining({
           uid: true,
           sport: true,
           startDate: true,
         }),
+        skip: 0,
         take: 11,
+        where: {
+          creatorUid: userUid,
+          startDate: { gte: mockCurrentDate },
+        },
       });
     });
 
     it('should filter past sessions when scope is PAST', async () => {
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockPastSession]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1626,22 +1651,25 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
-        where: {
-          creatorUid: userUid,
-          startDate: { lt: mockCurrentDate },
-        },
-        orderBy: undefined,
+        cursor: undefined,
+        orderBy: [{ uid: 'asc' }],
         select: expect.objectContaining({
           uid: true,
           sport: true,
           startDate: true,
         }),
+        skip: 0,
         take: 11,
+        where: {
+          creatorUid: userUid,
+          startDate: { lt: mockCurrentDate },
+        },
       });
     });
 
     it('should filter sessions by sports', async () => {
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession1]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1649,13 +1677,15 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
+        cursor: undefined,
+        orderBy: [{ uid: 'asc' }],
+        select: expect.any(Object),
+        skip: 0,
+        take: 11,
         where: {
           creatorUid: userUid,
           sport: { in: [Sport.FOOTBALL] },
         },
-        orderBy: undefined,
-        select: expect.any(Object),
-        take: 11,
       });
     });
 
@@ -1664,6 +1694,7 @@ describe('SessionsService', () => {
         mockSession1,
         mockSession2,
       ]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(2);
 
       await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1671,13 +1702,15 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
+        cursor: undefined,
+        orderBy: [{ uid: 'asc' }],
+        select: expect.any(Object),
+        skip: 0,
+        take: 11,
         where: {
           creatorUid: userUid,
           sport: { in: [Sport.FOOTBALL, Sport.BASKETBALL] },
         },
-        orderBy: undefined,
-        select: expect.any(Object),
-        take: 11,
       });
     });
 
@@ -1686,6 +1719,7 @@ describe('SessionsService', () => {
         mockSession1,
         mockSession2,
       ]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(2);
 
       await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1693,10 +1727,12 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
-        where: { creatorUid: userUid },
-        orderBy: [{ startDate: 'asc' }],
+        cursor: undefined,
+        orderBy: [{ startDate: 'asc' }, { uid: 'asc' }],
         select: expect.any(Object),
+        skip: 0,
         take: 11,
+        where: { creatorUid: userUid },
       });
     });
 
@@ -1705,6 +1741,7 @@ describe('SessionsService', () => {
         mockSession2,
         mockSession1,
       ]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(2);
 
       await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1712,10 +1749,12 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
-        where: { creatorUid: userUid },
-        orderBy: [{ startDate: 'desc' }],
+        cursor: undefined,
+        orderBy: [{ startDate: 'desc' }, { uid: 'asc' }],
         select: expect.any(Object),
+        skip: 0,
         take: 11,
+        where: { creatorUid: userUid },
       });
     });
 
@@ -1724,6 +1763,7 @@ describe('SessionsService', () => {
         mockSession1,
         mockSession2,
       ]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(2);
 
       await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1731,10 +1771,12 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
-        where: { creatorUid: userUid },
-        orderBy: [{ createdAt: 'desc' }],
+        cursor: undefined,
+        orderBy: [{ createdAt: 'desc' }, { uid: 'asc' }],
         select: expect.any(Object),
+        skip: 0,
         take: 11,
+        where: { creatorUid: userUid },
       });
     });
 
@@ -1743,6 +1785,7 @@ describe('SessionsService', () => {
         mockSession1,
         mockSession2,
       ]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(2);
 
       await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1751,10 +1794,12 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
-        where: { creatorUid: userUid },
-        orderBy: [{ startDate: 'asc' }, { createdAt: 'desc' }],
+        cursor: undefined,
+        orderBy: [{ startDate: 'asc' }, { createdAt: 'desc' }, { uid: 'asc' }],
         select: expect.any(Object),
+        skip: 0,
         take: 11,
+        where: { creatorUid: userUid },
       });
     });
 
@@ -1762,6 +1807,7 @@ describe('SessionsService', () => {
       const minStart = new Date('2023-01-08T00:00:00Z');
       const maxStart = new Date('2023-01-11T00:00:00Z');
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession1]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1773,23 +1819,26 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
-        where: {
-          creatorUid: userUid,
-          startDate: { gte: mockCurrentDate, lte: maxStart },
-          sport: { in: [Sport.FOOTBALL] },
-        },
-        orderBy: [{ startDate: 'asc' }],
+        cursor: undefined,
+        orderBy: [{ startDate: 'asc' }, { uid: 'asc' }],
         select: expect.objectContaining({
           uid: true,
           sport: true,
           startDate: true,
         }),
+        skip: 0,
         take: 11,
+        where: {
+          creatorUid: userUid,
+          sport: { in: [Sport.FOOTBALL] },
+          startDate: { gte: mockCurrentDate, lte: maxStart },
+        },
       });
     });
 
     it('should return empty array when no sessions found', async () => {
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(0);
 
       const result = await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1799,15 +1848,18 @@ describe('SessionsService', () => {
       expect(result.totalCount).toBe(0);
       expect(result.nextCursor).toBeNull();
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
-        where: { creatorUid: userUid },
-        orderBy: undefined,
+        cursor: undefined,
+        orderBy: [{ uid: 'asc' }],
         select: expect.any(Object),
+        skip: 0,
         take: 11,
+        where: { creatorUid: userUid },
       });
     });
 
     it('should filter sessions by level', async () => {
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession1]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1815,18 +1867,21 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
+        cursor: undefined,
+        orderBy: [{ uid: 'asc' }],
+        select: expect.any(Object),
+        skip: 0,
+        take: 11,
         where: {
           creatorUid: userUid,
           level: SessionSportLevel.BEGINNER,
         },
-        orderBy: undefined,
-        select: expect.any(Object),
-        take: 11,
       });
     });
 
     it('should filter sessions by visibility', async () => {
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession1]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1834,18 +1889,21 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
+        cursor: undefined,
+        orderBy: [{ uid: 'asc' }],
+        select: expect.any(Object),
+        skip: 0,
+        take: 11,
         where: {
           creatorUid: userUid,
           visibility: 'PUBLIC',
         },
-        orderBy: undefined,
-        select: expect.any(Object),
-        take: 11,
       });
     });
 
     it('should handle pagination with cursor', async () => {
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession2]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1854,13 +1912,14 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
+        cursor: { uid: 'session-uid-1' },
+        orderBy: [{ uid: 'asc' }],
+        select: expect.any(Object),
+        skip: 1,
+        take: 11,
         where: {
           creatorUid: userUid,
-          uid: { gt: 'session-uid-1' },
         },
-        orderBy: undefined,
-        select: expect.any(Object),
-        take: 11,
       });
     });
 
@@ -1872,6 +1931,7 @@ describe('SessionsService', () => {
           uid: `session-uid-${i}`,
         }));
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue(moreSessions);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(20);
 
       const result = await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1880,11 +1940,12 @@ describe('SessionsService', () => {
 
       expect(result.items).toHaveLength(10);
       expect(result.nextCursor).toBe('session-uid-10');
-      expect(result.totalCount).toBe(10);
+      expect(result.totalCount).toBe(20);
     });
 
     it('should return null nextCursor when no more results', async () => {
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession1]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       const result = await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1899,6 +1960,7 @@ describe('SessionsService', () => {
     it('should combine level, visibility, and other filters', async () => {
       const minStart = new Date('2023-01-08T00:00:00Z');
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession1]);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
@@ -1910,6 +1972,11 @@ describe('SessionsService', () => {
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
+        cursor: undefined,
+        orderBy: [{ startDate: 'asc' }, { uid: 'asc' }],
+        select: expect.any(Object),
+        skip: 0,
+        take: 11,
         where: {
           creatorUid: userUid,
           level: SessionSportLevel.INTERMEDIATE,
@@ -1917,9 +1984,31 @@ describe('SessionsService', () => {
           sport: { in: [Sport.FOOTBALL] },
           startDate: { gte: minStart },
         },
-        orderBy: [{ startDate: 'asc' }],
-        select: expect.any(Object),
-        take: 11,
+      });
+    });
+  });
+
+  describe('getUserSessionStats', () => {
+    it('should return organized and participated counts', async () => {
+      const userUid = 'user-uid-1';
+      (prismaService.sessions.count as jest.Mock)
+        .mockResolvedValueOnce(5) // organized
+        .mockResolvedValueOnce(10); // participated
+
+      const result = await service.getUserSessionStats(userUid);
+
+      expect(result).toEqual({ organizedCount: 5, participatedCount: 10 });
+      expect(prismaService.sessions.count).toHaveBeenCalledWith({
+        where: { creatorUid: userUid },
+      });
+      expect(prismaService.sessions.count).toHaveBeenCalledWith({
+        where: {
+          sessionPlayers: {
+            some: {
+              userUid: userUid,
+            },
+          },
+        },
       });
     });
   });
