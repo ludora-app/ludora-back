@@ -7,7 +7,6 @@ import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-r
 import {
   Controller,
   Get,
-  Post,
   Body,
   Param,
   Delete,
@@ -15,10 +14,10 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Put,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
-  ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -30,7 +29,6 @@ import { HourPreferencesService } from '../services/hour-preferences.service';
 import { CreateHourPreferenceDto } from '../dto/input/create-hour-preference.dto';
 import {
   PaginatedHourPreferenceResponseDto,
-  HourPreferenceResponseDto,
   HourPreferenceResponseData,
 } from '../dto/output/hour-preference-response.dto';
 
@@ -38,25 +36,6 @@ import {
 @UseGuards(AuthB2CGuard)
 export class HourPreferencesController {
   constructor(private readonly hourPreferencesService: HourPreferencesService) {}
-
-  @Post()
-  @Protected()
-  @ApiOperation({ summary: 'Create a new user hour preference' })
-  @ApiCreatedResponse({ type: HourPreferenceResponseDto })
-  @ApiBadRequestResponse({ type: BadRequestResponseDto })
-  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  @ApiNotFoundResponse({ type: NotFoundResponseDto })
-  @HttpCode(HttpStatus.CREATED)
-  async create(
-    @Req() request: Request,
-    @Body() createHourPreferenceDto: CreateHourPreferenceDto,
-  ): Promise<HourPreferenceResponseDto> {
-    const uid = request['user'].uid;
-
-    const data = await this.hourPreferencesService.create(uid, createHourPreferenceDto);
-
-    return { data, message: 'User hour preference created successfully' };
-  }
 
   @Get('list-by-user/:userUid')
   @Protected()
@@ -101,15 +80,32 @@ export class HourPreferencesController {
     };
   }
 
-  @Delete(':uid')
+  @Put()
   @Protected()
-  @ApiOperation({ summary: 'Delete a user hour preference by uid' })
+  @ApiOperation({ summary: 'Saves the hour preferences of the connected user' })
+  @ApiNoContentResponse({ description: 'User hour preferences created successfully' })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async createMany(
+    @Req() request: Request,
+    @Body() createHourPreferenceDto: CreateHourPreferenceDto,
+  ): Promise<void> {
+    const uid = request['user'].uid;
+
+    await this.hourPreferencesService.createMany(createHourPreferenceDto.hourPreferences, uid);
+  }
+
+  @Delete()
+  @Protected()
+  @ApiOperation({ summary: 'Delete all the hour preferences of the connected user' })
   @ApiNoContentResponse({ description: 'User hour preference deleted successfully' })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('uid') uid: string, @Req() request: Request): Promise<void> {
+  async remove(@Req() request: Request): Promise<void> {
     const userUid = request['user'].uid;
-    await this.hourPreferencesService.remove(uid, userUid);
+    await this.hourPreferencesService.clearPreferences(userUid);
   }
 }
