@@ -1,8 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { TimePeriod, UserHourPreferenceType } from 'generated/prisma/client';
-import { IsDateString, IsEnum, IsNumber, Max, Min, ValidateIf } from 'class-validator';
+import {
+  IsArray,
+  IsDateString,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  Max,
+  Min,
+  ValidateIf,
+} from 'class-validator';
 
-export class CreateHourPreferenceDto {
+export class CreateHourPreferenceData {
   @IsNumber()
   @Min(0)
   @Max(6)
@@ -34,4 +43,14 @@ export class CreateHourPreferenceDto {
     example: '2025-05-10T22:30:32.525Z',
   })
   date?: string;
+}
+
+export class CreateHourPreferenceDto {
+  @IsArray()
+  @IsNotEmpty({ each: true })
+  @ApiProperty({
+    description: 'The hour preferences of the user',
+    type: [CreateHourPreferenceData],
+  })
+  hourPreferences: CreateHourPreferenceData[];
 }

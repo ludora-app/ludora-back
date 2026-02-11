@@ -1,18 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { TimePeriod, UserHourPreferenceType } from 'generated/prisma/client';
 import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
 import { PinoLogger } from 'nestjs-pino';
-import { CreateHourPreferenceDto } from 'src/user-preferences/dto/input/create-hour-preference.dto';
-import { DateUtils } from 'src/shared/utils/date.utils';
-
-jest.mock('src/shared/utils/date.utils', () => ({
-  DateUtils: {
-    getDayOfWeekNumber: jest.fn(),
-  },
-}));
+import { CreateHourPreferenceData } from 'src/user-preferences/dto/input/create-hour-preference.dto';
 
 describe('HourPreferencesService', () => {
   let service: HourPreferencesService;
@@ -24,26 +17,21 @@ describe('HourPreferencesService', () => {
   const mockFutureDate = new Date('2023-01-10T14:00:00Z');
 
   beforeEach(async () => {
-    // Mock current date
-    const OriginalDate = global.Date;
-    jest.spyOn(global, 'Date').mockImplementation((...args) => {
-      if (!args.length) {
-        return mockCurrentDate;
-      }
-      return new OriginalDate(...args);
-    });
-
     const mockUsersService = {
       findOne: jest.fn(),
+    };
+    const mockTx = {
+      userHourPreferences: {
+        create: jest.fn(),
+      },
     };
     const mockPrismaService = {
       userHourPreferences: {
         findMany: jest.fn(),
-        create: jest.fn(),
-        findFirst: jest.fn(),
         findUnique: jest.fn(),
-        delete: jest.fn(),
+        deleteMany: jest.fn(),
       },
+      $transaction: jest.fn((cb: (tx: typeof mockTx) => Promise<void>) => cb(mockTx)),
     };
     const mockPinoLogger = {
       setContext: jest.fn(),
@@ -77,169 +65,154 @@ describe('HourPreferencesService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('create', () => {
-    const mockUser = { uid: 'user-uid-1', email: 'test@example.com' };
-
-    describe('RECURRENT preference', () => {
-      const createRecurrentDto: CreateHourPreferenceDto = {
+  describe('createMany', () => {
+    const userUid = 'user-uid-1';
+    const hourPreferences: CreateHourPreferenceData[] = [
+      {
         dayOfWeek: 2,
         timePeriod: TimePeriod.MORNING,
         preferenceType: UserHourPreferenceType.RECURRENT,
-      };
-
-      it('should create a recurrent hour preference successfully', async () => {
-        const mockCreatedPreference = {
-          uid: 'pref-uid-1',
-          userUid: 'user-uid-1',
-          dayOfWeek: 2,
-          timePeriod: TimePeriod.MORNING,
-          type: UserHourPreferenceType.RECURRENT,
-          date: null,
-          createdAt: mockCurrentDate,
-          updatedAt: mockCurrentDate,
-        };
-
-        (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
-        (prismaService.userHourPreferences.findFirst as jest.Mock).mockResolvedValue(null);
-        (prismaService.userHourPreferences.create as jest.Mock).mockResolvedValue(
-          mockCreatedPreference,
-        );
-
-        const result = await service.create('user-uid-1', createRecurrentDto);
-
-        expect(result).toEqual(mockCreatedPreference);
-        expect(usersService.findOne).toHaveBeenCalledWith('user-uid-1', expect.any(Object));
-        expect(prismaService.userHourPreferences.findFirst).toHaveBeenCalledWith({
-          where: {
-            dayOfWeek: 2,
-            timePeriod: TimePeriod.MORNING,
-            userUid: 'user-uid-1',
-          },
-        });
-        expect(prismaService.userHourPreferences.create).toHaveBeenCalledWith({
-          data: {
-            dayOfWeek: 2,
-            timePeriod: TimePeriod.MORNING,
-            type: UserHourPreferenceType.RECURRENT,
-            userUid: 'user-uid-1',
-          },
-        });
-      });
-
-      it('should throw NotFoundException when user does not exist', async () => {
-        (usersService.findOne as jest.Mock).mockResolvedValue(null);
-
-        await expect(service.create('user-uid-1', createRecurrentDto)).rejects.toThrow(
-          new NotFoundException('User not found'),
-        );
-        expect(logger.error).toHaveBeenCalledWith('User not found: user-uid-1');
-      });
-
-      it('should throw BadRequestException when recurrent preference already exists', async () => {
-        const existingPreference = {
-          uid: 'existing-pref-uid',
-          userUid: 'user-uid-1',
-          dayOfWeek: 2,
-          timePeriod: TimePeriod.MORNING,
-          type: UserHourPreferenceType.RECURRENT,
-        };
-
-        (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
-        (prismaService.userHourPreferences.findFirst as jest.Mock).mockResolvedValue(
-          existingPreference,
-        );
-
-        await expect(service.create('user-uid-1', createRecurrentDto)).rejects.toThrow(
-          new BadRequestException('An hour preference already exists for this day and time period'),
-        );
-      });
-    });
-
-    describe('ONE_TIME preference', () => {
-      const createOneTimeDto: CreateHourPreferenceDto = {
+      },
+      {
         timePeriod: TimePeriod.AFTERNOON,
         preferenceType: UserHourPreferenceType.ONE_TIME,
         date: mockFutureDate.toISOString(),
-      };
+      },
+    ];
 
-      it('should create a one-time hour preference successfully', async () => {
-        const mockCreatedPreference = {
-          uid: 'pref-uid-1',
-          userUid: 'user-uid-1',
+    it('should clear preferences then create all valid hour preferences in a transaction', async () => {
+      const mockTxCreate = jest.fn().mockResolvedValue({});
+      (prismaService.$transaction as jest.Mock).mockImplementation((cb) =>
+        cb({ userHourPreferences: { create: mockTxCreate } }),
+      );
+
+      await service.createMany(hourPreferences, userUid);
+
+      expect(prismaService.userHourPreferences.deleteMany).toHaveBeenCalledWith({
+        where: { userUid },
+      });
+      expect(prismaService.$transaction).toHaveBeenCalled();
+      expect(mockTxCreate).toHaveBeenCalledTimes(2);
+      expect(mockTxCreate).toHaveBeenNthCalledWith(1, {
+        data: {
+          date: undefined,
           dayOfWeek: 2,
+          timePeriod: TimePeriod.MORNING,
+          type: UserHourPreferenceType.RECURRENT,
+          userUid,
+        },
+      });
+      expect(mockTxCreate).toHaveBeenNthCalledWith(2, {
+        data: {
+          date: mockFutureDate.toISOString(),
+          dayOfWeek: undefined,
           timePeriod: TimePeriod.AFTERNOON,
           type: UserHourPreferenceType.ONE_TIME,
-          date: mockFutureDate,
-          createdAt: mockCurrentDate,
-          updatedAt: mockCurrentDate,
-        };
-
-        (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
-        (DateUtils.getDayOfWeekNumber as jest.Mock).mockReturnValue(2);
-        (prismaService.userHourPreferences.findFirst as jest.Mock).mockResolvedValue(null);
-        (prismaService.userHourPreferences.create as jest.Mock).mockResolvedValue(
-          mockCreatedPreference,
-        );
-
-        const result = await service.create('user-uid-1', createOneTimeDto);
-
-        expect(result).toEqual(mockCreatedPreference);
-        expect(DateUtils.getDayOfWeekNumber).toHaveBeenCalledWith(mockFutureDate.toISOString());
-        expect(prismaService.userHourPreferences.create).toHaveBeenCalledWith({
-          data: {
-            date: mockFutureDate.toISOString(),
-            dayOfWeek: 2,
-            timePeriod: TimePeriod.AFTERNOON,
-            type: UserHourPreferenceType.ONE_TIME,
-            userUid: 'user-uid-1',
-          },
-          select: {
-            createdAt: true,
-            date: true,
-            dayOfWeek: true,
-            timePeriod: true,
-            type: true,
-            uid: true,
-          },
-        });
+          userUid,
+        },
       });
+    });
 
-      it('should throw BadRequestException when date is in the past', async () => {
-        const pastDate = new Date('2022-01-01T12:00:00Z');
-        const pastDateDto: CreateHourPreferenceDto = {
+    it('should deduplicate RECURRENT preferences (same dayOfWeek + timePeriod)', async () => {
+      const prefs: CreateHourPreferenceData[] = [
+        {
+          dayOfWeek: 2,
+          timePeriod: TimePeriod.MORNING,
+          preferenceType: UserHourPreferenceType.RECURRENT,
+        },
+        {
+          dayOfWeek: 2,
+          timePeriod: TimePeriod.MORNING,
+          preferenceType: UserHourPreferenceType.RECURRENT,
+        },
+      ];
+      const mockTxCreate = jest.fn().mockResolvedValue({});
+      (prismaService.$transaction as jest.Mock).mockImplementation((cb) =>
+        cb({ userHourPreferences: { create: mockTxCreate } }),
+      );
+
+      await service.createMany(prefs, userUid);
+
+      expect(mockTxCreate).toHaveBeenCalledTimes(1);
+      expect(logger.warn).toHaveBeenCalledWith(
+        'Recurrent hour preference already exists, skipping',
+      );
+    });
+
+    it('should skip ONE_TIME when covered by RECURRENT (same dayOfWeek + timePeriod)', async () => {
+      const prefs: CreateHourPreferenceData[] = [
+        {
+          dayOfWeek: 2,
+          timePeriod: TimePeriod.MORNING,
+          preferenceType: UserHourPreferenceType.RECURRENT,
+        },
+        {
+          timePeriod: TimePeriod.MORNING,
+          preferenceType: UserHourPreferenceType.ONE_TIME,
+          date: '2023-01-10T14:00:00.000Z', // Tuesday = day 2
+        },
+      ];
+      const mockTxCreate = jest.fn().mockResolvedValue({});
+      (prismaService.$transaction as jest.Mock).mockImplementation((cb) =>
+        cb({ userHourPreferences: { create: mockTxCreate } }),
+      );
+
+      await service.createMany(prefs, userUid);
+
+      expect(mockTxCreate).toHaveBeenCalledTimes(1);
+      expect(logger.warn).toHaveBeenCalledWith(
+        'One-time hour preference covered by recurrent (dayOfWeek 2, MORNING), skipping',
+      );
+    });
+
+    it('should deduplicate ONE_TIME preferences (same date + timePeriod)', async () => {
+      const dateStr = mockFutureDate.toISOString();
+      const prefs: CreateHourPreferenceData[] = [
+        {
           timePeriod: TimePeriod.AFTERNOON,
           preferenceType: UserHourPreferenceType.ONE_TIME,
-          date: pastDate.toISOString(),
-        };
-
-        (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
-        (DateUtils.getDayOfWeekNumber as jest.Mock).mockReturnValue(2);
-        (prismaService.userHourPreferences.findFirst as jest.Mock).mockResolvedValue(null);
-
-        await expect(service.create('user-uid-1', pastDateDto)).rejects.toThrow(
-          new BadRequestException('The date is in the past'),
-        );
-      });
-
-      it('should throw BadRequestException when one-time preference conflicts with recurrent', async () => {
-        const existingPreference = {
-          uid: 'existing-pref-uid',
-          userUid: 'user-uid-1',
-          dayOfWeek: 2,
+          date: dateStr,
+        },
+        {
           timePeriod: TimePeriod.AFTERNOON,
-          type: UserHourPreferenceType.RECURRENT,
-        };
+          preferenceType: UserHourPreferenceType.ONE_TIME,
+          date: dateStr,
+        },
+      ];
+      const mockTxCreate = jest.fn().mockResolvedValue({});
+      (prismaService.$transaction as jest.Mock).mockImplementation((cb) =>
+        cb({ userHourPreferences: { create: mockTxCreate } }),
+      );
 
-        (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
-        (DateUtils.getDayOfWeekNumber as jest.Mock).mockReturnValue(2);
-        (prismaService.userHourPreferences.findFirst as jest.Mock).mockResolvedValue(
-          existingPreference,
-        );
+      await service.createMany(prefs, userUid);
 
-        await expect(service.create('user-uid-1', createOneTimeDto)).rejects.toThrow(
-          new BadRequestException('An hour preference already exists for this day and time period'),
-        );
-      });
+      expect(mockTxCreate).toHaveBeenCalledTimes(1);
+      expect(logger.warn).toHaveBeenCalledWith('One-time hour preference already exists, skipping');
+    });
+
+    it('should log when submitted count differs from valid count', async () => {
+      const prefs: CreateHourPreferenceData[] = [
+        {
+          dayOfWeek: 2,
+          timePeriod: TimePeriod.MORNING,
+          preferenceType: UserHourPreferenceType.RECURRENT,
+        },
+        {
+          dayOfWeek: 2,
+          timePeriod: TimePeriod.MORNING,
+          preferenceType: UserHourPreferenceType.RECURRENT,
+        },
+      ];
+      const mockTxCreate = jest.fn().mockResolvedValue({});
+      (prismaService.$transaction as jest.Mock).mockImplementation((cb) =>
+        cb({ userHourPreferences: { create: mockTxCreate } }),
+      );
+
+      await service.createMany(prefs, userUid);
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        '2 hour preferences submitted, but 1 are valid, skipping',
+      );
     });
   });
 
@@ -285,7 +258,6 @@ describe('HourPreferencesService', () => {
       );
       expect(prismaService.userHourPreferences.findMany).toHaveBeenCalledWith({
         select: {
-          createdAt: true,
           date: true,
           dayOfWeek: true,
           timePeriod: true,
@@ -295,7 +267,7 @@ describe('HourPreferencesService', () => {
         where: {
           OR: [
             { type: UserHourPreferenceType.RECURRENT, userUid: 'user-uid-1' },
-            { date: { gt: mockCurrentDate }, userUid: 'user-uid-1' },
+            { date: { gt: expect.any(Date) }, userUid: 'user-uid-1' },
           ],
         },
       });
@@ -321,47 +293,6 @@ describe('HourPreferencesService', () => {
         new NotFoundException('User not found'),
       );
       expect(logger.error).toHaveBeenCalledWith('User not found: user-uid-1');
-    });
-  });
-
-  describe('checkIfRecurrentHourPreferenceExists', () => {
-    it('should return true when recurrent preference exists', async () => {
-      const mockPreference = {
-        uid: 'pref-uid-1',
-        userUid: 'user-uid-1',
-        dayOfWeek: 2,
-        timePeriod: TimePeriod.MORNING,
-        type: UserHourPreferenceType.RECURRENT,
-      };
-
-      (prismaService.userHourPreferences.findFirst as jest.Mock).mockResolvedValue(mockPreference);
-
-      const result = await service.checkIfRecurrentHourPreferenceExists({
-        userUid: 'user-uid-1',
-        dayOfWeek: 2,
-        timePeriod: TimePeriod.MORNING,
-      });
-
-      expect(result).toBe(true);
-      expect(prismaService.userHourPreferences.findFirst).toHaveBeenCalledWith({
-        where: {
-          dayOfWeek: 2,
-          timePeriod: TimePeriod.MORNING,
-          userUid: 'user-uid-1',
-        },
-      });
-    });
-
-    it('should return false when no preference exists', async () => {
-      (prismaService.userHourPreferences.findFirst as jest.Mock).mockResolvedValue(null);
-
-      const result = await service.checkIfRecurrentHourPreferenceExists({
-        userUid: 'user-uid-1',
-        dayOfWeek: 2,
-        timePeriod: TimePeriod.MORNING,
-      });
-
-      expect(result).toBe(false);
     });
   });
 
@@ -397,46 +328,16 @@ describe('HourPreferencesService', () => {
     });
   });
 
-  describe('remove', () => {
-    const mockPreference = {
-      uid: 'pref-uid-1',
-      userUid: 'user-uid-1',
-      dayOfWeek: 2,
-      timePeriod: TimePeriod.MORNING,
-      type: UserHourPreferenceType.RECURRENT,
-      date: null,
-      createdAt: mockCurrentDate,
-      updatedAt: mockCurrentDate,
-    };
+  describe('clearPreferences', () => {
+    it('should delete all hour preferences for the user', async () => {
+      (prismaService.userHourPreferences.deleteMany as jest.Mock).mockResolvedValue({ count: 3 });
 
-    it('should delete a preference successfully', async () => {
-      (prismaService.userHourPreferences.findUnique as jest.Mock).mockResolvedValue(mockPreference);
-      (prismaService.userHourPreferences.delete as jest.Mock).mockResolvedValue(mockPreference);
+      await service.clearPreferences('user-uid-1');
 
-      await service.remove('pref-uid-1', 'user-uid-1');
-
-      expect(prismaService.userHourPreferences.delete).toHaveBeenCalledWith({
-        where: { uid: 'pref-uid-1' },
+      expect(prismaService.userHourPreferences.deleteMany).toHaveBeenCalledWith({
+        where: { userUid: 'user-uid-1' },
       });
-      expect(logger.info).toHaveBeenCalledWith('Hour preference deleted: pref-uid-1');
-    });
-
-    it('should throw NotFoundException when preference does not exist', async () => {
-      (prismaService.userHourPreferences.findUnique as jest.Mock).mockResolvedValue(null);
-
-      await expect(service.remove('pref-uid-1', 'user-uid-1')).rejects.toThrow(
-        new NotFoundException('Hour preference not found'),
-      );
-      expect(logger.error).toHaveBeenCalledWith('Hour preference not found: pref-uid-1');
-    });
-
-    it('should throw NotFoundException when userUid does not match', async () => {
-      (prismaService.userHourPreferences.findUnique as jest.Mock).mockResolvedValue(mockPreference);
-
-      await expect(service.remove('pref-uid-1', 'different-user-uid')).rejects.toThrow(
-        new NotFoundException('Hour preference not found'),
-      );
-      expect(logger.error).toHaveBeenCalledWith('Hour preference not found: pref-uid-1');
+      expect(logger.debug).toHaveBeenCalledWith('user-uid-1 hour preferences cleared');
     });
   });
 });

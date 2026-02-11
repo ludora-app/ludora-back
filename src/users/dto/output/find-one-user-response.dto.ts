@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Sex, UserType } from 'generated/prisma/client';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import { SimpleSportPreferenceResponseDto } from 'src/user-preferences/dto/output/simple-sport-preference-response.dto';
+import { SportPreferenceResponseData } from 'src/user-preferences/dto/output/sport-preference.response.dto';
 
 export class FindOneUserResponseData {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
@@ -28,7 +28,7 @@ export class FindOneUserResponseData {
     nullable: true,
     readOnly: true,
   })
-  readonly sportPreferences?: SimpleSportPreferenceResponseDto[];
+  readonly sportPreferences?: SportPreferenceResponseData[];
 
   @ApiProperty({ example: 42, readOnly: true })
   readonly friendsCount?: number;
