@@ -140,8 +140,25 @@ describe('UsersService', () => {
   describe('findAll', () => {
     it('should return a list of users', async () => {
       const mockUsers = [
-        { uid: '1', firstname: 'John', lastname: 'Doe', email: 'john@example.com' },
-        { uid: '2', firstname: 'Jane', lastname: 'Doe', email: 'jane@example.com' },
+        {
+          uid: '1',
+          firstname: 'John',
+          lastname: 'Doe',
+          email: 'john@example.com',
+          imageUrl: '',
+          userSportPreferences: [
+            { uid: 'sp1', sport: 'BASKETBALL', level: 3 },
+            { uid: 'sp2', sport: 'FOOTBALL', level: 2 },
+          ],
+        },
+        {
+          uid: '2',
+          firstname: 'Jane',
+          lastname: 'Doe',
+          email: 'jane@example.com',
+          imageUrl: '',
+          userSportPreferences: [{ uid: 'sp3', sport: 'TENNIS', level: 4 }],
+        },
       ];
 
       mockPrismaService.users.findMany.mockResolvedValueOnce(mockUsers);
@@ -149,16 +166,41 @@ describe('UsersService', () => {
 
       const result = await service.findAll({ limit: 10 });
 
-      expect(result.items).toEqual(mockUsers);
+      expect(result.items.length).toBe(2);
+      expect(result.items[0].uid).toBe('1');
+      expect(result.items[0].sportPreferences).toEqual(['BASKETBALL', 'FOOTBALL']);
+      expect(result.items[1].uid).toBe('2');
+      expect(result.items[1].sportPreferences).toEqual(['TENNIS']);
       expect(result.totalCount).toBe(2);
       expect(result.nextCursor).toBeNull();
     });
 
     it('should handle pagination correctly', async () => {
       const mockUsers = [
-        { uid: '1', firstname: 'John', lastname: 'Doe', email: 'john@example.com', imageUrl: '' },
-        { uid: '2', firstname: 'Jane', lastname: 'Doe', email: 'jane@example.com', imageUrl: '' },
-        { uid: '3', firstname: 'Bob', lastname: 'Smith', email: 'bob@example.com', imageUrl: '' },
+        {
+          uid: '1',
+          firstname: 'John',
+          lastname: 'Doe',
+          email: 'john@example.com',
+          imageUrl: '',
+          userSportPreferences: [{ uid: 'sp1', sport: 'BASKETBALL', level: 3 }],
+        },
+        {
+          uid: '2',
+          firstname: 'Jane',
+          lastname: 'Doe',
+          email: 'jane@example.com',
+          imageUrl: '',
+          userSportPreferences: [{ uid: 'sp2', sport: 'FOOTBALL', level: 2 }],
+        },
+        {
+          uid: '3',
+          firstname: 'Bob',
+          lastname: 'Smith',
+          email: 'bob@example.com',
+          imageUrl: '',
+          userSportPreferences: [{ uid: 'sp3', sport: 'TENNIS', level: 4 }],
+        },
       ];
 
       mockPrismaService.users.findMany.mockResolvedValueOnce(mockUsers);

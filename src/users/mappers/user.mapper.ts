@@ -7,7 +7,11 @@ import {
   UserType,
 } from 'generated/prisma/enums';
 
-import { FindMeUserResponseData, FindOneUserResponseData } from '../dto';
+import {
+  FindAllUsersResponseDataDto,
+  FindMeUserResponseData,
+  FindOneUserResponseData,
+} from '../dto';
 
 export interface RawUserFindOne {
   bio: string;
@@ -49,6 +53,18 @@ export interface RawUserFindMe extends RawUserFindOne {
   }[];
 }
 
+export interface RawUserFindAll {
+  uid: string;
+  lastname: string;
+  imageUrl: string;
+  firstname: string;
+  userSportPreferences: {
+    sport: string;
+    level: number;
+    uid: string;
+  }[];
+}
+
 export class UserMapper {
   static toFindOneResponseDto(user: RawUserFindOne): FindOneUserResponseData {
     return {
@@ -87,6 +103,18 @@ export class UserMapper {
       ),
       stripeAccountId: user.stripeAccountId,
       type: user.type,
+      uid: user.uid,
+    };
+  }
+
+  static toFindAllResponseDto(user: RawUserFindAll): FindAllUsersResponseDataDto {
+    return {
+      firstname: user.firstname,
+      imageUrl: user.imageUrl,
+      lastname: user.lastname,
+      sportPreferences: SportPreferencesMapper.toSimpleArrayWithGameModes(
+        user.userSportPreferences,
+      ),
       uid: user.uid,
     };
   }

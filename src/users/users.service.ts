@@ -18,6 +18,7 @@ import {
 } from '@nestjs/common';
 
 import { USERSELECT } from '../shared/constants/select-user';
+import { RawUserFindAll, UserMapper } from './mappers/user.mapper';
 import {
   CreateUserDto,
   FindAllUsersResponseDataDto,
@@ -96,9 +97,11 @@ export class UsersService {
         imageUrl: true,
         lastname: true,
         uid: true,
-        userSports: {
+        userSportPreferences: {
           select: {
+            level: true,
             sport: true,
+            uid: true,
           },
         },
       },
@@ -121,7 +124,11 @@ export class UsersService {
       query['cursor'] = cursor;
     }
 
-    const users = await this.prismaService.users.findMany(query);
+    const rawUsers = await this.prismaService.users.findMany(query);
+    console.log(rawUsers);
+    const users = rawUsers.map((user) =>
+      UserMapper.toFindAllResponseDto(user as unknown as RawUserFindAll),
+    );
 
     let nextCursor: string | null = null;
     if (users.length > limit) {
