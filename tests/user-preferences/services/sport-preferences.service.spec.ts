@@ -32,6 +32,7 @@ describe('SportPreferencesService', () => {
       userGameModePreferences: {
         findFirst: jest.fn(),
         create: jest.fn(),
+        deleteMany: jest.fn(),
       },
       $transaction: jest.fn(),
     };
@@ -248,10 +249,16 @@ describe('SportPreferencesService', () => {
 
     it('should delete all sport preferences for the user', async () => {
       (prismaService.userSportPreferences.deleteMany as jest.Mock).mockResolvedValue({ count: 2 });
+      (prismaService.userGameModePreferences.deleteMany as jest.Mock).mockResolvedValue({
+        count: 3,
+      });
 
       await service.clearPreferences(userUid);
 
       expect(prismaService.userSportPreferences.deleteMany).toHaveBeenCalledWith({
+        where: { userUid },
+      });
+      expect(prismaService.userGameModePreferences.deleteMany).toHaveBeenCalledWith({
         where: { userUid },
       });
       expect(logger.debug).toHaveBeenCalledWith(
@@ -281,6 +288,9 @@ describe('SportPreferencesService', () => {
       const mockGameModeCreate = jest.fn().mockResolvedValue({});
 
       (prismaService.userSportPreferences.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
+      (prismaService.userGameModePreferences.deleteMany as jest.Mock).mockResolvedValue({
+        count: 0,
+      });
       (prismaService.$transaction as jest.Mock).mockImplementation(async (callback) => {
         const mockTx = {
           userSportPreferences: { create: mockSportCreate },
@@ -292,6 +302,9 @@ describe('SportPreferencesService', () => {
       await service.createManyWithGameModes(preferences, userUid);
 
       expect(prismaService.userSportPreferences.deleteMany).toHaveBeenCalledWith({
+        where: { userUid },
+      });
+      expect(prismaService.userGameModePreferences.deleteMany).toHaveBeenCalledWith({
         where: { userUid },
       });
       expect(prismaService.$transaction).toHaveBeenCalledTimes(1);
@@ -322,6 +335,9 @@ describe('SportPreferencesService', () => {
       ];
 
       (prismaService.userSportPreferences.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
+      (prismaService.userGameModePreferences.deleteMany as jest.Mock).mockResolvedValue({
+        count: 0,
+      });
 
       await expect(service.createManyWithGameModes(preferences, userUid)).rejects.toThrow(
         new BadRequestException('Each sport preference must have a unique sport.'),
@@ -343,6 +359,9 @@ describe('SportPreferencesService', () => {
       const mockGameModeCreate = jest.fn().mockResolvedValue({});
 
       (prismaService.userSportPreferences.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
+      (prismaService.userGameModePreferences.deleteMany as jest.Mock).mockResolvedValue({
+        count: 0,
+      });
       (prismaService.$transaction as jest.Mock).mockImplementation(async (callback) => {
         const mockTx = {
           userSportPreferences: { create: mockSportCreate },
@@ -376,6 +395,9 @@ describe('SportPreferencesService', () => {
       const mockGameModeCreate = jest.fn().mockResolvedValue({});
 
       (prismaService.userSportPreferences.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
+      (prismaService.userGameModePreferences.deleteMany as jest.Mock).mockResolvedValue({
+        count: 0,
+      });
       (prismaService.$transaction as jest.Mock).mockImplementation(async (callback) => {
         const mockTx = {
           userSportPreferences: { create: mockSportCreate },
@@ -401,6 +423,9 @@ describe('SportPreferencesService', () => {
       ];
 
       (prismaService.userSportPreferences.deleteMany as jest.Mock).mockResolvedValue({ count: 2 });
+      (prismaService.userGameModePreferences.deleteMany as jest.Mock).mockResolvedValue({
+        count: 3,
+      });
       (prismaService.$transaction as jest.Mock).mockImplementation(async (callback) => {
         const mockTx = {
           userSportPreferences: { create: jest.fn().mockResolvedValue({}) },
@@ -413,6 +438,10 @@ describe('SportPreferencesService', () => {
 
       expect(prismaService.userSportPreferences.deleteMany).toHaveBeenCalledTimes(1);
       expect(prismaService.userSportPreferences.deleteMany).toHaveBeenCalledWith({
+        where: { userUid },
+      });
+      expect(prismaService.userGameModePreferences.deleteMany).toHaveBeenCalledTimes(1);
+      expect(prismaService.userGameModePreferences.deleteMany).toHaveBeenCalledWith({
         where: { userUid },
       });
     });

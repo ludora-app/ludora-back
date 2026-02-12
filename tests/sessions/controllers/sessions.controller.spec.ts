@@ -29,6 +29,7 @@ describe('SessionsController', () => {
     findOneWithDistance: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    getUserSessionStats: jest.fn(),
   };
 
   const mockSessionTeamsService = {
@@ -732,6 +733,42 @@ describe('SessionsController', () => {
 
       expect(result).toBe(mockResponse);
       expect(service.remove).toHaveBeenCalledWith('session-uid-1');
+    });
+  });
+
+  describe('getMyStats', () => {
+    const mockRequest = {
+      user: {
+        uid: 'user-uid-1',
+      },
+    } as any;
+
+    it('should return user session stats', async () => {
+      const mockStats = { organizedCount: 5, participatedCount: 10 };
+      (service.getUserSessionStats as jest.Mock).mockResolvedValue(mockStats);
+
+      const result = await controller.getMyStats(mockRequest);
+
+      expect(service.getUserSessionStats).toHaveBeenCalledWith('user-uid-1');
+      expect(result).toEqual({
+        data: mockStats,
+        message: 'Session stats fetched successfully',
+      });
+    });
+  });
+
+  describe('getUserStats', () => {
+    it('should return session stats for a specific user', async () => {
+      const mockStats = { organizedCount: 3, participatedCount: 7 };
+      (service.getUserSessionStats as jest.Mock).mockResolvedValue(mockStats);
+
+      const result = await controller.getUserStats('user-uid-2');
+
+      expect(service.getUserSessionStats).toHaveBeenCalledWith('user-uid-2');
+      expect(result).toEqual({
+        data: mockStats,
+        message: 'Session stats fetched successfully',
+      });
     });
   });
 });

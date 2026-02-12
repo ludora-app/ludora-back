@@ -74,10 +74,10 @@ export class SportPreferencesService {
 
   /**
    * Clears all the sport/game mode preferences of the connected user.
-   * UserGameModePreferences are deleted by DB cascade when UserSportPreferences are removed.
    */
   async clearPreferences(userUid: string): Promise<void> {
     await this.prisma.userSportPreferences.deleteMany({ where: { userUid } });
+    await this.prisma.userGameModePreferences.deleteMany({ where: { userUid } });
     this.logger.debug(`All sport preferences cleared for user: ${userUid}`);
   }
 

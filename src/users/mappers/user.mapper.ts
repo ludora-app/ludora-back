@@ -1,7 +1,17 @@
 import { SportPreferencesMapper } from 'src/user-preferences/mappers/sport-preferences.mapper';
-import { GameModes, TimePeriod, UserHourPreferenceType, UserType } from 'generated/prisma/enums';
+import {
+  GameModes,
+  Sex,
+  TimePeriod,
+  UserHourPreferenceType,
+  UserType,
+} from 'generated/prisma/enums';
 
-import { FindMeUserResponseData, FindOneUserResponseData } from '../dto';
+import {
+  FindAllUsersResponseDataDto,
+  FindMeUserResponseData,
+  FindOneUserResponseData,
+} from '../dto';
 
 export interface RawUserFindOne {
   bio: string;
@@ -27,6 +37,7 @@ export interface RawUserFindOne {
   }[];
 }
 export interface RawUserFindMe extends RawUserFindOne {
+  sex: Sex;
   email: string;
   phone: string;
   type: UserType;
@@ -34,12 +45,23 @@ export interface RawUserFindMe extends RawUserFindOne {
   isConnected: boolean;
   stripeAccountId: string;
   isEmailVerified: boolean;
-
   userHourPreferences: {
     date: Date;
     dayOfWeek: number;
     timePeriod: TimePeriod;
     type: UserHourPreferenceType;
+  }[];
+}
+
+export interface RawUserFindAll {
+  uid: string;
+  lastname: string;
+  imageUrl: string;
+  firstname: string;
+  userSportPreferences: {
+    sport: string;
+    level: number;
+    uid: string;
   }[];
 }
 
@@ -75,11 +97,24 @@ export class UserMapper {
       name: `${user.firstname} ${user.lastname}`,
       phone: user.phone,
       profileStatus: user.userSportPreferences.length > 0 ? 'COMPLETE' : 'INCOMPLETE',
+      sex: user.sex,
       sportPreferences: user.userSportPreferences.map((sportPreference) =>
         SportPreferencesMapper.toSimpleDisplay(sportPreference),
       ),
       stripeAccountId: user.stripeAccountId,
       type: user.type,
+      uid: user.uid,
+    };
+  }
+
+  static toFindAllResponseDto(user: RawUserFindAll): FindAllUsersResponseDataDto {
+    return {
+      firstname: user.firstname,
+      imageUrl: user.imageUrl,
+      lastname: user.lastname,
+      sportPreferences: SportPreferencesMapper.toSimpleArrayWithGameModes(
+        user.userSportPreferences,
+      ),
       uid: user.uid,
     };
   }

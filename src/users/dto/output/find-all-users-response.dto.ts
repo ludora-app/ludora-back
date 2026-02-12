@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Sport } from 'src/shared/constants/constants';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 export class FindAllUsersResponseDataDto {
@@ -17,8 +18,14 @@ export class FindAllUsersResponseDataDto {
   @ApiProperty({ example: 'https://example.com/image.jpg', nullable: true, readOnly: true })
   readonly imageUrl?: string;
 
-  @ApiProperty({ example: [{ sport: 'BASKETBALL' }], nullable: true, readOnly: true })
-  readonly userSports?: { sport: string }[];
+  @ApiProperty({
+    enum: Sport,
+    example: [Sport.BASKETBALL, Sport.FOOTBALL],
+    isArray: true,
+    nullable: true,
+    readOnly: true,
+  })
+  readonly sportPreferences?: Sport[];
 }
 
 export const FindAllUsersResponseDto = toPaginationResponseType(FindAllUsersResponseDataDto);

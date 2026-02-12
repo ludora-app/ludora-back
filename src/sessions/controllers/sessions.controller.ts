@@ -40,6 +40,10 @@ import { MySessionFilterDto } from '../dto/input/my-session-filter.dto';
 import { CreateSessionFromRequestDto } from '../dto/input/create-session.dto';
 import { SessionResponseData, SessionResponseDto } from '../dto/output/session-response.dto';
 import {
+  UserSessionStatsResponseDataDto,
+  UserSessionStatsResponseDto,
+} from '../dto/output/user-session-stats-response.dto';
+import {
   PaginatedSessionCollectionResponseDto,
   SessionCollectionItemDto,
 } from '../dto/output/session-collection-response.dto';
@@ -104,9 +108,44 @@ export class SessionsController {
     };
   }
 
+  @Get('my-stats')
+  @Protected()
+  @ApiOperation({ summary: 'Get session stats for the current user' })
+  @ApiOkResponse({ type: UserSessionStatsResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.OK)
+  async getMyStats(
+    @Req() request: Request,
+  ): Promise<ResponseTypeDto<UserSessionStatsResponseDataDto>> {
+    const userUid = request['user'].uid;
+    const stats = await this.sessionsService.getUserSessionStats(userUid);
+
+    return {
+      data: stats,
+      message: 'Session stats fetched successfully',
+    };
+  }
+
+  @Get('stats/:userUid')
+  @Protected()
+  @ApiOperation({ summary: 'Get session stats for a specific user' })
+  @ApiOkResponse({ type: UserSessionStatsResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.OK)
+  async getUserStats(
+    @Param('userUid') targetUserUid: string,
+  ): Promise<ResponseTypeDto<UserSessionStatsResponseDataDto>> {
+    const stats = await this.sessionsService.getUserSessionStats(targetUserUid);
+
+    return {
+      data: stats,
+      message: 'Session stats fetched successfully',
+    };
+  }
+
   @Get('my-list/collection')
   @Protected()
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 50, ttl: 60000 } })
   @ApiOperation({ summary: 'Get all sessions created or joined by the current user' })
   @ApiOkResponse({ type: PaginatedSessionCollectionResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })

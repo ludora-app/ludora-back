@@ -45,6 +45,27 @@ import {
 
 @Injectable()
 export class SessionsService {
+  async getUserSessionStats(
+    userUid: string,
+  ): Promise<{ organizedCount: number; participatedCount: number }> {
+    const [organizedCount, participatedCount] = await Promise.all([
+      this.prisma.sessions.count({
+        where: { creatorUid: userUid },
+      }),
+      this.prisma.sessions.count({
+        where: {
+          sessionPlayers: {
+            some: {
+              userUid: userUid,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return { organizedCount, participatedCount };
+  }
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly teamsService: SessionTeamsService,
@@ -642,11 +663,6 @@ export class SessionsService {
       where.visibility = visibility;
     }
 
-    // Handle pagination
-    if (cursor) {
-      where.uid = { gt: cursor };
-    }
-
     const take = limit + 1;
     // Build orderBy
     const orderBy: Prisma.SessionsOrderByWithRelationInput[] = [];
@@ -657,31 +673,41 @@ export class SessionsService {
       orderBy.push({ createdAt: createdAtSortOrder });
     }
 
-    const sessions = await this.prisma.sessions.findMany({
-      orderBy: orderBy.length > 0 ? orderBy : undefined,
-      select: {
-        creatorUid: true,
-        endDate: true,
-        field: {
-          select: {
-            fieldImages: { select: { url: true }, take: 1 },
-            latitude: true,
-            longitude: true,
-            shortAddress: true,
+    // Add uid to orderBy to ensure stable pagination
+    orderBy.push({ uid: 'asc' });
+
+    const [sessions, totalCount] = await Promise.all([
+      this.prisma.sessions.findMany({
+        cursor: cursor ? { uid: cursor } : undefined,
+        orderBy,
+        select: {
+          creatorUid: true,
+          endDate: true,
+          field: {
+            select: {
+              fieldImages: { select: { url: true }, take: 1 },
+              latitude: true,
+              longitude: true,
+              shortAddress: true,
+            },
           },
+          gameMode: true,
+          level: true,
+          maxPlayersPerTeam: true,
+          sessionTeams: {
+            select: { _count: { select: { sessionPlayers: true } }, teamName: true },
+          },
+          sport: true,
+          startDate: true,
+          uid: true,
+          visibility: true,
         },
-        gameMode: true,
-        level: true,
-        maxPlayersPerTeam: true,
-        sessionTeams: { select: { _count: { select: { sessionPlayers: true } }, teamName: true } },
-        sport: true,
-        startDate: true,
-        uid: true,
-        visibility: true,
-      },
-      take,
-      where,
-    });
+        skip: cursor ? 1 : 0,
+        take,
+        where,
+      }),
+      this.prisma.sessions.count({ where }),
+    ]);
 
     let nextCursor: string | null = null;
     if (sessions.length > limit) {
@@ -694,7 +720,7 @@ export class SessionsService {
     return {
       items,
       nextCursor,
-      totalCount: items.length,
+      totalCount,
     };
   }
 
