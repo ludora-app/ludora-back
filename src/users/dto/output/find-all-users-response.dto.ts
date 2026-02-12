@@ -19,7 +19,8 @@ export class FindAllUsersResponseDataDto {
   readonly imageUrl?: string;
 
   @ApiProperty({
-    example: ['BASKETBALL', 'FOOTBALL'],
+    enum: Sport,
+    example: [Sport.BASKETBALL, Sport.FOOTBALL],
     isArray: true,
     nullable: true,
     readOnly: true,
