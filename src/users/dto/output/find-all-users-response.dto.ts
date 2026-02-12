@@ -17,7 +17,12 @@ export class FindAllUsersResponseDataDto {
   @ApiProperty({ example: 'https://example.com/image.jpg', nullable: true, readOnly: true })
   readonly imageUrl?: string;
 
-  @ApiProperty({ example: ['BASKETBALL', 'FOOTBALL'], nullable: true, readOnly: true })
+  @ApiProperty({
+    example: ['BASKETBALL', 'FOOTBALL'],
+    isArray: true,
+    nullable: true,
+    readOnly: true,
+  })
   readonly sportPreferences?: string[];
 }
 
