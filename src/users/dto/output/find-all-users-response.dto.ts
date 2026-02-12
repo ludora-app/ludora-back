@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Sport } from 'src/shared/constants/constants';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 export class FindAllUsersResponseDataDto {
@@ -23,7 +24,7 @@ export class FindAllUsersResponseDataDto {
     nullable: true,
     readOnly: true,
   })
-  readonly sportPreferences?: string[];
+  readonly sportPreferences?: Sport[];
 }
 
 export const FindAllUsersResponseDto = toPaginationResponseType(FindAllUsersResponseDataDto);

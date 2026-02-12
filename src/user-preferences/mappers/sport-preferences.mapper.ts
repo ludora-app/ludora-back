@@ -26,7 +26,7 @@ export class SportPreferencesMapper {
     };
   }
 
-  static toSimpleArrayWithGameModes(preferences: SportPreferences[]): string[] {
-    return preferences?.map((preference) => preference.sport) || [];
+  static toSimpleArrayWithGameModes(preferences: SportPreferences[]): Sport[] {
+    return preferences?.map((preference) => preference.sport as Sport) || [];
   }
 }

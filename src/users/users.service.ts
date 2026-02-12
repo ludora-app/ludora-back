@@ -125,7 +125,6 @@ export class UsersService {
     }
 
     const rawUsers = await this.prismaService.users.findMany(query);
-    console.log(rawUsers);
     const users = rawUsers.map((user) =>
       UserMapper.toFindAllResponseDto(user as unknown as RawUserFindAll),
     );
