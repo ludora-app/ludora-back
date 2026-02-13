@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
+import { ConversationMembershipGuard } from 'src/conversations/guards/conversation-membership.guard';
 import { ConversationsController } from 'src/conversations/conversations.controller';
 import { ConversationsService } from 'src/conversations/services/conversations.service';
 import { ConversationMembersService } from 'src/conversations/services/conversation-members.service';
@@ -40,6 +41,8 @@ describe('ConversationsController', () => {
       ],
     })
       .overrideGuard(DevOnlyGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(ConversationMembershipGuard)
       .useValue({ canActivate: () => true })
       .compile();
 

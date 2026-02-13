@@ -23,6 +23,7 @@ import {
   DefaultValuePipe,
   Patch,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -40,6 +41,7 @@ import { CreateMessageDto } from './dto/input/create-message.dto';
 import { ConversationsService } from './services/conversations.service';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
 import { ConversationMembersService } from './services/conversation-members.service';
+import { ConversationMembershipGuard } from './guards/conversation-membership.guard';
 import {
   ArchivedConversationSettingsDto,
   MutedConversationSettingsDto,
@@ -109,6 +111,7 @@ export class ConversationsController {
   }
 
   @Get(':uid')
+  @UseGuards(ConversationMembershipGuard)
   @Protected()
   @ApiOperation({ summary: 'Get a conversation by uid' })
   @ApiOkResponse({ type: FindOneConversationResponseDto })
@@ -166,6 +169,7 @@ export class ConversationsController {
   }
 
   @Patch('mute/:uid')
+  @UseGuards(ConversationMembershipGuard)
   @Protected()
   @ApiOperation({ summary: "Update a conversation's mute settings" })
   @ApiNoContentResponse({ description: "Conversation's mute settings updated successfully" })
@@ -184,6 +188,7 @@ export class ConversationsController {
   }
 
   @Patch('archive/:uid')
+  @UseGuards(ConversationMembershipGuard)
   @Protected()
   @ApiOperation({ summary: "Update a conversation's archive settings" })
   @ApiNoContentResponse({ description: "Conversation's archive settings updated successfully" })
@@ -202,6 +207,7 @@ export class ConversationsController {
   }
 
   @Delete(':uid')
+  @UseGuards(ConversationMembershipGuard)
   @Protected()
   @ApiOperation({
     summary:
