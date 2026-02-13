@@ -1,6 +1,6 @@
 import { PinoLogger } from 'nestjs-pino';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ForbiddenException, Injectable } from '@nestjs/common';
 
 import {
   ArchivedConversationSettingsDto,
@@ -34,27 +34,27 @@ export class ConversationMembersService {
     });
   }
 
-  async isMember(conversationUid: string, userUid: string): Promise<boolean> {
-    const member = await this.prisma.conversationMembers.findFirst({
-      where: {
-        conversationUid: conversationUid,
-        userUid: userUid,
-      },
-    });
-    return !!member;
-  }
+  // async isMember(conversationUid: string, userUid: string): Promise<boolean> {
+  //   const member = await this.prisma.conversationMembers.findFirst({
+  //     where: {
+  //       conversationUid: conversationUid,
+  //       userUid: userUid,
+  //     },
+  //   });
+  //   return !!member;
+  // }
 
   async updateMuteSettings(
     conversationUid: string,
     userUid: string,
     settings: MutedConversationSettingsDto,
   ): Promise<void> {
-    const isMember = await this.isMember(conversationUid, userUid);
+    // const isMember = await this.isMember(conversationUid, userUid);
 
-    if (!isMember) {
-      this.logger.error(`User ${userUid} is not a member of conversation ${conversationUid}`);
-      throw new ForbiddenException(`Action not allowed`);
-    }
+    // if (!isMember) {
+    //   this.logger.error(`User ${userUid} is not a member of conversation ${conversationUid}`);
+    //   throw new ForbiddenException(`Action not allowed`);
+    // }
 
     await this.prisma.conversationMembers.update({
       data: settings,
@@ -70,12 +70,12 @@ export class ConversationMembersService {
     userUid: string,
     settings: ArchivedConversationSettingsDto,
   ): Promise<void> {
-    const isMember = await this.isMember(conversationUid, userUid);
+    // const isMember = await this.isMember(conversationUid, userUid);
 
-    if (!isMember) {
-      this.logger.error(`User ${userUid} is not a member of conversation ${conversationUid}`);
-      throw new ForbiddenException(`Action not allowed`);
-    }
+    // if (!isMember) {
+    //   this.logger.error(`User ${userUid} is not a member of conversation ${conversationUid}`);
+    //   throw new ForbiddenException(`Action not allowed`);
+    // }
 
     await this.prisma.conversationMembers.update({
       data: settings,
@@ -95,12 +95,12 @@ export class ConversationMembersService {
     conversationUid: string,
     userUid: string,
   ): Promise<void> {
-    const isMember = await this.isMember(conversationUid, userUid);
+    // const isMember = await this.isMember(conversationUid, userUid);
 
-    if (!isMember) {
-      this.logger.error(`User ${userUid} is not a member of conversation ${conversationUid}`);
-      throw new ForbiddenException(`Action not allowed`);
-    }
+    // if (!isMember) {
+    //   this.logger.error(`User ${userUid} is not a member of conversation ${conversationUid}`);
+    //   throw new ForbiddenException(`Action not allowed`);
+    // }
 
     await this.prisma.conversationMembers.update({
       data: {

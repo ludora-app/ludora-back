@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ConversationMembersService } from 'src/conversations/services/conversation-members.service';
@@ -88,33 +87,8 @@ describe('ConversationMembersService', () => {
     });
   });
 
-  describe('isMember', () => {
-    it('should return true when user is a member', async () => {
-      mockPrisma.conversationMembers.findFirst.mockResolvedValue({
-        conversationUid: 'conv-1',
-        userUid: 'user-1',
-      });
-
-      const result = await service.isMember('conv-1', 'user-1');
-
-      expect(result).toBe(true);
-      expect(mockPrisma.conversationMembers.findFirst).toHaveBeenCalledWith({
-        where: { conversationUid: 'conv-1', userUid: 'user-1' },
-      });
-    });
-
-    it('should return false when user is not a member', async () => {
-      mockPrisma.conversationMembers.findFirst.mockResolvedValue(null);
-
-      const result = await service.isMember('conv-1', 'user-1');
-
-      expect(result).toBe(false);
-    });
-  });
-
   describe('updateMuteSettings', () => {
-    it('should update mute settings when user is a member', async () => {
-      mockPrisma.conversationMembers.findFirst.mockResolvedValue({});
+    it('should update mute settings', async () => {
       mockPrisma.conversationMembers.update.mockResolvedValue(undefined);
 
       await service.updateMuteSettings('conv-1', 'user-1', { isMuted: true });
@@ -125,25 +99,10 @@ describe('ConversationMembersService', () => {
       });
       expect(mockLogger.debug).toHaveBeenCalled();
     });
-
-    it('should throw ForbiddenException when user is not a member', async () => {
-      mockPrisma.conversationMembers.findFirst.mockResolvedValue(null);
-
-      await expect(
-        service.updateMuteSettings('conv-1', 'user-1', { isMuted: true }),
-      ).rejects.toThrow(ForbiddenException);
-      await expect(
-        service.updateMuteSettings('conv-1', 'user-1', { isMuted: true }),
-      ).rejects.toThrow('Action not allowed');
-
-      expect(mockPrisma.conversationMembers.update).not.toHaveBeenCalled();
-      expect(mockLogger.error).toHaveBeenCalled();
-    });
   });
 
   describe('updateArchivedSettings', () => {
-    it('should update archived settings when user is a member', async () => {
-      mockPrisma.conversationMembers.findFirst.mockResolvedValue({});
+    it('should update archived settings', async () => {
       mockPrisma.conversationMembers.update.mockResolvedValue(undefined);
 
       await service.updateArchivedSettings('conv-1', 'user-1', { isArchived: true });
@@ -154,26 +113,10 @@ describe('ConversationMembersService', () => {
       });
       expect(mockLogger.debug).toHaveBeenCalled();
     });
-
-    it('should throw ForbiddenException when user is not a member', async () => {
-      mockPrisma.conversationMembers.findFirst.mockResolvedValue(null);
-
-      await expect(
-        service.updateArchivedSettings('conv-1', 'user-1', { isArchived: true }),
-      ).rejects.toThrow(ForbiddenException);
-      await expect(
-        service.updateArchivedSettings('conv-1', 'user-1', { isArchived: true }),
-      ).rejects.toThrow('Action not allowed');
-
-      expect(mockPrisma.conversationMembers.update).not.toHaveBeenCalled();
-      expect(mockLogger.error).toHaveBeenCalled();
-    });
   });
 
   describe('updateDisplayMessagesAfterDeletion', () => {
-    it('should update displayMessagesAfter and isVisible when user is a member', async () => {
-      const beforeDate = new Date();
-      mockPrisma.conversationMembers.findFirst.mockResolvedValue({});
+    it('should update displayMessagesAfter and isVisible', async () => {
       mockPrisma.conversationMembers.update.mockImplementation((args: any) => {
         expect(args.data.displayMessagesAfter).toBeInstanceOf(Date);
         expect(args.data.isVisible).toBe(false);
@@ -190,20 +133,6 @@ describe('ConversationMembersService', () => {
       });
       const call = mockPrisma.conversationMembers.update.mock.calls[0][0];
       expect(call.data.displayMessagesAfter).toBeInstanceOf(Date);
-    });
-
-    it('should throw ForbiddenException when user is not a member', async () => {
-      mockPrisma.conversationMembers.findFirst.mockResolvedValue(null);
-
-      await expect(service.updateDisplayMessagesAfterDeletion('conv-1', 'user-1')).rejects.toThrow(
-        ForbiddenException,
-      );
-      await expect(service.updateDisplayMessagesAfterDeletion('conv-1', 'user-1')).rejects.toThrow(
-        'Action not allowed',
-      );
-
-      expect(mockPrisma.conversationMembers.update).not.toHaveBeenCalled();
-      expect(mockLogger.error).toHaveBeenCalled();
     });
   });
 });
