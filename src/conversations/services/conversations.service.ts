@@ -13,6 +13,7 @@ import {
 import { MessagesService } from './messages.service';
 import { CreateMessageDto } from '../dto/input/create-message.dto';
 import { ConversationMapper } from '../mappers/conversation.mapper';
+import { ConversationMembersService } from './conversation-members.service';
 import { ConversationFilterDto } from '../dto/input/conversation-filter.dto';
 import { MessageCollectionItemDto } from '../dto/output/message-collection-response.dto';
 import { CreateSessionConversationDto } from '../dto/input/create-session-conversation.dto';
@@ -26,6 +27,7 @@ export class ConversationsService {
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
     private readonly messagesService: MessagesService,
+    private readonly conversationMembersService: ConversationMembersService,
   ) {
     this.logger.setContext(ConversationsService.name);
   }
@@ -57,12 +59,10 @@ export class ConversationsService {
 
     this.logger.debug(`Conversation ${newConversation.uid} created`);
 
-    await prismaClient.conversationMembers.createMany({
-      data: createConversationDto.userUids.map((userUid) => ({
-        conversationUid: newConversation.uid,
-        userUid: userUid,
-      })),
-    });
+    await this.conversationMembersService.create(
+      newConversation.uid,
+      createConversationDto.userUid,
+    );
 
     this.logger.debug(`Conversation members created`);
 
@@ -90,12 +90,10 @@ export class ConversationsService {
     });
     this.logger.debug(`Conversation ${newConversation.uid} created`);
 
-    await prismaClient.conversationMembers.createMany({
-      data: createPrivateConversationDto.userUids.map((userUid) => ({
-        conversationUid: newConversation.uid,
-        userUid: userUid,
-      })),
-    });
+    await this.conversationMembersService.createMany(
+      newConversation.uid,
+      createPrivateConversationDto.userUids,
+    );
     this.logger.debug(`Conversation members created`);
 
     return { uid: newConversation.uid };
@@ -171,6 +169,8 @@ export class ConversationsService {
         conversationMembers: {
           some: {
             userUid: string;
+            isVisible: true;
+            isArchived: false;
           };
         };
         type?: ConversationType;
@@ -238,6 +238,8 @@ export class ConversationsService {
       where: {
         conversationMembers: {
           some: {
+            isArchived: false,
+            isVisible: true,
             userUid: userUid,
           },
         },

@@ -7,6 +7,7 @@ import { FieldSlotsService } from 'src/fields/services/field-slots.service';
 import { ConversationsModule } from 'src/conversations/conversations.module';
 import { UserPreferencesModule } from 'src/user-preferences/user-preferences.module';
 import { ConversationsService } from 'src/conversations/services/conversations.service';
+import { ConversationMembersService } from 'src/conversations/services/conversation-members.service';
 
 import { SessionsService } from './services/sessions.service';
 import { SessionsController } from './controllers/sessions.controller';
@@ -34,6 +35,7 @@ import { SessionInvitationsController } from './controllers/session-invitations.
     SessionTeamsService,
     SessionInvitationsService,
     FieldSlotsService,
+    ConversationMembersService,
   ],
 })
 export class SessionsModule {}
