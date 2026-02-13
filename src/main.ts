@@ -38,7 +38,12 @@ async function bootstrap() {
 
     const document = SwaggerModule.createDocument(app, config);
 
-    SwaggerModule.setup('swagger', app, document);
+    SwaggerModule.setup('swagger', app, document, {
+      swaggerOptions: {
+        operationsSorter: 'method',
+        tagsSorter: 'alpha',
+      },
+    });
   }
 
   // In Docker, Fastify must listen on 0.0.0.0 to be reachable from outside the container.

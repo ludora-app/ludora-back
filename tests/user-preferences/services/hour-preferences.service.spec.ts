@@ -104,7 +104,7 @@ describe('HourPreferencesService', () => {
       });
       expect(mockTxCreate).toHaveBeenNthCalledWith(2, {
         data: {
-          date: mockFutureDate.toISOString(),
+          date: expect.any(Date),
           dayOfWeek: undefined,
           timePeriod: TimePeriod.AFTERNOON,
           type: UserHourPreferenceType.ONE_TIME,

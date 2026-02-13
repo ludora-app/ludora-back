@@ -25,9 +25,18 @@ export class HourPreferencesService {
 
     await this.prisma.$transaction(async (tx) => {
       for (const hourPreference of validHourPreferences) {
+        let date: Date | undefined;
+
+        //? Check if the date is a valid date string, puts the date at 00:00:00
+        if (hourPreference.date && !Number.isNaN(Date.parse(hourPreference.date))) {
+          date = new Date(hourPreference.date);
+          date.setHours(0, 0, 0, 0);
+        } else {
+          date = undefined;
+        }
         await tx.userHourPreferences.create({
           data: {
-            date: hourPreference.date,
+            date,
             dayOfWeek: hourPreference.dayOfWeek,
             timePeriod: hourPreference.timePeriod,
             type: hourPreference.preferenceType,
