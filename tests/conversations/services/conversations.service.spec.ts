@@ -572,6 +572,7 @@ describe('ConversationsService', () => {
       name: 'John Doe',
       sender: mockRawConversation.conversationMembers[0].user,
       sessionUid: null,
+      settings: { isArchived: false, isMuted: false },
       type: ConversationType.PRIVATE,
       uid: 'conv-123',
     };
@@ -594,6 +595,9 @@ describe('ConversationsService', () => {
         include: {
           conversationMembers: {
             select: {
+              isArchived: true,
+              isMuted: true,
+              userUid: true,
               user: {
                 select: {
                   firstname: true,
@@ -601,11 +605,6 @@ describe('ConversationsService', () => {
                   lastname: true,
                   uid: true,
                 },
-              },
-            },
-            where: {
-              NOT: {
-                userUid: 'user-123',
               },
             },
           },
@@ -637,7 +636,7 @@ describe('ConversationsService', () => {
           uid: 'conv-123',
         },
       });
-      expect(ConversationMapper.toFindOneDto).toHaveBeenCalledWith(mockRawConversation);
+      expect(ConversationMapper.toFindOneDto).toHaveBeenCalledWith(mockRawConversation, 'user-123');
     });
 
     it('should throw NotFoundException if conversation does not exist', async () => {
@@ -688,7 +687,7 @@ describe('ConversationsService', () => {
       );
     });
 
-    it('should exclude current user from conversationMembers', async () => {
+    it('should fetch all conversationMembers and pass userUid to mapper for separation', async () => {
       mockPrismaService.conversations.findUnique.mockResolvedValue(mockRawConversation);
       mockPrismaService.conversationMembers.findFirst.mockResolvedValue({ userUid: 'user-456' });
 
@@ -698,15 +697,17 @@ describe('ConversationsService', () => {
         expect.objectContaining({
           include: expect.objectContaining({
             conversationMembers: expect.objectContaining({
-              where: {
-                NOT: {
-                  userUid: 'user-456',
-                },
-              },
+              select: expect.objectContaining({
+                isArchived: true,
+                isMuted: true,
+                userUid: true,
+                user: expect.any(Object),
+              }),
             }),
           }),
         }),
       );
+      expect(ConversationMapper.toFindOneDto).toHaveBeenCalledWith(mockRawConversation, 'user-456');
     });
 
     it('should check membership for the correct user and conversation', async () => {

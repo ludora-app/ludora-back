@@ -2,6 +2,7 @@ import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { ConversationType } from 'generated/prisma/enums';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
+import { ConversationSettingsDto } from './conversation-settings.dto';
 import { BasicConversationResponseData, MessageDto } from './basic-conversation-response.dto';
 
 export class FindOneConversationResponseData extends OmitType(BasicConversationResponseData, [
@@ -33,6 +34,12 @@ export class FindOneConversationResponseData extends OmitType(BasicConversationR
   type: ConversationType;
 
   messages: MessageDto[];
+
+  @ApiProperty({
+    description: 'Conversation settings',
+    type: ConversationSettingsDto,
+  })
+  settings: ConversationSettingsDto;
 }
 
 export class FindOneConversationResponseDto extends ResponseTypeDto<FindOneConversationResponseData> {

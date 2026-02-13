@@ -1,28 +1,9 @@
-import { IsBoolean } from 'class-validator';
-import { ApiProperty, PickType } from '@nestjs/swagger';
+import { PickType } from '@nestjs/swagger';
 
-export class UpdateConversationSettingsDto {
-  @IsBoolean()
-  @ApiProperty({
-    description: 'Controls whether the conversation is archived',
-    example: false,
-    required: true,
-  })
-  isArchived: boolean;
+import { ConversationSettingsDto } from '../output/conversation-settings.dto';
 
-  @IsBoolean()
-  @ApiProperty({
-    description: 'Controls whether the conversation is muted',
-    example: false,
-    required: true,
-  })
-  isMuted: boolean;
-}
-
-export class ArchivedConversationSettingsDto extends PickType(UpdateConversationSettingsDto, [
+export class ArchivedConversationSettingsDto extends PickType(ConversationSettingsDto, [
   'isArchived',
 ]) {}
 
-export class MutedConversationSettingsDto extends PickType(UpdateConversationSettingsDto, [
-  'isMuted',
-]) {}
+export class MutedConversationSettingsDto extends PickType(ConversationSettingsDto, ['isMuted']) {}
