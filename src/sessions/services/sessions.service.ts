@@ -211,7 +211,7 @@ export class SessionsService {
           name: createdSession.title,
           sessionUid: createdSession.uid,
           type: ConversationType.SESSION,
-          userUids: [createSessionDto.userUid],
+          userUid: createSessionDto.userUid,
         },
         tx,
       );

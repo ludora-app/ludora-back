@@ -3,6 +3,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MessagesService } from 'src/conversations/services/messages.service';
+import { ConversationMembersService } from 'src/conversations/services/conversation-members.service';
 import { ConversationsService } from 'src/conversations/services/conversations.service';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
 
@@ -11,6 +12,7 @@ describe('ConversationsService', () => {
   let mockPrisma: any;
   let mockLogger: any;
   let mockMessagesService: any;
+  let mockConversationMembersService: any;
 
   beforeEach(async () => {
     mockPrisma = {
@@ -39,6 +41,11 @@ describe('ConversationsService', () => {
       getMessages: jest.fn(),
     };
 
+    mockConversationMembersService = {
+      create: jest.fn(),
+      createMany: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ConversationsService,
@@ -53,6 +60,10 @@ describe('ConversationsService', () => {
         {
           provide: MessagesService,
           useValue: mockMessagesService,
+        },
+        {
+          provide: ConversationMembersService,
+          useValue: mockConversationMembersService,
         },
       ],
     }).compile();
@@ -74,7 +85,7 @@ describe('ConversationsService', () => {
         name: 'Session 123',
         sessionUid: 'session-123',
         type: ConversationType.SESSION,
-        userUids: ['user-1', 'user-2', 'user-3'],
+        userUid: 'user-1',
       };
 
       const mockConversation = {
@@ -88,7 +99,7 @@ describe('ConversationsService', () => {
       };
 
       mockPrisma.conversations.create.mockResolvedValue(mockConversation);
-      mockPrisma.conversationMembers.createMany.mockResolvedValue({ count: 3 });
+      mockConversationMembersService.create.mockResolvedValue(undefined);
 
       await service.createSessionConversation(createDto);
 
@@ -99,13 +110,7 @@ describe('ConversationsService', () => {
           type: createDto.type,
         },
       });
-      expect(mockPrisma.conversationMembers.createMany).toHaveBeenCalledWith({
-        data: [
-          { conversationUid: 'conv-123', userUid: 'user-1' },
-          { conversationUid: 'conv-123', userUid: 'user-2' },
-          { conversationUid: 'conv-123', userUid: 'user-3' },
-        ],
-      });
+      expect(mockConversationMembersService.create).toHaveBeenCalledWith('conv-123', 'user-1');
     });
 
     it('should throw BadRequestException when sessionUid is missing', async () => {
@@ -113,7 +118,7 @@ describe('ConversationsService', () => {
         name: 'Session',
         sessionUid: undefined,
         type: ConversationType.SESSION,
-        userUids: ['user-1'],
+        userUid: 'user-1',
       } as any;
 
       await expect(service.createSessionConversation(createDto)).rejects.toThrow(
@@ -127,7 +132,7 @@ describe('ConversationsService', () => {
         name: 'Session TX',
         sessionUid: 'session-tx-123',
         type: ConversationType.SESSION,
-        userUids: ['user-1'],
+        userUid: 'user-1',
       };
 
       const mockConversation = {
@@ -135,18 +140,17 @@ describe('ConversationsService', () => {
       };
 
       const mockTx = {
-        conversationMembers: {
-          createMany: jest.fn().mockResolvedValue({ count: 1 }),
-        },
         conversations: {
           create: jest.fn().mockResolvedValue(mockConversation),
         },
       } as any;
 
+      mockConversationMembersService.create.mockResolvedValue(undefined);
+
       await service.createSessionConversation(createDto, mockTx);
 
       expect(mockTx.conversations.create).toHaveBeenCalled();
-      expect(mockTx.conversationMembers.createMany).toHaveBeenCalled();
+      expect(mockConversationMembersService.create).toHaveBeenCalledWith('conv-tx-123', 'user-1');
       expect(mockPrisma.conversations.create).not.toHaveBeenCalled();
     });
   });
@@ -169,7 +173,7 @@ describe('ConversationsService', () => {
       };
 
       mockPrisma.conversations.create.mockResolvedValue(mockConversation);
-      mockPrisma.conversationMembers.createMany.mockResolvedValue({ count: 2 });
+      mockConversationMembersService.createMany.mockResolvedValue(undefined);
 
       const result = await service.createPrivateConversation(createDto);
 
@@ -179,12 +183,10 @@ describe('ConversationsService', () => {
           type: createDto.type,
         },
       });
-      expect(mockPrisma.conversationMembers.createMany).toHaveBeenCalledWith({
-        data: [
-          { conversationUid: 'conv-private-123', userUid: 'user-1' },
-          { conversationUid: 'conv-private-123', userUid: 'user-2' },
-        ],
-      });
+      expect(mockConversationMembersService.createMany).toHaveBeenCalledWith('conv-private-123', [
+        'user-1',
+        'user-2',
+      ]);
     });
 
     it('should work with a transaction client', async () => {
@@ -198,18 +200,21 @@ describe('ConversationsService', () => {
       };
 
       const mockTx = {
-        conversationMembers: {
-          createMany: jest.fn().mockResolvedValue({ count: 2 }),
-        },
         conversations: {
           create: jest.fn().mockResolvedValue(mockConversation),
         },
       } as any;
 
+      mockConversationMembersService.createMany.mockResolvedValue(undefined);
+
       const result = await service.createPrivateConversation(createDto, mockTx);
 
       expect(result).toEqual({ uid: 'conv-tx-private-123' });
       expect(mockTx.conversations.create).toHaveBeenCalled();
+      expect(mockConversationMembersService.createMany).toHaveBeenCalledWith(
+        'conv-tx-private-123',
+        ['user-1', 'user-2'],
+      );
       expect(mockPrisma.conversations.create).not.toHaveBeenCalled();
     });
   });
@@ -526,7 +531,7 @@ describe('ConversationsService', () => {
 
       mockPrisma.conversations.findFirst.mockResolvedValue(null);
       mockPrisma.conversations.create.mockResolvedValue({ uid: 'conv-new-123' });
-      mockPrisma.conversationMembers.createMany.mockResolvedValue({ count: 2 });
+      mockConversationMembersService.createMany.mockResolvedValue(undefined);
       mockMessagesService.createTextMessage.mockResolvedValue(undefined);
 
       await service.createMessage(userUid, dto);

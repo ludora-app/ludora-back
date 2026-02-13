@@ -1,13 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { ConversationsController } from 'src/conversations/conversations.controller';
 import { ConversationsService } from 'src/conversations/services/conversations.service';
+import { ConversationMembersService } from 'src/conversations/services/conversation-members.service';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
 
 describe('ConversationsController', () => {
   let controller: ConversationsController;
   let mockConversationsService: any;
+  let mockMembersService: any;
 
   beforeEach(async () => {
     mockConversationsService = {
@@ -19,12 +20,22 @@ describe('ConversationsController', () => {
       loadMoreMessages: jest.fn(),
     };
 
+    mockMembersService = {
+      updateMuteSettings: jest.fn(),
+      updateArchivedSettings: jest.fn(),
+      updateDisplayMessagesAfterDeletion: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ConversationsController],
       providers: [
         {
           provide: ConversationsService,
           useValue: mockConversationsService,
+        },
+        {
+          provide: ConversationMembersService,
+          useValue: mockMembersService,
         },
       ],
     })
@@ -550,6 +561,58 @@ describe('ConversationsController', () => {
       expect(result).toHaveProperty('data');
       expect(result).toHaveProperty('message', 'Messages fetched successfully');
       expect(result.data).toEqual(mockMessages);
+    });
+  });
+
+  describe('updateMuteSettings', () => {
+    it('should call membersService.updateMuteSettings with conversation uid, user uid and settings', async () => {
+      const mockRequest = { user: { uid: 'user-123' } } as any;
+      const conversationUid = 'conv-123';
+      const settings = { isMuted: true };
+
+      mockMembersService.updateMuteSettings.mockResolvedValue(undefined);
+
+      await controller.updateMuteSettings(conversationUid, mockRequest, settings);
+
+      expect(mockMembersService.updateMuteSettings).toHaveBeenCalledWith(
+        conversationUid,
+        'user-123',
+        settings,
+      );
+    });
+  });
+
+  describe('updateArchivedSettings', () => {
+    it('should call membersService.updateArchivedSettings with conversation uid, user uid and settings', async () => {
+      const mockRequest = { user: { uid: 'user-456' } } as any;
+      const conversationUid = 'conv-456';
+      const settings = { isArchived: true };
+
+      mockMembersService.updateArchivedSettings.mockResolvedValue(undefined);
+
+      await controller.updateArchivedSettings(conversationUid, mockRequest, settings);
+
+      expect(mockMembersService.updateArchivedSettings).toHaveBeenCalledWith(
+        conversationUid,
+        'user-456',
+        settings,
+      );
+    });
+  });
+
+  describe('remove', () => {
+    it('should call membersService.updateDisplayMessagesAfterDeletion with conversation uid and user uid', async () => {
+      const mockRequest = { user: { uid: 'user-789' } } as any;
+      const conversationUid = 'conv-789';
+
+      mockMembersService.updateDisplayMessagesAfterDeletion.mockResolvedValue(undefined);
+
+      await controller.remove(conversationUid, mockRequest);
+
+      expect(mockMembersService.updateDisplayMessagesAfterDeletion).toHaveBeenCalledWith(
+        conversationUid,
+        'user-789',
+      );
     });
   });
 });

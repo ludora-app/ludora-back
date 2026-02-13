@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ConversationType } from 'generated/prisma/enums';
-import { ArrayUnique, IsArray, IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateSessionConversationDto {
   @IsString()
@@ -22,16 +22,14 @@ export class CreateSessionConversationDto {
   })
   readonly type: ConversationType = ConversationType.SESSION;
 
-  @IsArray()
   @IsNotEmpty()
-  @IsString({ each: true })
-  @ArrayUnique({ each: true })
+  @IsString()
   @ApiProperty({
     description: 'The users of the conversation',
-    example: ['cmajhjkjf000bq77q4b5ugn8b', 'cmajhjkjf000bq77q4b5ugn8b'],
+    example: 'cmajhjkjf000bq77q4b5ugn8b',
     required: true,
   })
-  readonly userUids: string[];
+  readonly userUid: string;
 
   @IsString()
   @IsNotEmpty()

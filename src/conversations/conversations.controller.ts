@@ -1,3 +1,4 @@
+import { FastifyRequest } from 'fastify';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
@@ -20,6 +21,8 @@ import {
   UseInterceptors,
   ParseIntPipe,
   DefaultValuePipe,
+  Patch,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -36,6 +39,11 @@ import {
 import { CreateMessageDto } from './dto/input/create-message.dto';
 import { ConversationsService } from './services/conversations.service';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
+import { ConversationMembersService } from './services/conversation-members.service';
+import {
+  ArchivedConversationSettingsDto,
+  MutedConversationSettingsDto,
+} from './dto/input/update-conversation-settings.dto';
 import {
   MessageCollectionItemDto,
   PaginatedMessageCollectionResponseDto,
@@ -51,7 +59,10 @@ import {
 
 @Controller('conversations')
 export class ConversationsController {
-  constructor(private readonly conversationsService: ConversationsService) {}
+  constructor(
+    private readonly conversationsService: ConversationsService,
+    private readonly membersService: ConversationMembersService,
+  ) {}
 
   // @Post()
   // create(@Body() createConversationDto: CreatePrivateConversationDto) {
@@ -154,13 +165,56 @@ export class ConversationsController {
     };
   }
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateConversationDto: UpdateConversationDto) {
-  //   return this.conversationsService.update(+id, updateConversationDto);
-  // }
+  @Patch('mute/:uid')
+  @Protected()
+  @ApiOperation({ summary: "Update a conversation's mute settings" })
+  @ApiNoContentResponse({ description: "Conversation's mute settings updated successfully" })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiForbiddenResponse({ type: ForbiddenResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  updateMuteSettings(
+    @Param('uid') conversationUid: string,
+    @Req() request: FastifyRequest,
+    @Body() settings: MutedConversationSettingsDto,
+  ) {
+    const userUid = request['user'].uid;
+    return this.membersService.updateMuteSettings(conversationUid, userUid, settings);
+  }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.conversationsService.remove(+id);
-  // }
+  @Patch('archive/:uid')
+  @Protected()
+  @ApiOperation({ summary: "Update a conversation's archive settings" })
+  @ApiNoContentResponse({ description: "Conversation's archive settings updated successfully" })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiForbiddenResponse({ type: ForbiddenResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  updateArchivedSettings(
+    @Param('uid') conversationUid: string,
+    @Req() request: FastifyRequest,
+    @Body() settings: ArchivedConversationSettingsDto,
+  ) {
+    const userUid = request['user'].uid;
+    return this.membersService.updateArchivedSettings(conversationUid, userUid, settings);
+  }
+
+  @Delete(':uid')
+  @Protected()
+  @ApiOperation({
+    summary:
+      'Soft delete a conversation, it updates the display messages after to the current date',
+  })
+  @ApiNoContentResponse({
+    description: "Conversation's display messages after updated successfully",
+  })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiForbiddenResponse({ type: ForbiddenResponseDto })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('uid') conversationUid: string, @Req() request: FastifyRequest) {
+    const userUid = request['user'].uid;
+    return this.membersService.updateDisplayMessagesAfterDeletion(conversationUid, userUid);
+  }
 }

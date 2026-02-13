@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ConversationsService } from 'src/conversations/services/conversations.service';
+import { ConversationMembersService } from 'src/conversations/services/conversation-members.service';
 import { MessagesService } from 'src/conversations/services/messages.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
@@ -16,6 +17,7 @@ describe('ConversationsService', () => {
   let mockPrismaService: any;
   let mockMessagesService: any;
   let mockStorageService: any;
+  let mockConversationMembersService: any;
 
   const mockPinoLogger = {
     debug: jest.fn(),
@@ -45,6 +47,11 @@ describe('ConversationsService', () => {
       createMediaMessage: jest.fn(),
     };
 
+    mockConversationMembersService = {
+      create: jest.fn(),
+      createMany: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ConversationsService,
@@ -59,6 +66,10 @@ describe('ConversationsService', () => {
         {
           provide: MessagesService,
           useValue: mockMessagesService,
+        },
+        {
+          provide: ConversationMembersService,
+          useValue: mockConversationMembersService,
         },
       ],
     }).compile();
@@ -75,7 +86,7 @@ describe('ConversationsService', () => {
       name: 'Test Session',
       sessionUid: 'session-123',
       type: ConversationType.SESSION,
-      userUids: ['user-1', 'user-2'],
+      userUid: 'user-1',
     };
 
     it('should create a session conversation without transaction', async () => {
@@ -87,7 +98,7 @@ describe('ConversationsService', () => {
       };
 
       mockPrismaService.conversations.create.mockResolvedValue(mockConversation);
-      mockPrismaService.conversationMembers.createMany.mockResolvedValue({ count: 2 });
+      mockConversationMembersService.create.mockResolvedValue(undefined);
 
       await service.createSessionConversation(createSessionConversationDto);
 
@@ -99,30 +110,24 @@ describe('ConversationsService', () => {
         },
       });
 
-      expect(mockPrismaService.conversationMembers.createMany).toHaveBeenCalledWith({
-        data: [
-          { conversationUid: 'conv-123', userUid: 'user-1' },
-          { conversationUid: 'conv-123', userUid: 'user-2' },
-        ],
-      });
+      expect(mockConversationMembersService.create).toHaveBeenCalledWith('conv-123', 'user-1');
 
       expect(mockPinoLogger.info).toHaveBeenCalled();
     });
 
     it('should create a session conversation with transaction', async () => {
       const mockTx = {
-        conversationMembers: {
-          createMany: jest.fn().mockResolvedValue({ count: 2 }),
-        },
         conversations: {
           create: jest.fn().mockResolvedValue({ uid: 'conv-456' }),
         },
       };
 
+      mockConversationMembersService.create.mockResolvedValue(undefined);
+
       await service.createSessionConversation(createSessionConversationDto, mockTx as any);
 
       expect(mockTx.conversations.create).toHaveBeenCalled();
-      expect(mockTx.conversationMembers.createMany).toHaveBeenCalled();
+      expect(mockConversationMembersService.create).toHaveBeenCalledWith('conv-456', 'user-1');
       expect(mockPrismaService.conversations.create).not.toHaveBeenCalled();
     });
 
@@ -140,25 +145,19 @@ describe('ConversationsService', () => {
       );
     });
 
-    it('should create conversation members for all user uids', async () => {
+    it('should call conversationMembersService.create with conversation uid and user uid', async () => {
       const mockConversation = { uid: 'conv-789' };
       mockPrismaService.conversations.create.mockResolvedValue(mockConversation);
-      mockPrismaService.conversationMembers.createMany.mockResolvedValue({ count: 3 });
+      mockConversationMembersService.create.mockResolvedValue(undefined);
 
-      const dtoWithMultipleUsers = {
+      const dto = {
         ...createSessionConversationDto,
-        userUids: ['user-1', 'user-2', 'user-3'],
+        userUid: 'user-789',
       };
 
-      await service.createSessionConversation(dtoWithMultipleUsers);
+      await service.createSessionConversation(dto);
 
-      expect(mockPrismaService.conversationMembers.createMany).toHaveBeenCalledWith({
-        data: [
-          { conversationUid: 'conv-789', userUid: 'user-1' },
-          { conversationUid: 'conv-789', userUid: 'user-2' },
-          { conversationUid: 'conv-789', userUid: 'user-3' },
-        ],
-      });
+      expect(mockConversationMembersService.create).toHaveBeenCalledWith('conv-789', 'user-789');
     });
   });
 
@@ -175,7 +174,7 @@ describe('ConversationsService', () => {
       };
 
       mockPrismaService.conversations.create.mockResolvedValue(mockConversation);
-      mockPrismaService.conversationMembers.createMany.mockResolvedValue({ count: 2 });
+      mockConversationMembersService.createMany.mockResolvedValue(undefined);
 
       await service.createPrivateConversation(createPrivateConversationDto);
 
@@ -185,28 +184,28 @@ describe('ConversationsService', () => {
         },
       });
 
-      expect(mockPrismaService.conversationMembers.createMany).toHaveBeenCalledWith({
-        data: [
-          { conversationUid: 'conv-private-123', userUid: 'user-1' },
-          { conversationUid: 'conv-private-123', userUid: 'user-2' },
-        ],
-      });
+      expect(mockConversationMembersService.createMany).toHaveBeenCalledWith('conv-private-123', [
+        'user-1',
+        'user-2',
+      ]);
     });
 
     it('should create a private conversation with transaction', async () => {
       const mockTx = {
-        conversationMembers: {
-          createMany: jest.fn().mockResolvedValue({ count: 2 }),
-        },
         conversations: {
           create: jest.fn().mockResolvedValue({ uid: 'conv-private-456' }),
         },
       };
 
+      mockConversationMembersService.createMany.mockResolvedValue(undefined);
+
       await service.createPrivateConversation(createPrivateConversationDto, mockTx as any);
 
       expect(mockTx.conversations.create).toHaveBeenCalled();
-      expect(mockTx.conversationMembers.createMany).toHaveBeenCalled();
+      expect(mockConversationMembersService.createMany).toHaveBeenCalledWith('conv-private-456', [
+        'user-1',
+        'user-2',
+      ]);
     });
   });
 
@@ -293,6 +292,8 @@ describe('ConversationsService', () => {
           where: expect.objectContaining({
             conversationMembers: {
               some: {
+                isArchived: false,
+                isVisible: true,
                 userUid: 'user-123',
               },
             },
