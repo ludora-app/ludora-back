@@ -41,6 +41,9 @@ export interface RawFindOneConversation {
     }[];
   } | null;
   conversationMembers?: {
+    isArchived: boolean;
+    isMuted: boolean;
+    userUid: string;
     user: {
       uid: string;
       firstname: string;
@@ -95,18 +98,27 @@ export class ConversationMapper {
     };
   }
 
-  static toFindOneDto(conversation: RawFindOneConversation): FindOneConversationResponseData {
-    const otherUser = conversation.conversationMembers?.[0]?.user;
+  static toFindOneDto(
+    conversation: RawFindOneConversation,
+    userUid: string,
+  ): FindOneConversationResponseData {
+    const currentMember = conversation.conversationMembers?.find((m) => m.userUid === userUid);
+    const otherMember = conversation.conversationMembers?.find((m) => m.userUid !== userUid);
+    const otherUser = otherMember?.user;
+
     return {
       imageUrl: conversation.session?.sessionImages?.[0]?.url || null,
       messages: conversation.messages.map((message) => MessageMapper.toLastMessageDto(message)),
-
       name:
         conversation.type === ConversationType.PRIVATE && otherUser
           ? `${otherUser.firstname} ${otherUser.lastname}`
           : conversation.name,
-      sender: conversation.conversationMembers?.[0]?.user || null,
+      sender: otherUser || null,
       sessionUid: conversation.sessionUid || null,
+      settings: {
+        isArchived: currentMember?.isArchived ?? false,
+        isMuted: currentMember?.isMuted ?? false,
+      },
       type: conversation.type,
       uid: conversation.uid,
     };

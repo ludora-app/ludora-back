@@ -289,6 +289,8 @@ export class ConversationsService {
       include: {
         conversationMembers: {
           select: {
+            isArchived: true,
+            isMuted: true,
             user: {
               select: {
                 firstname: true,
@@ -297,11 +299,7 @@ export class ConversationsService {
                 uid: true,
               },
             },
-          },
-          where: {
-            NOT: {
-              userUid: userUid,
-            },
+            userUid: true,
           },
         },
         messages: {
@@ -347,7 +345,7 @@ export class ConversationsService {
       throw new ForbiddenException(`User with uid ${userUid} is not a member of this conversation`);
     }
 
-    const conversation = await ConversationMapper.toFindOneDto(existingConversation);
+    const conversation = await ConversationMapper.toFindOneDto(existingConversation, userUid);
 
     return conversation;
   }
