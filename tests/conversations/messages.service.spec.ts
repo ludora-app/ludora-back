@@ -20,6 +20,11 @@ describe('MessagesService', () => {
     mockPrisma = {
       conversationMembers: {
         findFirst: jest.fn(),
+        findMany: jest.fn(),
+      },
+      messageReceipts: {
+        create: jest.fn(),
+        createMany: jest.fn(),
       },
       messages: {
         create: jest.fn(),
@@ -104,6 +109,9 @@ describe('MessagesService', () => {
       mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
       mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
       mockPrisma.messages.create.mockResolvedValue(mockMessage);
+      mockPrisma.conversationMembers.findMany.mockResolvedValue([{ userUid: 'user-456' }]);
+      mockPrisma.messageReceipts.createMany.mockResolvedValue({ count: 1 });
+      mockPrisma.messageReceipts.create.mockResolvedValue({});
 
       await service.createTextMessage(senderUid, content, conversationUid, sessionUid);
 
@@ -129,6 +137,18 @@ describe('MessagesService', () => {
               uid: true,
             },
           },
+        },
+      });
+      expect(mockPrisma.conversationMembers.findMany).toHaveBeenCalledWith({
+        select: { userUid: true },
+        where: { conversationUid, userUid: { not: senderUid } },
+      });
+      expect(mockPrisma.messageReceipts.createMany).toHaveBeenCalled();
+      expect(mockPrisma.messageReceipts.create).toHaveBeenCalledWith({
+        data: {
+          messageUid: 'msg-123',
+          status: MessageStatus.SENT,
+          userUid: senderUid,
         },
       });
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(EventTypes.NEW_MESSAGE, {
@@ -165,6 +185,9 @@ describe('MessagesService', () => {
       mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
       mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
       mockPrisma.messages.create.mockResolvedValue(mockMessage);
+      mockPrisma.conversationMembers.findMany.mockResolvedValue([{ userUid: 'user-456' }]);
+      mockPrisma.messageReceipts.createMany.mockResolvedValue({ count: 1 });
+      mockPrisma.messageReceipts.create.mockResolvedValue({});
 
       await service.createTextMessage(senderUid, content, conversationUid, sessionUid);
 
@@ -213,6 +236,9 @@ describe('MessagesService', () => {
       mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
       mockStorageService.upload.mockResolvedValue(uploadedFile);
       mockPrisma.messages.create.mockResolvedValue(mockMessage);
+      mockPrisma.conversationMembers.findMany.mockResolvedValue([{ userUid: 'user-456' }]);
+      mockPrisma.messageReceipts.createMany.mockResolvedValue({ count: 1 });
+      mockPrisma.messageReceipts.create.mockResolvedValue({});
 
       await service.createMediaMessage(senderUid, conversationUid, type, file, sessionUid);
 
@@ -303,6 +329,7 @@ describe('MessagesService', () => {
   describe('getMessages', () => {
     it('should return paginated messages', async () => {
       const conversationUid = 'conv-123';
+      const userUid = 'user-1';
       const limit = 50;
 
       const mockMessages = [
@@ -345,10 +372,11 @@ describe('MessagesService', () => {
         },
       ];
 
+      mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
       mockPrisma.messages.findMany.mockResolvedValue(mockMessages);
-      mockStorageService.getSignedUrl.mockResolvedValue('signed-url');
 
-      const result = await service.getMessages(conversationUid, undefined, limit);
+      const result = await service.getMessages(conversationUid, userUid, undefined, limit);
 
       expect(mockPrisma.messages.findMany).toHaveBeenCalledWith({
         include: {
@@ -381,13 +409,15 @@ describe('MessagesService', () => {
 
     it('should handle cursor pagination', async () => {
       const conversationUid = 'conv-123';
+      const userUid = 'user-1';
       const cursor = 'msg-cursor-123';
       const limit = 10;
 
+      mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
       mockPrisma.messages.findMany.mockResolvedValue([]);
-      mockStorageService.getSignedUrl.mockResolvedValue('signed-url');
 
-      await service.getMessages(conversationUid, cursor, limit);
+      await service.getMessages(conversationUid, userUid, cursor, limit);
 
       expect(mockPrisma.messages.findMany).toHaveBeenCalledWith({
         cursor: {

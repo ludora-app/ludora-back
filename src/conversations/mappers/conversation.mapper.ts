@@ -12,6 +12,7 @@ export interface RawConversationCollectionItem {
   type: ConversationType;
   messages: RawMessage[];
   sessionUid?: string | null;
+  _count: { messages: number };
   session?: {
     sessionImages: {
       url: string;
@@ -95,6 +96,7 @@ export class ConversationMapper {
       sessionUid: conversation.sessionUid || null,
       type: conversation.type,
       uid: conversation.uid,
+      unreadMessagesCount: conversation._count?.messages ?? 0,
     };
   }
 

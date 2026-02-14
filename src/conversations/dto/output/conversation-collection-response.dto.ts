@@ -15,6 +15,13 @@ export class ConversationCollectionResponseData extends OmitType(BasicConversati
     type: MessageDto,
   })
   lastMessage: MessageDto | null;
+
+  @ApiProperty({
+    description: 'Number of unread messages in the conversation',
+    example: 1,
+    readOnly: true,
+  })
+  unreadMessagesCount: number;
 }
 
 export class ConversationCollectionResponseDto extends ResponseTypeDto<ConversationCollectionResponseData> {

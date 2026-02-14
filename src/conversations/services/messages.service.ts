@@ -68,6 +68,9 @@ export class MessagesService {
       `Message ${message.uid} created in conversation ${conversationUid} by user ${senderUid}`,
     );
 
+    const membersUids = await this.getOtherMembersUids(conversationUid, senderUid);
+    await this.createMessageReceipt(message.uid, membersUids, senderUid);
+
     const senderName = `${message.sender.firstname ?? ''} ${message.sender.lastname ?? ''}`.trim();
 
     //? default notification title for a private conversation
@@ -141,6 +144,9 @@ export class MessagesService {
       `Message ${message.uid} created in conversation ${conversationUid} by user ${senderUid}`,
     );
 
+    const membersUids = await this.getOtherMembersUids(conversationUid, senderUid);
+    await this.createMessageReceipt(message.uid, membersUids, senderUid);
+
     const senderName = `${message.sender.firstname ?? ''} ${message.sender.lastname ?? ''}`.trim();
 
     //? default notification title for a private conversation
@@ -169,10 +175,12 @@ export class MessagesService {
    */
   async getMessages(
     conversationUid: string,
+    userUid: string,
     cursor?: string,
     limit = 50,
   ): Promise<PaginatedDataDto<MessageCollectionItemDto>> {
     // Verify user is a member of the conversation
+    await this.markMessagesAsRead(conversationUid, userUid);
 
     const messages = await this.prisma.messages.findMany({
       include: {
@@ -254,5 +262,35 @@ export class MessagesService {
     );
 
     return result.count;
+  }
+
+  async getOtherMembersUids(conversationUid: string, senderUid: string): Promise<Set<string>> {
+    const members = await this.prisma.conversationMembers.findMany({
+      select: {
+        userUid: true,
+      },
+      where: { conversationUid, userUid: { not: senderUid } },
+    });
+    return new Set(members.map((member) => member.userUid));
+  }
+
+  async createMessageReceipt(
+    messageUid: string,
+    userUids: Set<string>,
+    senderUid: string,
+  ): Promise<void> {
+    await this.prisma.messageReceipts.createMany({
+      data: Array.from(userUids).map((userUid) => ({
+        messageUid,
+        userUid,
+      })),
+    });
+    await this.prisma.messageReceipts.create({
+      data: {
+        messageUid,
+        status: MessageStatus.SENT,
+        userUid: senderUid,
+      },
+    });
   }
 }

@@ -1,8 +1,8 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Prisma } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ConversationType, MessageType } from 'generated/prisma/browser';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/browser';
 import {
   BadRequestException,
   ForbiddenException,
@@ -107,6 +107,20 @@ export class ConversationsService {
 
     const query: {
       include: {
+        _count: {
+          select: {
+            messages: {
+              where: {
+                messageReceipts: {
+                  some: {
+                    userUid: string;
+                    status: { notIn: MessageStatus[] };
+                  };
+                };
+              };
+            };
+          };
+        };
         messages: {
           orderBy: {
             createdAt: 'desc';
@@ -181,6 +195,20 @@ export class ConversationsService {
       };
     } = {
       include: {
+        _count: {
+          select: {
+            messages: {
+              where: {
+                messageReceipts: {
+                  some: {
+                    status: { notIn: [MessageStatus.READ, MessageStatus.SENT] },
+                    userUid: userUid,
+                  },
+                },
+              },
+            },
+          },
+        },
         conversationMembers: {
           select: {
             user: {
@@ -310,6 +338,12 @@ export class ConversationsService {
             content: true,
             createdAt: true,
             globalStatus: true,
+            messageReceipts: {
+              select: {
+                status: true,
+                userUid: true,
+              },
+            },
             sender: {
               select: {
                 firstname: true,
@@ -445,6 +479,6 @@ export class ConversationsService {
       throw new Error(`User ${userUid} is not a member of conversation ${conversationUid}`);
     }
 
-    return await this.messagesService.getMessages(conversationUid, cursor, limit);
+    return await this.messagesService.getMessages(conversationUid, userUid, cursor, limit);
   }
 }
