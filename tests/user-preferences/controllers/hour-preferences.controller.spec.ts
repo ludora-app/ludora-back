@@ -113,7 +113,7 @@ describe('HourPreferencesController', () => {
         {
           dayOfWeek: 2,
           timePeriod: TimePeriod.MORNING,
-          preferenceType: UserHourPreferenceType.RECURRENT,
+          type: UserHourPreferenceType.RECURRENT,
         },
       ],
     };

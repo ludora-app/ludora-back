@@ -6,8 +6,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserHourPreferenceType } from 'generated/prisma/client';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
-import { CreateHourPreferenceData } from '../dto/input/create-hour-preference.dto';
-import { HourPreferenceResponseData } from '../dto/output/hour-preference-response.dto';
+import { HourPreferenceData } from '../dto/input/create-hour-preference.dto';
 
 @Injectable()
 export class HourPreferencesService {
@@ -19,7 +18,7 @@ export class HourPreferencesService {
     this.logger.setContext(HourPreferencesService.name);
   }
 
-  async createMany(hourPreferences: CreateHourPreferenceData[], userUid: string) {
+  async createMany(hourPreferences: HourPreferenceData[], userUid: string) {
     const validHourPreferences = this.validateHourPreferences(hourPreferences);
     await this.clearPreferences(userUid);
 
@@ -28,18 +27,19 @@ export class HourPreferencesService {
         let date: Date | undefined;
 
         //? Check if the date is a valid date string, puts the date at 00:00:00
-        if (hourPreference.date && !Number.isNaN(Date.parse(hourPreference.date))) {
-          date = new Date(hourPreference.date);
-          date.setHours(0, 0, 0, 0);
-        } else {
-          date = undefined;
+        if (hourPreference.date) {
+          const parsed = new Date(hourPreference.date);
+          if (!Number.isNaN(parsed.getTime())) {
+            date = parsed;
+            date.setHours(0, 0, 0, 0);
+          }
         }
         await tx.userHourPreferences.create({
           data: {
             date,
             dayOfWeek: hourPreference.dayOfWeek,
             timePeriod: hourPreference.timePeriod,
-            type: hourPreference.preferenceType,
+            type: hourPreference.type,
             userUid,
           },
         });
@@ -48,7 +48,7 @@ export class HourPreferencesService {
     this.logger.debug(`${validHourPreferences.length} hour preferences created`);
   }
 
-  async findAllByUserUid(userUid: string): Promise<PaginatedDataDto<HourPreferenceResponseData>> {
+  async findAllByUserUid(userUid: string): Promise<PaginatedDataDto<HourPreferenceData>> {
     const existingUser = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
     if (!existingUser) {
       this.logger.error(`User not found: ${userUid}`);
@@ -61,7 +61,6 @@ export class HourPreferencesService {
         dayOfWeek: true,
         timePeriod: true,
         type: true,
-        uid: true,
       },
       where: {
         OR: [
@@ -84,23 +83,17 @@ export class HourPreferencesService {
    * @param hourPreferences
    * @returns
    */
-  private validateHourPreferences(
-    hourPreferences: CreateHourPreferenceData[],
-  ): CreateHourPreferenceData[] {
+  private validateHourPreferences(hourPreferences: HourPreferenceData[]): HourPreferenceData[] {
     const validHourPreferences = [];
     // Process RECURRENT first so ONE_TIME can be skipped when covered by a RECURRENT
     const sorted = [...hourPreferences].sort((a, b) =>
-      a.preferenceType === b.preferenceType
-        ? 0
-        : a.preferenceType === UserHourPreferenceType.RECURRENT
-          ? -1
-          : 1,
+      a.type === b.type ? 0 : a.type === UserHourPreferenceType.RECURRENT ? -1 : 1,
     );
     for (const hourPreference of sorted) {
-      if (hourPreference.preferenceType === UserHourPreferenceType.RECURRENT) {
+      if (hourPreference.type === UserHourPreferenceType.RECURRENT) {
         const existingPref = validHourPreferences.find(
           (pref) =>
-            pref.preferenceType === UserHourPreferenceType.RECURRENT &&
+            pref.type === UserHourPreferenceType.RECURRENT &&
             pref.dayOfWeek === hourPreference.dayOfWeek &&
             pref.timePeriod === hourPreference.timePeriod,
         );
@@ -118,7 +111,7 @@ export class HourPreferencesService {
           dayOfWeekFromDate !== undefined &&
           validHourPreferences.some(
             (pref) =>
-              pref.preferenceType === UserHourPreferenceType.RECURRENT &&
+              pref.type === UserHourPreferenceType.RECURRENT &&
               pref.dayOfWeek === dayOfWeekFromDate &&
               pref.timePeriod === hourPreference.timePeriod,
           );
@@ -130,7 +123,7 @@ export class HourPreferencesService {
         }
         const existingOneTime = validHourPreferences.find(
           (pref) =>
-            pref.preferenceType === UserHourPreferenceType.ONE_TIME &&
+            pref.type === UserHourPreferenceType.ONE_TIME &&
             pref.date === hourPreference.date &&
             pref.timePeriod === hourPreference.timePeriod,
         );

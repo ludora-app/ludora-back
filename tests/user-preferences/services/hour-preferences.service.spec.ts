@@ -5,7 +5,7 @@ import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
 import { PinoLogger } from 'nestjs-pino';
-import { CreateHourPreferenceData } from 'src/user-preferences/dto/input/create-hour-preference.dto';
+import { HourPreferenceData } from 'src/user-preferences/dto/input/create-hour-preference.dto';
 
 describe('HourPreferencesService', () => {
   let service: HourPreferencesService;
@@ -67,16 +67,16 @@ describe('HourPreferencesService', () => {
 
   describe('createMany', () => {
     const userUid = 'user-uid-1';
-    const hourPreferences: CreateHourPreferenceData[] = [
+    const hourPreferences: HourPreferenceData[] = [
       {
         dayOfWeek: 2,
         timePeriod: TimePeriod.MORNING,
-        preferenceType: UserHourPreferenceType.RECURRENT,
+        type: UserHourPreferenceType.RECURRENT,
       },
       {
         timePeriod: TimePeriod.AFTERNOON,
-        preferenceType: UserHourPreferenceType.ONE_TIME,
-        date: mockFutureDate.toISOString(),
+        type: UserHourPreferenceType.ONE_TIME,
+        date: mockFutureDate,
       },
     ];
 
@@ -114,16 +114,16 @@ describe('HourPreferencesService', () => {
     });
 
     it('should deduplicate RECURRENT preferences (same dayOfWeek + timePeriod)', async () => {
-      const prefs: CreateHourPreferenceData[] = [
+      const prefs: HourPreferenceData[] = [
         {
           dayOfWeek: 2,
           timePeriod: TimePeriod.MORNING,
-          preferenceType: UserHourPreferenceType.RECURRENT,
+          type: UserHourPreferenceType.RECURRENT,
         },
         {
           dayOfWeek: 2,
           timePeriod: TimePeriod.MORNING,
-          preferenceType: UserHourPreferenceType.RECURRENT,
+          type: UserHourPreferenceType.RECURRENT,
         },
       ];
       const mockTxCreate = jest.fn().mockResolvedValue({});
@@ -140,16 +140,16 @@ describe('HourPreferencesService', () => {
     });
 
     it('should skip ONE_TIME when covered by RECURRENT (same dayOfWeek + timePeriod)', async () => {
-      const prefs: CreateHourPreferenceData[] = [
+      const prefs: HourPreferenceData[] = [
         {
           dayOfWeek: 2,
           timePeriod: TimePeriod.MORNING,
-          preferenceType: UserHourPreferenceType.RECURRENT,
+          type: UserHourPreferenceType.RECURRENT,
         },
         {
           timePeriod: TimePeriod.MORNING,
-          preferenceType: UserHourPreferenceType.ONE_TIME,
-          date: '2023-01-10T14:00:00.000Z', // Tuesday = day 2
+          type: UserHourPreferenceType.ONE_TIME,
+          date: new Date('2023-01-10T14:00:00.000Z'), // Tuesday = day 2
         },
       ];
       const mockTxCreate = jest.fn().mockResolvedValue({});
@@ -167,16 +167,16 @@ describe('HourPreferencesService', () => {
 
     it('should deduplicate ONE_TIME preferences (same date + timePeriod)', async () => {
       const dateStr = mockFutureDate.toISOString();
-      const prefs: CreateHourPreferenceData[] = [
+      const prefs: HourPreferenceData[] = [
         {
           timePeriod: TimePeriod.AFTERNOON,
-          preferenceType: UserHourPreferenceType.ONE_TIME,
-          date: dateStr,
+          type: UserHourPreferenceType.ONE_TIME,
+          date: new Date(dateStr),
         },
         {
           timePeriod: TimePeriod.AFTERNOON,
-          preferenceType: UserHourPreferenceType.ONE_TIME,
-          date: dateStr,
+          type: UserHourPreferenceType.ONE_TIME,
+          date: new Date(dateStr),
         },
       ];
       const mockTxCreate = jest.fn().mockResolvedValue({});
@@ -191,16 +191,16 @@ describe('HourPreferencesService', () => {
     });
 
     it('should log when submitted count differs from valid count', async () => {
-      const prefs: CreateHourPreferenceData[] = [
+      const prefs: HourPreferenceData[] = [
         {
           dayOfWeek: 2,
           timePeriod: TimePeriod.MORNING,
-          preferenceType: UserHourPreferenceType.RECURRENT,
+          type: UserHourPreferenceType.RECURRENT,
         },
         {
           dayOfWeek: 2,
           timePeriod: TimePeriod.MORNING,
-          preferenceType: UserHourPreferenceType.RECURRENT,
+          type: UserHourPreferenceType.RECURRENT,
         },
       ];
       const mockTxCreate = jest.fn().mockResolvedValue({});
@@ -262,7 +262,6 @@ describe('HourPreferencesService', () => {
           dayOfWeek: true,
           timePeriod: true,
           type: true,
-          uid: true,
         },
         where: {
           OR: [

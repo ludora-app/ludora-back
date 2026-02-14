@@ -25,11 +25,11 @@ import {
 } from '@nestjs/swagger';
 
 import { HourPreferencesService } from '../services/hour-preferences.service';
-import { CreateHourPreferenceDto } from '../dto/input/create-hour-preference.dto';
+import { PaginatedHourPreferenceResponseDto } from '../dto/output/hour-preference-response.dto';
 import {
-  PaginatedHourPreferenceResponseDto,
-  HourPreferenceResponseData,
-} from '../dto/output/hour-preference-response.dto';
+  CreateHourPreferenceDto,
+  HourPreferenceData,
+} from '../dto/input/create-hour-preference.dto';
 
 @Controller('hour-preferences')
 @UseGuards(AuthB2CGuard)
@@ -45,7 +45,7 @@ export class HourPreferencesController {
   @HttpCode(HttpStatus.OK)
   async findMyHourPreferences(
     @Req() request: Request,
-  ): Promise<PaginationResponseTypeDto<HourPreferenceResponseData>> {
+  ): Promise<PaginationResponseTypeDto<HourPreferenceData>> {
     const uid = request['user'].uid;
     const data = await this.hourPreferencesService.findAllByUserUid(uid);
 
