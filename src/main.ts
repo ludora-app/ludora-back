@@ -8,7 +8,8 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
-  await app.register(contentParser);
+  // Limit to 10 Mo per file to support HEIC (iPhone) and other photos
+  await app.register(contentParser, { limits: { fileSize: 10 * 1024 * 1024 } });
 
   app.useGlobalPipes(
     new ValidationPipe({

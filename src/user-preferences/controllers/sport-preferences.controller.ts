@@ -19,6 +19,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -86,6 +87,11 @@ export class SportPreferencesController {
   @Put()
   @Protected()
   @ApiOperation({ summary: 'Saves the sport preferences of the connected user' })
+  @ApiBody({ type: CreateSportPreferenceDto })
+  @ApiNoContentResponse({ description: 'User sport preferences created successfully' })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.NO_CONTENT)
   async createManyWithGameModes(
     @Req() req: FastifyRequest,
     @Body() dto: CreateSportPreferenceDto,

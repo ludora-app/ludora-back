@@ -28,7 +28,7 @@ export class CreateSportPreferenceData {
   })
   readonly level: UserSportLevel;
 
-  @IsEnum(GameModes)
+  @IsEnum(GameModes, { each: true })
   @IsNotEmpty()
   @ApiProperty({
     description: 'The game mode which the user prefers',
