@@ -55,6 +55,10 @@ import {
   FindOneConversationResponseDto,
 } from './dto/output/find-one-conversation-response.dto';
 import {
+  ConversationMemberResponseData,
+  PaginatedConversationMemberResponseDto,
+} from './dto/output/conversation-member-response.dto';
+import {
   ConversationCollectionResponseData,
   PaginatedConversationCollectionResponseDto,
 } from './dto/output/conversation-collection-response.dto';
@@ -165,6 +169,24 @@ export class ConversationsController {
     return {
       data: messages,
       message: 'Messages fetched successfully',
+    };
+  }
+
+  @Get(':uid/members')
+  @ApiOperation({ summary: 'Get all members of a conversation' })
+  @ApiOkResponse({ type: PaginatedConversationMemberResponseDto })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiForbiddenResponse({ type: ForbiddenResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @Protected()
+  async findAllMembers(
+    @Param('uid') uid: string,
+  ): Promise<PaginationResponseTypeDto<ConversationMemberResponseData>> {
+    const members = await this.membersService.findAllByConversationUid(uid);
+    return {
+      data: members,
+      message: 'Members fetched successfully',
     };
   }
 

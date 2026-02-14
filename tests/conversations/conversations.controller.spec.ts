@@ -22,6 +22,7 @@ describe('ConversationsController', () => {
     };
 
     mockMembersService = {
+      findAllByConversationUid: jest.fn(),
       updateMuteSettings: jest.fn(),
       updateArchivedSettings: jest.fn(),
       updateDisplayMessagesAfterDeletion: jest.fn(),
@@ -564,6 +565,49 @@ describe('ConversationsController', () => {
       expect(result).toHaveProperty('data');
       expect(result).toHaveProperty('message', 'Messages fetched successfully');
       expect(result.data).toEqual(mockMessages);
+    });
+  });
+
+  describe('findAllMembers', () => {
+    it('should return paginated members for a conversation', async () => {
+      const conversationUid = 'conv-123';
+      const mockMembers = {
+        items: [
+          {
+            userUid: 'user-1',
+            firstname: 'John',
+            lastname: 'Doe',
+            imageUrl: 'https://example.com/john.jpg',
+            isAdmin: true,
+            joinedAt: new Date(),
+            sessionData: null,
+          },
+        ],
+        totalCount: 1,
+      };
+
+      mockMembersService.findAllByConversationUid.mockResolvedValue(mockMembers);
+
+      const result = await controller.findAllMembers(conversationUid);
+
+      expect(result).toEqual({
+        data: mockMembers,
+        message: 'Members fetched successfully',
+      });
+      expect(mockMembersService.findAllByConversationUid).toHaveBeenCalledWith(conversationUid);
+    });
+
+    it('should return empty list when conversation has no members', async () => {
+      const conversationUid = 'conv-empty';
+      const mockMembers = { items: [], totalCount: 0 };
+
+      mockMembersService.findAllByConversationUid.mockResolvedValue(mockMembers);
+
+      const result = await controller.findAllMembers(conversationUid);
+
+      expect(result.data.items).toHaveLength(0);
+      expect(result.data.totalCount).toBe(0);
+      expect(mockMembersService.findAllByConversationUid).toHaveBeenCalledWith(conversationUid);
     });
   });
 

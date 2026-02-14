@@ -226,6 +226,7 @@ describe('ConversationsService', () => {
 
       const mockConversations = [
         {
+          _count: { messages: 3 },
           conversationMembers: [],
           createdAt: new Date(),
           imageUrl: null,
@@ -305,6 +306,7 @@ describe('ConversationsService', () => {
 
       const mockConversations = [
         {
+          _count: { messages: 0 },
           conversationMembers: [],
           messages: [],
           name: 'Conv 1',
@@ -313,6 +315,7 @@ describe('ConversationsService', () => {
           uid: 'conv-1',
         },
         {
+          _count: { messages: 0 },
           conversationMembers: [],
           messages: [],
           name: 'Conv 2',
@@ -321,6 +324,7 @@ describe('ConversationsService', () => {
           uid: 'conv-2',
         },
         {
+          _count: { messages: 0 },
           conversationMembers: [],
           messages: [],
           name: 'Conv 3',
@@ -611,7 +615,12 @@ describe('ConversationsService', () => {
           userUid,
         },
       });
-      expect(mockMessagesService.getMessages).toHaveBeenCalledWith(conversationUid, cursor, limit);
+      expect(mockMessagesService.getMessages).toHaveBeenCalledWith(
+        conversationUid,
+        userUid,
+        cursor,
+        limit,
+      );
       expect(result).toEqual(mockMessages);
     });
 
@@ -644,7 +653,12 @@ describe('ConversationsService', () => {
 
       await service.loadMoreMessages(conversationUid, userUid);
 
-      expect(mockMessagesService.getMessages).toHaveBeenCalledWith(conversationUid, undefined, 50);
+      expect(mockMessagesService.getMessages).toHaveBeenCalledWith(
+        conversationUid,
+        userUid,
+        undefined,
+        50,
+      );
     });
   });
 });

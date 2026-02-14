@@ -1,8 +1,8 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Prisma } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ConversationType, MessageType } from 'generated/prisma/browser';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/browser';
 import {
   BadRequestException,
   ForbiddenException,
@@ -107,6 +107,20 @@ export class ConversationsService {
 
     const query: {
       include: {
+        _count: {
+          select: {
+            messages: {
+              where: {
+                messageReceipts: {
+                  some: {
+                    userUid: string;
+                    status: { notIn: MessageStatus[] };
+                  };
+                };
+              };
+            };
+          };
+        };
         messages: {
           orderBy: {
             createdAt: 'desc';
@@ -149,12 +163,26 @@ export class ConversationsService {
         };
         session: {
           select: {
+            sport: true;
             sessionImages: {
               select: {
                 url: true;
               };
               where: {
                 order: 1;
+              };
+            };
+            sessionTeams: {
+              select: {
+                teamName: true;
+                teamLabel: true;
+              };
+              where: {
+                sessionPlayers: {
+                  some: {
+                    userUid: string;
+                  };
+                };
               };
             };
           };
@@ -181,6 +209,20 @@ export class ConversationsService {
       };
     } = {
       include: {
+        _count: {
+          select: {
+            messages: {
+              where: {
+                messageReceipts: {
+                  some: {
+                    status: { notIn: [MessageStatus.READ, MessageStatus.SENT] },
+                    userUid: userUid,
+                  },
+                },
+              },
+            },
+          },
+        },
         conversationMembers: {
           select: {
             user: {
@@ -231,6 +273,20 @@ export class ConversationsService {
                 order: 1,
               },
             },
+            sessionTeams: {
+              select: {
+                teamLabel: true,
+                teamName: true,
+              },
+              where: {
+                sessionPlayers: {
+                  some: {
+                    userUid: userUid,
+                  },
+                },
+              },
+            },
+            sport: true,
           },
         },
       },
@@ -262,6 +318,8 @@ export class ConversationsService {
     }
 
     const rawConversations = await this.prisma.conversations.findMany(query);
+
+    console.log(JSON.stringify(rawConversations, null, 2));
 
     const actualLimit = limit || 10;
     let nextCursor: string | null = null;
@@ -310,6 +368,12 @@ export class ConversationsService {
             content: true,
             createdAt: true,
             globalStatus: true,
+            messageReceipts: {
+              select: {
+                status: true,
+                userUid: true,
+              },
+            },
             sender: {
               select: {
                 firstname: true,
@@ -324,6 +388,29 @@ export class ConversationsService {
             updatedAt: true,
           },
           take: 10,
+        },
+        session: {
+          select: {
+            sessionImages: {
+              select: {
+                url: true,
+              },
+            },
+            sessionTeams: {
+              select: {
+                teamLabel: true,
+                teamName: true,
+              },
+              where: {
+                sessionPlayers: {
+                  some: {
+                    userUid: userUid,
+                  },
+                },
+              },
+            },
+            sport: true,
+          },
         },
       },
       where: {
@@ -445,6 +532,6 @@ export class ConversationsService {
       throw new Error(`User ${userUid} is not a member of conversation ${conversationUid}`);
     }
 
-    return await this.messagesService.getMessages(conversationUid, cursor, limit);
+    return await this.messagesService.getMessages(conversationUid, userUid, cursor, limit);
   }
 }

@@ -1,3 +1,4 @@
+import { Sport } from 'src/shared/constants/constants';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
 
 import { MessageMapper } from './message.mapper';
@@ -12,11 +13,7 @@ export interface RawConversationCollectionItem {
   type: ConversationType;
   messages: RawMessage[];
   sessionUid?: string | null;
-  session?: {
-    sessionImages: {
-      url: string;
-    }[];
-  } | null;
+  _count: { messages: number };
   conversationMembers?: {
     user: {
       uid: string;
@@ -25,6 +22,16 @@ export interface RawConversationCollectionItem {
       imageUrl: string;
     };
   }[];
+  session?: {
+    sport: string;
+    sessionImages: {
+      url: string;
+    }[];
+    sessionTeams: {
+      teamName: string;
+      teamLabel: string;
+    }[];
+  } | null;
 }
 
 export interface RawFindOneConversation {
@@ -38,6 +45,11 @@ export interface RawFindOneConversation {
   session?: {
     sessionImages: {
       url: string;
+    }[];
+    sport: string;
+    sessionTeams: {
+      teamLabel: string;
+      teamName: string;
     }[];
   } | null;
   conversationMembers?: {
@@ -92,9 +104,16 @@ export class ConversationMapper {
           ? `${otherUser.firstname} ${otherUser.lastname}`
           : conversation.name,
       sender: firstMessage?.sender || null,
-      sessionUid: conversation.sessionUid || null,
+      sessionData: {
+        sessionUid: conversation.sessionUid || null,
+        sport: (conversation.session?.sport as Sport) ?? null,
+        teamLabel: conversation.session?.sessionTeams?.[0]?.teamLabel ?? null,
+        teamName: conversation.session?.sessionTeams?.[0]?.teamName ?? null,
+      },
+
       type: conversation.type,
       uid: conversation.uid,
+      unreadMessagesCount: conversation._count?.messages ?? 0,
     };
   }
 
@@ -114,7 +133,12 @@ export class ConversationMapper {
           ? `${otherUser.firstname} ${otherUser.lastname}`
           : conversation.name,
       sender: otherUser || null,
-      sessionUid: conversation.sessionUid || null,
+      sessionData: {
+        sessionUid: conversation.sessionUid || null,
+        sport: (conversation.session?.sport as Sport) ?? null,
+        teamLabel: conversation.session?.sessionTeams?.[0]?.teamLabel ?? null,
+        teamName: conversation.session?.sessionTeams?.[0]?.teamName ?? null,
+      },
       settings: {
         isArchived: currentMember?.isArchived ?? false,
         isMuted: currentMember?.isMuted ?? false,

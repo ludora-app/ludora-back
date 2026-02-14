@@ -414,9 +414,10 @@ describe('ConversationsService', () => {
           lastMessage: null,
           name: `Conv ${conversation.uid}`,
           sender: null,
-          sessionUid: null,
+          sessionData: null,
           type: ConversationType.PRIVATE,
           uid: conversation.uid,
+          unreadMessagesCount: 0,
         }));
 
       const result = await service.findAllByUserUid({ limit: 5 }, 'user-123');
@@ -571,7 +572,7 @@ describe('ConversationsService', () => {
       ],
       name: 'John Doe',
       sender: mockRawConversation.conversationMembers[0].user,
-      sessionUid: null,
+      sessionData: null,
       settings: { isArchived: false, isMuted: false },
       type: ConversationType.PRIVATE,
       uid: 'conv-123',
@@ -616,6 +617,12 @@ describe('ConversationsService', () => {
               content: true,
               createdAt: true,
               globalStatus: true,
+              messageReceipts: {
+                select: {
+                  status: true,
+                  userUid: true,
+                },
+              },
               sender: {
                 select: {
                   firstname: true,
@@ -630,6 +637,29 @@ describe('ConversationsService', () => {
               updatedAt: true,
             },
             take: 10,
+          },
+          session: {
+            select: {
+              sessionImages: {
+                select: {
+                  url: true,
+                },
+              },
+              sessionTeams: {
+                select: {
+                  teamLabel: true,
+                  teamName: true,
+                },
+                where: {
+                  sessionPlayers: {
+                    some: {
+                      userUid: 'user-123',
+                    },
+                  },
+                },
+              },
+              sport: true,
+            },
           },
         },
         where: {

@@ -1,7 +1,13 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
+import { ConversationMemberResponseData } from '../dto/output/conversation-member-response.dto';
+import {
+  ConversationMembersMapper,
+  RawConversationMember,
+} from '../mappers/conversation-members.mapper';
 import {
   ArchivedConversationSettingsDto,
   MutedConversationSettingsDto,
@@ -34,28 +40,73 @@ export class ConversationMembersService {
     });
   }
 
-  // async isMember(conversationUid: string, userUid: string): Promise<boolean> {
-  //   const member = await this.prisma.conversationMembers.findFirst({
-  //     where: {
-  //       conversationUid: conversationUid,
-  //       userUid: userUid,
-  //     },
-  //   });
-  //   return !!member;
-  // }
+  async findAllByConversationUid(
+    conversationUid: string,
+  ): Promise<PaginatedDataDto<ConversationMemberResponseData>> {
+    const members = await this.prisma.conversationMembers.findMany({
+      select: {
+        conversation: {
+          select: {
+            sessionUid: true,
+          },
+        },
+        isAdmin: true,
+        joinedAt: true,
+        user: {
+          select: {
+            firstname: true,
+            imageUrl: true,
+            lastname: true,
+            uid: true,
+          },
+        },
+      },
+      where: { conversationUid },
+    });
+    if (members[0]?.conversation.sessionUid) {
+      let membersWithSessionData = [];
+      for (const member of members) {
+        let memberWithSessionData = await this.prisma.sessionTeams.findMany({
+          select: {
+            teamLabel: true,
+            teamName: true,
+          },
+          where: {
+            sessionPlayers: {
+              some: {
+                userUid: member.user.uid,
+              },
+            },
+            sessionUid: member.conversation.sessionUid,
+          },
+        });
+        membersWithSessionData.push({
+          ...member,
+          sessionTeams: memberWithSessionData,
+        });
+      }
+      const membersCollection = membersWithSessionData.map((member) =>
+        ConversationMembersMapper.toDto(member),
+      );
+      return {
+        items: membersCollection,
+        totalCount: membersCollection.length,
+      };
+    }
+    const membersCollection = members.map((member) =>
+      ConversationMembersMapper.toDto(member as RawConversationMember),
+    );
+    return {
+      items: membersCollection,
+      totalCount: membersCollection.length,
+    };
+  }
 
   async updateMuteSettings(
     conversationUid: string,
     userUid: string,
     settings: MutedConversationSettingsDto,
   ): Promise<void> {
-    // const isMember = await this.isMember(conversationUid, userUid);
-
-    // if (!isMember) {
-    //   this.logger.error(`User ${userUid} is not a member of conversation ${conversationUid}`);
-    //   throw new ForbiddenException(`Action not allowed`);
-    // }
-
     await this.prisma.conversationMembers.update({
       data: settings,
       where: { conversationUid_userUid: { conversationUid, userUid } },
@@ -70,13 +121,6 @@ export class ConversationMembersService {
     userUid: string,
     settings: ArchivedConversationSettingsDto,
   ): Promise<void> {
-    // const isMember = await this.isMember(conversationUid, userUid);
-
-    // if (!isMember) {
-    //   this.logger.error(`User ${userUid} is not a member of conversation ${conversationUid}`);
-    //   throw new ForbiddenException(`Action not allowed`);
-    // }
-
     await this.prisma.conversationMembers.update({
       data: settings,
       where: { conversationUid_userUid: { conversationUid, userUid } },
@@ -95,13 +139,6 @@ export class ConversationMembersService {
     conversationUid: string,
     userUid: string,
   ): Promise<void> {
-    // const isMember = await this.isMember(conversationUid, userUid);
-
-    // if (!isMember) {
-    //   this.logger.error(`User ${userUid} is not a member of conversation ${conversationUid}`);
-    //   throw new ForbiddenException(`Action not allowed`);
-    // }
-
     await this.prisma.conversationMembers.update({
       data: {
         displayMessagesAfter: new Date(),
