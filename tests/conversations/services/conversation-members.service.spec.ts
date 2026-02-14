@@ -13,8 +13,12 @@ describe('ConversationMembersService', () => {
       conversationMembers: {
         create: jest.fn(),
         createMany: jest.fn(),
+        findMany: jest.fn(),
         findFirst: jest.fn(),
         update: jest.fn(),
+      },
+      sessionTeams: {
+        findMany: jest.fn(),
       },
     };
 
@@ -84,6 +88,106 @@ describe('ConversationMembersService', () => {
           { conversationUid, userUid: 'user-3' },
         ],
       });
+    });
+  });
+
+  describe('findAllByConversationUid', () => {
+    it('should return members without session data when conversation has no session', async () => {
+      const conversationUid = 'conv-private';
+      const rawMembers = [
+        {
+          conversation: { sessionUid: null },
+          isAdmin: false,
+          joinedAt: new Date('2025-01-01'),
+          user: {
+            uid: 'user-1',
+            firstname: 'John',
+            lastname: 'Doe',
+            imageUrl: 'https://example.com/john.jpg',
+          },
+        },
+      ];
+
+      mockPrisma.conversationMembers.findMany.mockResolvedValue(rawMembers);
+
+      const result = await service.findAllByConversationUid(conversationUid);
+
+      expect(mockPrisma.conversationMembers.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { conversationUid },
+          select: expect.objectContaining({
+            conversation: { select: { sessionUid: true } },
+            isAdmin: true,
+            joinedAt: true,
+            user: expect.any(Object),
+          }),
+        }),
+      );
+      expect(mockPrisma.sessionTeams.findMany).not.toHaveBeenCalled();
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]).toMatchObject({
+        userUid: 'user-1',
+        firstname: 'John',
+        lastname: 'Doe',
+        imageUrl: 'https://example.com/john.jpg',
+        isAdmin: false,
+        sessionData: null,
+      });
+      expect(result.totalCount).toBe(1);
+    });
+
+    it('should return members with session team data when conversation is a session', async () => {
+      const conversationUid = 'conv-session';
+      const sessionUid = 'session-123';
+      const rawMembers = [
+        {
+          conversation: { sessionUid },
+          isAdmin: true,
+          joinedAt: new Date('2025-01-02'),
+          user: {
+            uid: 'user-1',
+            firstname: 'Jane',
+            lastname: 'Smith',
+            imageUrl: 'https://example.com/jane.jpg',
+          },
+        },
+      ];
+      const sessionTeams = [{ teamLabel: 'A', teamName: 'Team Alpha' }];
+
+      mockPrisma.conversationMembers.findMany.mockResolvedValue(rawMembers);
+      mockPrisma.sessionTeams.findMany.mockResolvedValue(sessionTeams);
+
+      const result = await service.findAllByConversationUid(conversationUid);
+
+      expect(mockPrisma.conversationMembers.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { conversationUid } }),
+      );
+      expect(mockPrisma.sessionTeams.findMany).toHaveBeenCalledWith({
+        select: { teamLabel: true, teamName: true },
+        where: {
+          sessionUid,
+          sessionPlayers: { some: { userUid: 'user-1' } },
+        },
+      });
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]).toMatchObject({
+        userUid: 'user-1',
+        firstname: 'Jane',
+        lastname: 'Smith',
+        isAdmin: true,
+        sessionData: { teamLabel: 'A', teamName: 'Team Alpha' },
+      });
+      expect(result.totalCount).toBe(1);
+    });
+
+    it('should return empty list when conversation has no members', async () => {
+      mockPrisma.conversationMembers.findMany.mockResolvedValue([]);
+
+      const result = await service.findAllByConversationUid('conv-empty');
+
+      expect(result.items).toHaveLength(0);
+      expect(result.totalCount).toBe(0);
+      expect(mockPrisma.sessionTeams.findMany).not.toHaveBeenCalled();
     });
   });
 

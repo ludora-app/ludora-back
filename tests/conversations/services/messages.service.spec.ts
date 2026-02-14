@@ -32,6 +32,11 @@ describe('MessagesService', () => {
       },
       conversationMembers: {
         findFirst: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      messageReceipts: {
+        create: jest.fn().mockResolvedValue(undefined),
+        createMany: jest.fn().mockResolvedValue(undefined),
       },
     };
 

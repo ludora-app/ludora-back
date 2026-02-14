@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Sport } from 'src/shared/constants/constants';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
 
 export class MessageDto {
@@ -63,6 +64,39 @@ export class SenderDto {
   lastname: string;
 }
 
+export class SessionData {
+  @ApiProperty({
+    description: 'Team label of the connected user in the conversation',
+    example: 'A',
+    readOnly: true,
+  })
+  teamLabel: string;
+
+  @ApiProperty({
+    description: 'Team name of the connected user in the conversation',
+    example: 'Team A',
+    readOnly: true,
+  })
+  teamName: string;
+
+  @ApiProperty({
+    description: 'Session ID of the conversation',
+    example: 'cmajhjkjf000bq77q4b5ugn8b',
+    nullable: true,
+    readOnly: true,
+    type: String,
+  })
+  sessionUid: string | null;
+
+  @ApiProperty({
+    description: 'Session sport',
+    enum: Sport,
+    example: Sport.FOOTBALL,
+    readOnly: true,
+  })
+  sport: Sport;
+}
+
 export class BasicConversationResponseData {
   @ApiProperty({
     description: 'Conversation ID',
@@ -73,13 +107,12 @@ export class BasicConversationResponseData {
   uid: string;
 
   @ApiProperty({
-    description: 'Session ID',
-    example: 'cmajhjkjf000bq77q4b5ugn8b',
+    description: 'Session data',
     nullable: true,
     readOnly: true,
-    type: String,
+    type: SessionData,
   })
-  sessionUid: string | null;
+  sessionData: SessionData | null;
 
   @ApiProperty({
     description: 'Conversation name',

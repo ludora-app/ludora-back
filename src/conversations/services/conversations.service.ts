@@ -163,12 +163,26 @@ export class ConversationsService {
         };
         session: {
           select: {
+            sport: true;
             sessionImages: {
               select: {
                 url: true;
               };
               where: {
                 order: 1;
+              };
+            };
+            sessionTeams: {
+              select: {
+                teamName: true;
+                teamLabel: true;
+              };
+              where: {
+                sessionPlayers: {
+                  some: {
+                    userUid: string;
+                  };
+                };
               };
             };
           };
@@ -259,6 +273,20 @@ export class ConversationsService {
                 order: 1,
               },
             },
+            sessionTeams: {
+              select: {
+                teamLabel: true,
+                teamName: true,
+              },
+              where: {
+                sessionPlayers: {
+                  some: {
+                    userUid: userUid,
+                  },
+                },
+              },
+            },
+            sport: true,
           },
         },
       },
@@ -290,6 +318,8 @@ export class ConversationsService {
     }
 
     const rawConversations = await this.prisma.conversations.findMany(query);
+
+    console.log(JSON.stringify(rawConversations, null, 2));
 
     const actualLimit = limit || 10;
     let nextCursor: string | null = null;
@@ -358,6 +388,29 @@ export class ConversationsService {
             updatedAt: true,
           },
           take: 10,
+        },
+        session: {
+          select: {
+            sessionImages: {
+              select: {
+                url: true,
+              },
+            },
+            sessionTeams: {
+              select: {
+                teamLabel: true,
+                teamName: true,
+              },
+              where: {
+                sessionPlayers: {
+                  some: {
+                    userUid: userUid,
+                  },
+                },
+              },
+            },
+            sport: true,
+          },
         },
       },
       where: {
