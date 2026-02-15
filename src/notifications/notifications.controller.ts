@@ -2,6 +2,7 @@ import { FastifyRequest } from 'fastify';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { Controller, HttpCode, HttpStatus, Param, Req } from '@nestjs/common';
 import { Get, Patch, Delete, Post, Body, UseGuards, Query } from '@nestjs/common';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
@@ -16,6 +17,7 @@ import {
 
 import { NotificationsService } from './notifications.service';
 import { NotificationFilterDto } from './dto/input/notification-filter.dto';
+import { UnreadCountResponse } from './dto/output/unread-count-response.dto';
 import { SendPushNotificationDto } from './dto/input/send-push-notification.dto';
 import {
   NotificationResponseData,
@@ -58,13 +60,13 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Get the unread count for the current user' })
   @ApiOkResponse({
     description: 'Successfully fetched unread count',
-    type: Number,
+    type: UnreadCountResponse,
   })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  async getUnreadCount(@Req() req: FastifyRequest) {
+  async getUnreadCount(@Req() req: FastifyRequest): Promise<ResponseTypeDto<number>> {
     const userUid = req['user'].uid;
     const unreadCount = await this.notificationsService.getUnreadCount(userUid);
-    return { unreadCount };
+    return { data: unreadCount, message: 'Unread count fetched successfully' };
   }
 
   @Patch(':uid/read')
