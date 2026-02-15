@@ -9,6 +9,7 @@ import { NotificationsService } from 'src/notifications/notifications.service';
 import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
 import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
 import { NotificationType } from 'generated/prisma/enums';
+import { Sport } from 'src/shared/constants/constants';
 
 describe('NotificationsGateway', () => {
   let gateway: NotificationsGateway;
@@ -261,10 +262,14 @@ describe('NotificationsGateway', () => {
   describe('handleSessionInvitationNotification', () => {
     it('should send session invitation notification', async () => {
       const payload = {
-        recipientId: 'user-123',
-        sessionName: 'Basketball Game',
-        sessionId: 'session-456',
-        invitedBy: 'Jane Smith',
+        sessionUid: 'session-456',
+        sessionTitle: 'Basketball Game',
+        sessionDate: '2025-06-01',
+        senderFirstname: 'Jane',
+        senderLastname: 'Smith',
+        sessionSport: Sport.BASKETBALL,
+        senderAvatar: 'https://example.com/avatar.jpg',
+        senderUid: 'user-sender',
       };
 
       mockNotificationsService.create.mockResolvedValue({
@@ -283,7 +288,7 @@ describe('NotificationsGateway', () => {
       // Simulate a connected user
       gateway['connectedUsers'].set('user-123', new Set(['socket-123']));
 
-      await gateway.handleSessionInvitationNotification(payload);
+      await gateway.handleSessionInvitationNotification(payload, 'user-123');
 
       expect(mockServerTo).toHaveBeenCalledWith('user:user-123');
       expect(mockEmit).toHaveBeenCalledWith('notification', expect.any(Object));

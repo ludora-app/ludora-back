@@ -6,11 +6,12 @@ import { DevicesService } from 'src/devices/devices.service';
 import { FirebaseService } from 'src/firebase/firebase.service';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
+import { MetadataMapper } from './mappers/metadata.mapper';
 import { NotificationMetadata } from './dto/input/notification-metadata';
 import { CreateNotificationDto } from './dto/input/create-notification.dto';
 import { SendPushNotificationDto } from './dto/input/send-push-notification.dto';
 import { NotificationResponseData } from './dto/output/notification-response.dto';
-import { CreateManyNotificationsDto } from './dto/input/create-many-notifications.dto';
+import { NotificationFilterDto, NotificationTypeFilter } from './dto/input/notification-filter.dto';
 
 @Injectable()
 export class NotificationsService {
@@ -62,27 +63,6 @@ export class NotificationsService {
     } catch (error) {
       this.logger.error(`Failed to create notification in DB: ${error.message}`, {
         data,
-        error: error.stack,
-      });
-      throw error;
-    }
-  }
-
-  async createMany(data: CreateManyNotificationsDto) {
-    try {
-      const notifications = await this.prisma.notifications.createMany({
-        data: data.userUids.map((userUid) => ({
-          body: data.message,
-          data: data.metadata || {},
-          foreignUid: data.foreignUid,
-          title: data.title,
-          type: data.type,
-          userUid,
-        })),
-      });
-      return notifications;
-    } catch (error) {
-      this.logger.error(`Failed to create many notifications: ${error.message}`, {
         error: error.stack,
       });
       throw error;
@@ -279,10 +259,31 @@ export class NotificationsService {
    */
   async findAllByUserUid(
     userUid: string,
-    limit = 20,
-    offset = 0,
+    filters: NotificationFilterDto,
   ): Promise<PaginatedDataDto<NotificationResponseData>> {
-    const notifications = await this.prisma.notifications.findMany({
+    const { cursor, limit = 20, type } = filters;
+
+    const query: {
+      orderBy: { createdAt: 'desc' };
+      select: {
+        body: true;
+        createdAt: true;
+        data: true;
+        isRead: true;
+        readAt: true;
+        sentViaPush: true;
+        title: true;
+        type: true;
+        uid: true;
+        userUid: true;
+      };
+      skip?: number;
+      take?: number;
+      where: { userUid: string };
+      cursor?: {
+        uid: string;
+      };
+    } = {
       orderBy: { createdAt: 'desc' },
       select: {
         body: true,
@@ -296,11 +297,37 @@ export class NotificationsService {
         uid: true,
         userUid: true,
       },
-      skip: offset,
-      take: limit,
-      where: {
-        userUid,
-      },
+      where: { userUid },
+    };
+
+    if (type === NotificationTypeFilter.SESSION) {
+      query.where['type'] = {
+        in: [
+          NotificationType.SESSION_INVITATION,
+          NotificationType.SESSION_UPDATED,
+          NotificationType.SESSION_CANCELLED,
+          NotificationType.SESSION_REMINDER,
+        ],
+      };
+    } else if (type === NotificationTypeFilter.FRIEND) {
+      query.where['type'] = {
+        in: [NotificationType.FRIEND_ACCEPTED, NotificationType.FRIEND_REQUEST],
+      };
+    }
+
+    if (limit) {
+      query.take = limit;
+    }
+
+    if (cursor) {
+      query.cursor = {
+        uid: cursor,
+      };
+      query.skip = 1;
+    }
+
+    const notifications = await this.prisma.notifications.findMany({
+      ...query,
     });
 
     let nextCursor: string | null = null;
@@ -309,10 +336,15 @@ export class NotificationsService {
       nextCursor = nextItem!.uid;
     }
 
+    const items: NotificationResponseData[] = notifications.map((n) => ({
+      ...n,
+      metadata: MetadataMapper.toMetadata(n.type, n.data),
+    }));
+
     return {
-      items: notifications,
+      items,
       nextCursor,
-      totalCount: notifications.length,
+      totalCount: items.length,
     };
   }
 

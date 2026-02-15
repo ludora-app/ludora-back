@@ -4,9 +4,13 @@ import { NotificationsService } from 'src/notifications/notifications.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { FirebaseService } from 'src/firebase/firebase.service';
 import { DevicesService } from 'src/devices/devices.service';
+import { NotificationTypeFilter } from 'src/notifications/dto/input/notification-filter.dto';
+import { NotificationType } from 'generated/prisma/enums';
 
 describe('NotificationsService', () => {
   let service: NotificationsService;
+  let mockFindMany: jest.Mock;
+  let mockCreateMany: jest.Mock;
 
   const mockPrismaService = {};
 
@@ -15,6 +19,7 @@ describe('NotificationsService', () => {
     info: jest.fn(),
     error: jest.fn(),
     warn: jest.fn(),
+    debug: jest.fn(),
   };
 
   const mockFirebaseService = {
@@ -25,13 +30,31 @@ describe('NotificationsService', () => {
     findByUserUid: jest.fn(),
   };
 
+  const mockNotification = {
+    uid: 'notif-1',
+    userUid: 'user-1',
+    type: NotificationType.SESSION_INVITATION,
+    title: 'Title',
+    body: 'Body',
+    data: {},
+    isRead: false,
+    readAt: null,
+    sentViaPush: false,
+    createdAt: new Date(),
+  };
+
   beforeEach(async () => {
+    mockFindMany = jest.fn().mockResolvedValue([mockNotification]);
+    mockCreateMany = jest.fn().mockResolvedValue({ count: 0 });
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         NotificationsService,
         {
           provide: PrismaService,
-          useValue: mockPrismaService,
+          useValue: {
+            ...mockPrismaService,
+            notifications: { findMany: mockFindMany, createMany: mockCreateMany },
+          },
         },
         {
           provide: PinoLogger,
@@ -53,5 +76,99 @@ describe('NotificationsService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('findAllByUserUid', () => {
+    it('should call prisma with userUid and default limit 20 when no filters', async () => {
+      await service.findAllByUserUid('user-1', {});
+
+      expect(mockFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userUid: 'user-1' },
+          take: 20,
+          orderBy: { createdAt: 'desc' },
+        }),
+      );
+      expect(mockFindMany).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ type: expect.anything() }),
+        }),
+      );
+    });
+
+    it('should apply cursor and limit when provided in filters', async () => {
+      await service.findAllByUserUid('user-1', {
+        cursor: 'cursor-uid-123',
+        limit: 10,
+      });
+
+      expect(mockFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userUid: 'user-1' },
+          take: 10,
+          cursor: { uid: 'cursor-uid-123' },
+          skip: 1,
+        }),
+      );
+    });
+
+    it('should filter by type SESSION when type is NotificationTypeFilter.SESSION', async () => {
+      await service.findAllByUserUid('user-1', {
+        type: NotificationTypeFilter.SESSION,
+      });
+
+      expect(mockFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            userUid: 'user-1',
+            type: {
+              in: [
+                NotificationType.SESSION_INVITATION,
+                NotificationType.SESSION_UPDATED,
+                NotificationType.SESSION_CANCELLED,
+                NotificationType.SESSION_REMINDER,
+              ],
+            },
+          },
+        }),
+      );
+    });
+
+    it('should filter by type FRIEND when type is NotificationTypeFilter.FRIEND', async () => {
+      await service.findAllByUserUid('user-1', {
+        type: NotificationTypeFilter.FRIEND,
+      });
+
+      expect(mockFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            userUid: 'user-1',
+            type: {
+              in: [NotificationType.FRIEND_ACCEPTED, NotificationType.FRIEND_REQUEST],
+            },
+          },
+        }),
+      );
+    });
+
+    it('should return items, nextCursor and totalCount', async () => {
+      mockFindMany.mockResolvedValueOnce([mockNotification]);
+
+      const result = await service.findAllByUserUid('user-1', { limit: 5 });
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          items: expect.any(Array),
+          nextCursor: null,
+          totalCount: 1,
+        }),
+      );
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]).toMatchObject({
+        uid: mockNotification.uid,
+        type: mockNotification.type,
+        title: mockNotification.title,
+      });
+    });
   });
 });
