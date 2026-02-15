@@ -1,5 +1,6 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
@@ -22,8 +23,13 @@ export class ConversationMembersService {
     this.logger.setContext(ConversationMembersService.name);
   }
 
-  async create(conversationUid: string, userUid: string): Promise<void> {
-    await this.prisma.conversationMembers.create({
+  async create(
+    conversationUid: string,
+    userUid: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    const prismaClient = tx ?? this.prisma;
+    await prismaClient.conversationMembers.create({
       data: {
         conversationUid: conversationUid,
         userUid: userUid,
@@ -31,8 +37,13 @@ export class ConversationMembersService {
     });
   }
 
-  async createMany(conversationUid: string, userUids: string[]): Promise<void> {
-    await this.prisma.conversationMembers.createMany({
+  async createMany(
+    conversationUid: string,
+    userUids: string[],
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    const prismaClient = tx ?? this.prisma;
+    await prismaClient.conversationMembers.createMany({
       data: userUids.map((userUid) => ({
         conversationUid: conversationUid,
         userUid: userUid,

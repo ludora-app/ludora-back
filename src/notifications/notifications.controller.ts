@@ -7,6 +7,7 @@ import { Controller, HttpCode, HttpStatus, Param, Req } from '@nestjs/common';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
+  ApiExtraModels,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
@@ -19,13 +20,19 @@ import {
   NotificationResponseData,
   PaginatedNotificationResponse,
 } from './dto/output/notification-response.dto';
+import {
+  FriendRequestData,
+  SessionInvitationData,
+  SessionUpdatedData,
+} from './dto/input/notification-metadata.dto';
 
 @UseGuards(AuthB2CGuard)
 @Controller('notifications')
+@ApiExtraModels(FriendRequestData, SessionInvitationData, SessionUpdatedData)
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
-  @Get()
+  @Get('/collection')
   @Protected()
   @ApiOperation({ summary: 'Get all notifications for the current user' })
   @ApiOkResponse({
@@ -95,7 +102,7 @@ export class NotificationsController {
   @Post('send-push')
   @UseGuards(DevOnlyGuard)
   @Protected()
-  @ApiOperation({ summary: 'Send a push notification to a specific FCM token' })
+  @ApiOperation({ summary: '[DEV ONLY] Send a push notification to a specific FCM token' })
   @ApiOkResponse({
     description: 'Push notification sent successfully',
   })

@@ -62,6 +62,7 @@ export class ConversationsService {
     await this.conversationMembersService.create(
       newConversation.uid,
       createConversationDto.userUid,
+      tx,
     );
 
     this.logger.debug(`Conversation members created`);
@@ -93,6 +94,7 @@ export class ConversationsService {
     await this.conversationMembersService.createMany(
       newConversation.uid,
       createPrivateConversationDto.userUids,
+      tx,
     );
     this.logger.debug(`Conversation members created`);
 

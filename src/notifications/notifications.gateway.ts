@@ -17,6 +17,7 @@ import { EventTypes } from './constants/event.types';
 import { NotificationsService } from './notifications.service';
 import { NotificationEventDto } from './dto/notification-event.dto';
 import { NotificationMetadata } from './dto/input/notification-metadata';
+import { SessionInvitationData } from './dto/input/notification-metadata.dto';
 
 /**
  * NotificationsGateway handles real-time notifications using Socket.io
@@ -345,26 +346,27 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
    * SESSION_INVITATION: Send via hybrid delivery
    */
   @OnEvent(EventTypes.SESSION_INVITATION)
-  async handleSessionInvitationNotification(payload: {
-    recipientId: string;
-    sessionName: string;
-    sessionId: string;
-    invitedBy: string;
-    inviterAvatar?: string;
-  }): Promise<void> {
+  async handleSessionInvitationNotification(
+    payload: Omit<SessionInvitationData, 'actionUrl'>,
+    receiverUid: string,
+  ): Promise<void> {
     await this.sendNotification({
-      foreignUid: payload.sessionId,
-      message: `${payload.invitedBy} invited you to join "${payload.sessionName}"`,
+      foreignUid: payload.sessionUid,
+      message: `${payload.senderFirstname} ${payload.senderLastname} invited you to join a ${payload.sessionSport} session`,
       metadata: {
-        actionUrl: `app://sessions/${payload.sessionId}`,
-        inviterAvatar: payload.inviterAvatar,
-        inviterName: payload.invitedBy,
-        sessionTitle: payload.sessionName,
-        sessionUid: payload.sessionId,
+        actionUrl: `app://sessions/${payload.sessionUid}`,
+        senderAvatar: payload.senderAvatar,
+        senderFirstname: payload.senderFirstname,
+        senderLastname: payload.senderLastname,
+        senderUid: payload.senderUid,
+        sessionDate: payload.sessionDate,
+        sessionSport: payload.sessionSport,
+        sessionTitle: payload.sessionTitle,
+        sessionUid: payload.sessionUid,
       },
       title: 'New Session Invitation',
       type: NotificationType.SESSION_INVITATION,
-      userUid: payload.recipientId,
+      userUid: receiverUid,
     });
   }
 

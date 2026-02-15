@@ -46,6 +46,8 @@ export class SessionInvitationsService {
       this.logger.error(`Session ${createSessionInvitationDto.sessionUid} not found`);
       throw new BadRequestException('Session not found');
     }
+
+    console.log(senderUid);
     // ? checks if the sender is a player in the session
     const existingPlayer = await this.prisma.sessionPlayers.findFirst({
       include: {
@@ -113,14 +115,23 @@ export class SessionInvitationsService {
       this.logger.debug(
         `User ${createSessionInvitationDto.receiverUid} invited to the session ${createSessionInvitationDto.sessionUid} by User${senderUid}`,
       );
-      this.eventEmitter.emit(EventTypes.SESSION_INVITATION, {
-        invitedBy: existingPlayer.user.firstname + ' ' + existingPlayer.user.lastname,
-        inviterAvatar: existingPlayer.user.imageUrl,
-        recipientId: createSessionInvitationDto.receiverUid,
-        sessionDate: existingSession.startDate,
-        sessionId: existingSession.uid,
-        // sessionName: existingSession.title,
-      });
+      this.eventEmitter.emit(
+        EventTypes.SESSION_INVITATION,
+        {
+          invitedBy: existingPlayer.user.firstname + ' ' + existingPlayer.user.lastname,
+          inviterAvatar: existingPlayer.user.imageUrl,
+          recipientId: createSessionInvitationDto.receiverUid,
+          senderAvatar: existingPlayer.user.imageUrl,
+          senderFirstname: existingPlayer.user.firstname,
+          senderLastname: existingPlayer.user.lastname,
+          senderUid: senderUid,
+          sessionDate: existingSession.startDate,
+          sessionSport: existingSession.sport,
+          sessionTitle: existingSession.title,
+          sessionUid: existingSession.uid,
+        },
+        createSessionInvitationDto.receiverUid,
+      );
       return invitation;
     }
 

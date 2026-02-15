@@ -6,6 +6,7 @@ import { DevicesService } from 'src/devices/devices.service';
 import { FirebaseService } from 'src/firebase/firebase.service';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
+import { MetadataMapper } from './mappers/metadata.mapper';
 import { NotificationMetadata } from './dto/input/notification-metadata';
 import { CreateNotificationDto } from './dto/input/create-notification.dto';
 import { SendPushNotificationDto } from './dto/input/send-push-notification.dto';
@@ -309,10 +310,15 @@ export class NotificationsService {
       nextCursor = nextItem!.uid;
     }
 
+    const items: NotificationResponseData[] = notifications.map((n) => ({
+      ...n,
+      metadata: MetadataMapper.toMetadata(n.type, n.data),
+    }));
+
     return {
-      items: notifications,
+      items,
       nextCursor,
-      totalCount: notifications.length,
+      totalCount: items.length,
     };
   }
 

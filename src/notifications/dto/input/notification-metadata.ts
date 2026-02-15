@@ -8,7 +8,6 @@ export interface NotificationMetadata {
   sessionUid?: string;
   senderName?: string;
   sessionDate?: string;
-  inviterName?: string;
 
   senderAvatar?: string;
   sessionTitle?: string;
@@ -24,7 +23,7 @@ export interface FriendNotificationMetaData extends Pick<
 
 export interface SessionNotificationMetaData extends Pick<
   NotificationMetadata,
-  'imageUrl' | 'actionUrl' | 'sessionUid' | 'sessionTitle' | 'sessionDate' | 'inviterName'
+  'imageUrl' | 'actionUrl' | 'sessionUid' | 'sessionTitle' | 'sessionDate' | 'senderName'
 > {}
 
 export interface MessageNotificationMetaData extends Pick<
