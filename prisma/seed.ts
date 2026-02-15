@@ -5,6 +5,7 @@ import {
   InvitationStatus,
   MessageStatus,
   MessageType,
+  NotificationType,
   PrismaClient,
   Sex,
   TeamLabels,
@@ -2453,6 +2454,43 @@ async function seed() {
 
   console.log(`${totalConversations} conversations created`);
   console.log(`${totalMessages} messages created`);
+
+  // Create 10 notifications per user: 5 SESSION_INVITATION + 5 FRIEND_REQUEST
+  console.log('Creating notifications for each user...');
+  const sessionInvitationNotifs = Array.from({ length: 5 }, (_, i) => ({
+    type: NotificationType.SESSION_INVITATION,
+    title: `Session invitation ${i + 1}`,
+    body: `You have been invited to join a session (seed #${i + 1})`,
+    data: {},
+  }));
+  const friendRequestNotifs = Array.from({ length: 5 }, (_, i) => ({
+    type: NotificationType.FRIEND_REQUEST,
+    title: `Friend request ${i + 1}`,
+    body: `Someone sent you a friend request (seed #${i + 1})`,
+    data: {},
+  }));
+
+  for (const user of createdUsers) {
+    const data = [
+      ...sessionInvitationNotifs.map((n) => ({
+        userUid: user.uid,
+        title: n.title,
+        body: n.body,
+        type: n.type,
+        data: n.data,
+      })),
+      ...friendRequestNotifs.map((n) => ({
+        userUid: user.uid,
+        title: n.title,
+        body: n.body,
+        type: n.type,
+        data: n.data,
+      })),
+    ];
+    await prisma.notifications.createMany({ data });
+  }
+  console.log(`${createdUsers.length * 10} notifications created (10 per user)`);
+
   console.log('✅ Seed completed successfully!');
 }
 

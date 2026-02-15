@@ -2,8 +2,8 @@ import { FastifyRequest } from 'fastify';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
-import { Get, Patch, Delete, Post, Body, UseGuards } from '@nestjs/common';
 import { Controller, HttpCode, HttpStatus, Param, Req } from '@nestjs/common';
+import { Get, Patch, Delete, Post, Body, UseGuards, Query } from '@nestjs/common';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
@@ -15,6 +15,7 @@ import {
 } from '@nestjs/swagger';
 
 import { NotificationsService } from './notifications.service';
+import { NotificationFilterDto } from './dto/input/notification-filter.dto';
 import { SendPushNotificationDto } from './dto/input/send-push-notification.dto';
 import {
   NotificationResponseData,
@@ -42,9 +43,10 @@ export class NotificationsController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   async findAll(
     @Req() req: FastifyRequest,
+    @Query() filters: NotificationFilterDto,
   ): Promise<PaginationResponseTypeDto<NotificationResponseData>> {
     const userUid = req['user'].uid;
-    const notifications = await this.notificationsService.findAllByUserUid(userUid);
+    const notifications = await this.notificationsService.findAllByUserUid(userUid, filters);
     return {
       data: notifications,
       message: 'Notifications fetched successfully',
