@@ -124,7 +124,9 @@ export class HourPreferencesService {
         const existingOneTime = validHourPreferences.find(
           (pref) =>
             pref.type === UserHourPreferenceType.ONE_TIME &&
-            pref.date === hourPreference.date &&
+            pref.date != null &&
+            hourPreference.date != null &&
+            new Date(pref.date).getTime() === new Date(hourPreference.date).getTime() &&
             pref.timePeriod === hourPreference.timePeriod,
         );
         if (!existingOneTime) {

@@ -110,7 +110,11 @@ describe('ConversationsService', () => {
           type: createDto.type,
         },
       });
-      expect(mockConversationMembersService.create).toHaveBeenCalledWith('conv-123', 'user-1');
+      expect(mockConversationMembersService.create).toHaveBeenCalledWith(
+        'conv-123',
+        'user-1',
+        undefined,
+      );
     });
 
     it('should throw BadRequestException when sessionUid is missing', async () => {
@@ -150,7 +154,11 @@ describe('ConversationsService', () => {
       await service.createSessionConversation(createDto, mockTx);
 
       expect(mockTx.conversations.create).toHaveBeenCalled();
-      expect(mockConversationMembersService.create).toHaveBeenCalledWith('conv-tx-123', 'user-1');
+      expect(mockConversationMembersService.create).toHaveBeenCalledWith(
+        'conv-tx-123',
+        'user-1',
+        mockTx,
+      );
       expect(mockPrisma.conversations.create).not.toHaveBeenCalled();
     });
   });
@@ -183,10 +191,11 @@ describe('ConversationsService', () => {
           type: createDto.type,
         },
       });
-      expect(mockConversationMembersService.createMany).toHaveBeenCalledWith('conv-private-123', [
-        'user-1',
-        'user-2',
-      ]);
+      expect(mockConversationMembersService.createMany).toHaveBeenCalledWith(
+        'conv-private-123',
+        ['user-1', 'user-2'],
+        undefined,
+      );
     });
 
     it('should work with a transaction client', async () => {
@@ -214,6 +223,7 @@ describe('ConversationsService', () => {
       expect(mockConversationMembersService.createMany).toHaveBeenCalledWith(
         'conv-tx-private-123',
         ['user-1', 'user-2'],
+        mockTx,
       );
       expect(mockPrisma.conversations.create).not.toHaveBeenCalled();
     });

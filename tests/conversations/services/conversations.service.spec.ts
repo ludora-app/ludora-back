@@ -110,7 +110,11 @@ describe('ConversationsService', () => {
         },
       });
 
-      expect(mockConversationMembersService.create).toHaveBeenCalledWith('conv-123', 'user-1');
+      expect(mockConversationMembersService.create).toHaveBeenCalledWith(
+        'conv-123',
+        'user-1',
+        undefined,
+      );
 
       expect(mockPinoLogger.info).toHaveBeenCalled();
     });
@@ -127,7 +131,11 @@ describe('ConversationsService', () => {
       await service.createSessionConversation(createSessionConversationDto, mockTx as any);
 
       expect(mockTx.conversations.create).toHaveBeenCalled();
-      expect(mockConversationMembersService.create).toHaveBeenCalledWith('conv-456', 'user-1');
+      expect(mockConversationMembersService.create).toHaveBeenCalledWith(
+        'conv-456',
+        'user-1',
+        mockTx,
+      );
       expect(mockPrismaService.conversations.create).not.toHaveBeenCalled();
     });
 
@@ -157,7 +165,11 @@ describe('ConversationsService', () => {
 
       await service.createSessionConversation(dto);
 
-      expect(mockConversationMembersService.create).toHaveBeenCalledWith('conv-789', 'user-789');
+      expect(mockConversationMembersService.create).toHaveBeenCalledWith(
+        'conv-789',
+        'user-789',
+        undefined,
+      );
     });
   });
 
@@ -184,10 +196,11 @@ describe('ConversationsService', () => {
         },
       });
 
-      expect(mockConversationMembersService.createMany).toHaveBeenCalledWith('conv-private-123', [
-        'user-1',
-        'user-2',
-      ]);
+      expect(mockConversationMembersService.createMany).toHaveBeenCalledWith(
+        'conv-private-123',
+        ['user-1', 'user-2'],
+        undefined,
+      );
     });
 
     it('should create a private conversation with transaction', async () => {
@@ -202,10 +215,11 @@ describe('ConversationsService', () => {
       await service.createPrivateConversation(createPrivateConversationDto, mockTx as any);
 
       expect(mockTx.conversations.create).toHaveBeenCalled();
-      expect(mockConversationMembersService.createMany).toHaveBeenCalledWith('conv-private-456', [
-        'user-1',
-        'user-2',
-      ]);
+      expect(mockConversationMembersService.createMany).toHaveBeenCalledWith(
+        'conv-private-456',
+        ['user-1', 'user-2'],
+        mockTx,
+      );
     });
   });
 
