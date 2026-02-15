@@ -24,7 +24,6 @@ export class FindOneUserResponseData {
 
   @ApiProperty({
     example: [{ sport: 'BASKETBALL' }],
-    isArray: true,
     nullable: true,
     readOnly: true,
   })

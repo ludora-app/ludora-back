@@ -4,7 +4,6 @@ import { IsStrongPassword } from 'src/users/validators/password.validator';
 
 export class UpdatePasswordDto {
   @IsString()
-  @Validate(IsStrongPassword)
   @ApiProperty({
     description: 'Old password of the user',
     example: 'password',
