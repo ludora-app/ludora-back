@@ -34,6 +34,7 @@ export class FriendResponseData {
 
   @ApiProperty({
     description: 'Friend request status',
+    enum: InvitationStatus,
     example: InvitationStatus.PENDING,
     readOnly: true,
   })
