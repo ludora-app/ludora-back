@@ -437,6 +437,37 @@ export class ConversationsService {
     return conversation;
   }
 
+  async findByUserUids(
+    connectedUserUid: string,
+    otherUserUid: string,
+  ): Promise<{ conversationUid: string }> {
+    const existingConversation = await this.prisma.conversations.findFirst({
+      select: {
+        uid: true,
+      },
+      where: {
+        AND: [
+          {
+            conversationMembers: {
+              some: { userUid: connectedUserUid },
+            },
+          },
+          {
+            conversationMembers: {
+              some: { userUid: otherUserUid },
+            },
+          },
+        ],
+        type: ConversationType.PRIVATE,
+      },
+    });
+    if (existingConversation) {
+      return { conversationUid: existingConversation.uid };
+    }
+
+    return { conversationUid: null };
+  }
+
   async createMessage(
     userUid: string,
     dto: CreateMessageDto,
