@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Sport } from 'src/shared/constants/constants';
+import { UserSimpleDisplayDataDto } from 'src/users/dto';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
 
 export class MessageDto {
@@ -41,27 +42,13 @@ export class MessageDto {
   type: MessageType;
 }
 
-export class SenderDto {
+export class SenderDto extends UserSimpleDisplayDataDto {
   @ApiProperty({
     description: 'User ID',
     example: 'cmkpi7ca502t45imrn5ss4zki',
     readOnly: true,
   })
   uid: string;
-
-  @ApiProperty({
-    description: 'User firstname',
-    example: 'John',
-    readOnly: true,
-  })
-  firstname: string;
-
-  @ApiProperty({
-    description: 'User lastname',
-    example: 'Doe',
-    readOnly: true,
-  })
-  lastname: string;
 }
 
 export class SessionData {

@@ -1,11 +1,11 @@
 import { PinoLogger } from 'nestjs-pino';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { StorageFolderName } from 'src/shared/constants/constants';
 import { MessageStatus, MessageType } from 'generated/prisma/enums';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { EventTypes } from 'src/notifications/constants/event.types';
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
 import { MessageMapper } from '../mappers/message.mapper';
@@ -35,7 +35,7 @@ export class MessagesService {
     content: string,
     conversationUid: string,
     sessionUid: string | null,
-  ): Promise<void> {
+  ): Promise<{ messageUid: string }> {
     // Mark messages as read for the sender
     await this.markMessagesAsRead(conversationUid, senderUid);
 
@@ -86,7 +86,7 @@ export class MessagesService {
       senderUid,
     });
 
-    return;
+    return { messageUid: message.uid };
   }
 
   /**
@@ -104,7 +104,7 @@ export class MessagesService {
     type: MessageType,
     file: any,
     sessionUid: string | null,
-  ): Promise<void> {
+  ): Promise<{ messageUid: string }> {
     // Mark messages as read for the sender
     await this.markMessagesAsRead(conversationUid, senderUid);
     const folderName = `${StorageFolderName.CONVERSATIONS}/${conversationUid}`;
@@ -162,7 +162,7 @@ export class MessagesService {
       senderUid,
     });
 
-    return;
+    return { messageUid: message.uid };
   }
 
   /**
@@ -202,7 +202,7 @@ export class MessagesService {
       orderBy: {
         createdAt: 'desc',
       },
-      take: limit,
+      take: limit + 1,
       where: {
         conversationUid,
       },
@@ -215,7 +215,9 @@ export class MessagesService {
     });
 
     return {
-      items: messages.map((message) => MessageMapper.toCollectionItemDto(message)),
+      items: messages
+        .reverse()
+        .map((message) => MessageMapper.toCollectionItemDto(message, userUid)),
       nextCursor: messages.length > limit ? messages[limit].uid : null,
       totalCount: messages.length,
     };
@@ -228,19 +230,17 @@ export class MessagesService {
    * @returns Number of messages updated
    */
   async markMessagesAsRead(conversationUid: string, userUid: string): Promise<number> {
-    // Verify user is a member
-    const isMember = await this.prisma.conversationMembers.findFirst({
+    await this.prisma.conversationMembers.update({
+      data: {
+        lastReadAt: new Date(),
+      },
       where: {
-        conversationUid,
-        userUid,
+        conversationUid_userUid: {
+          conversationUid,
+          userUid,
+        },
       },
     });
-
-    if (!isMember) {
-      throw new ForbiddenException(
-        `User ${userUid} is not a member of conversation ${conversationUid}`,
-      );
-    }
 
     const result = await this.prisma.messages.updateMany({
       data: {

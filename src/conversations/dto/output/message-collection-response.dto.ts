@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
-import { MessageDto } from './basic-conversation-response.dto';
+import { MessageDto, SenderDto } from './basic-conversation-response.dto';
 
 export class MessageCollectionItemDto extends MessageDto {
   @ApiProperty({
@@ -18,6 +18,20 @@ export class MessageCollectionItemDto extends MessageDto {
     readOnly: true,
   })
   hasEveryoneRead: boolean;
+
+  @ApiProperty({
+    description: 'Message sender',
+    readOnly: true,
+    type: SenderDto,
+  })
+  sender: SenderDto;
+
+  @ApiProperty({
+    description: 'Whether the message is sent by the connected user',
+    example: true,
+    readOnly: true,
+  })
+  isSender: boolean;
 }
 
 export class MessageCollectionResponseDto extends ResponseTypeDto<MessageCollectionItemDto> {

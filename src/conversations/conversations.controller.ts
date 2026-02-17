@@ -138,6 +138,7 @@ export class ConversationsController {
   }
 
   @Get(':uid/messages-list/collection')
+  @UseGuards(ConversationMembershipGuard)
   @Protected()
   @ApiOperation({ summary: 'Get a list of messages for a conversation' })
   @ApiOkResponse({ type: PaginatedMessageCollectionResponseDto })

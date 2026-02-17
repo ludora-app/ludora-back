@@ -96,8 +96,6 @@ export class FriendsService {
       },
     });
 
-    console.log(newFriendRequest);
-
     this.logger.debug(
       `Friend request sent to ${newFriendRequest.user2.firstname} ${newFriendRequest.user2.lastname} by ${newFriendRequest.user1.firstname} ${newFriendRequest.user1.lastname}`,
     );

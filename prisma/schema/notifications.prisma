@@ -8,6 +8,7 @@ enum NotificationType {
   NEW_MESSAGE
   GENERAL
   EMAIL_VERIFIED
+  MESSAGE_SENT
 
   @@map("notification_type")
   @@schema("notifications")

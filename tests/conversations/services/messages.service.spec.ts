@@ -33,6 +33,7 @@ describe('MessagesService', () => {
       conversationMembers: {
         findFirst: jest.fn(),
         findMany: jest.fn().mockResolvedValue([]),
+        update: jest.fn().mockResolvedValue({}),
       },
       messageReceipts: {
         create: jest.fn().mockResolvedValue(undefined),
@@ -209,15 +210,15 @@ describe('MessagesService', () => {
       );
     });
 
-    it('should throw ForbiddenException if user is not a member', async () => {
-      mockPrismaService.conversationMembers.findFirst.mockResolvedValue(null);
+    it('should throw error if user is not a member', async () => {
+      mockPrismaService.conversationMembers.update.mockRejectedValueOnce(
+        new Error('Record not found'),
+      );
 
       await expect(
         service.createTextMessage(senderUid, content, conversationUid, sessionUid),
-      ).rejects.toThrow(ForbiddenException);
-      await expect(
-        service.createTextMessage(senderUid, content, conversationUid, sessionUid),
-      ).rejects.toThrow(`User ${senderUid} is not a member of conversation ${conversationUid}`);
+      ).rejects.toThrow();
+      expect(mockPrismaService.messages.create).not.toHaveBeenCalled();
     });
   });
 
@@ -377,15 +378,15 @@ describe('MessagesService', () => {
       ).rejects.toThrow('File is required for media messages');
     });
 
-    it('should throw ForbiddenException if user is not a member', async () => {
-      mockPrismaService.conversationMembers.findFirst.mockResolvedValue(null);
+    it('should throw error if user is not a member', async () => {
+      mockPrismaService.conversationMembers.update.mockRejectedValueOnce(
+        new Error('Record not found'),
+      );
 
       await expect(
         service.createMediaMessage(senderUid, conversationUid, type, mockFile, sessionUid),
-      ).rejects.toThrow(ForbiddenException);
-      await expect(
-        service.createMediaMessage(senderUid, conversationUid, type, mockFile, sessionUid),
-      ).rejects.toThrow(`User ${senderUid} is not a member of conversation ${conversationUid}`);
+      ).rejects.toThrow();
+      expect(mockPrismaService.messages.create).not.toHaveBeenCalled();
     });
 
     it('should handle different message types', async () => {
@@ -449,15 +450,13 @@ describe('MessagesService', () => {
       );
     });
 
-    it('should throw ForbiddenException if user is not a member', async () => {
-      mockPrismaService.conversationMembers.findFirst.mockResolvedValue(null);
+    it('should throw error if user is not a member', async () => {
+      mockPrismaService.conversationMembers.update.mockRejectedValueOnce(
+        new Error('Record not found'),
+      );
 
-      await expect(service.markMessagesAsRead(conversationUid, userUid)).rejects.toThrow(
-        ForbiddenException,
-      );
-      await expect(service.markMessagesAsRead(conversationUid, userUid)).rejects.toThrow(
-        `User ${userUid} is not a member of conversation ${conversationUid}`,
-      );
+      await expect(service.markMessagesAsRead(conversationUid, userUid)).rejects.toThrow();
+      expect(mockPrismaService.messages.updateMany).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,6 +1,7 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { NotificationType } from 'generated/prisma/enums';
 import { UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
 import { CreateMessageDto } from 'src/conversations/dto/input/create-message.dto';
@@ -120,7 +121,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @UsePipes(
     new ValidationPipe({
       exceptionFactory: (errors) => {
-        console.log('Erreurs de validation:', JSON.stringify(errors, null, 2));
         return errors;
       },
       transform: true,
@@ -130,7 +130,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: CreateMessageDto,
-  ): Promise<void> {
+  ): Promise<{ conversationUid: string; messageUid: string }> {
     try {
       const userUid = client.data.userUid;
 
@@ -142,11 +142,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      console.log('data', data);
       this.logger.warn('content', data.content);
 
       // Create message - the service handles finding/creating conversations
-      const { conversationUid } = await this.conversationsService.createMessage(userUid, data);
+      const { conversationUid, messageUid } = await this.conversationsService.createMessage(
+        userUid,
+        data,
+      );
 
       // If a new private conversation was created, join both users to the room
       if (data.recipientUid && !data.conversationUid) {
@@ -165,7 +167,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         conversationUid,
       });
 
+      // Send acknowledgment to the sender
+      client.emit('notification', {
+        conversationUid,
+        messageUid,
+        type: NotificationType.MESSAGE_SENT,
+      });
+
       this.logger.debug(`Message sent to conversation ${conversationUid} by user ${userUid}`);
+      this.logger.debug(`Emitted messageSent event to sender with messageUid: ${messageUid}`);
+
+      return {
+        conversationUid,
+        messageUid,
+      };
     } catch (error) {
       this.logger.error(`Error sending message: ${error.message}`);
       client.emit('error', {

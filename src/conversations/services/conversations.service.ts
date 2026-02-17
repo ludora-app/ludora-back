@@ -321,8 +321,6 @@ export class ConversationsService {
 
     const rawConversations = await this.prisma.conversations.findMany(query);
 
-    console.log(JSON.stringify(rawConversations, null, 2));
-
     const actualLimit = limit || 10;
     let nextCursor: string | null = null;
     if (rawConversations.length > actualLimit) {
@@ -443,7 +441,7 @@ export class ConversationsService {
     userUid: string,
     dto: CreateMessageDto,
     file?: any,
-  ): Promise<{ conversationUid: string }> {
+  ): Promise<{ conversationUid: string; messageUid: string }> {
     const { content, conversationUid, recipientUid, type } = dto;
     // const existingConversation = await this.findOne(conversationUid, userUid);
 
@@ -496,16 +494,17 @@ export class ConversationsService {
     }
 
     const actualConversationUid = privateConversation?.uid ?? conversationUid;
+    let message: { messageUid: string } | undefined;
 
     if ((type as MessageType) === MessageType.TEXT) {
-      await this.messagesService.createTextMessage(
+      message = await this.messagesService.createTextMessage(
         userUid,
         content,
         actualConversationUid,
         sessionConversation?.uid ?? null,
       );
     } else {
-      await this.messagesService.createMediaMessage(
+      message = await this.messagesService.createMediaMessage(
         userUid,
         actualConversationUid,
         type,
@@ -514,7 +513,7 @@ export class ConversationsService {
       );
     }
 
-    return { conversationUid: actualConversationUid };
+    return { conversationUid: actualConversationUid, messageUid: message?.messageUid };
   }
 
   async loadMoreMessages(

@@ -34,13 +34,23 @@ export class MessageMapper {
     };
   }
 
-  static toCollectionItemDto(message: RawMessageCollectionItem): MessageCollectionItemDto {
+  static toCollectionItemDto(
+    message: RawMessageCollectionItem,
+    connectedUserUid: string,
+  ): MessageCollectionItemDto {
     return {
       content: message.content,
       createdAt: message.createdAt,
       globalStatus: message.globalStatus,
       hasAnyRead: this.calculateGlobalStatus(message.messageReceipts).hasAnyRead,
       hasEveryoneRead: this.calculateGlobalStatus(message.messageReceipts).hasEveryoneRead,
+      isSender: message.sender.uid === connectedUserUid,
+      sender: {
+        firstname: message.sender.firstname,
+        imageUrl: message.sender.imageUrl,
+        lastname: message.sender.lastname,
+        uid: message.sender.uid,
+      },
       type: message.type,
       uid: message.uid,
     };

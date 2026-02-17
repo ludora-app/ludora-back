@@ -427,7 +427,6 @@ export class AuthB2CService {
       if (!userUid) {
         throw new UnauthorizedException('Invalid refresh token');
       }
-      console.log('userUid', userUid);
       // Verify that the refresh token still exists in the database
       const refreshTokenRecord = await this.prismaService.refreshTokens.findFirst({
         where: {

@@ -29,15 +29,13 @@ export class StorageService {
 
       const key = `${folder}/${processedFilename}`;
 
-      const res = await this.s3.send(
+      await this.s3.send(
         new PutObjectCommand({
           Body: file,
           Bucket: this.configService.getOrThrow('CLOUDFLARE_R2_BUCKET'),
           Key: key,
         }),
       );
-
-      console.log(res);
 
       const response = { data: `${this.publicUrl}/${key}` };
       return response;

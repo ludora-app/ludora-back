@@ -21,6 +21,7 @@ describe('MessagesService', () => {
       conversationMembers: {
         findFirst: jest.fn(),
         findMany: jest.fn(),
+        update: jest.fn(),
       },
       messageReceipts: {
         create: jest.fn(),
@@ -107,6 +108,7 @@ describe('MessagesService', () => {
       };
 
       mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
       mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
       mockPrisma.messages.create.mockResolvedValue(mockMessage);
       mockPrisma.conversationMembers.findMany.mockResolvedValue([{ userUid: 'user-456' }]);
@@ -183,6 +185,7 @@ describe('MessagesService', () => {
       };
 
       mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
       mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
       mockPrisma.messages.create.mockResolvedValue(mockMessage);
       mockPrisma.conversationMembers.findMany.mockResolvedValue([{ userUid: 'user-456' }]);
@@ -233,6 +236,7 @@ describe('MessagesService', () => {
       };
 
       mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
       mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
       mockStorageService.upload.mockResolvedValue(uploadedFile);
       mockPrisma.messages.create.mockResolvedValue(mockMessage);
@@ -284,6 +288,7 @@ describe('MessagesService', () => {
       const sessionUid = null;
 
       mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
       mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
 
       await expect(
@@ -301,6 +306,7 @@ describe('MessagesService', () => {
       };
 
       mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
       mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
 
       await expect(
@@ -318,6 +324,7 @@ describe('MessagesService', () => {
       };
 
       mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
       mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
 
       await expect(
@@ -373,6 +380,7 @@ describe('MessagesService', () => {
       ];
 
       mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
       mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
       mockPrisma.messages.findMany.mockResolvedValue(mockMessages);
 
@@ -398,7 +406,7 @@ describe('MessagesService', () => {
         orderBy: {
           createdAt: 'desc',
         },
-        take: limit,
+        take: limit + 1,
         where: {
           conversationUid,
         },
@@ -414,6 +422,7 @@ describe('MessagesService', () => {
       const limit = 10;
 
       mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
       mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
       mockPrisma.messages.findMany.mockResolvedValue([]);
 
@@ -443,7 +452,7 @@ describe('MessagesService', () => {
           createdAt: 'desc',
         },
         skip: 1,
-        take: limit,
+        take: limit + 1,
         where: {
           conversationUid,
         },
@@ -456,19 +465,20 @@ describe('MessagesService', () => {
       const conversationUid = 'conv-123';
       const userUid = 'user-123';
 
-      mockPrisma.conversationMembers.findFirst.mockResolvedValue({
-        conversationUid,
-        uid: 'member-1',
-        userUid,
-      });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
       mockPrisma.messages.updateMany.mockResolvedValue({ count: 5 });
 
       const result = await service.markMessagesAsRead(conversationUid, userUid);
 
-      expect(mockPrisma.conversationMembers.findFirst).toHaveBeenCalledWith({
+      expect(mockPrisma.conversationMembers.update).toHaveBeenCalledWith({
+        data: {
+          lastReadAt: expect.any(Date),
+        },
         where: {
-          conversationUid,
-          userUid,
+          conversationUid_userUid: {
+            conversationUid,
+            userUid,
+          },
         },
       });
       expect(mockPrisma.messages.updateMany).toHaveBeenCalledWith({
@@ -488,15 +498,14 @@ describe('MessagesService', () => {
       expect(result).toBe(5);
     });
 
-    it('should throw ForbiddenException when user is not a member', async () => {
+    it('should throw error when user is not a member', async () => {
       const conversationUid = 'conv-123';
       const userUid = 'user-123';
 
-      mockPrisma.conversationMembers.findFirst.mockResolvedValue(null);
+      mockPrisma.conversationMembers.update.mockRejectedValue(new Error('Record not found'));
+      mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
 
-      await expect(service.markMessagesAsRead(conversationUid, userUid)).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(service.markMessagesAsRead(conversationUid, userUid)).rejects.toThrow();
       expect(mockPrisma.messages.updateMany).not.toHaveBeenCalled();
     });
 
@@ -509,6 +518,7 @@ describe('MessagesService', () => {
         uid: 'member-1',
         userUid,
       });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
       mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
 
       const result = await service.markMessagesAsRead(conversationUid, userUid);
