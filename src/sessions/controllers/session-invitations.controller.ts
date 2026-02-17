@@ -8,7 +8,6 @@ import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-respons
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
@@ -36,7 +35,7 @@ import {
 import { SessionInvitationsService } from '../services/session-invitations.service';
 import { UpdateSessionInvitationDto } from '../dto/input/update-session-invitation.dto';
 import { SessionInvitationFilterDto } from '../dto/input/session-invitation-filter.dto';
-import { CreateSessionInvitationDto } from '../dto/input/create-session-invitation.dto';
+import { CreateManySessionInvitationDto } from '../dto/input/create-many-session-invitation.dto';
 import {
   PaginatedSessionInvitationResponseDto,
   SessionInvitationResponseData,
@@ -48,34 +47,23 @@ import {
 export class SessionInvitationsController {
   constructor(private readonly sessionInvitationsService: SessionInvitationsService) {}
 
-  @Post()
+  @Post(':sessionUid')
   @Protected()
   @UseGuards(AuthB2CGuard)
-  @ApiOperation({ summary: 'Create a new session invitation' })
+  @ApiOperation({ summary: 'Create multiple session invitations' })
   @ApiCreatedResponse({ type: ResponseTypeDto<SessionInvitationResponseData> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiConflictResponse({ type: ConflictResponseDto })
-  @HttpCode(HttpStatus.CREATED)
-  async create(
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async createMany(
+    @Param('sessionUid') sessionUid: string,
+    @Body() dto: CreateManySessionInvitationDto,
     @Req() request: Request,
-    @Body() createSessionInvitationDto: CreateSessionInvitationDto,
-  ): Promise<ResponseTypeDto<SessionInvitationResponseData>> {
+  ): Promise<void> {
     const senderUid = request['user'].uid;
-
-    const invitation = await this.sessionInvitationsService.create(
-      senderUid,
-      createSessionInvitationDto,
-    );
-
-    if (!invitation) {
-      throw new BadRequestException('Failed to create session invitation');
-    }
-
-    return {
-      data: invitation,
-      message: 'Session invitation created successfully',
-    };
+    await this.sessionInvitationsService.createMany(senderUid, sessionUid, dto);
+    return;
   }
 
   @Get('list-by-user/collection/:userUid')

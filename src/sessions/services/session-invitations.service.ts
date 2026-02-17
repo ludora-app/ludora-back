@@ -6,19 +6,14 @@ import { USERSELECT } from 'src/shared/constants/select-user';
 import { EventTypes } from 'src/notifications/constants/event.types';
 import { SessionsService } from 'src/sessions/services/sessions.service';
 import { InvitationStatus, SessionInvitations } from 'generated/prisma/client';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
 import { CreateSessionPlayerDto } from 'src/sessions/dto/input/create-session-player.dto';
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
 
-import { CreateSessionInvitationDto } from '../dto/input/create-session-invitation.dto';
 import { SessionInvitationFilterDto } from '../dto/input/session-invitation-filter.dto';
 import { UpdateSessionInvitationDto } from '../dto/input/update-session-invitation.dto';
+import { CreateManySessionInvitationDto } from '../dto/input/create-many-session-invitation.dto';
 
 @Injectable()
 export class SessionInvitationsService {
@@ -33,145 +28,77 @@ export class SessionInvitationsService {
     this.logger.setContext(SessionInvitationsService.name);
   }
 
-  async create(
+  async createMany(
     senderUid: string,
-    createSessionInvitationDto: CreateSessionInvitationDto,
-  ): Promise<SessionInvitations> {
-    // checks if the session exists
-    const existingSession = await this.sessionsService.findOne(
-      createSessionInvitationDto.sessionUid,
+    sessionUid: string,
+    createManySessionInvitationDto: CreateManySessionInvitationDto,
+  ): Promise<void> {
+    const existingSender = await this.usersService.findOne(
+      senderUid,
+      USERSELECT.basicUserInfoDisplay,
     );
-
+    if (!existingSender) {
+      throw new NotFoundException('Sender not found');
+    }
+    const existingSession = await this.sessionsService.findOne(sessionUid);
     if (!existingSession) {
-      this.logger.error(`Session ${createSessionInvitationDto.sessionUid} not found`);
-      throw new BadRequestException('Session not found');
+      throw new NotFoundException('Session not found');
     }
-
-    console.log(senderUid);
-    // ? checks if the sender is a player in the session
-    const existingPlayer = await this.prisma.sessionPlayers.findFirst({
-      include: {
-        user: {
-          select: {
-            firstname: true,
-            imageUrl: true,
-            lastname: true,
-          },
-        },
-      },
-      where: {
-        sessionUid: createSessionInvitationDto.sessionUid,
-        userUid: senderUid,
-      },
-    });
-
-    if (!existingPlayer) {
-      throw new BadRequestException('Sender is not a player in the session');
-    }
-
-    // ? checks if the receiver exists
-    const existingReceiver = await this.usersService.findOne(
-      createSessionInvitationDto.receiverUid,
-      USERSELECT.findOne,
+    const validUids = await this.checkValidUidBeforeSendingInvitations(
+      senderUid,
+      sessionUid,
+      createManySessionInvitationDto.receiverUids,
     );
 
-    if (!existingReceiver) {
-      this.logger.error(`User ${createSessionInvitationDto.receiverUid} not found`);
-      throw new BadRequestException('User not found');
-    }
-
-    if (senderUid === createSessionInvitationDto.receiverUid) {
-      this.logger.error(`User ${createSessionInvitationDto.receiverUid} cannot invite himself`);
-      throw new BadRequestException('You cannot invite yourself to a session');
-    }
-
-    // ? checks if the user is already invited to the session
-    const existingInvitation = await this.prisma.sessionInvitations.findFirst({
-      where: {
-        receiverUid: createSessionInvitationDto.receiverUid,
-        sessionUid: createSessionInvitationDto.sessionUid,
-      },
-    });
-
-    // ? if the user is already invited to the session and did not reject, we throw an error
-    if (
-      existingInvitation &&
-      (existingInvitation.status === InvitationStatus.ACCEPTED ||
-        existingInvitation.status === InvitationStatus.PENDING)
-    ) {
-      this.logger.error(
-        `User ${createSessionInvitationDto.receiverUid} already invited to the session ${createSessionInvitationDto.sessionUid}`,
+    //? Upsert each invitation: create if new, or set status back to PENDING if already exists (e.g. was CANCELED/REJECTED)
+    const validUidsArray = Array.from(validUids ?? new Set<string>());
+    if (validUidsArray.length > 0) {
+      await this.prisma.$transaction(
+        validUidsArray.map((receiverUid) =>
+          this.prisma.sessionInvitations.upsert({
+            create: { receiverUid, senderUid, sessionUid },
+            update: { status: InvitationStatus.PENDING },
+            where: {
+              sessionUid_senderUid_receiverUid: {
+                receiverUid,
+                senderUid,
+                sessionUid,
+              },
+            },
+          }),
+        ),
       );
-      throw new ConflictException('User already invited to the session');
-    }
-    if (!existingInvitation) {
-      const invitation = await this.prisma.sessionInvitations.create({
-        data: {
-          receiverUid: createSessionInvitationDto.receiverUid,
-          senderUid,
-          sessionUid: createSessionInvitationDto.sessionUid,
-        },
-      });
+
       this.logger.debug(
-        `User ${createSessionInvitationDto.receiverUid} invited to the session ${createSessionInvitationDto.sessionUid} by User${senderUid}`,
+        `${validUidsArray.length} users invited (or re-invited) to the session ${sessionUid}`,
       );
-      this.eventEmitter.emit(
-        EventTypes.SESSION_INVITATION,
-        {
-          invitedBy: existingPlayer.user.firstname + ' ' + existingPlayer.user.lastname,
-          inviterAvatar: existingPlayer.user.imageUrl,
-          recipientId: createSessionInvitationDto.receiverUid,
-          senderAvatar: existingPlayer.user.imageUrl,
-          senderFirstname: existingPlayer.user.firstname,
-          senderLastname: existingPlayer.user.lastname,
-          senderUid: senderUid,
-          sessionDate: existingSession.startDate,
-          sessionSport: existingSession.sport,
-          sessionTitle: existingSession.title,
-          sessionUid: existingSession.uid,
-        },
-        createSessionInvitationDto.receiverUid,
-      );
-      return invitation;
-    }
+      if (validUidsArray.length > 0) {
+        for (const uid of validUidsArray) {
+          if (senderUid === uid) {
+            this.logger.error(`User ${uid} cannot invite himself`);
+            continue;
+          }
 
-    // ? if the sender canceled the invitation and tries to invite again the same user, we update the invitation to pending
-    if (
-      existingInvitation &&
-      existingInvitation.senderUid === senderUid &&
-      existingInvitation.status === InvitationStatus.CANCELED
-    ) {
-      const invitation = await this.prisma.sessionInvitations.update({
-        data: {
-          status: InvitationStatus.PENDING,
-        },
-        where: {
-          sessionUid_senderUid_receiverUid: {
-            receiverUid: createSessionInvitationDto.receiverUid,
-            senderUid: senderUid,
-            sessionUid: createSessionInvitationDto.sessionUid,
-          },
-        },
-      });
-      this.logger.info(
-        `User ${createSessionInvitationDto.receiverUid} reinvited to the session ${createSessionInvitationDto.sessionUid} by User${senderUid} after being canceled`,
-      );
-      return invitation;
-    }
-
-    // ? if the invitation was rejected, create a new one
-    if (existingInvitation && existingInvitation.status === InvitationStatus.REJECTED) {
-      const invitation = await this.prisma.sessionInvitations.create({
-        data: {
-          receiverUid: createSessionInvitationDto.receiverUid,
-          senderUid,
-          sessionUid: createSessionInvitationDto.sessionUid,
-        },
-      });
-      this.logger.info(
-        `User ${createSessionInvitationDto.receiverUid} re-invited to the session ${createSessionInvitationDto.sessionUid} by User${senderUid} after rejection`,
-      );
-      return invitation;
+          this.eventEmitter.emit(
+            EventTypes.SESSION_INVITATION,
+            {
+              invitedBy: existingSender.firstname + ' ' + existingSender.lastname,
+              inviterAvatar: existingSender.imageUrl,
+              senderAvatar: existingSender.imageUrl,
+              senderFirstname: existingSender.firstname,
+              senderLastname: existingSender.lastname,
+              senderUid: senderUid,
+              sessionDate: existingSession.startDate,
+              sessionSport: existingSession.sport,
+              sessionTitle: existingSession.title,
+              sessionUid: existingSession.uid,
+            },
+            uid,
+          );
+        }
+      }
+    } else {
+      this.logger.warn(`No valid UIDs to invite to the session ${sessionUid}`);
     }
   }
 
@@ -450,5 +377,79 @@ export class SessionInvitationsService {
         status: InvitationStatus.PENDING,
       },
     });
+  }
+
+  /**
+   * The function `checkValidUid` validates a list of receiver UIDs against certain conditions and
+   * returns a set of valid UIDs.
+   * @param {string} senderUid - The `senderUid` parameter represents the unique identifier of the user
+   * who is sending the invitation.
+   * @param {string} sessionUid - The `sessionUid` parameter in the `checkValidUid` function represents
+   * the unique identifier of a session. This function is used to validate a list of receiver UIDs to
+   * ensure they are valid for a given sender UID and session UID. The function checks if the sender UID
+   * is not the same as
+   * @param {string[]} receiverUids - The `receiverUids` parameter in the `checkValidUid` function is an
+   * array of strings containing the user IDs of the receivers. The function iterates over each receiver
+   * UID in the array to perform validation checks before adding the valid UIDs to a `Set` and returning
+   * it as a `
+   * @returns The `checkValidUid` function returns a Promise that resolves to a Set of valid user UIDs.
+   * The function iterates over an array of receiver UIDs, performs various checks for each UID, and adds
+   * the valid UIDs to the Set. If any of the checks fail, an error message is logged and the function
+   * returns early without adding the UID to the Set.
+   */
+  async checkValidUidBeforeSendingInvitations(
+    senderUid: string,
+    sessionUid: string,
+    receiverUids: string[],
+  ): Promise<Set<string>> {
+    let validUids = new Set<string>();
+
+    for (const receiverUid of receiverUids) {
+      if (senderUid === receiverUid) {
+        this.logger.error(`User ${receiverUid} cannot invite himself`);
+        continue;
+      }
+      const existingReceiver = await this.usersService.findOne(
+        receiverUid,
+        USERSELECT.checkIfUserExists,
+      );
+
+      if (!existingReceiver) {
+        this.logger.error(`User ${receiverUid} not found`);
+        continue;
+      }
+
+      const existingPlayer = await this.prisma.sessionPlayers.findFirst({
+        where: {
+          sessionUid,
+          userUid: receiverUid,
+        },
+      });
+      if (existingPlayer) {
+        this.logger.error(`User ${receiverUid} already in session ${sessionUid}`);
+        continue;
+      }
+
+      // ? checks if the user was already invited to the session by the sender
+      const existingInvitation = await this.prisma.sessionInvitations.findFirst({
+        where: {
+          receiverUid: receiverUid,
+          senderUid,
+          sessionUid: sessionUid,
+        },
+      });
+      // ? if the user is already invited and did not reject, skip (do not add to validUids)
+      if (
+        existingInvitation &&
+        (existingInvitation.status === InvitationStatus.ACCEPTED ||
+          existingInvitation.status === InvitationStatus.PENDING)
+      ) {
+        this.logger.warn(`User ${receiverUid} already invited to the session ${sessionUid}`);
+        continue;
+      }
+      validUids.add(receiverUid);
+    }
+
+    return validUids;
   }
 }
