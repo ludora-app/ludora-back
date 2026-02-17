@@ -9,6 +9,17 @@ import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-resp
 import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
+  ApiBadRequestResponse,
+  ApiConsumes,
+  ApiForbiddenResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import {
   Controller,
   Get,
   Param,
@@ -24,24 +35,15 @@ import {
   Patch,
   Delete,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
-import {
-  ApiBadRequestResponse,
-  ApiConsumes,
-  ApiForbiddenResponse,
-  ApiNoContentResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiQuery,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
 
 import { CreateMessageDto } from './dto/input/create-message.dto';
 import { ConversationsService } from './services/conversations.service';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
 import { ConversationMembersService } from './services/conversation-members.service';
 import { ConversationMembershipGuard } from './guards/conversation-membership.guard';
+import { FindOneConversationByUserUidResponseDto } from './dto/output/find-one-conversation-by-user-uid-response.dto';
 import {
   ArchivedConversationSettingsDto,
   MutedConversationSettingsDto,
@@ -134,6 +136,28 @@ export class ConversationsController {
     return {
       data: conversation,
       message: 'Conversation fetched successfully',
+    };
+  }
+
+  @Get('user/:userUid')
+  @Protected()
+  @ApiOperation({ summary: 'Get a conversation by user uids' })
+  @ApiOkResponse({ type: FindOneConversationByUserUidResponseDto })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiForbiddenResponse({ type: ForbiddenResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  async findByUserUids(
+    @Param('userUid') userUid: string,
+    @Req() request: Request,
+  ): Promise<ResponseTypeDto<{ conversationUid: string }>> {
+    const connectedUserUid = request['user'].uid;
+    if (connectedUserUid === userUid) {
+      throw new BadRequestException('Connected user uid and other user uid cannot be the same');
+    }
+    const conversation = await this.conversationsService.findByUserUids(connectedUserUid, userUid);
+    return {
+      data: conversation,
     };
   }
 

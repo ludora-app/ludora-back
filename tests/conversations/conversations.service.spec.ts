@@ -671,4 +671,89 @@ describe('ConversationsService', () => {
       );
     });
   });
+
+  describe('findByUserUids', () => {
+    it('should return existing private conversation between two users', async () => {
+      const connectedUserUid = 'user-123';
+      const otherUserUid = 'user-456';
+
+      const mockConversation = {
+        uid: 'conv-private-123',
+      };
+
+      mockPrisma.conversations.findFirst.mockResolvedValue(mockConversation);
+
+      const result = await service.findByUserUids(connectedUserUid, otherUserUid);
+
+      expect(result).toEqual({ conversationUid: 'conv-private-123' });
+      expect(mockPrisma.conversations.findFirst).toHaveBeenCalledWith({
+        select: {
+          uid: true,
+        },
+        where: {
+          conversationMembers: {
+            some: {
+              userUid: {
+                in: [connectedUserUid, otherUserUid],
+              },
+            },
+          },
+          type: ConversationType.PRIVATE,
+        },
+      });
+    });
+
+    it('should return null conversationUid when no conversation exists', async () => {
+      const connectedUserUid = 'user-123';
+      const otherUserUid = 'user-999';
+
+      mockPrisma.conversations.findFirst.mockResolvedValue(null);
+
+      const result = await service.findByUserUids(connectedUserUid, otherUserUid);
+
+      expect(result).toEqual({ conversationUid: null });
+      expect(mockPrisma.conversations.findFirst).toHaveBeenCalledWith({
+        select: {
+          uid: true,
+        },
+        where: {
+          conversationMembers: {
+            some: {
+              userUid: {
+                in: [connectedUserUid, otherUserUid],
+              },
+            },
+          },
+          type: ConversationType.PRIVATE,
+        },
+      });
+    });
+
+    it('should only search for private conversations', async () => {
+      const connectedUserUid = 'user-123';
+      const otherUserUid = 'user-456';
+
+      mockPrisma.conversations.findFirst.mockResolvedValue(null);
+
+      await service.findByUserUids(connectedUserUid, otherUserUid);
+
+      const callArgs = mockPrisma.conversations.findFirst.mock.calls[0][0];
+      expect(callArgs.where.type).toBe(ConversationType.PRIVATE);
+    });
+
+    it('should search for both user uids in conversation members', async () => {
+      const connectedUserUid = 'user-aaa';
+      const otherUserUid = 'user-bbb';
+
+      mockPrisma.conversations.findFirst.mockResolvedValue(null);
+
+      await service.findByUserUids(connectedUserUid, otherUserUid);
+
+      const callArgs = mockPrisma.conversations.findFirst.mock.calls[0][0];
+      expect(callArgs.where.conversationMembers.some.userUid.in).toEqual([
+        connectedUserUid,
+        otherUserUid,
+      ]);
+    });
+  });
 });

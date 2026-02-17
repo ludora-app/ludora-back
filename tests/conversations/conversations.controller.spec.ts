@@ -17,6 +17,7 @@ describe('ConversationsController', () => {
       createPrivateConversation: jest.fn(),
       createSessionConversation: jest.fn(),
       findAllByUserUid: jest.fn(),
+      findByUserUids: jest.fn(),
       findOne: jest.fn(),
       loadMoreMessages: jest.fn(),
     };
@@ -659,6 +660,116 @@ describe('ConversationsController', () => {
       expect(mockMembersService.updateDisplayMessagesAfterDeletion).toHaveBeenCalledWith(
         conversationUid,
         'user-789',
+      );
+    });
+  });
+
+  describe('findByUserUids', () => {
+    it('should return existing conversation between two users', async () => {
+      const mockRequest = {
+        user: { uid: 'user-123' },
+      } as any;
+      const otherUserUid = 'user-456';
+
+      const mockResponse = {
+        conversationUid: 'conv-private-123',
+      };
+
+      mockConversationsService.findByUserUids.mockResolvedValue(mockResponse);
+
+      const result = await controller.findByUserUids(otherUserUid, mockRequest);
+
+      expect(result).toEqual({
+        data: mockResponse,
+      });
+      expect(mockConversationsService.findByUserUids).toHaveBeenCalledWith('user-123', 'user-456');
+    });
+
+    it('should return null conversationUid when no conversation exists', async () => {
+      const mockRequest = {
+        user: { uid: 'user-123' },
+      } as any;
+      const otherUserUid = 'user-999';
+
+      const mockResponse = {
+        conversationUid: null,
+      };
+
+      mockConversationsService.findByUserUids.mockResolvedValue(mockResponse);
+
+      const result = await controller.findByUserUids(otherUserUid, mockRequest);
+
+      expect(result).toEqual({
+        data: mockResponse,
+      });
+      expect(mockConversationsService.findByUserUids).toHaveBeenCalledWith('user-123', 'user-999');
+    });
+
+    it('should throw BadRequestException when connectedUserUid equals otherUserUid', async () => {
+      const mockRequest = {
+        user: { uid: 'user-123' },
+      } as any;
+      const sameUserUid = 'user-123';
+
+      await expect(controller.findByUserUids(sameUserUid, mockRequest)).rejects.toThrow(
+        'Connected user uid and other user uid cannot be the same',
+      );
+      expect(mockConversationsService.findByUserUids).not.toHaveBeenCalled();
+    });
+
+    it('should extract correct user uid from request', async () => {
+      const mockRequest = {
+        user: { uid: 'user-different-123' },
+      } as any;
+      const otherUserUid = 'user-other-456';
+
+      mockConversationsService.findByUserUids.mockResolvedValue({
+        conversationUid: 'conv-test',
+      });
+
+      await controller.findByUserUids(otherUserUid, mockRequest);
+
+      expect(mockConversationsService.findByUserUids).toHaveBeenCalledWith(
+        'user-different-123',
+        'user-other-456',
+      );
+    });
+
+    it('should pass userUid parameter from route param', async () => {
+      const mockRequest = {
+        user: { uid: 'user-aaa' },
+      } as any;
+      const routeParamUserUid = 'user-bbb';
+
+      mockConversationsService.findByUserUids.mockResolvedValue({
+        conversationUid: 'conv-found',
+      });
+
+      await controller.findByUserUids(routeParamUserUid, mockRequest);
+
+      const [connectedUid, otherUid] = mockConversationsService.findByUserUids.mock.calls[0];
+      expect(connectedUid).toBe('user-aaa');
+      expect(otherUid).toBe('user-bbb');
+    });
+
+    it('should handle case where users have no conversation yet', async () => {
+      const mockRequest = {
+        user: { uid: 'user-new-1' },
+      } as any;
+      const otherUserUid = 'user-new-2';
+
+      const mockResponse = {
+        conversationUid: null,
+      };
+
+      mockConversationsService.findByUserUids.mockResolvedValue(mockResponse);
+
+      const result = await controller.findByUserUids(otherUserUid, mockRequest);
+
+      expect(result.data.conversationUid).toBeNull();
+      expect(mockConversationsService.findByUserUids).toHaveBeenCalledWith(
+        'user-new-1',
+        'user-new-2',
       );
     });
   });
