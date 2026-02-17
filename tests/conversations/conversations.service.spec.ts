@@ -691,13 +691,18 @@ describe('ConversationsService', () => {
           uid: true,
         },
         where: {
-          conversationMembers: {
-            some: {
-              userUid: {
-                in: [connectedUserUid, otherUserUid],
+          AND: [
+            {
+              conversationMembers: {
+                some: { userUid: connectedUserUid },
               },
             },
-          },
+            {
+              conversationMembers: {
+                some: { userUid: otherUserUid },
+              },
+            },
+          ],
           type: ConversationType.PRIVATE,
         },
       });
@@ -717,13 +722,18 @@ describe('ConversationsService', () => {
           uid: true,
         },
         where: {
-          conversationMembers: {
-            some: {
-              userUid: {
-                in: [connectedUserUid, otherUserUid],
+          AND: [
+            {
+              conversationMembers: {
+                some: { userUid: connectedUserUid },
               },
             },
-          },
+            {
+              conversationMembers: {
+                some: { userUid: otherUserUid },
+              },
+            },
+          ],
           type: ConversationType.PRIVATE,
         },
       });
@@ -741,7 +751,7 @@ describe('ConversationsService', () => {
       expect(callArgs.where.type).toBe(ConversationType.PRIVATE);
     });
 
-    it('should search for both user uids in conversation members', async () => {
+    it('should ensure both users are members of the conversation', async () => {
       const connectedUserUid = 'user-aaa';
       const otherUserUid = 'user-bbb';
 
@@ -750,10 +760,9 @@ describe('ConversationsService', () => {
       await service.findByUserUids(connectedUserUid, otherUserUid);
 
       const callArgs = mockPrisma.conversations.findFirst.mock.calls[0][0];
-      expect(callArgs.where.conversationMembers.some.userUid.in).toEqual([
-        connectedUserUid,
-        otherUserUid,
-      ]);
+      expect(callArgs.where.AND).toHaveLength(2);
+      expect(callArgs.where.AND[0].conversationMembers.some.userUid).toBe(connectedUserUid);
+      expect(callArgs.where.AND[1].conversationMembers.some.userUid).toBe(otherUserUid);
     });
   });
 });

@@ -446,13 +446,18 @@ export class ConversationsService {
         uid: true,
       },
       where: {
-        conversationMembers: {
-          some: {
-            userUid: {
-              in: [connectedUserUid, otherUserUid],
+        AND: [
+          {
+            conversationMembers: {
+              some: { userUid: connectedUserUid },
             },
           },
-        },
+          {
+            conversationMembers: {
+              some: { userUid: otherUserUid },
+            },
+          },
+        ],
         type: ConversationType.PRIVATE,
       },
     });
