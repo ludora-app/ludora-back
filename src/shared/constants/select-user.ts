@@ -7,6 +7,13 @@ import { InvitationStatus, Prisma } from 'generated/prisma/client';
  * return { data: user, message: 'User fetched successfully' };
  */
 export const USERSELECT: Record<string, Prisma.UsersSelect> = {
+  basicUserInfoDisplay: {
+    firstname: true,
+    imageUrl: true,
+    lastname: true,
+    uid: true,
+  },
+
   checkIfUserExists: {
     uid: true,
   },
@@ -15,7 +22,6 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     email: true,
     uid: true,
   },
-
   createStripeAccountToken: {
     birthdate: true,
     email: true,
@@ -23,6 +29,7 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     lastname: true,
     phone: true,
   },
+
   createStripeConnectAccount: {
     birthdate: true,
     email: true,
@@ -74,7 +81,6 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
       },
     },
   },
-
   findOne: {
     _count: {
       select: {
@@ -101,6 +107,7 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
       },
     },
   },
+
   findOneByEmail: {
     email: true,
     firstname: true,
@@ -110,7 +117,6 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     provider: true,
     uid: true,
   },
-
   login: {
     email: true,
     password: true,

@@ -12,6 +12,7 @@ describe('SessionInvitationsController', () => {
 
   const mockSessionInvitationsService = {
     create: jest.fn(),
+    createMany: jest.fn(),
     findAllByReceiverId: jest.fn(),
     findAllBySessionId: jest.fn(),
     findOne: jest.fn(),
@@ -45,38 +46,30 @@ describe('SessionInvitationsController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('create', () => {
-    it('should create an invitation and wrap response', async () => {
+  describe('createMany', () => {
+    it('should call createMany with senderUid from request, sessionUid and dto', async () => {
+      const sessionUid = 'sess-123';
       const req: any = { user: { uid: 'sender-1' } };
-      const dto: CreateSessionInvitationDto = {
-        sessionUid: 'sess-1',
-        receiverUid: 'user-2',
-      };
-      const invitation = {
-        sessionUid: 'sess-1',
-        senderUid: 'sender-1',
-        receiverUid: 'user-2',
-        status: 'PENDING',
-      } as any;
+      const dto = { receiverUids: ['user-2', 'user-3'] };
+      mockSessionInvitationsService.createMany.mockResolvedValue(undefined);
 
-      mockSessionInvitationsService.create.mockResolvedValue(invitation);
+      const result = await controller.createMany(sessionUid, dto, req);
 
-      await expect(controller.create(req, dto)).resolves.toEqual({
-        data: invitation,
-        message: 'Session invitation created successfully',
-      });
-      expect(mockSessionInvitationsService.create).toHaveBeenCalledWith('sender-1', dto);
+      expect(mockSessionInvitationsService.createMany).toHaveBeenCalledWith(
+        'sender-1',
+        sessionUid,
+        dto,
+      );
+      expect(result).toBeUndefined();
     });
 
-    it('should throw BadRequestException when service returns null', async () => {
-      const req: any = { user: { uid: 'sender-1' } };
-      const dto: CreateSessionInvitationDto = {
-        sessionUid: 'sess-1',
-        receiverUid: 'user-2',
-      };
-      mockSessionInvitationsService.create.mockResolvedValue(null);
+    it('should return 201 and success message on success', async () => {
+      const sessionUid = 'sess-456';
+      const req: any = { user: { uid: 'sender-2' } };
+      const dto = { receiverUids: ['user-a'] };
+      mockSessionInvitationsService.createMany.mockResolvedValue(undefined);
 
-      await expect(controller.create(req, dto)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(controller.createMany(sessionUid, dto, req)).resolves.toBeUndefined();
     });
   });
 
