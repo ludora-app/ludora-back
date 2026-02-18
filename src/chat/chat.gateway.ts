@@ -1,8 +1,10 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Server, Socket } from 'socket.io';
+import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { NotificationType } from 'generated/prisma/enums';
 import { UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
+import { EventTypes } from 'src/notifications/constants/event.types';
 import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
 import { CreateMessageDto } from 'src/conversations/dto/input/create-message.dto';
 import {
@@ -305,46 +307,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
-   * Handle marking messages as read
-   * - Updates message status in database
-   * - Notifies other users in the conversation
+   * Handle EventEmitter2 event for marking messages as read (triggered from HTTP endpoints)
    */
-  @SubscribeMessage('markAsRead')
-  async handleMarkAsRead(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { conversationUid: string },
-  ): Promise<void> {
+  @OnEvent(EventTypes.MARK_MESSAGES_AS_READ)
+  async handleMarkAsReadEvent(payload: {
+    conversationUid: string;
+    userUid: string;
+  }): Promise<void> {
     try {
-      const userUid = client.data.userUid;
-
-      if (!userUid) {
-        return;
-      }
-
-      const { conversationUid } = data;
+      const { conversationUid, userUid } = payload;
 
       const count = await this.messagesService.markMessagesAsRead(conversationUid, userUid);
 
-      // Notify the user
-      client.emit('markedAsRead', {
-        conversationUid,
-        count,
-      });
-
-      // Notify other users in the conversation
       const conversationRoom = `conversation:${conversationUid}`;
-      client.to(conversationRoom).emit('messagesRead', {
+      this.server.to(conversationRoom).emit('notification', {
         conversationUid,
+        message: `${userUid} marked ${count} messages from ${conversationUid} as read`,
+        type: NotificationType.MESSAGES_READ,
         userUid,
       });
 
-      this.logger.debug(`User ${userUid} marked ${count} messages as read in ${conversationUid}`);
+      this.logger.debug(
+        `[Event] User ${userUid} marked ${count} messages as read in ${conversationUid}`,
+      );
     } catch (error) {
-      this.logger.error(`Error marking messages as read: ${error.message}`);
-      client.emit('error', {
-        code: 'MARK_READ_FAILED',
-        message: 'Failed to mark messages as read',
-      });
+      this.logger.error(`Error handling mark as read event: ${error.message}`);
     }
   }
 }
