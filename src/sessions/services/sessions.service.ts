@@ -4,11 +4,9 @@ import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SessionScope } from 'src/shared/constants/constants';
 import { FieldsService } from 'src/fields/services/fields.service';
-import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, Sessions } from 'generated/prisma/client';
 import { FieldSlotsService } from 'src/fields/services/field-slots.service';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
 import { ConversationsService } from 'src/conversations/services/conversations.service';
@@ -16,9 +14,16 @@ import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisati
 import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
 import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
   FieldSlots,
   FieldType,
   GameModes,
+  InvitationStatus,
   SessionPlayers,
   SessionVisibility,
 } from 'generated/prisma/browser';
@@ -70,7 +75,6 @@ export class SessionsService {
     private readonly prisma: PrismaService,
     private readonly teamsService: SessionTeamsService,
     private readonly playersService: SessionPlayersService,
-    private readonly storageService: StorageService,
     private readonly conversationsService: ConversationsService,
     private readonly hourPreferencesService: HourPreferencesService,
     private readonly sportPreferencesService: SportPreferencesService,
@@ -202,6 +206,7 @@ export class SessionsService {
             teamUid: teamA.uid,
             userUid: createSessionDto.userUid,
           },
+          createdSession.creatorUid,
           tx,
         );
       }
@@ -1023,6 +1028,33 @@ export class SessionsService {
       this.logger.error(`Session ${createSessionPlayerDto.sessionUid} not found`);
       throw new NotFoundException(`Session ${createSessionPlayerDto.sessionUid} not found`);
     }
+
+    //? If the session is private, we need to check if the user is a friend of the session creator
+    if (existingSession.visibility === SessionVisibility.PRIVATE) {
+      const existingFriendship = await this.prisma.friends.findFirst({
+        where: {
+          AND: [
+            {
+              OR: [
+                {
+                  userUid1: createSessionPlayerDto.userUid,
+                  userUid2: existingSession.creatorUid,
+                },
+                {
+                  userUid1: existingSession.creatorUid,
+                  userUid2: createSessionPlayerDto.userUid,
+                },
+              ],
+            },
+            {
+              status: InvitationStatus.ACCEPTED,
+            },
+          ],
+        },
+      });
+      if (!existingFriendship)
+        throw new ForbiddenException('You are not a friend of the session creator');
+    }
     const existingTeam = await this.prisma.sessionTeams.findUnique({
       select: {
         _count: { select: { sessionPlayers: true } },
@@ -1064,6 +1096,9 @@ export class SessionsService {
       );
     }
 
-    return this.playersService.addPlayerToSession(createSessionPlayerDto);
+    return this.playersService.addPlayerToSession(
+      createSessionPlayerDto,
+      existingSession.creatorUid,
+    );
   }
 }

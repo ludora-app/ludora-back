@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { ConversationMembersService } from 'src/conversations/services/conversation-members.service';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
 
 describe('SessionPlayersService', () => {
@@ -24,6 +26,14 @@ describe('SessionPlayersService', () => {
     log: jest.fn(),
   };
 
+  const mockEventEmitter = {
+    emit: jest.fn(),
+  };
+
+  const mockConversationMembersService = {
+    create: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -35,6 +45,14 @@ describe('SessionPlayersService', () => {
         {
           provide: PinoLogger,
           useValue: mockLogger,
+        },
+        {
+          provide: EventEmitter2,
+          useValue: mockEventEmitter,
+        },
+        {
+          provide: ConversationMembersService,
+          useValue: mockConversationMembersService,
         },
       ],
     }).compile();
@@ -67,10 +85,11 @@ describe('SessionPlayersService', () => {
 
       (mockPrismaService.sessionPlayers.create as jest.Mock).mockResolvedValue(created);
 
-      const result = await service.addPlayerToSession(dto as any);
+      const result = await service.addPlayerToSession(dto as any, dto.userUid);
 
       expect(prismaService.sessionPlayers.create).toHaveBeenCalledWith({
         data: dto,
+        include: expect.any(Object),
       });
       expect(mockLogger.info).toHaveBeenCalledWith(
         `Player ${dto.userUid} added to session ${dto.sessionUid}`,

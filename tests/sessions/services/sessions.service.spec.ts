@@ -216,6 +216,7 @@ describe('SessionsService', () => {
 
     const mockCreatedSession = {
       uid: 'session-uid-1',
+      creatorUid: 'user-uid-1',
       description: 'Test session',
       endDate: mockFutureEndDate,
       fieldUid: 'field-uid-1',
@@ -711,6 +712,7 @@ describe('SessionsService', () => {
             teamUid: 'team-a',
             userUid: 'user-uid-1',
           },
+          'user-uid-1',
           expect.anything(),
         );
       });
@@ -1290,6 +1292,7 @@ describe('SessionsService', () => {
       );
       expect(sessionPlayersService.addPlayerToSession).toHaveBeenCalledWith(
         mockCreateSessionPlayerDto,
+        'creator-uid-1',
       );
       expect(result).toEqual(mockNewPlayer);
     });
