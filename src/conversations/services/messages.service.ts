@@ -179,9 +179,10 @@ export class MessagesService {
     cursor?: string,
     limit = 50,
   ): Promise<PaginatedDataDto<MessageCollectionItemDto>> {
-    // Verify user is a member of the conversation
-    await this.markMessagesAsRead(conversationUid, userUid);
-
+    this.eventEmitter.emit(EventTypes.MARK_MESSAGES_AS_READ, {
+      conversationUid,
+      userUid,
+    });
     const messages = await this.prisma.messages.findMany({
       include: {
         messageReceipts: {

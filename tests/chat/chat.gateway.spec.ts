@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { PinoLogger } from 'nestjs-pino';
 import { Socket } from 'socket.io';
-import { MessageType } from 'generated/prisma/enums';
+import { MessageType, NotificationType } from 'generated/prisma/enums';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
 import { ChatGateway } from 'src/chat/chat.gateway';
@@ -304,24 +304,30 @@ describe('ChatGateway', () => {
     });
   });
 
-  describe('handleMarkAsRead', () => {
+  describe('handleMarkAsReadEvent', () => {
+    const mockServerEmit = jest.fn();
+    const mockServerTo = jest.fn().mockReturnValue({ emit: mockServerEmit });
+
     beforeEach(() => {
-      mockSocket.data.userUid = 'user-123';
-      mockSocket.to = jest.fn().mockReturnValue({
-        emit: jest.fn(),
-      });
+      gateway.server = { to: mockServerTo } as any;
+      mockServerEmit.mockClear();
+      mockServerTo.mockClear();
     });
 
-    it('should mark messages as read and notify others', async () => {
+    it('should mark messages as read and notify conversation room', async () => {
       const conversationUid = 'conv-456';
+      const userUid = 'user-123';
       mockMessagesService.markMessagesAsRead.mockResolvedValue(5);
 
-      await gateway.handleMarkAsRead(mockSocket, { conversationUid });
+      await gateway.handleMarkAsReadEvent({ conversationUid, userUid });
 
-      expect(messagesService.markMessagesAsRead).toHaveBeenCalledWith(conversationUid, 'user-123');
-      expect(mockSocket.emit).toHaveBeenCalledWith('markedAsRead', {
+      expect(messagesService.markMessagesAsRead).toHaveBeenCalledWith(conversationUid, userUid);
+      expect(mockServerTo).toHaveBeenCalledWith(`conversation:${conversationUid}`);
+      expect(mockServerEmit).toHaveBeenCalledWith('notification', {
         conversationUid,
-        count: 5,
+        message: `${userUid} marked 5 messages from ${conversationUid} as read`,
+        type: NotificationType.MESSAGES_READ,
+        userUid,
       });
     });
   });
