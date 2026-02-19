@@ -1,15 +1,20 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma, SessionPlayers } from 'generated/prisma/client';
+import { EventTypes } from 'src/notifications/constants/event.types';
 
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
+import { ConversationMembersService } from './../../conversations/services/conversation-members.service';
 
 @Injectable()
 export class SessionPlayersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
+    private readonly eventEmitter: EventEmitter2,
+    private readonly conversationMembersService: ConversationMembersService,
   ) {
     this.logger.setContext(SessionPlayersService.name);
   }
@@ -20,6 +25,7 @@ export class SessionPlayersService {
    */
   async addPlayerToSession(
     createSessionPlayerDto: CreateSessionPlayerDto,
+    creatorUid: string,
     tx?: Prisma.TransactionClient,
   ): Promise<SessionPlayers> {
     const client = tx ?? this.prisma;
@@ -29,10 +35,45 @@ export class SessionPlayersService {
         teamUid: createSessionPlayerDto.teamUid,
         userUid: createSessionPlayerDto.userUid,
       },
+      include: {
+        session: {
+          select: {
+            conversation: {
+              select: {
+                uid: true,
+              },
+            },
+          },
+        },
+        user: {
+          select: {
+            firstname: true,
+            imageUrl: true,
+            lastname: true,
+            uid: true,
+          },
+        },
+      },
     });
     this.logger.info(
       `Player ${createSessionPlayerDto.userUid} added to session ${createSessionPlayerDto.sessionUid}`,
     );
+
+    if (creatorUid !== createSessionPlayerDto.userUid) {
+      await this.conversationMembersService.create(
+        newPlayer.session.conversation.uid,
+        createSessionPlayerDto.userUid,
+      );
+
+      this.eventEmitter.emit(EventTypes.SESSION_PLAYER_ADDED, {
+        creatorUid: creatorUid,
+        playerAvatar: newPlayer.user.imageUrl,
+        playerFirstname: newPlayer.user.firstname,
+        playerLastname: newPlayer.user.lastname,
+        playerUid: createSessionPlayerDto.userUid,
+        sessionUid: createSessionPlayerDto.sessionUid,
+      });
+    }
     return newPlayer;
   }
 

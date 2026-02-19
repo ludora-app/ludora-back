@@ -290,10 +290,22 @@ export class SessionInvitationsService {
   }
 
   async update(updateSessionInvitationDto: UpdateSessionInvitationDto): Promise<void> {
-    const existingInvitation = await this.findOneSessionBySenderOrReceiver(
-      updateSessionInvitationDto.sessionUid,
-      updateSessionInvitationDto.userUid,
-    );
+    const existingInvitation = await this.prisma.sessionInvitations.findFirst({
+      include: {
+        session: {
+          select: {
+            creatorUid: true,
+          },
+        },
+      },
+      where: {
+        OR: [
+          { senderUid: updateSessionInvitationDto.userUid },
+          { receiverUid: updateSessionInvitationDto.userUid },
+        ],
+        sessionUid: updateSessionInvitationDto.sessionUid,
+      },
+    });
 
     if (!existingInvitation) {
       throw new NotFoundException('Session invitation not found');
@@ -356,7 +368,11 @@ export class SessionInvitationsService {
           },
         });
 
-        await this.playersService.addPlayerToSession(createSessionPlayerDto, tx);
+        await this.playersService.addPlayerToSession(
+          createSessionPlayerDto,
+          existingInvitation.session.creatorUid,
+          tx,
+        );
 
         return updated;
       });

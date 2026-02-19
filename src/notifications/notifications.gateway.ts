@@ -437,4 +437,33 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       });
     }
   }
+
+  /**
+   * @description Sends a notification to the session creator when a is added to his session
+   */
+  @OnEvent(EventTypes.SESSION_PLAYER_ADDED)
+  async handleSessionPlayerAdded(payload: {
+    sessionUid: string;
+    playerUid: string;
+    playerFirstname: string;
+    playerLastname: string;
+    playerAvatar?: string;
+    creatorUid: string;
+  }): Promise<void> {
+    const content = `${payload.playerFirstname} ${payload.playerLastname} joined your session`;
+    await this.sendNotification({
+      foreignUid: payload.sessionUid,
+      message: content,
+      metadata: {
+        actionUrl: `app://sessions/${payload.sessionUid}`,
+        senderAvatar: payload.playerAvatar,
+        senderFirstname: payload.playerFirstname,
+        senderLastname: payload.playerLastname,
+        senderUid: payload.playerUid,
+      },
+      title: 'New Session Player',
+      type: NotificationType.SESSION_PLAYER_ADDED,
+      userUid: payload.creatorUid,
+    });
+  }
 }

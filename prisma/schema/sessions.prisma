@@ -123,7 +123,7 @@ model SessionTeams {
 model SessionPlayers {
   sessionUid String   @map("session_uid")
   teamUid    String   @map("team_uid")
-  userUid    String
+  userUid    String   @map("user_uid")
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 

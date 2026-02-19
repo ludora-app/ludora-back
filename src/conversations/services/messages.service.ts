@@ -39,6 +39,8 @@ export class MessagesService {
     // Mark messages as read for the sender
     await this.markMessagesAsRead(conversationUid, senderUid);
 
+    const now = new Date();
+
     // Create the message
     const message = await this.prisma.messages.create({
       data: {
@@ -67,6 +69,11 @@ export class MessagesService {
     this.logger.debug(
       `Message ${message.uid} created in conversation ${conversationUid} by user ${senderUid}`,
     );
+
+    await this.prisma.conversations.update({
+      data: { updatedAt: now },
+      where: { uid: conversationUid },
+    });
 
     const membersUids = await this.getOtherMembersUids(conversationUid, senderUid);
     await this.createMessageReceipt(message.uid, membersUids, senderUid);
@@ -107,6 +114,7 @@ export class MessagesService {
   ): Promise<{ messageUid: string }> {
     // Mark messages as read for the sender
     await this.markMessagesAsRead(conversationUid, senderUid);
+    const now = new Date();
     const folderName = `${StorageFolderName.CONVERSATIONS}/${conversationUid}`;
 
     if (!file || !file.buffer || !file.originalname) {
@@ -143,6 +151,11 @@ export class MessagesService {
     this.logger.debug(
       `Message ${message.uid} created in conversation ${conversationUid} by user ${senderUid}`,
     );
+
+    await this.prisma.conversations.update({
+      data: { updatedAt: now },
+      where: { uid: conversationUid },
+    });
 
     const membersUids = await this.getOtherMembersUids(conversationUid, senderUid);
     await this.createMessageReceipt(message.uid, membersUids, senderUid);

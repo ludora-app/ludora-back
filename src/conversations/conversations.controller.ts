@@ -93,6 +93,11 @@ export class ConversationsController {
     @UploadedFilesCustom() files: { buffer: Buffer; originalname: string }[],
   ) {
     const userUid = request['user'].uid;
+
+    if (dto.recipientUid && userUid === dto.recipientUid) {
+      throw new BadRequestException('You cannot send a message to yourself');
+    }
+
     const file = files && files.length > 0 ? files[0] : undefined;
     return this.conversationsService.createMessage(userUid, dto, file);
   }

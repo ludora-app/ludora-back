@@ -212,10 +212,13 @@ describe('SessionInvitationsService', () => {
       senderUid: 'sender-123',
       receiverUid: 'user-123',
       status: InvitationStatus.PENDING,
+      session: { creatorUid: 'creator-123' },
     } as any;
 
     it('should update status to ACCEPTED and add player', async () => {
-      jest.spyOn(service, 'findOne').mockResolvedValue(existingInvitation);
+      (prismaService.sessionInvitations.findFirst as jest.Mock).mockResolvedValue(
+        existingInvitation,
+      );
 
       const txUpdateMock = jest
         .fn()
@@ -235,6 +238,7 @@ describe('SessionInvitationsService', () => {
       expect(prismaService.$transaction).toHaveBeenCalled();
       expect(playersService.addPlayerToSession).toHaveBeenCalledWith(
         { sessionUid: 'session-123', teamUid: 'session-123', userUid: 'user-123' },
+        'creator-123',
         expect.any(Object),
       );
       expect(txUpdateMock).toHaveBeenCalledWith({
@@ -250,7 +254,7 @@ describe('SessionInvitationsService', () => {
     });
 
     it('should throw NotFoundException when invitation does not exist', async () => {
-      jest.spyOn(service, 'findOneSessionBySenderOrReceiver').mockResolvedValue(null as any);
+      (prismaService.sessionInvitations.findFirst as jest.Mock).mockResolvedValue(null);
       const dto: UpdateSessionInvitationDto = {
         status: InvitationStatus.ACCEPTED,
         userUid: 'user-123',
@@ -260,7 +264,9 @@ describe('SessionInvitationsService', () => {
     });
 
     it('should throw BadRequestException when status is unchanged', async () => {
-      jest.spyOn(service, 'findOneSessionBySenderOrReceiver').mockResolvedValue(existingInvitation);
+      (prismaService.sessionInvitations.findFirst as jest.Mock).mockResolvedValue(
+        existingInvitation,
+      );
       const dto: UpdateSessionInvitationDto = {
         status: InvitationStatus.PENDING,
         userUid: 'user-123',
@@ -270,7 +276,9 @@ describe('SessionInvitationsService', () => {
     });
 
     it('should throw BadRequestException when receiver changes status to PENDING or CANCELED', async () => {
-      jest.spyOn(service, 'findOneSessionBySenderOrReceiver').mockResolvedValue(existingInvitation);
+      (prismaService.sessionInvitations.findFirst as jest.Mock).mockResolvedValue(
+        existingInvitation,
+      );
       const dtoPending: UpdateSessionInvitationDto = {
         status: InvitationStatus.PENDING,
         userUid: 'user-123',

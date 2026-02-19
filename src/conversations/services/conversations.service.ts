@@ -191,6 +191,9 @@ export class ConversationsService {
         };
       };
       take: number;
+      orderBy?: {
+        updatedAt: 'desc';
+      };
       skip?: number;
       cursor?: {
         uid: string;
@@ -291,6 +294,9 @@ export class ConversationsService {
             sport: true,
           },
         },
+      },
+      orderBy: {
+        updatedAt: 'desc',
       },
       take: limit ? limit + 1 : 10,
       where: {
