@@ -38,7 +38,7 @@ CREATE TYPE "infrastructure"."field_type" AS ENUM ('PUBLIC', 'PRIVATE');
 CREATE TYPE "infrastructure"."verification_status" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 
 -- CreateEnum
-CREATE TYPE "notifications"."notification_type" AS ENUM ('FRIEND_REQUEST', 'FRIEND_ACCEPTED', 'SESSION_INVITATION', 'SESSION_UPDATED', 'SESSION_CANCELLED', 'SESSION_REMINDER', 'NEW_MESSAGE', 'GENERAL', 'EMAIL_VERIFIED');
+CREATE TYPE "notifications"."notification_type" AS ENUM ('FRIEND_REQUEST', 'FRIEND_ACCEPTED', 'SESSION_INVITATION', 'SESSION_UPDATED', 'SESSION_CANCELLED', 'SESSION_REMINDER', 'NEW_MESSAGE', 'GENERAL', 'EMAIL_VERIFIED', 'MESSAGE_SENT', 'MESSAGES_READ', 'SESSION_PLAYER_ADDED');
 
 -- CreateEnum
 CREATE TYPE "notifications"."platform" AS ENUM ('IOS', 'ANDROID', 'WEB');
@@ -82,6 +82,8 @@ CREATE TABLE "auth"."Users" (
     "phone" TEXT,
     "image_url" TEXT,
     "bio" TEXT,
+    "city" TEXT,
+    "country" TEXT NOT NULL DEFAULT 'FR',
     "provider" "auth"."Provider" NOT NULL DEFAULT 'LUDORA',
     "is_connected" BOOLEAN NOT NULL DEFAULT true,
     "stripe_account_id" TEXT,
@@ -108,7 +110,6 @@ CREATE TABLE "auth"."Email_verification" (
 CREATE TABLE "auth"."User_tokens" (
     "uid" TEXT NOT NULL,
     "user_uid" TEXT NOT NULL,
-    "device_uid" TEXT,
     "organisation_uid" TEXT,
     "token" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -121,7 +122,6 @@ CREATE TABLE "auth"."User_tokens" (
 CREATE TABLE "auth"."Refresh_tokens" (
     "uid" TEXT NOT NULL,
     "user_uid" TEXT NOT NULL,
-    "device_uid" TEXT,
     "organisation_uid" TEXT,
     "token" TEXT NOT NULL,
     "expires_at" TIMESTAMP(3) NOT NULL,
@@ -136,6 +136,10 @@ CREATE TABLE "infrastructure"."Partners" (
     "uid" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "image_url" TEXT,
+    "zip_code" TEXT NOT NULL,
+    "city" TEXT NOT NULL,
+    "department" TEXT,
+    "country" TEXT NOT NULL DEFAULT 'FR',
     "address" TEXT NOT NULL,
     "latitude" DOUBLE PRECISION NOT NULL,
     "longitude" DOUBLE PRECISION NOT NULL,
@@ -153,9 +157,12 @@ CREATE TABLE "infrastructure"."Fields" (
     "uid" TEXT NOT NULL,
     "type" "infrastructure"."field_type" NOT NULL DEFAULT 'PUBLIC',
     "status" "infrastructure"."verification_status" NOT NULL DEFAULT 'PENDING',
-    "sport" TEXT NOT NULL,
     "partner_uid" TEXT,
     "name" TEXT,
+    "zip_code" TEXT NOT NULL,
+    "city" TEXT NOT NULL,
+    "department" TEXT,
+    "country" TEXT NOT NULL DEFAULT 'FR',
     "address" TEXT NOT NULL,
     "short_address" TEXT NOT NULL,
     "latitude" DOUBLE PRECISION NOT NULL,
@@ -179,6 +186,14 @@ CREATE TABLE "infrastructure"."Field_slots" (
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Field_slots_pkey" PRIMARY KEY ("uid")
+);
+
+-- CreateTable
+CREATE TABLE "infrastructure"."Field_sports" (
+    "field_uid" TEXT NOT NULL,
+    "sport" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL
 );
 
 -- CreateTable
@@ -286,6 +301,7 @@ CREATE TABLE "sessions"."Sessions" (
     "min_players_per_team" INTEGER NOT NULL,
     "description" TEXT,
     "visibility" "sessions"."session_visibility" NOT NULL DEFAULT 'PUBLIC',
+    "view_count" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -330,7 +346,7 @@ CREATE TABLE "sessions"."Session_teams" (
 CREATE TABLE "sessions"."Session_players" (
     "session_uid" TEXT NOT NULL,
     "team_uid" TEXT NOT NULL,
-    "userUid" TEXT NOT NULL,
+    "user_uid" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL
 );
@@ -379,7 +395,7 @@ CREATE TABLE "social"."Conversation_members" (
     "is_archived" BOOLEAN NOT NULL DEFAULT false,
     "is_muted" BOOLEAN NOT NULL DEFAULT false,
     "is_visible" BOOLEAN NOT NULL DEFAULT true,
-    "display_messages_after" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "display_messages_after" TIMESTAMP(3),
     "joined_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "last_read_at" TIMESTAMP(3),
 
@@ -421,6 +437,17 @@ CREATE TABLE "user_preferences"."User_hour_preferences" (
     CONSTRAINT "User_hour_preferences_pkey" PRIMARY KEY ("uid")
 );
 
+-- CreateTable
+CREATE TABLE "user_preferences"."User_game_mode_preferences" (
+    "uid" TEXT NOT NULL,
+    "user_uid" TEXT NOT NULL,
+    "gameMode" "sessions"."game_modes" NOT NULL,
+    "sport" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "User_game_mode_preferences_pkey" PRIMARY KEY ("uid")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Users_email_key" ON "auth"."Users"("email");
 
@@ -452,13 +479,16 @@ CREATE UNIQUE INDEX "Partners_name_key" ON "infrastructure"."Partners"("name");
 CREATE UNIQUE INDEX "Partners_email_key" ON "infrastructure"."Partners"("email");
 
 -- CreateIndex
+CREATE INDEX "Partners_city_idx" ON "infrastructure"."Partners"("city");
+
+-- CreateIndex
+CREATE INDEX "Partners_zip_code_idx" ON "infrastructure"."Partners"("zip_code");
+
+-- CreateIndex
 CREATE INDEX "Fields_partner_uid_idx" ON "infrastructure"."Fields"("partner_uid");
 
 -- CreateIndex
 CREATE INDEX "Fields_longitude_latitude_idx" ON "infrastructure"."Fields"("longitude", "latitude");
-
--- CreateIndex
-CREATE INDEX "Fields_sport_idx" ON "infrastructure"."Fields"("sport");
 
 -- CreateIndex
 CREATE INDEX "Fields_type_idx" ON "infrastructure"."Fields"("type");
@@ -467,10 +497,25 @@ CREATE INDEX "Fields_type_idx" ON "infrastructure"."Fields"("type");
 CREATE INDEX "Fields_status_idx" ON "infrastructure"."Fields"("status");
 
 -- CreateIndex
+CREATE INDEX "Fields_city_idx" ON "infrastructure"."Fields"("city");
+
+-- CreateIndex
+CREATE INDEX "Fields_zip_code_idx" ON "infrastructure"."Fields"("zip_code");
+
+-- CreateIndex
 CREATE INDEX "Field_slots_field_uid_idx" ON "infrastructure"."Field_slots"("field_uid");
 
 -- CreateIndex
 CREATE INDEX "Field_slots_start_time_end_time_idx" ON "infrastructure"."Field_slots"("start_time", "end_time");
+
+-- CreateIndex
+CREATE INDEX "Field_sports_field_uid_idx" ON "infrastructure"."Field_sports"("field_uid");
+
+-- CreateIndex
+CREATE INDEX "Field_sports_sport_idx" ON "infrastructure"."Field_sports"("sport");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Field_sports_field_uid_sport_key" ON "infrastructure"."Field_sports"("field_uid", "sport");
 
 -- CreateIndex
 CREATE INDEX "Partner_sports_partner_uid_idx" ON "infrastructure"."Partner_sports"("partner_uid");
@@ -533,10 +578,10 @@ CREATE UNIQUE INDEX "Session_teams_session_uid_team_label_key" ON "sessions"."Se
 CREATE INDEX "Session_players_session_uid_idx" ON "sessions"."Session_players"("session_uid");
 
 -- CreateIndex
-CREATE INDEX "Session_players_userUid_idx" ON "sessions"."Session_players"("userUid");
+CREATE INDEX "Session_players_user_uid_idx" ON "sessions"."Session_players"("user_uid");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Session_players_session_uid_userUid_key" ON "sessions"."Session_players"("session_uid", "userUid");
+CREATE UNIQUE INDEX "Session_players_session_uid_user_uid_key" ON "sessions"."Session_players"("session_uid", "user_uid");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Conversations_session_uid_key" ON "social"."Conversations"("session_uid");
@@ -577,11 +622,23 @@ CREATE INDEX "User_hour_preferences_time_period_idx" ON "user_preferences"."User
 -- CreateIndex
 CREATE INDEX "User_hour_preferences_day_of_week_idx" ON "user_preferences"."User_hour_preferences"("day_of_week");
 
+-- CreateIndex
+CREATE INDEX "User_game_mode_preferences_user_uid_idx" ON "user_preferences"."User_game_mode_preferences"("user_uid");
+
+-- CreateIndex
+CREATE INDEX "User_game_mode_preferences_gameMode_idx" ON "user_preferences"."User_game_mode_preferences"("gameMode");
+
+-- CreateIndex
+CREATE INDEX "User_game_mode_preferences_user_uid_sport_idx" ON "user_preferences"."User_game_mode_preferences"("user_uid", "sport");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_game_mode_preferences_user_uid_gameMode_sport_key" ON "user_preferences"."User_game_mode_preferences"("user_uid", "gameMode", "sport");
+
 -- AddForeignKey
 ALTER TABLE "auth"."Email_verification" ADD CONSTRAINT "Email_verification_user_uid_fkey" FOREIGN KEY ("user_uid") REFERENCES "auth"."Users"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "auth"."User_tokens" ADD CONSTRAINT "User_tokens_user_uid_fkey" FOREIGN KEY ("user_uid") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "auth"."User_tokens" ADD CONSTRAINT "User_tokens_user_uid_fkey" FOREIGN KEY ("user_uid") REFERENCES "auth"."Users"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "auth"."User_tokens" ADD CONSTRAINT "User_tokens_organisation_uid_fkey" FOREIGN KEY ("organisation_uid") REFERENCES "infrastructure"."Partners"("uid") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -596,19 +653,22 @@ ALTER TABLE "auth"."Refresh_tokens" ADD CONSTRAINT "Refresh_tokens_organisation_
 ALTER TABLE "infrastructure"."Fields" ADD CONSTRAINT "Fields_partner_uid_fkey" FOREIGN KEY ("partner_uid") REFERENCES "infrastructure"."Partners"("uid") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "infrastructure"."Fields" ADD CONSTRAINT "Fields_sport_fkey" FOREIGN KEY ("sport") REFERENCES "infrastructure"."Sports"("name") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "infrastructure"."Field_slots" ADD CONSTRAINT "Field_slots_field_uid_fkey" FOREIGN KEY ("field_uid") REFERENCES "infrastructure"."Fields"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "infrastructure"."Partner_sports" ADD CONSTRAINT "Partner_sports_partner_uid_fkey" FOREIGN KEY ("partner_uid") REFERENCES "infrastructure"."Partners"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "infrastructure"."Field_sports" ADD CONSTRAINT "Field_sports_field_uid_fkey" FOREIGN KEY ("field_uid") REFERENCES "infrastructure"."Fields"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "infrastructure"."Field_sports" ADD CONSTRAINT "Field_sports_sport_fkey" FOREIGN KEY ("sport") REFERENCES "infrastructure"."Sports"("name") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "infrastructure"."Partner_sports" ADD CONSTRAINT "Partner_sports_partner_uid_fkey" FOREIGN KEY ("partner_uid") REFERENCES "infrastructure"."Partners"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "infrastructure"."Partner_sports" ADD CONSTRAINT "Partner_sports_sport_fkey" FOREIGN KEY ("sport") REFERENCES "infrastructure"."Sports"("name") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "infrastructure"."Field_images" ADD CONSTRAINT "Field_images_field_uid_fkey" FOREIGN KEY ("field_uid") REFERENCES "infrastructure"."Fields"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "infrastructure"."Field_images" ADD CONSTRAINT "Field_images_field_uid_fkey" FOREIGN KEY ("field_uid") REFERENCES "infrastructure"."Fields"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "notifications"."Notifications" ADD CONSTRAINT "Notifications_user_uid_fkey" FOREIGN KEY ("user_uid") REFERENCES "auth"."Users"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -620,10 +680,10 @@ ALTER TABLE "notifications"."Devices" ADD CONSTRAINT "Devices_user_uid_fkey" FOR
 ALTER TABLE "ratings"."User_ratings" ADD CONSTRAINT "User_ratings_evaluator_uid_fkey" FOREIGN KEY ("evaluator_uid") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ratings"."User_ratings" ADD CONSTRAINT "User_ratings_evaluated_uid_fkey" FOREIGN KEY ("evaluated_uid") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ratings"."User_ratings" ADD CONSTRAINT "User_ratings_evaluated_uid_fkey" FOREIGN KEY ("evaluated_uid") REFERENCES "auth"."Users"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ratings"."User_global_ratings" ADD CONSTRAINT "User_global_ratings_user_uid_fkey" FOREIGN KEY ("user_uid") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ratings"."User_global_ratings" ADD CONSTRAINT "User_global_ratings_user_uid_fkey" FOREIGN KEY ("user_uid") REFERENCES "auth"."Users"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ratings"."User_global_ratings" ADD CONSTRAINT "User_global_ratings_sport_name_fkey" FOREIGN KEY ("sport_name") REFERENCES "infrastructure"."Sports"("name") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -641,7 +701,7 @@ ALTER TABLE "sessions"."Sessions" ADD CONSTRAINT "Sessions_slot_uid_fkey" FOREIG
 ALTER TABLE "sessions"."Sessions" ADD CONSTRAINT "Sessions_sport_fkey" FOREIGN KEY ("sport") REFERENCES "infrastructure"."Sports"("name") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "sessions"."Session_invitations" ADD CONSTRAINT "Session_invitations_session_uid_fkey" FOREIGN KEY ("session_uid") REFERENCES "sessions"."Sessions"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "sessions"."Session_invitations" ADD CONSTRAINT "Session_invitations_session_uid_fkey" FOREIGN KEY ("session_uid") REFERENCES "sessions"."Sessions"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "sessions"."Session_invitations" ADD CONSTRAINT "Session_invitations_sender_uid_fkey" FOREIGN KEY ("sender_uid") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -650,19 +710,19 @@ ALTER TABLE "sessions"."Session_invitations" ADD CONSTRAINT "Session_invitations
 ALTER TABLE "sessions"."Session_invitations" ADD CONSTRAINT "Session_invitations_receiver_uid_fkey" FOREIGN KEY ("receiver_uid") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "sessions"."Session_images" ADD CONSTRAINT "Session_images_session_uid_fkey" FOREIGN KEY ("session_uid") REFERENCES "sessions"."Sessions"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "sessions"."Session_images" ADD CONSTRAINT "Session_images_session_uid_fkey" FOREIGN KEY ("session_uid") REFERENCES "sessions"."Sessions"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "sessions"."Session_teams" ADD CONSTRAINT "Session_teams_session_uid_fkey" FOREIGN KEY ("session_uid") REFERENCES "sessions"."Sessions"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "sessions"."Session_teams" ADD CONSTRAINT "Session_teams_session_uid_fkey" FOREIGN KEY ("session_uid") REFERENCES "sessions"."Sessions"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "sessions"."Session_players" ADD CONSTRAINT "Session_players_session_uid_fkey" FOREIGN KEY ("session_uid") REFERENCES "sessions"."Sessions"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "sessions"."Session_players" ADD CONSTRAINT "Session_players_session_uid_fkey" FOREIGN KEY ("session_uid") REFERENCES "sessions"."Sessions"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "sessions"."Session_players" ADD CONSTRAINT "Session_players_team_uid_fkey" FOREIGN KEY ("team_uid") REFERENCES "sessions"."Session_teams"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "sessions"."Session_players" ADD CONSTRAINT "Session_players_userUid_fkey" FOREIGN KEY ("userUid") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "sessions"."Session_players" ADD CONSTRAINT "Session_players_user_uid_fkey" FOREIGN KEY ("user_uid") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "social"."Conversations" ADD CONSTRAINT "Conversations_session_uid_fkey" FOREIGN KEY ("session_uid") REFERENCES "sessions"."Sessions"("uid") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -686,16 +746,25 @@ ALTER TABLE "social"."Conversation_members" ADD CONSTRAINT "Conversation_members
 ALTER TABLE "social"."Conversation_members" ADD CONSTRAINT "Conversation_members_user_uid_fkey" FOREIGN KEY ("user_uid") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "social"."Friends" ADD CONSTRAINT "Friends_user_uid_1_fkey" FOREIGN KEY ("user_uid_1") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "social"."Friends" ADD CONSTRAINT "Friends_user_uid_1_fkey" FOREIGN KEY ("user_uid_1") REFERENCES "auth"."Users"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "social"."Friends" ADD CONSTRAINT "Friends_user_uid_2_fkey" FOREIGN KEY ("user_uid_2") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "social"."Friends" ADD CONSTRAINT "Friends_user_uid_2_fkey" FOREIGN KEY ("user_uid_2") REFERENCES "auth"."Users"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "user_preferences"."User_sports" ADD CONSTRAINT "User_sports_user_uid_fkey" FOREIGN KEY ("user_uid") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "user_preferences"."User_sports" ADD CONSTRAINT "User_sports_user_uid_fkey" FOREIGN KEY ("user_uid") REFERENCES "auth"."Users"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "user_preferences"."User_sports" ADD CONSTRAINT "User_sports_sport_fkey" FOREIGN KEY ("sport") REFERENCES "infrastructure"."Sports"("name") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "user_preferences"."User_hour_preferences" ADD CONSTRAINT "User_hour_preferences_user_uid_fkey" FOREIGN KEY ("user_uid") REFERENCES "auth"."Users"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "user_preferences"."User_hour_preferences" ADD CONSTRAINT "User_hour_preferences_user_uid_fkey" FOREIGN KEY ("user_uid") REFERENCES "auth"."Users"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "user_preferences"."User_game_mode_preferences" ADD CONSTRAINT "User_game_mode_preferences_user_uid_fkey" FOREIGN KEY ("user_uid") REFERENCES "auth"."Users"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "user_preferences"."User_game_mode_preferences" ADD CONSTRAINT "User_game_mode_preferences_sport_fkey" FOREIGN KEY ("sport") REFERENCES "infrastructure"."Sports"("name") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "user_preferences"."User_game_mode_preferences" ADD CONSTRAINT "User_game_mode_preferences_user_uid_sport_fkey" FOREIGN KEY ("user_uid", "sport") REFERENCES "user_preferences"."User_sports"("user_uid", "sport") ON DELETE CASCADE ON UPDATE CASCADE;
