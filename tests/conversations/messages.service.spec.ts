@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { MessagesService } from 'src/conversations/services/messages.service';
@@ -33,6 +33,8 @@ describe('MessagesService', () => {
       messages: {
         create: jest.fn(),
         findMany: jest.fn(),
+        findUnique: jest.fn(),
+        update: jest.fn(),
         updateMany: jest.fn(),
       },
     };
@@ -527,6 +529,119 @@ describe('MessagesService', () => {
       const result = await service.markMessagesAsRead(conversationUid, userUid);
 
       expect(result).toBe(0);
+    });
+  });
+
+  describe('delete', () => {
+    it('should soft-delete a message by setting globalStatus to DELETED when user is sender', async () => {
+      const messageUid = 'msg-123';
+      const userUid = 'user-123';
+
+      const mockMessage = {
+        uid: messageUid,
+        senderUid: userUid,
+        globalStatus: MessageStatus.SENT,
+      };
+
+      mockPrisma.messages.findUnique.mockResolvedValue(mockMessage);
+      mockPrisma.messages.update.mockResolvedValue({
+        uid: messageUid,
+        globalStatus: MessageStatus.DELETED,
+      });
+
+      await service.delete(messageUid, userUid);
+
+      expect(mockPrisma.messages.findUnique).toHaveBeenCalledWith({
+        where: { uid: messageUid },
+      });
+      expect(mockPrisma.messages.update).toHaveBeenCalledWith({
+        data: {
+          globalStatus: MessageStatus.DELETED,
+        },
+        where: { uid: messageUid },
+      });
+    });
+
+    it('should call prisma.messages.update with correct messageUid and userUid', async () => {
+      const messageUid = 'msg-456';
+      const userUid = 'user-456';
+
+      mockPrisma.messages.findUnique.mockResolvedValue({
+        uid: messageUid,
+        senderUid: userUid,
+        globalStatus: MessageStatus.SENT,
+      });
+      mockPrisma.messages.update.mockResolvedValue({});
+
+      await service.delete(messageUid, userUid);
+
+      expect(mockPrisma.messages.findUnique).toHaveBeenCalledWith({
+        where: { uid: 'msg-456' },
+      });
+      expect(mockPrisma.messages.update).toHaveBeenCalledWith({
+        data: { globalStatus: MessageStatus.DELETED },
+        where: { uid: 'msg-456' },
+      });
+    });
+
+    it('should return void on success', async () => {
+      const messageUid = 'msg-789';
+      const userUid = 'user-789';
+
+      mockPrisma.messages.findUnique.mockResolvedValue({
+        uid: messageUid,
+        senderUid: userUid,
+        globalStatus: MessageStatus.SENT,
+      });
+      mockPrisma.messages.update.mockResolvedValue({});
+
+      const result = await service.delete(messageUid, userUid);
+
+      expect(result).toBeUndefined();
+    });
+
+    it('should throw NotFoundException when message does not exist', async () => {
+      const messageUid = 'msg-not-found';
+      const userUid = 'user-123';
+
+      mockPrisma.messages.findUnique.mockResolvedValue(null);
+
+      await expect(service.delete(messageUid, userUid)).rejects.toThrow(NotFoundException);
+      await expect(service.delete(messageUid, userUid)).rejects.toThrow('Message not found');
+      expect(mockPrisma.messages.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw ForbiddenException when user is not the sender', async () => {
+      const messageUid = 'msg-123';
+      const userUid = 'user-other';
+      const senderUid = 'user-sender';
+
+      mockPrisma.messages.findUnique.mockResolvedValue({
+        uid: messageUid,
+        senderUid,
+        globalStatus: MessageStatus.SENT,
+      });
+
+      await expect(service.delete(messageUid, userUid)).rejects.toThrow(ForbiddenException);
+      await expect(service.delete(messageUid, userUid)).rejects.toThrow(
+        'You are not the sender of this message',
+      );
+      expect(mockPrisma.messages.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when message is already deleted', async () => {
+      const messageUid = 'msg-123';
+      const userUid = 'user-123';
+
+      mockPrisma.messages.findUnique.mockResolvedValue({
+        uid: messageUid,
+        senderUid: userUid,
+        globalStatus: MessageStatus.DELETED,
+      });
+
+      await expect(service.delete(messageUid, userUid)).rejects.toThrow(BadRequestException);
+      await expect(service.delete(messageUid, userUid)).rejects.toThrow('Message already deleted');
+      expect(mockPrisma.messages.update).not.toHaveBeenCalled();
     });
   });
 });

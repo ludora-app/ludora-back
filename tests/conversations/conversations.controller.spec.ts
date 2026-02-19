@@ -4,12 +4,14 @@ import { ConversationMembershipGuard } from 'src/conversations/guards/conversati
 import { ConversationsController } from 'src/conversations/conversations.controller';
 import { ConversationsService } from 'src/conversations/services/conversations.service';
 import { ConversationMembersService } from 'src/conversations/services/conversation-members.service';
+import { MessagesService } from 'src/conversations/services/messages.service';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
 
 describe('ConversationsController', () => {
   let controller: ConversationsController;
   let mockConversationsService: any;
   let mockMembersService: any;
+  let mockMessagesService: any;
 
   beforeEach(async () => {
     mockConversationsService = {
@@ -29,6 +31,10 @@ describe('ConversationsController', () => {
       updateDisplayMessagesAfterDeletion: jest.fn(),
     };
 
+    mockMessagesService = {
+      delete: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ConversationsController],
       providers: [
@@ -39,6 +45,10 @@ describe('ConversationsController', () => {
         {
           provide: ConversationMembersService,
           useValue: mockMembersService,
+        },
+        {
+          provide: MessagesService,
+          useValue: mockMessagesService,
         },
       ],
     })
@@ -661,6 +671,57 @@ describe('ConversationsController', () => {
         conversationUid,
         'user-789',
       );
+    });
+
+    it('should return void (no content) on success', async () => {
+      const mockRequest = { user: { uid: 'user-123' } } as any;
+      const conversationUid = 'conv-123';
+
+      mockMembersService.updateDisplayMessagesAfterDeletion.mockResolvedValue(undefined);
+
+      const result = await controller.remove(conversationUid, mockRequest);
+
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('deleteMessage', () => {
+    it('should call messagesService.delete with messageUid and userUid from request', async () => {
+      const mockRequest = { user: { uid: 'user-123' } } as any;
+      const conversationUid = 'conv-123';
+      const messageUid = 'msg-456';
+
+      mockMessagesService.delete.mockResolvedValue(undefined);
+
+      await controller.deleteMessage(conversationUid, messageUid, mockRequest);
+
+      expect(mockMessagesService.delete).toHaveBeenCalledWith(messageUid, 'user-123');
+      expect(mockMessagesService.delete).toHaveBeenCalledTimes(1);
+    });
+
+    it('should pass messageUid from route param and userUid from request to service', async () => {
+      const mockRequest = { user: { uid: 'user-456' } } as any;
+      const conversationUid = 'conv-any';
+      const messageUid = 'msg-to-delete';
+
+      mockMessagesService.delete.mockResolvedValue(undefined);
+
+      await controller.deleteMessage(conversationUid, messageUid, mockRequest);
+
+      expect(mockMessagesService.delete).toHaveBeenCalledWith('msg-to-delete', 'user-456');
+    });
+
+    it('should not pass conversationUid to messagesService.delete', async () => {
+      const mockRequest = { user: { uid: 'user-789' } } as any;
+      const conversationUid = 'conv-789';
+      const messageUid = 'msg-789';
+
+      mockMessagesService.delete.mockResolvedValue(undefined);
+
+      await controller.deleteMessage(conversationUid, messageUid, mockRequest);
+
+      expect(mockMessagesService.delete).toHaveBeenCalledWith(messageUid, 'user-789');
+      expect(mockMessagesService.delete).not.toHaveBeenCalledWith(conversationUid);
     });
   });
 
