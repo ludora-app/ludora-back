@@ -16,6 +16,7 @@ import {
 export interface RawUserFindOne {
   bio: string;
   uid: string;
+  city: string;
   imageUrl: string;
   lastname: string;
   firstname: string;
@@ -69,6 +70,7 @@ export class UserMapper {
   static toFindOneResponseDto(user: RawUserFindOne): FindOneUserResponseData {
     return {
       bio: user.bio,
+      city: user.city,
       firstname: user.firstname,
       friendsCount: user._count.friendsReceived + user._count.friendsSent,
       imageUrl: user.imageUrl,
@@ -87,6 +89,7 @@ export class UserMapper {
       active: user.isConnected,
       bio: user.bio,
       birthdate: user.birthdate,
+      city: user.city,
       email: user.email,
       firstname: user.firstname,
       friendsCount: user._count.friendsReceived + user._count.friendsSent,

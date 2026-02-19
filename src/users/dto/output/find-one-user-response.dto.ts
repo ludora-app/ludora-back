@@ -34,6 +34,9 @@ export class FindOneUserResponseData {
 
   @ApiProperty({ example: 12, readOnly: true })
   readonly matchesCount?: number;
+
+  @ApiProperty({ example: 'Paris', nullable: true, readOnly: true })
+  readonly city?: string;
 }
 
 export class FindMeUserResponseData extends FindOneUserResponseData {
