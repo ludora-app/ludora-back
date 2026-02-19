@@ -132,19 +132,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: CreateMessageDto,
-  ): Promise<{ conversationUid: string; messageUid: string }> {
+  ): Promise<{
+    data: { conversationUid: string; messageUid: string } | null;
+    error: any;
+  }> {
     try {
       const userUid = client.data.userUid;
 
       if (!userUid) {
-        client.emit('error', {
-          code: 'UNAUTHORIZED',
-          message: 'Unauthorized',
-        });
-        return;
+        return {
+          data: null,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Unauthorized',
+          },
+        };
       }
 
-      this.logger.warn('content', data.content);
+      // DEV ONLY: simulate an error for frontend testing only on dev environment
+      if (data.content === 'Error' && process.env.NODE_ENV !== 'production') {
+        throw new Error('Simulated error for testing');
+      }
 
       // Create message - the service handles finding/creating conversations
       const { conversationUid, messageUid } = await this.conversationsService.createMessage(
@@ -163,9 +171,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
       }
 
-      // Broadcast to all users in the conversation room
+      // Broadcast to all users in the conversation room EXCEPT the sender
+      // (the sender already receives their own 'notification' event above)
       const conversationRoom = `conversation:${conversationUid}`;
-      this.server.to(conversationRoom).emit('newMessage', {
+      client.to(conversationRoom).emit('newMessage', {
         conversationUid,
       });
 
@@ -180,15 +189,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.logger.debug(`Emitted messageSent event to sender with messageUid: ${messageUid}`);
 
       return {
-        conversationUid,
-        messageUid,
+        data: {
+          conversationUid,
+          messageUid,
+        },
+        error: null,
       };
     } catch (error) {
       this.logger.error(`Error sending message: ${error.message}`);
-      client.emit('error', {
-        code: 'MESSAGE_SEND_FAILED',
-        message: error.message || 'Failed to send message',
-      });
+      return {
+        data: null,
+        error: {
+          code: 'MESSAGE_SEND_FAILED',
+          message: error.message || 'Failed to send message',
+        },
+      };
     }
   }
 
