@@ -49,6 +49,7 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     },
     bio: true,
     birthdate: true,
+    city: true,
     email: true,
     firstname: true,
     imageUrl: true,
@@ -90,6 +91,7 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
       },
     },
     bio: true,
+    city: true,
     firstname: true,
     imageUrl: true,
     lastname: true,
@@ -109,6 +111,7 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
   },
 
   findOneByEmail: {
+    city: true,
     email: true,
     firstname: true,
     imageUrl: true,

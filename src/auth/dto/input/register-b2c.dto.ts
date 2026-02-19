@@ -2,12 +2,14 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Sex, UserType } from 'generated/prisma/client';
 import { IsStrongPassword } from 'src/users/validators/password.validator';
 import {
+  IsAlpha,
   IsDateString,
   IsEmail,
   IsEnum,
   IsOptional,
   IsPhoneNumber,
   IsString,
+  MaxLength,
   MinLength,
   Validate,
   ValidateIf,
@@ -16,13 +18,11 @@ import {
 export class RegisterB2CDto {
   @IsEnum(UserType)
   @ApiProperty({
-    description: 'user type (USER or ADMIN)',
+    description: 'type of the user',
     enum: UserType,
     example: UserType.USER,
   })
   readonly type: UserType;
-
-  // Propriétés communes
 
   @IsString()
   @IsEmail()
@@ -38,7 +38,7 @@ export class RegisterB2CDto {
   @IsString()
   @IsOptional()
   @ApiProperty({
-    description: 'firstname of user',
+    description: 'firstname of the user',
     example: 'Doe',
   })
   readonly firstname?: string;
@@ -46,7 +46,7 @@ export class RegisterB2CDto {
   @IsString()
   @IsOptional()
   @ApiProperty({
-    description: 'lastname of user',
+    description: 'lastname of the user',
     example: 'Doe',
   })
   readonly lastname?: string;
@@ -68,7 +68,7 @@ export class RegisterB2CDto {
   @ValidateIf((dto) => dto.type === UserType.USER)
   @IsDateString()
   @ApiProperty({
-    description: 'birthdate of user',
+    description: 'birthdate of the user',
     example: '1990-01-01',
     format: 'date',
     type: 'string',
@@ -79,12 +79,24 @@ export class RegisterB2CDto {
   @IsEnum(Sex, { message: 'Unknown Sex' })
   @IsOptional()
   @ApiProperty({
-    description: 'sex of user',
+    description: 'sex of the user',
     enum: Sex,
     example: ['MALE', 'FEMALE', 'OTHER'],
     required: false,
   })
   readonly sex?: Sex;
+
+  @IsString()
+  @IsAlpha('fr-FR')
+  @MaxLength(50)
+  @MinLength(2)
+  @IsOptional()
+  @ApiProperty({
+    description: 'city of the user',
+    example: 'Paris',
+    required: false,
+  })
+  readonly city?: string;
 }
 
 export class RegisterB2CWithFileDto extends RegisterB2CDto {

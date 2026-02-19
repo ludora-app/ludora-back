@@ -533,6 +533,7 @@ describe('UsersService', () => {
           imageUrl: true,
           lastname: true,
           provider: true,
+          city: true,
           uid: true,
         },
         where: { email: 'test@test.com' },

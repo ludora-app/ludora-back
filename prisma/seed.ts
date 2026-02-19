@@ -1220,6 +1220,10 @@ async function seed() {
     console.log('Field slots already exist, skipping creation');
   }
 
+  const userCities = ['Paris', 'Créteil', 'Clichy', 'Saint-Denis'];
+  const getRandomUserCity = () =>
+    userCities[Math.floor(Math.random() * userCities.length)];
+
   const users = [
     {
       email: 'seto.kaiba@hotmail.fr',
@@ -1408,7 +1412,10 @@ async function seed() {
       phone: '+33609032667',
       imageUrl: '1738433236109explore2.png',
     },
-  ];
+  ].map((user) => ({
+    ...user,
+    city: getRandomUserCity(),
+  }));
 
   // Generate 100+ additional users
   const additionalUsers = [];
@@ -1722,6 +1729,7 @@ async function seed() {
         .toString()
         .padStart(8, '0')}`,
       imageUrl: '1738433236109explore2.png',
+      city: getRandomUserCity(),
     });
   }
 
