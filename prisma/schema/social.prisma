@@ -4,6 +4,7 @@ enum MessageStatus {
   SENT
   DELIVERED
   READ
+  DELETED
 
   @@map("MessageStatus")
   @@schema("social")
@@ -47,7 +48,6 @@ model Messages {
   conversationUid String        @map("conversation_uid")
   senderUid       String        @map("sender_uid")
   content         String
-  // status          MessageStatus @default(SENT)
   globalStatus    MessageStatus @default(SENT) @map("global_status")
   type            MessageType
   createdAt       DateTime      @default(now()) @map("created_at")

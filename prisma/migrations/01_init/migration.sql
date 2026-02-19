@@ -56,7 +56,7 @@ CREATE TYPE "sessions"."session_visibility" AS ENUM ('PUBLIC', 'PRIVATE');
 CREATE TYPE "shared"."InvitationStatus" AS ENUM ('PENDING', 'ACCEPTED', 'REJECTED', 'CANCELED');
 
 -- CreateEnum
-CREATE TYPE "social"."MessageStatus" AS ENUM ('SENT', 'DELIVERED', 'READ');
+CREATE TYPE "social"."MessageStatus" AS ENUM ('SENT', 'DELIVERED', 'READ', 'DELETED');
 
 -- CreateEnum
 CREATE TYPE "social"."Message_type" AS ENUM ('TEXT', 'IMAGE', 'VIDEO', 'AUDIO');

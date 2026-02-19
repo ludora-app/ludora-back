@@ -1,12 +1,17 @@
 import { PinoLogger } from 'nestjs-pino';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
 import { StorageFolderName } from 'src/shared/constants/constants';
 import { MessageStatus, MessageType } from 'generated/prisma/enums';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { EventTypes } from 'src/notifications/constants/event.types';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { MessageMapper } from '../mappers/message.mapper';
 import { MessageCollectionItemDto } from '../dto/output/message-collection-response.dto';
@@ -305,6 +310,30 @@ export class MessagesService {
         status: MessageStatus.SENT,
         userUid: senderUid,
       },
+    });
+  }
+
+  async delete(messageUid: string, userUid: string): Promise<void> {
+    const message = await this.prisma.messages.findUnique({
+      where: { uid: messageUid },
+    });
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+
+    if (message.senderUid !== userUid) {
+      throw new ForbiddenException('You are not the sender of this message');
+    }
+
+    if (message.globalStatus === MessageStatus.DELETED) {
+      throw new BadRequestException('Message already deleted');
+    }
+
+    await this.prisma.messages.update({
+      data: {
+        globalStatus: MessageStatus.DELETED,
+      },
+      where: { uid: messageUid },
     });
   }
 }

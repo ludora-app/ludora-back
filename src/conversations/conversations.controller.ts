@@ -38,6 +38,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 
+import { MessagesService } from './services/messages.service';
 import { CreateMessageDto } from './dto/input/create-message.dto';
 import { ConversationsService } from './services/conversations.service';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
@@ -70,6 +71,7 @@ export class ConversationsController {
   constructor(
     private readonly conversationsService: ConversationsService,
     private readonly membersService: ConversationMembersService,
+    private readonly messagesService: MessagesService,
   ) {}
 
   // @Post()
@@ -274,5 +276,23 @@ export class ConversationsController {
   remove(@Param('uid') conversationUid: string, @Req() request: FastifyRequest) {
     const userUid = request['user'].uid;
     return this.membersService.updateDisplayMessagesAfterDeletion(conversationUid, userUid);
+  }
+
+  @Delete(':uid/messages/:messageUid')
+  @UseGuards(ConversationMembershipGuard)
+  @Protected()
+  @ApiOperation({ summary: 'Delete a message from a conversation' })
+  @ApiNoContentResponse({ description: 'Message deleted successfully' })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiForbiddenResponse({ type: ForbiddenResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteMessage(
+    @Param('uid') _conversationUid: string,
+    @Param('messageUid') messageUid: string,
+    @Req() request: FastifyRequest,
+  ) {
+    const userUid = request['user'].uid;
+    return this.messagesService.delete(messageUid, userUid);
   }
 }
