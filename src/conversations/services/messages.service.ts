@@ -75,6 +75,11 @@ export class MessagesService {
       where: { uid: conversationUid },
     });
 
+    await this.prisma.conversations.update({
+      data: { updatedAt: now },
+      where: { uid: conversationUid },
+    });
+
     const membersUids = await this.getOtherMembersUids(conversationUid, senderUid);
     await this.createMessageReceipt(message.uid, membersUids, senderUid);
 
