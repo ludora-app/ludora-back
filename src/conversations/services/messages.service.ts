@@ -233,12 +233,19 @@ export class MessagesService {
       }),
     });
 
+    const hasMore = messages.length > limit;
+    const paginatedMessages = hasMore ? messages.slice(0, limit) : messages;
+
+    // paginatedMessages is in DESC order (newest first)
+    // The oldest message is the last element, which becomes the nextCursor
+    const nextCursor = hasMore ? paginatedMessages[paginatedMessages.length - 1].uid : null;
+
     return {
-      items: messages
+      items: paginatedMessages
         .reverse()
         .map((message) => MessageMapper.toCollectionItemDto(message, userUid)),
-      nextCursor: messages.length > limit ? messages[limit].uid : null,
-      totalCount: messages.length,
+      nextCursor,
+      totalCount: paginatedMessages.length,
     };
   }
 
