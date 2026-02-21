@@ -21,6 +21,9 @@ describe('SportPreferencesService', () => {
     };
 
     const mockPrismaService = {
+      users: {
+        findUnique: jest.fn(),
+      },
       userSportPreferences: {
         findFirst: jest.fn(),
         findMany: jest.fn(),
@@ -97,7 +100,7 @@ describe('SportPreferencesService', () => {
         },
       ];
 
-      (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.users.findUnique as jest.Mock).mockResolvedValue({ uid: mockUser.uid });
       (prismaService.userSportPreferences.findMany as jest.Mock).mockResolvedValue(mockPreferences);
 
       const result = await service.findAllByUserUid(userUid);
@@ -126,7 +129,10 @@ describe('SportPreferencesService', () => {
         nextCursor: null,
         totalCount: 3,
       });
-      expect(usersService.findOne).toHaveBeenCalledWith(userUid, expect.any(Object));
+      expect(prismaService.users.findUnique).toHaveBeenCalledWith({
+        select: { uid: true },
+        where: { uid: userUid },
+      });
       expect(prismaService.userSportPreferences.findMany).toHaveBeenCalledWith({
         select: {
           level: true,
@@ -144,7 +150,7 @@ describe('SportPreferencesService', () => {
     });
 
     it('should return empty array when user has no sport preferences', async () => {
-      (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.users.findUnique as jest.Mock).mockResolvedValue({ uid: mockUser.uid });
       (prismaService.userSportPreferences.findMany as jest.Mock).mockResolvedValue([]);
 
       const result = await service.findAllByUserUid(userUid);
@@ -171,7 +177,7 @@ describe('SportPreferencesService', () => {
     });
 
     it('should throw NotFoundException when user does not exist', async () => {
-      (usersService.findOne as jest.Mock).mockResolvedValue(null);
+      (prismaService.users.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.findAllByUserUid(userUid)).rejects.toThrow(
         new NotFoundException('User not found'),

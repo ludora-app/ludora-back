@@ -1181,8 +1181,8 @@ async function seed() {
     const createdSlots = [];
 
     for (const field of privateFields) {
-      // Créer des créneaux pour les 30 prochains jours
-      for (let day = 0; day < 30; day++) {
+      // Créer des créneaux : 14 jours dans le passé jusqu'à 30 jours dans le futur
+      for (let day = -14; day < 30; day++) {
         const slotDate = new Date(today);
         slotDate.setDate(today.getDate() + day);
 
@@ -1888,9 +1888,10 @@ async function seed() {
     console.log('Creating 100 sessions for PUBLIC fields (free) without slots...');
 
     for (let i = 0; i < 100; i++) {
-      const daysAhead = Math.floor(Math.random() * 30) + 1; // 1-30 jours
+      // -14 à +30 jours : une partie des sessions sera dans le passé
+      const daysOffset = Math.floor(Math.random() * 45) - 14; // -14 à +30 jours
       const startDate = new Date(today);
-      startDate.setDate(today.getDate() + daysAhead);
+      startDate.setDate(today.getDate() + daysOffset);
       startDate.setHours(10 + Math.floor(Math.random() * 10), 0, 0, 0); // 10h-20h
 
       const endDate = new Date(startDate);
@@ -1931,7 +1932,8 @@ async function seed() {
     // avec des horaires et durées variées
     console.log('Creating specific sessions for public fields with varied times and durations...');
     const specificFieldUids = ['cmjpyq9ok000j57po1wk8y0mi', 'cmjpyq9om000l57pohqm85tqy'];
-    const days = [0, 1]; // 0 = aujourd'hui, 1 = demain
+    // Inclure des jours passés (-2, -1), aujourd'hui (0) et demain (1)
+    const days = [-2, -1, 0, 1];
 
     for (const fieldUid of specificFieldUids) {
       const field = createdFields.find((f) => f.uid === fieldUid);
@@ -1958,7 +1960,13 @@ async function seed() {
           const gameMode = sportGameModes[j % sportGameModes.length];
           const { maxPlayersPerTeam, minPlayersPerTeam } = getPlayersPerTeamData(gameMode);
 
-          const dayLabel = dayOffset === 0 ? "aujourd'hui" : 'demain';
+          const dayLabels: Record<number, string> = {
+            [-2]: "il y a 2 jours",
+            [-1]: 'hier',
+            0: "aujourd'hui",
+            1: 'demain',
+          };
+          const dayLabel = dayLabels[dayOffset] ?? `J${dayOffset}`;
 
           const createdSession = await prisma.sessions.create({
             data: {
@@ -2160,7 +2168,7 @@ async function seed() {
     });
 
     // Créer la conversation de session
-    const groupConversation = await prisma.conversations.upsert({
+    const sessionConversation = await prisma.conversations.upsert({
       where: { sessionUid: session.uid },
       update: {
         name: session.title || `Session ${session.sport}`,
@@ -2177,7 +2185,7 @@ async function seed() {
       await prisma.conversationMembers.upsert({
         where: {
           conversationUid_userUid: {
-            conversationUid: groupConversation.uid,
+            conversationUid: sessionConversation.uid,
             userUid: userUid,
           },
         },
@@ -2185,7 +2193,7 @@ async function seed() {
           isAdmin: userUid === session.creatorUid,
         },
         create: {
-          conversationUid: groupConversation.uid,
+          conversationUid: sessionConversation.uid,
           userUid: userUid,
           isAdmin: userUid === session.creatorUid, // Le créateur est admin
         },

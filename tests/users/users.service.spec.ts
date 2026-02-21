@@ -38,6 +38,7 @@ describe('UsersService', () => {
       findFirst: jest.fn(),
       delete: jest.fn(),
     },
+    $queryRaw: jest.fn(),
     $transaction: jest.fn((callback) => callback(mockPrismaService)),
   };
 
@@ -138,13 +139,14 @@ describe('UsersService', () => {
   });
 
   describe('findAll', () => {
+    const connectedUserUid = 'connected-uid';
+
     it('should return a list of users', async () => {
       const mockUsers = [
         {
           uid: '1',
           firstname: 'John',
           lastname: 'Doe',
-          email: 'john@example.com',
           imageUrl: '',
           userSportPreferences: [
             { uid: 'sp1', sport: 'BASKETBALL', level: 3 },
@@ -155,16 +157,22 @@ describe('UsersService', () => {
           uid: '2',
           firstname: 'Jane',
           lastname: 'Doe',
-          email: 'jane@example.com',
           imageUrl: '',
           userSportPreferences: [{ uid: 'sp3', sport: 'TENNIS', level: 4 }],
         },
       ];
 
+      mockPrismaService.users.findUnique.mockResolvedValueOnce({
+        city: 'Paris',
+        userSportPreferences: [{ sport: 'BASKETBALL', level: 3 }],
+      });
+      mockPrismaService.$queryRaw.mockResolvedValueOnce([
+        { uid: '1', score: 1000, total_count: BigInt(2) },
+        { uid: '2', score: 500, total_count: BigInt(2) },
+      ]);
       mockPrismaService.users.findMany.mockResolvedValueOnce(mockUsers);
-      mockPrismaService.users.count.mockResolvedValueOnce(2);
 
-      const result = await service.findAll({ limit: 10 });
+      const result = await service.findAll({ limit: 10 }, connectedUserUid);
 
       expect(result.items.length).toBe(2);
       expect(result.items[0].uid).toBe('1');
@@ -181,7 +189,6 @@ describe('UsersService', () => {
           uid: '1',
           firstname: 'John',
           lastname: 'Doe',
-          email: 'john@example.com',
           imageUrl: '',
           userSportPreferences: [{ uid: 'sp1', sport: 'BASKETBALL', level: 3 }],
         },
@@ -189,28 +196,50 @@ describe('UsersService', () => {
           uid: '2',
           firstname: 'Jane',
           lastname: 'Doe',
-          email: 'jane@example.com',
           imageUrl: '',
           userSportPreferences: [{ uid: 'sp2', sport: 'FOOTBALL', level: 2 }],
         },
-        {
-          uid: '3',
-          firstname: 'Bob',
-          lastname: 'Smith',
-          email: 'bob@example.com',
-          imageUrl: '',
-          userSportPreferences: [{ uid: 'sp3', sport: 'TENNIS', level: 4 }],
-        },
       ];
 
+      mockPrismaService.users.findUnique.mockResolvedValueOnce({
+        city: null,
+        userSportPreferences: [{ sport: 'BASKETBALL', level: 3 }],
+      });
+      mockPrismaService.$queryRaw.mockResolvedValueOnce([
+        { uid: '1', score: 1000, total_count: BigInt(3) },
+        { uid: '2', score: 500, total_count: BigInt(3) },
+        { uid: '3', score: 200, total_count: BigInt(3) },
+      ]);
       mockPrismaService.users.findMany.mockResolvedValueOnce(mockUsers);
-      mockPrismaService.users.count.mockResolvedValueOnce(3);
 
-      const result = await service.findAll({ limit: 2 });
+      const result = await service.findAll({ limit: 2 }, connectedUserUid);
 
       expect(result.items.length).toBe(2);
-      expect(result.nextCursor).toBe('3');
+      expect(result.nextCursor).toBe('2');
       expect(result.totalCount).toBe(3);
+    });
+
+    it('should return empty when connected user has no sports, no city and no name filter', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce({
+        city: null,
+        userSportPreferences: [],
+      });
+
+      const result = await service.findAll({ limit: 10 }, connectedUserUid);
+
+      expect(result.items).toEqual([]);
+      expect(result.nextCursor).toBeNull();
+      expect(result.totalCount).toBe(0);
+      expect(mockPrismaService.$queryRaw).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when connected user does not exist', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
+
+      await expect(service.findAll({ limit: 10 }, 'unknown-uid')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockPrismaService.$queryRaw).not.toHaveBeenCalled();
     });
   });
 

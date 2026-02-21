@@ -1,10 +1,10 @@
 import * as argon2 from 'argon2';
 import { PinoLogger } from 'nestjs-pino';
 import { CreateImageDto } from 'src/auth/dto';
-import { Users } from 'generated/prisma/client';
+import { Provider } from 'generated/prisma/browser';
+import { Prisma, Users } from 'generated/prisma/client';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma, Provider } from 'generated/prisma/browser';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { StorageFolderName } from 'src/shared/constants/constants';
 import { StorageService } from 'src/shared/storage/storage.service';
@@ -19,6 +19,7 @@ import {
 
 import { USERSELECT } from '../shared/constants/select-user';
 import { RawUserFindAll, UserMapper } from './mappers/user.mapper';
+import { USER_SUGGESTION_CONFIG } from './constants/users.constants';
 import {
   CreateUserDto,
   FindAllUsersResponseDataDto,
@@ -87,61 +88,205 @@ export class UsersService {
     return newUser;
   }
 
-  async findAll(filters: UserFilterDto): Promise<PaginatedDataDto<FindAllUsersResponseDataDto>> {
-    const { cursor, limit, name } = filters;
+  /**
+   * Returns a paginated, ranked list of users based on shared sports, city, level match, and name search.
+   *
+   * Numeric score constants are wrapped with `Prisma.raw()` instead of being interpolated directly.
+   * When a JS number is interpolated into `Prisma.sql`, it becomes a bound parameter (`$1`) whose type
+   * PostgreSQL must infer from context. In expressions like `COUNT(*) * $1`, `COUNT(*)` returns `bigint`
+   * and PostgreSQL cannot resolve the type of `$1`, falling back to `text` — causing the error
+   * `operator does not exist: bigint * text`. `Prisma.raw()` embeds the value as a SQL literal instead,
+   * which is safe here because these values come from internal constants, not user input.
+   */
+  async findAll(
+    filters: UserFilterDto,
+    userUid: string,
+  ): Promise<PaginatedDataDto<FindAllUsersResponseDataDto>> {
+    const {
+      cursor,
+      levels: filterLevels = [],
+      limit = 10,
+      name,
+      sports: filterSports = [],
+    } = filters;
 
-    const query = {
+    const connectedUser = await this.prismaService.users.findUnique({
       select: {
-        email: true,
+        city: true,
+        userSportPreferences: { select: { level: true, sport: true } },
+      },
+      where: { uid: userUid },
+    });
+
+    if (!connectedUser) throw new NotFoundException('User not found');
+
+    const currentOffset = cursor ? parseInt(cursor, 10) : 0;
+    const take = limit + 1;
+
+    // -------------------------------------------------------------------------
+    // 1. SPORTS — scoring & strict filtering
+    // -------------------------------------------------------------------------
+    const isFilteringSports = filterSports.length > 0;
+    const connectedUserSports = connectedUser.userSportPreferences.map((p) => p.sport);
+    const sportsToScore = isFilteringSports ? filterSports : connectedUserSports;
+    const hasSportsToScore = sportsToScore.length > 0;
+
+    // +SPORT_SCORE_PER_MATCH per sport the other player shares with me (or with the filter)
+    const sportScoreSql = hasSportsToScore
+      ? Prisma.sql`COALESCE((
+          SELECT COUNT(*) * ${Prisma.raw(USER_SUGGESTION_CONFIG.SCORES.SPORT_SCORE_PER_MATCH.toString())}
+          FROM user_preferences."User_sports" usp_score
+          WHERE usp_score.user_uid = u.uid
+            AND usp_score.sport::text IN (${Prisma.join(sportsToScore)})
+        ), 0)`
+      : Prisma.sql`0`;
+
+    // strict: only keep users who practice at least one of the requested sports
+    let sportWhereSql = Prisma.empty;
+    if (isFilteringSports) {
+      sportWhereSql = Prisma.sql`
+        AND EXISTS (
+          SELECT 1 FROM user_preferences."User_sports" usp_f
+          WHERE usp_f.user_uid = u.uid
+            AND usp_f.sport::text IN (${Prisma.join(filterSports)})
+        )`;
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. LEVELS — strict filtering
+    // -------------------------------------------------------------------------
+    let levelWhereSql = Prisma.empty;
+    if (filterLevels.length > 0) {
+      levelWhereSql = Prisma.sql`
+        AND EXISTS (
+          SELECT 1 FROM user_preferences."User_sports" usp_l
+          WHERE usp_l.user_uid = u.uid
+            AND usp_l.level IN (${Prisma.join(filterLevels.map((l) => Prisma.sql`${l}`))})
+        )`;
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. CITY — +CITY_BONUS if same city as connected user
+    // -------------------------------------------------------------------------
+    const hasCity = !!connectedUser.city;
+    const cityScoreSql = hasCity
+      ? Prisma.sql`CASE WHEN u.city = ${connectedUser.city} THEN ${Prisma.raw(USER_SUGGESTION_CONFIG.SCORES.CITY_BONUS.toString())} ELSE 0 END`
+      : Prisma.sql`0`;
+
+    // -------------------------------------------------------------------------
+    // 4. LEVEL MATCH — +LEVEL_MATCH_SCORE_PER_PAIR per (sport, level) pair shared with connected user
+    // -------------------------------------------------------------------------
+    const connectedUserSportPrefs = connectedUser.userSportPreferences;
+    let levelMatchScoreSql = Prisma.sql`0`;
+    if (connectedUserSportPrefs.length > 0) {
+      const levelConditions = connectedUserSportPrefs.map(
+        (p) => Prisma.sql`(usp_lvl.sport::text = ${p.sport} AND usp_lvl.level = ${p.level})`,
+      );
+      levelMatchScoreSql = Prisma.sql`COALESCE((
+        SELECT COUNT(*) * ${Prisma.raw(USER_SUGGESTION_CONFIG.SCORES.LEVEL_MATCH_SCORE_PER_PAIR.toString())}
+        FROM user_preferences."User_sports" usp_lvl
+        WHERE usp_lvl.user_uid = u.uid
+          AND (${Prisma.join(levelConditions, ' OR ')})
+      ), 0)`;
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. SEARCH — filter + score by first name / last name
+    // -------------------------------------------------------------------------
+    let searchWhereSql = Prisma.empty;
+    let searchScoreSql = Prisma.sql`0`;
+    if (name) {
+      const searchPattern = `%${name.replace(/\s+/g, '')}%`;
+      searchWhereSql = Prisma.sql`
+        AND (
+          word_similarity(${name}, u.firstname) > ${Prisma.raw(USER_SUGGESTION_CONFIG.THRESHOLDS.WORD_SIMILARITY_THRESHOLD.toString())} OR
+          word_similarity(${name}, u.lastname) > ${Prisma.raw(USER_SUGGESTION_CONFIG.THRESHOLDS.WORD_SIMILARITY_THRESHOLD.toString())} OR
+          u.firstname ILIKE ${searchPattern}
+          OR u.lastname ILIKE ${searchPattern}
+          OR (u.firstname || ' ' || u.lastname) ILIKE ${searchPattern}
+        )`;
+      searchScoreSql = Prisma.sql`
+        CASE
+          WHEN u.firstname ILIKE ${searchPattern} OR u.lastname ILIKE ${searchPattern} THEN ${Prisma.raw(USER_SUGGESTION_CONFIG.SCORES.SEARCH_EXACT_BONUS.toString())}
+          ELSE ${Prisma.raw(USER_SUGGESTION_CONFIG.SCORES.SEARCH_PARTIAL_BONUS.toString())}
+        END`;
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. SAFETY BARRIER — require at least one scoring dimension
+    // -------------------------------------------------------------------------
+    if (!hasSportsToScore && !hasCity && !name) {
+      return { items: [], nextCursor: null, totalCount: 0 };
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. EXECUTE RAW QUERY
+    // -------------------------------------------------------------------------
+    const rankedUsers = await this.prismaService.$queryRaw<
+      { uid: string; score: number; total_count: bigint }[]
+    >`
+      SELECT
+        ranked_users.*,
+        count(*) OVER() AS total_count
+      FROM (
+        SELECT
+          u.uid,
+          (
+            (${sportScoreSql}) +
+            (${cityScoreSql}) +
+            (${levelMatchScoreSql}) +
+            (${searchScoreSql})
+          ) AS score
+        FROM auth."Users" u
+        WHERE
+          u.uid != ${userUid}
+          ${sportWhereSql}
+          ${levelWhereSql}
+          ${searchWhereSql}
+      ) AS ranked_users
+      ORDER BY ranked_users.score DESC, ranked_users.uid ASC
+      LIMIT ${take}
+      OFFSET ${currentOffset}
+    `;
+
+    // -------------------------------------------------------------------------
+    // 8. HYDRATION & RETURN
+    // -------------------------------------------------------------------------
+    if (!rankedUsers || rankedUsers.length === 0) {
+      return { items: [], nextCursor: null, totalCount: 0 };
+    }
+
+    const totalCount = Number(rankedUsers[0].total_count);
+    let nextCursor: string | null = null;
+    let itemsToFetch = rankedUsers;
+
+    if (rankedUsers.length > limit) {
+      itemsToFetch = rankedUsers.slice(0, limit);
+      nextCursor = (currentOffset + limit).toString();
+    }
+
+    const userUids = itemsToFetch.map((r) => r.uid);
+    const users = await this.prismaService.users.findMany({
+      select: {
         firstname: true,
         imageUrl: true,
         lastname: true,
         uid: true,
-        userSportPreferences: {
-          select: {
-            level: true,
-            sport: true,
-            uid: true,
-          },
-        },
+        userSportPreferences: { select: { level: true, sport: true, uid: true } },
       },
-    };
+      where: { uid: { in: userUids } },
+    });
 
-    if (name) {
-      query['where'] = {
-        OR: [
-          { firstname: { contains: name, mode: 'insensitive' } },
-          { lastname: { contains: name, mode: 'insensitive' } },
-        ],
-      };
-    }
-
-    if (limit) {
-      query['take'] = limit + 1;
-    }
-
-    if (cursor) {
-      query['cursor'] = cursor;
-    }
-
-    const rawUsers = await this.prismaService.users.findMany(query);
-    const users = rawUsers.map((user) =>
-      UserMapper.toFindAllResponseDto(user as unknown as RawUserFindAll),
+    const uidToIndex = new Map(itemsToFetch.map((item, idx) => [item.uid, idx]));
+    const sortedUsers = [...users].sort(
+      (a, b) => (uidToIndex.get(a.uid) ?? 999) - (uidToIndex.get(b.uid) ?? 999),
     );
 
-    let nextCursor: string | null = null;
-    if (users.length > limit) {
-      const nextItem = users.pop();
-      nextCursor = nextItem.uid;
-    }
+    const items = sortedUsers.map((user) =>
+      UserMapper.toFindAllResponseDto(user as RawUserFindAll),
+    );
 
-    const totalCount = await this.prismaService.users.count();
-
-    return {
-      items: users,
-      nextCursor,
-      totalCount,
-    };
+    return { items, nextCursor, totalCount };
   }
 
   async findOne(uid: string, select: Prisma.UsersSelect): Promise<Users> {
