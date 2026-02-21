@@ -65,8 +65,14 @@ export class MessageMapper {
 
     const hasAnyRead = messageReceipts.some((r) => r.status === MessageStatus.READ);
 
-    const hasEveryoneRead = messageReceipts.every((r) => r.status === MessageStatus.READ);
-
+    //? -1 because the sender's receipt is not included in the count
+    const hasEveryoneRead =
+      messageReceipts.length - 1 ===
+      messageReceipts.filter((r) => r.status === MessageStatus.READ).length;
+    console.log(
+      messageReceipts.length - 1,
+      messageReceipts.filter((r) => r.status === MessageStatus.READ).length,
+    );
     return { hasAnyRead, hasEveryoneRead };
   }
 }
