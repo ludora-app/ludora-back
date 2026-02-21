@@ -1,9 +1,11 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { UserSimpleDisplayDataDto } from 'src/users/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma, SessionPlayers } from 'generated/prisma/client';
 import { EventTypes } from 'src/notifications/constants/event.types';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
 import { ConversationMembersService } from './../../conversations/services/conversation-members.service';
@@ -97,5 +99,48 @@ export class SessionPlayersService {
     return this.prisma.sessionPlayers.findFirst({
       where: { sessionUid: sessionUid, userUid: userUid },
     });
+  }
+
+  async suggestPlayerFromPreviousSessions(
+    userUid: string,
+  ): Promise<PaginatedDataDto<UserSimpleDisplayDataDto>> {
+    const previousSessions = await this.prisma.sessions.findMany({
+      select: {
+        sessionPlayers: {
+          select: {
+            user: {
+              select: {
+                firstname: true,
+                imageUrl: true,
+                lastname: true,
+                uid: true,
+              },
+            },
+          },
+        },
+      },
+      take: 5,
+      where: {
+        endDate: {
+          gte: new Date(),
+        },
+        sessionPlayers: {
+          some: {
+            userUid: userUid,
+          },
+        },
+      },
+    });
+
+    let suggestedPlayers = [];
+    for (const session of previousSessions) {
+      for (const player of session.sessionPlayers) {
+        suggestedPlayers.push(player.user);
+      }
+    }
+
+    //? we only want to return 20 suggestions max
+    if (suggestedPlayers.length > 20) suggestedPlayers = suggestedPlayers.slice(0, 20);
+    return { items: suggestedPlayers, nextCursor: null, totalCount: suggestedPlayers.length };
   }
 }
