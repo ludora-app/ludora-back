@@ -335,12 +335,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const count = await this.messagesService.markMessagesAsRead(conversationUid, userUid);
 
       const conversationRoom = `conversation:${conversationUid}`;
-      this.server.to(conversationRoom).emit('notification', {
-        conversationUid,
-        message: `${userUid} marked ${count} messages from ${conversationUid} as read`,
-        type: NotificationType.MESSAGES_READ,
-        userUid,
-      });
+
+      if (count > 0) {
+        this.server.to(conversationRoom).emit('notification', {
+          conversationUid,
+          message: `${userUid} marked ${count} messages from ${conversationUid} as read`,
+          type: NotificationType.MESSAGES_READ,
+          userUid,
+        });
+      }
 
       this.logger.debug(
         `[Event] User ${userUid} marked ${count} messages as read in ${conversationUid}`,

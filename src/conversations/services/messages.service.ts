@@ -268,18 +268,30 @@ export class MessagesService {
       },
     });
 
-    const result = await this.prisma.messages.updateMany({
-      data: {
-        globalStatus: MessageStatus.READ,
-      },
+    const targetMessages = await this.prisma.messages.findMany({
+      select: { senderUid: true, uid: true },
       where: {
         conversationUid,
-        globalStatus: {
-          not: MessageStatus.READ,
-        },
-        senderUid: {
-          not: userUid,
-        },
+        globalStatus: { not: MessageStatus.READ },
+        senderUid: { not: userUid },
+      },
+    });
+
+    const messages: { uid: string; senderUid: string }[] = targetMessages.map((message) => ({
+      senderUid: message.senderUid,
+      uid: message.uid,
+    }));
+
+    const result = await this.prisma.messages.updateMany({
+      data: { globalStatus: MessageStatus.READ },
+      where: { uid: { in: messages.map((message) => message.uid) } },
+    });
+
+    await this.prisma.messageReceipts.updateMany({
+      data: { status: MessageStatus.READ },
+      where: {
+        messageUid: { in: messages.map((message) => message.uid) },
+        userUid,
       },
     });
 
