@@ -15,6 +15,9 @@ describe('SessionPlayersService', () => {
       findFirst: jest.fn(),
       findMany: jest.fn(),
     },
+    sessions: {
+      findMany: jest.fn(),
+    },
   };
 
   const mockLogger = {
@@ -123,6 +126,104 @@ describe('SessionPlayersService', () => {
         where: { sessionUid: 'session-uid-123', userUid: 'user-uid-789' },
       });
       expect(result).toEqual(player);
+    });
+  });
+
+  describe('suggestPlayerFromPreviousSessions', () => {
+    const userUid = 'user-uid-123';
+
+    it('returns paginated suggestions from previous sessions', async () => {
+      const suggestedUser = {
+        uid: 'suggested-user-uid',
+        firstname: 'Jean',
+        lastname: 'Dupont',
+        imageUrl: 'https://example.com/avatar.jpg',
+      };
+      const previousSessions = [
+        {
+          sessionPlayers: [{ user: suggestedUser }],
+        },
+      ];
+      (mockPrismaService.sessions.findMany as jest.Mock).mockResolvedValue(previousSessions);
+
+      const result = await service.suggestPlayerFromPreviousSessions(userUid);
+
+      expect(prismaService.sessions.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 5,
+          where: {
+            endDate: { gte: expect.any(Date) },
+            sessionPlayers: { some: { userUid } },
+          },
+          select: expect.objectContaining({
+            sessionPlayers: {
+              select: {
+                user: {
+                  select: {
+                    firstname: true,
+                    imageUrl: true,
+                    lastname: true,
+                    uid: true,
+                  },
+                },
+              },
+            },
+          }),
+        }),
+      );
+      expect(result).toEqual({
+        items: [suggestedUser],
+        nextCursor: null,
+        totalCount: 1,
+      });
+    });
+
+    it('returns empty list when user has no previous sessions', async () => {
+      (mockPrismaService.sessions.findMany as jest.Mock).mockResolvedValue([]);
+
+      const result = await service.suggestPlayerFromPreviousSessions(userUid);
+
+      expect(result).toEqual({
+        items: [],
+        nextCursor: null,
+        totalCount: 0,
+      });
+    });
+
+    it('limits to 20 suggestions when more than 20 players are found', async () => {
+      const users = Array.from({ length: 25 }, (_, i) => ({
+        uid: `user-${i}`,
+        firstname: `First${i}`,
+        lastname: `Last${i}`,
+        imageUrl: null,
+      }));
+      const previousSessions = [
+        {
+          sessionPlayers: users.map((user) => ({ user })),
+        },
+      ];
+      (mockPrismaService.sessions.findMany as jest.Mock).mockResolvedValue(previousSessions);
+
+      const result = await service.suggestPlayerFromPreviousSessions(userUid);
+
+      expect(result.items).toHaveLength(20);
+      expect(result.totalCount).toBe(20);
+      expect(result.nextCursor).toBeNull();
+    });
+
+    it('aggregates players from multiple sessions', async () => {
+      const user1 = { uid: 'u1', firstname: 'A', lastname: 'A', imageUrl: null };
+      const user2 = { uid: 'u2', firstname: 'B', lastname: 'B', imageUrl: null };
+      const previousSessions = [
+        { sessionPlayers: [{ user: user1 }] },
+        { sessionPlayers: [{ user: user2 }] },
+      ];
+      (mockPrismaService.sessions.findMany as jest.Mock).mockResolvedValue(previousSessions);
+
+      const result = await service.suggestPlayerFromPreviousSessions(userUid);
+
+      expect(result.items).toEqual([user1, user2]);
+      expect(result.totalCount).toBe(2);
     });
   });
 });

@@ -4,13 +4,19 @@ import { JoinSessionDto } from 'src/sessions/dto/input/create-session-player.dto
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SessionPlayersController } from 'src/sessions/controllers/session-players.controller';
 import { SessionsService } from 'src/sessions/services/sessions.service';
+import { SessionPlayersService } from 'src/sessions/services/session-players.service';
 
 describe('SessionPlayersController', () => {
   let controller: SessionPlayersController;
   let sessionsService: SessionsService;
+  let playersService: SessionPlayersService;
 
   const mockSessionsService = {
     joinSession: jest.fn(),
+  };
+
+  const mockPlayersService = {
+    suggestPlayerFromPreviousSessions: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -25,6 +31,10 @@ describe('SessionPlayersController', () => {
           provide: SessionsService,
           useValue: mockSessionsService,
         },
+        {
+          provide: SessionPlayersService,
+          useValue: mockPlayersService,
+        },
       ],
     })
       .overrideGuard(AuthB2CGuard)
@@ -33,6 +43,7 @@ describe('SessionPlayersController', () => {
 
     controller = module.get<SessionPlayersController>(SessionPlayersController);
     sessionsService = module.get<SessionsService>(SessionsService);
+    playersService = module.get<SessionPlayersService>(SessionPlayersService);
 
     // Clear all mocks before each test
     jest.clearAllMocks();
@@ -152,6 +163,62 @@ describe('SessionPlayersController', () => {
         ...mockJoinSessionDto,
         userUid: mockRequest.user.uid,
       });
+    });
+  });
+
+  describe('suggestPlayerFromPreviousSessions', () => {
+    const mockRequest = {
+      user: { uid: 'user-uid-123' },
+    } as any;
+
+    const mockPaginatedSuggestions = {
+      items: [
+        {
+          uid: 'suggested-uid-1',
+          firstname: 'Jean',
+          lastname: 'Dupont',
+          imageUrl: 'https://example.com/avatar.jpg',
+        },
+      ],
+      nextCursor: null,
+      totalCount: 1,
+    };
+
+    it('should return suggested players with success message', async () => {
+      mockPlayersService.suggestPlayerFromPreviousSessions.mockResolvedValue(
+        mockPaginatedSuggestions,
+      );
+
+      const result = await controller.suggestPlayerFromPreviousSessions(mockRequest);
+
+      expect(playersService.suggestPlayerFromPreviousSessions).toHaveBeenCalledWith(
+        mockRequest.user.uid,
+      );
+      expect(result).toEqual({
+        data: mockPaginatedSuggestions,
+        message: 'Players suggested successfully',
+      });
+    });
+
+    it('should pass userUid from request to the service', async () => {
+      mockPlayersService.suggestPlayerFromPreviousSessions.mockResolvedValue({
+        items: [],
+        nextCursor: null,
+        totalCount: 0,
+      });
+
+      await controller.suggestPlayerFromPreviousSessions(mockRequest);
+
+      expect(playersService.suggestPlayerFromPreviousSessions).toHaveBeenCalledWith('user-uid-123');
+    });
+
+    it('should propagate errors from the service', async () => {
+      const error = new Error('Database error');
+      mockPlayersService.suggestPlayerFromPreviousSessions.mockRejectedValue(error);
+
+      await expect(controller.suggestPlayerFromPreviousSessions(mockRequest)).rejects.toThrow(
+        'Database error',
+      );
     });
   });
 });
