@@ -44,6 +44,9 @@ describe('UsersService', () => {
 
   const mockStorageService = {
     upload: jest.fn(),
+    createDefaultProfilePicture: jest
+      .fn()
+      .mockResolvedValue({ data: 'https://example.com/default-avatar.png' }),
   };
 
   const mockEmailsService = {
