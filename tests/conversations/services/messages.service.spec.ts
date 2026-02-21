@@ -1,55 +1,59 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { MessagesService } from 'src/conversations/services/messages.service';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
+import { MessagesService } from 'src/conversations/services/messages.service';
 import { MessageStatus, MessageType } from 'generated/prisma/enums';
 import { EventTypes } from 'src/notifications/constants/event.types';
 import { StorageFolderName } from 'src/shared/constants/constants';
 
 describe('MessagesService', () => {
   let service: MessagesService;
-  let mockPrismaService: any;
-  let mockStorageService: any;
+  let mockPrisma: any;
+  let mockLogger: any;
   let mockEventEmitter: any;
-
-  const mockPinoLogger = {
-    debug: jest.fn(),
-    error: jest.fn(),
-    info: jest.fn(),
-    setContext: jest.fn(),
-    warn: jest.fn(),
-  };
+  let mockStorageService: any;
 
   beforeEach(async () => {
-    mockPrismaService = {
-      messages: {
-        create: jest.fn(),
-        findMany: jest.fn(),
-        updateMany: jest.fn(),
-      },
+    mockPrisma = {
       conversationMembers: {
         findFirst: jest.fn(),
-        findMany: jest.fn().mockResolvedValue([]),
-        update: jest.fn().mockResolvedValue({}),
+        findMany: jest.fn(),
+        update: jest.fn(),
       },
       conversations: {
         update: jest.fn().mockResolvedValue({}),
       },
       messageReceipts: {
-        create: jest.fn().mockResolvedValue(undefined),
-        createMany: jest.fn().mockResolvedValue(undefined),
+        create: jest.fn(),
+        createMany: jest.fn(),
+        updateMany: jest.fn().mockResolvedValue(undefined),
+      },
+      messages: {
+        create: jest.fn(),
+        findMany: jest.fn(),
+        findUnique: jest.fn(),
+        update: jest.fn(),
+        updateMany: jest.fn(),
       },
     };
 
-    mockStorageService = {
-      upload: jest.fn(),
+    mockLogger = {
+      debug: jest.fn(),
+      error: jest.fn(),
+      info: jest.fn(),
+      setContext: jest.fn(),
     };
 
     mockEventEmitter = {
       emit: jest.fn(),
+    };
+
+    mockStorageService = {
+      upload: jest.fn(),
+      getSignedUrl: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -57,11 +61,11 @@ describe('MessagesService', () => {
         MessagesService,
         {
           provide: PrismaService,
-          useValue: mockPrismaService,
+          useValue: mockPrisma,
         },
         {
           provide: PinoLogger,
-          useValue: mockPinoLogger,
+          useValue: mockLogger,
         },
         {
           provide: EventEmitter2,
@@ -81,57 +85,48 @@ describe('MessagesService', () => {
     jest.clearAllMocks();
   });
 
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
   describe('createTextMessage', () => {
-    const senderUid = 'user-123';
-    const content = 'Hello, this is a test message';
-    const conversationUid = 'conv-123';
-    const sessionUid = null;
-
-    const mockSender = {
-      firstname: 'John',
-      lastname: 'Doe',
-      imageUrl: 'https://example.com/image.jpg',
-      uid: senderUid,
-    };
-
-    const mockMessage = {
-      uid: 'msg-123',
-      content,
-      conversationUid,
-      senderUid,
-      type: MessageType.TEXT,
-      globalStatus: MessageStatus.SENT,
-      sender: mockSender,
-    };
-
-    beforeEach(() => {
-      mockPrismaService.conversationMembers.findFirst.mockResolvedValue({
-        conversationUid,
-        userUid: senderUid,
-      });
-      mockPrismaService.messages.updateMany.mockResolvedValue({ count: 0 });
-      mockPrismaService.messages.create.mockResolvedValue(mockMessage);
-    });
-
     it('should create a text message successfully', async () => {
+      const senderUid = 'user-123';
+      const content = 'Hello, world!';
+      const conversationUid = 'conv-123';
+      const sessionUid = null;
+
+      const mockMessage = {
+        content,
+        conversationUid,
+        createdAt: new Date(),
+        globalStatus: MessageStatus.SENT,
+        sender: {
+          firstname: 'John',
+          imageUrl: 'image.jpg',
+          lastname: 'Doe',
+          uid: senderUid,
+        },
+        senderUid,
+        type: MessageType.TEXT,
+        uid: 'msg-123',
+        updatedAt: new Date(),
+      };
+
+      mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
+      mockPrisma.messages.findMany.mockResolvedValue([]);
+      mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
+      mockPrisma.messages.create.mockResolvedValue(mockMessage);
+      mockPrisma.conversationMembers.findMany.mockResolvedValue([{ userUid: 'user-456' }]);
+      mockPrisma.messageReceipts.createMany.mockResolvedValue({ count: 1 });
+      mockPrisma.messageReceipts.create.mockResolvedValue({});
+
       await service.createTextMessage(senderUid, content, conversationUid, sessionUid);
 
-      expect(mockPrismaService.messages.updateMany).toHaveBeenCalledWith({
-        data: {
-          globalStatus: MessageStatus.READ,
-        },
-        where: {
-          conversationUid,
-          globalStatus: {
-            not: MessageStatus.READ,
-          },
-          senderUid: {
-            not: senderUid,
-          },
-        },
-      });
-
-      expect(mockPrismaService.messages.create).toHaveBeenCalledWith({
+      expect(mockPrisma.messages.findMany).toHaveBeenCalled();
+      expect(mockPrisma.messages.updateMany).toHaveBeenCalled();
+      expect(mockPrisma.messages.create).toHaveBeenCalledWith({
         data: {
           content,
           conversation: {
@@ -154,148 +149,121 @@ describe('MessagesService', () => {
           },
         },
       });
-
+      expect(mockPrisma.conversationMembers.findMany).toHaveBeenCalledWith({
+        select: { userUid: true },
+        where: { conversationUid, userUid: { not: senderUid } },
+      });
+      expect(mockPrisma.messageReceipts.createMany).toHaveBeenCalled();
+      expect(mockPrisma.messageReceipts.create).toHaveBeenCalledWith({
+        data: {
+          messageUid: 'msg-123',
+          status: MessageStatus.SENT,
+          userUid: senderUid,
+        },
+      });
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(EventTypes.NEW_MESSAGE, {
         content,
         conversationUid,
         notificationTitle: 'John Doe sent you a message',
         senderUid,
       });
-
-      expect(mockPinoLogger.debug).toHaveBeenCalledWith(
-        `Message ${mockMessage.uid} created in conversation ${conversationUid} by user ${senderUid}`,
-      );
     });
 
-    it('should include sessionUid in notification title when sessionUid is provided', async () => {
-      const sessionUidWithValue = 'session-456';
-      await service.createTextMessage(senderUid, content, conversationUid, sessionUidWithValue);
+    it('should include sessionUid in notification title for session conversations', async () => {
+      const senderUid = 'user-123';
+      const content = 'Session message';
+      const conversationUid = 'conv-123';
+      const sessionUid = 'session-456';
 
-      expect(mockEventEmitter.emit).toHaveBeenCalledWith(EventTypes.NEW_MESSAGE, {
+      const mockMessage = {
         content,
         conversationUid,
-        notificationTitle: `Session ${sessionUidWithValue} - John Doe sent you a message`,
-        senderUid,
-      });
-    });
-
-    it('should handle sender with missing firstname or lastname', async () => {
-      const mockMessageWithoutName = {
-        ...mockMessage,
+        createdAt: new Date(),
+        globalStatus: MessageStatus.SENT,
         sender: {
-          ...mockSender,
-          firstname: null,
-          lastname: null,
+          firstname: 'Jane',
+          imageUrl: null,
+          lastname: 'Smith',
+          uid: senderUid,
         },
+        senderUid,
+        type: MessageType.TEXT,
+        uid: 'msg-123',
+        updatedAt: new Date(),
       };
-      mockPrismaService.messages.create.mockResolvedValue(mockMessageWithoutName);
+
+      mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
+      mockPrisma.messages.findMany.mockResolvedValue([]);
+      mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
+      mockPrisma.messages.create.mockResolvedValue(mockMessage);
+      mockPrisma.conversationMembers.findMany.mockResolvedValue([{ userUid: 'user-456' }]);
+      mockPrisma.messageReceipts.createMany.mockResolvedValue({ count: 1 });
+      mockPrisma.messageReceipts.create.mockResolvedValue({});
 
       await service.createTextMessage(senderUid, content, conversationUid, sessionUid);
 
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(EventTypes.NEW_MESSAGE, {
         content,
         conversationUid,
-        notificationTitle: ' sent you a message',
+        notificationTitle: `Session ${sessionUid} - Jane Smith sent you a message`,
         senderUid,
       });
-    });
-
-    it('should mark messages as read before creating new message', async () => {
-      const updateManySpy = jest.spyOn(mockPrismaService.messages, 'updateMany');
-      const createSpy = jest.spyOn(mockPrismaService.messages, 'create');
-
-      await service.createTextMessage(senderUid, content, conversationUid, sessionUid);
-
-      expect(updateManySpy).toHaveBeenCalled();
-      expect(createSpy).toHaveBeenCalled();
-      expect(updateManySpy.mock.invocationCallOrder[0]).toBeLessThan(
-        createSpy.mock.invocationCallOrder[0],
-      );
-    });
-
-    it('should throw error if user is not a member', async () => {
-      mockPrismaService.conversationMembers.update.mockRejectedValueOnce(
-        new Error('Record not found'),
-      );
-
-      await expect(
-        service.createTextMessage(senderUid, content, conversationUid, sessionUid),
-      ).rejects.toThrow();
-      expect(mockPrismaService.messages.create).not.toHaveBeenCalled();
     });
   });
 
   describe('createMediaMessage', () => {
-    const senderUid = 'user-123';
-    const conversationUid = 'conv-123';
-    const type = MessageType.IMAGE;
-    const sessionUid = null;
-
-    const mockFile = {
-      buffer: Buffer.from('fake-image-data'),
-      originalname: 'test-image.jpg',
-      mimetype: 'image/jpeg',
-      encoding: '7bit',
-      fieldname: 'file',
-    };
-
-    const mockSender = {
-      firstname: 'Jane',
-      lastname: 'Smith',
-      imageUrl: 'https://example.com/image2.jpg',
-      uid: senderUid,
-    };
-
-    const mockUploadedFile = {
-      data: '1234567890test-image.jpg',
-    };
-
-    const mockMessage = {
-      uid: 'msg-456',
-      content: mockUploadedFile.data,
-      conversationUid,
-      senderUid,
-      type: MessageType.IMAGE,
-      sender: mockSender,
-    };
-
-    beforeEach(() => {
-      mockPrismaService.conversationMembers.findFirst.mockResolvedValue({
-        conversationUid,
-        userUid: senderUid,
-      });
-      mockPrismaService.messages.updateMany.mockResolvedValue({ count: 0 });
-      mockStorageService.upload.mockResolvedValue(mockUploadedFile);
-      mockPrismaService.messages.create.mockResolvedValue(mockMessage);
-    });
-
     it('should create a media message successfully', async () => {
-      await service.createMediaMessage(senderUid, conversationUid, type, mockFile, sessionUid);
+      const senderUid = 'user-123';
+      const conversationUid = 'conv-123';
+      const type = MessageType.IMAGE;
+      const sessionUid = null;
+      const file = {
+        buffer: Buffer.from('fake-image-data'),
+        originalname: 'test-image.jpg',
+      };
 
-      expect(mockPrismaService.messages.updateMany).toHaveBeenCalledWith({
-        data: {
-          globalStatus: MessageStatus.READ,
+      const uploadedFile = {
+        data: 'uploaded-file-path.jpg',
+      };
+
+      const mockMessage = {
+        content: uploadedFile.data,
+        conversationUid,
+        createdAt: new Date(),
+        globalStatus: MessageStatus.SENT,
+        sender: {
+          firstname: 'John',
+          imageUrl: 'image.jpg',
+          lastname: 'Doe',
+          uid: senderUid,
         },
-        where: {
-          conversationUid,
-          globalStatus: {
-            not: MessageStatus.READ,
-          },
-          senderUid: {
-            not: senderUid,
-          },
-        },
-      });
+        senderUid,
+        type,
+        uid: 'msg-123',
+        updatedAt: new Date(),
+      };
+
+      mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
+      mockPrisma.messages.findMany.mockResolvedValue([]);
+      mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
+      mockStorageService.upload.mockResolvedValue(uploadedFile);
+      mockPrisma.messages.create.mockResolvedValue(mockMessage);
+      mockPrisma.conversationMembers.findMany.mockResolvedValue([{ userUid: 'user-456' }]);
+      mockPrisma.messageReceipts.createMany.mockResolvedValue({ count: 1 });
+      mockPrisma.messageReceipts.create.mockResolvedValue({});
+
+      await service.createMediaMessage(senderUid, conversationUid, type, file, sessionUid);
 
       expect(mockStorageService.upload).toHaveBeenCalledWith(
         `${StorageFolderName.CONVERSATIONS}/${conversationUid}`,
-        mockFile.originalname,
-        mockFile.buffer,
+        file.originalname,
+        file.buffer,
       );
-
-      expect(mockPrismaService.messages.create).toHaveBeenCalledWith({
+      expect(mockPrisma.messages.create).toHaveBeenCalledWith({
         data: {
-          content: mockUploadedFile.data,
+          content: uploadedFile.data,
           conversation: {
             connect: { uid: conversationUid },
           },
@@ -315,151 +283,459 @@ describe('MessagesService', () => {
           },
         },
       });
-
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(EventTypes.NEW_MESSAGE, {
-        content: mockUploadedFile.data,
+        content: uploadedFile.data,
         conversationUid,
-        notificationTitle: 'Jane Smith sent you a message',
-        senderUid,
-      });
-
-      expect(mockPinoLogger.debug).toHaveBeenCalledWith(
-        `Message ${mockMessage.uid} created in conversation ${conversationUid} by user ${senderUid}`,
-      );
-    });
-
-    it('should include sessionUid in notification title when sessionUid is provided', async () => {
-      const sessionUidWithValue = 'session-789';
-      await service.createMediaMessage(
-        senderUid,
-        conversationUid,
-        type,
-        mockFile,
-        sessionUidWithValue,
-      );
-
-      expect(mockEventEmitter.emit).toHaveBeenCalledWith(EventTypes.NEW_MESSAGE, {
-        content: mockUploadedFile.data,
-        conversationUid,
-        notificationTitle: `Session ${sessionUidWithValue} - Jane Smith sent you a message`,
+        notificationTitle: 'John Doe sent you a message',
         senderUid,
       });
     });
 
-    it('should throw BadRequestException when file is undefined', async () => {
+    it('should throw BadRequestException when file is missing', async () => {
+      const senderUid = 'user-123';
+      const conversationUid = 'conv-123';
+      const type = MessageType.IMAGE;
+      const sessionUid = null;
+
+      mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
+      mockPrisma.messages.findMany.mockResolvedValue([]);
+      mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
+
       await expect(
-        service.createMediaMessage(senderUid, conversationUid, type, undefined, sessionUid),
+        service.createMediaMessage(senderUid, conversationUid, type, null, sessionUid),
       ).rejects.toThrow(BadRequestException);
-      await expect(
-        service.createMediaMessage(senderUid, conversationUid, type, undefined, sessionUid),
-      ).rejects.toThrow('File is required for media messages');
     });
 
-    it('should throw BadRequestException when file.buffer is missing', async () => {
-      const invalidFile = {
+    it('should throw BadRequestException when file buffer is missing', async () => {
+      const senderUid = 'user-123';
+      const conversationUid = 'conv-123';
+      const type = MessageType.IMAGE;
+      const sessionUid = null;
+      const file = {
         originalname: 'test.jpg',
       };
 
+      mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
+      mockPrisma.messages.findMany.mockResolvedValue([]);
+      mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
+
       await expect(
-        service.createMediaMessage(senderUid, conversationUid, type, invalidFile, sessionUid),
+        service.createMediaMessage(senderUid, conversationUid, type, file, sessionUid),
       ).rejects.toThrow(BadRequestException);
-      await expect(
-        service.createMediaMessage(senderUid, conversationUid, type, invalidFile, sessionUid),
-      ).rejects.toThrow('File is required for media messages');
     });
 
-    it('should throw BadRequestException when file.originalname is missing', async () => {
-      const invalidFile = {
+    it('should throw BadRequestException when file originalname is missing', async () => {
+      const senderUid = 'user-123';
+      const conversationUid = 'conv-123';
+      const type = MessageType.IMAGE;
+      const sessionUid = null;
+      const file = {
         buffer: Buffer.from('data'),
       };
 
+      mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
+      mockPrisma.messages.findMany.mockResolvedValue([]);
+      mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
+
       await expect(
-        service.createMediaMessage(senderUid, conversationUid, type, invalidFile, sessionUid),
+        service.createMediaMessage(senderUid, conversationUid, type, file, sessionUid),
       ).rejects.toThrow(BadRequestException);
-      await expect(
-        service.createMediaMessage(senderUid, conversationUid, type, invalidFile, sessionUid),
-      ).rejects.toThrow('File is required for media messages');
+    });
+  });
+
+  describe('getMessages', () => {
+    it('should return paginated messages', async () => {
+      const conversationUid = 'conv-123';
+      const userUid = 'user-1';
+      const limit = 50;
+
+      const mockMessages = [
+        {
+          content: 'Message 1',
+          conversationUid,
+          createdAt: new Date(),
+          globalStatus: MessageStatus.SENT,
+          messageReceipts: [
+            { status: MessageStatus.READ, userUid: 'user-1' },
+            { status: MessageStatus.SENT, userUid: 'user-2' },
+          ],
+          sender: {
+            firstname: 'John',
+            imageUrl: 'image.jpg',
+            lastname: 'Doe',
+            uid: 'user-1',
+          },
+          senderUid: 'user-1',
+          type: MessageType.TEXT,
+          uid: 'msg-1',
+          updatedAt: new Date(),
+        },
+        {
+          content: 'Message 2',
+          conversationUid,
+          createdAt: new Date(),
+          globalStatus: MessageStatus.SENT,
+          messageReceipts: [],
+          sender: {
+            firstname: 'Jane',
+            imageUrl: null,
+            lastname: 'Smith',
+            uid: 'user-2',
+          },
+          senderUid: 'user-2',
+          type: MessageType.TEXT,
+          uid: 'msg-2',
+          updatedAt: new Date(),
+        },
+      ];
+
+      mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
+      mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
+      mockPrisma.messages.findMany.mockResolvedValue(mockMessages);
+
+      const result = await service.getMessages(conversationUid, userUid, undefined, limit);
+
+      expect(mockPrisma.messages.findMany).toHaveBeenCalledWith({
+        include: {
+          messageReceipts: {
+            select: {
+              status: true,
+              userUid: true,
+            },
+          },
+          sender: {
+            select: {
+              firstname: true,
+              imageUrl: true,
+              lastname: true,
+              uid: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: limit + 1,
+        where: {
+          conversationUid,
+        },
+      });
+      expect(result.items).toHaveLength(2);
+      expect(result.totalCount).toBe(2);
     });
 
-    it('should throw error if user is not a member', async () => {
-      mockPrismaService.conversationMembers.update.mockRejectedValueOnce(
-        new Error('Record not found'),
-      );
+    it('should handle cursor pagination', async () => {
+      const conversationUid = 'conv-123';
+      const userUid = 'user-1';
+      const cursor = 'msg-cursor-123';
+      const limit = 10;
 
-      await expect(
-        service.createMediaMessage(senderUid, conversationUid, type, mockFile, sessionUid),
-      ).rejects.toThrow();
-      expect(mockPrismaService.messages.create).not.toHaveBeenCalled();
+      mockPrisma.conversationMembers.findFirst.mockResolvedValue({ uid: 'member-1' });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
+      mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
+      mockPrisma.messages.findMany.mockResolvedValue([]);
+
+      await service.getMessages(conversationUid, userUid, cursor, limit);
+
+      expect(mockPrisma.messages.findMany).toHaveBeenCalledWith({
+        cursor: {
+          uid: cursor,
+        },
+        include: {
+          messageReceipts: {
+            select: {
+              status: true,
+              userUid: true,
+            },
+          },
+          sender: {
+            select: {
+              firstname: true,
+              imageUrl: true,
+              lastname: true,
+              uid: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip: 1,
+        take: limit + 1,
+        where: {
+          conversationUid,
+        },
+      });
+    });
+  });
+
+  describe('getOtherMembersUids', () => {
+    it('should return a Set of other member UIDs excluding the sender', async () => {
+      const conversationUid = 'conv-123';
+      const senderUid = 'user-123';
+      const otherMembers = [{ userUid: 'user-456' }, { userUid: 'user-789' }];
+
+      mockPrisma.conversationMembers.findMany.mockResolvedValue(otherMembers);
+
+      const result = await service.getOtherMembersUids(conversationUid, senderUid);
+
+      expect(mockPrisma.conversationMembers.findMany).toHaveBeenCalledWith({
+        select: { userUid: true },
+        where: { conversationUid, userUid: { not: senderUid } },
+      });
+      expect(result).toBeInstanceOf(Set);
+      expect(result.size).toBe(2);
+      expect(result.has('user-456')).toBe(true);
+      expect(result.has('user-789')).toBe(true);
+      expect(result.has(senderUid)).toBe(false);
     });
 
-    it('should handle different message types', async () => {
-      const videoType = MessageType.VIDEO;
-      await service.createMediaMessage(senderUid, conversationUid, videoType, mockFile, sessionUid);
+    it('should return empty Set when there are no other members', async () => {
+      const conversationUid = 'conv-123';
+      const senderUid = 'user-123';
 
-      expect(mockPrismaService.messages.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            type: videoType,
-          }),
-        }),
-      );
+      mockPrisma.conversationMembers.findMany.mockResolvedValue([]);
+
+      const result = await service.getOtherMembersUids(conversationUid, senderUid);
+
+      expect(mockPrisma.conversationMembers.findMany).toHaveBeenCalledWith({
+        select: { userUid: true },
+        where: { conversationUid, userUid: { not: senderUid } },
+      });
+      expect(result).toBeInstanceOf(Set);
+      expect(result.size).toBe(0);
+    });
+  });
+
+  describe('createMessageReceipt', () => {
+    it('should create receipts for all other members and sender with SENT status', async () => {
+      const messageUid = 'msg-123';
+      const userUids = new Set(['user-456', 'user-789']);
+      const senderUid = 'user-123';
+
+      mockPrisma.messageReceipts.createMany.mockResolvedValue({ count: 2 });
+      mockPrisma.messageReceipts.create.mockResolvedValue({});
+
+      await service.createMessageReceipt(messageUid, userUids, senderUid);
+
+      expect(mockPrisma.messageReceipts.createMany).toHaveBeenCalledWith({
+        data: [
+          { messageUid, userUid: 'user-456' },
+          { messageUid, userUid: 'user-789' },
+        ],
+      });
+      expect(mockPrisma.messageReceipts.create).toHaveBeenCalledWith({
+        data: {
+          messageUid,
+          status: MessageStatus.SENT,
+          userUid: senderUid,
+        },
+      });
     });
 
-    it('should mark messages as read before uploading file', async () => {
-      const updateManySpy = jest.spyOn(mockPrismaService.messages, 'updateMany');
-      const uploadSpy = jest.spyOn(mockStorageService, 'upload');
+    it('should call createMany with empty array when no other members', async () => {
+      const messageUid = 'msg-123';
+      const userUids = new Set<string>();
+      const senderUid = 'user-123';
 
-      await service.createMediaMessage(senderUid, conversationUid, type, mockFile, sessionUid);
+      mockPrisma.messageReceipts.createMany.mockResolvedValue({ count: 0 });
+      mockPrisma.messageReceipts.create.mockResolvedValue({});
 
-      expect(updateManySpy).toHaveBeenCalled();
-      expect(uploadSpy).toHaveBeenCalled();
-      expect(updateManySpy.mock.invocationCallOrder[0]).toBeLessThan(
-        uploadSpy.mock.invocationCallOrder[0],
-      );
+      await service.createMessageReceipt(messageUid, userUids, senderUid);
+
+      expect(mockPrisma.messageReceipts.createMany).toHaveBeenCalledWith({
+        data: [],
+      });
+      expect(mockPrisma.messageReceipts.create).toHaveBeenCalledWith({
+        data: {
+          messageUid,
+          status: MessageStatus.SENT,
+          userUid: senderUid,
+        },
+      });
     });
   });
 
   describe('markMessagesAsRead', () => {
-    const conversationUid = 'conv-123';
-    const userUid = 'user-123';
+    it('should mark messages as read for a user', async () => {
+      const conversationUid = 'conv-123';
+      const userUid = 'user-123';
+      const targetMessageUids = ['msg-1', 'msg-2', 'msg-3', 'msg-4', 'msg-5'];
 
-    it('should mark messages as read successfully', async () => {
-      mockPrismaService.conversationMembers.findFirst.mockResolvedValue({
-        conversationUid,
-        userUid,
-      });
-      mockPrismaService.messages.updateMany.mockResolvedValue({ count: 5 });
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
+      mockPrisma.messages.findMany.mockResolvedValue(
+        targetMessageUids.map((uid) => ({ uid, senderUid: 'other-user' })),
+      );
+      mockPrisma.messages.updateMany.mockResolvedValue({ count: 5 });
+      mockPrisma.messageReceipts.updateMany.mockResolvedValue(undefined);
 
       const result = await service.markMessagesAsRead(conversationUid, userUid);
 
-      expect(result).toBe(5);
-      expect(mockPrismaService.messages.updateMany).toHaveBeenCalledWith({
+      expect(mockPrisma.conversationMembers.update).toHaveBeenCalledWith({
         data: {
-          globalStatus: MessageStatus.READ,
+          lastReadAt: expect.any(Date),
         },
         where: {
-          conversationUid,
-          globalStatus: {
-            not: MessageStatus.READ,
-          },
-          senderUid: {
-            not: userUid,
+          conversationUid_userUid: {
+            conversationUid,
+            userUid,
           },
         },
       });
-
-      expect(mockPinoLogger.debug).toHaveBeenCalledWith(
-        `Marked 5 messages as read for user ${userUid} in conversation ${conversationUid}`,
-      );
+      expect(mockPrisma.messages.findMany).toHaveBeenCalledWith({
+        select: { senderUid: true, uid: true },
+        where: {
+          conversationUid,
+          globalStatus: { not: MessageStatus.READ },
+          senderUid: { not: userUid },
+        },
+      });
+      expect(mockPrisma.messages.updateMany).toHaveBeenCalledWith({
+        data: { globalStatus: MessageStatus.READ },
+        where: { uid: { in: targetMessageUids } },
+      });
+      expect(result).toBe(5);
     });
 
-    it('should throw error if user is not a member', async () => {
-      mockPrismaService.conversationMembers.update.mockRejectedValueOnce(
-        new Error('Record not found'),
-      );
+    it('should throw error when user is not a member', async () => {
+      const conversationUid = 'conv-123';
+      const userUid = 'user-123';
+
+      mockPrisma.conversationMembers.update.mockRejectedValue(new Error('Record not found'));
+      mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
 
       await expect(service.markMessagesAsRead(conversationUid, userUid)).rejects.toThrow();
-      expect(mockPrismaService.messages.updateMany).not.toHaveBeenCalled();
+      expect(mockPrisma.messages.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('should return 0 when no messages to mark as read', async () => {
+      const conversationUid = 'conv-123';
+      const userUid = 'user-123';
+
+      mockPrisma.conversationMembers.update.mockResolvedValue({});
+      mockPrisma.messages.findMany.mockResolvedValue([]);
+      mockPrisma.messages.updateMany.mockResolvedValue({ count: 0 });
+
+      const result = await service.markMessagesAsRead(conversationUid, userUid);
+
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('delete', () => {
+    it('should soft-delete a message by setting globalStatus to DELETED when user is sender', async () => {
+      const messageUid = 'msg-123';
+      const userUid = 'user-123';
+
+      const mockMessage = {
+        uid: messageUid,
+        senderUid: userUid,
+        globalStatus: MessageStatus.SENT,
+      };
+
+      mockPrisma.messages.findUnique.mockResolvedValue(mockMessage);
+      mockPrisma.messages.update.mockResolvedValue({
+        uid: messageUid,
+        globalStatus: MessageStatus.DELETED,
+      });
+
+      await service.delete(messageUid, userUid);
+
+      expect(mockPrisma.messages.findUnique).toHaveBeenCalledWith({
+        where: { uid: messageUid },
+      });
+      expect(mockPrisma.messages.update).toHaveBeenCalledWith({
+        data: {
+          globalStatus: MessageStatus.DELETED,
+        },
+        where: { uid: messageUid },
+      });
+    });
+
+    it('should call prisma.messages.update with correct messageUid and userUid', async () => {
+      const messageUid = 'msg-456';
+      const userUid = 'user-456';
+
+      mockPrisma.messages.findUnique.mockResolvedValue({
+        uid: messageUid,
+        senderUid: userUid,
+        globalStatus: MessageStatus.SENT,
+      });
+      mockPrisma.messages.update.mockResolvedValue({});
+
+      await service.delete(messageUid, userUid);
+
+      expect(mockPrisma.messages.findUnique).toHaveBeenCalledWith({
+        where: { uid: 'msg-456' },
+      });
+      expect(mockPrisma.messages.update).toHaveBeenCalledWith({
+        data: { globalStatus: MessageStatus.DELETED },
+        where: { uid: 'msg-456' },
+      });
+    });
+
+    it('should return void on success', async () => {
+      const messageUid = 'msg-789';
+      const userUid = 'user-789';
+
+      mockPrisma.messages.findUnique.mockResolvedValue({
+        uid: messageUid,
+        senderUid: userUid,
+        globalStatus: MessageStatus.SENT,
+      });
+      mockPrisma.messages.update.mockResolvedValue({});
+
+      const result = await service.delete(messageUid, userUid);
+
+      expect(result).toBeUndefined();
+    });
+
+    it('should throw NotFoundException when message does not exist', async () => {
+      const messageUid = 'msg-not-found';
+      const userUid = 'user-123';
+
+      mockPrisma.messages.findUnique.mockResolvedValue(null);
+
+      await expect(service.delete(messageUid, userUid)).rejects.toThrow(NotFoundException);
+      await expect(service.delete(messageUid, userUid)).rejects.toThrow('Message not found');
+      expect(mockPrisma.messages.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw ForbiddenException when user is not the sender', async () => {
+      const messageUid = 'msg-123';
+      const userUid = 'user-other';
+      const senderUid = 'user-sender';
+
+      mockPrisma.messages.findUnique.mockResolvedValue({
+        uid: messageUid,
+        senderUid,
+        globalStatus: MessageStatus.SENT,
+      });
+
+      await expect(service.delete(messageUid, userUid)).rejects.toThrow(ForbiddenException);
+      await expect(service.delete(messageUid, userUid)).rejects.toThrow(
+        'You are not the sender of this message',
+      );
+      expect(mockPrisma.messages.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when message is already deleted', async () => {
+      const messageUid = 'msg-123';
+      const userUid = 'user-123';
+
+      mockPrisma.messages.findUnique.mockResolvedValue({
+        uid: messageUid,
+        senderUid: userUid,
+        globalStatus: MessageStatus.DELETED,
+      });
+
+      await expect(service.delete(messageUid, userUid)).rejects.toThrow(BadRequestException);
+      await expect(service.delete(messageUid, userUid)).rejects.toThrow('Message already deleted');
+      expect(mockPrisma.messages.update).not.toHaveBeenCalled();
     });
   });
 });

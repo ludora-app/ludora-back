@@ -306,12 +306,14 @@ describe('ChatGateway', () => {
 
   describe('handleMarkAsReadEvent', () => {
     const mockServerEmit = jest.fn();
-    const mockServerTo = jest.fn().mockReturnValue({ emit: mockServerEmit });
+    const mockServerExcept = jest.fn().mockReturnValue({ emit: mockServerEmit });
+    const mockServerTo = jest.fn().mockReturnValue({ except: mockServerExcept });
 
     beforeEach(() => {
       gateway.server = { to: mockServerTo } as any;
       mockServerEmit.mockClear();
       mockServerTo.mockClear();
+      mockServerExcept.mockClear();
     });
 
     it('should mark messages as read and notify conversation room', async () => {
@@ -323,6 +325,7 @@ describe('ChatGateway', () => {
 
       expect(messagesService.markMessagesAsRead).toHaveBeenCalledWith(conversationUid, userUid);
       expect(mockServerTo).toHaveBeenCalledWith(`conversation:${conversationUid}`);
+      expect(mockServerExcept).toHaveBeenCalledWith(`user:${userUid}`);
       expect(mockServerEmit).toHaveBeenCalledWith('notification', {
         conversationUid,
         message: `${userUid} marked 5 messages from ${conversationUid} as read`,

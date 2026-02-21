@@ -277,10 +277,12 @@ export class MessagesService {
       },
     });
 
-    const messages: { uid: string; senderUid: string }[] = targetMessages.map((message) => ({
-      senderUid: message.senderUid,
-      uid: message.uid,
-    }));
+    const messages: { uid: string; senderUid: string }[] = (targetMessages ?? []).map(
+      (message) => ({
+        senderUid: message.senderUid,
+        uid: message.uid,
+      }),
+    );
 
     const result = await this.prisma.messages.updateMany({
       data: { globalStatus: MessageStatus.READ },
