@@ -315,7 +315,7 @@ describe('ConversationsService', () => {
         }),
       );
       expect(toCollectionDtoSpy).toHaveBeenCalledTimes(2);
-      expect(toCollectionDtoSpy).toHaveBeenCalledWith(mockConversations[0]);
+      expect(toCollectionDtoSpy).toHaveBeenCalledWith(mockConversations[0], 'user-123');
     });
 
     it('should filter conversations by type', async () => {
@@ -427,6 +427,7 @@ describe('ConversationsService', () => {
           imageUrl: null,
           lastMessage: null,
           name: `Conv ${conversation.uid}`,
+          receiver: null,
           sender: null,
           sessionData: null,
           type: ConversationType.PRIVATE,
@@ -573,6 +574,7 @@ describe('ConversationsService', () => {
           content: 'Message 1',
           createdAt: mockRawConversation.messages[0].createdAt,
           globalStatus: MessageStatus.SENT,
+          isSender: false,
           type: MessageType.TEXT,
           uid: 'msg-1',
         },
@@ -580,11 +582,13 @@ describe('ConversationsService', () => {
           content: 'Message 2',
           createdAt: mockRawConversation.messages[1].createdAt,
           globalStatus: MessageStatus.SENT,
+          isSender: true,
           type: MessageType.TEXT,
           uid: 'msg-2',
         },
       ],
       name: 'John Doe',
+      receiver: null,
       sender: mockRawConversation.conversationMembers[0].user,
       sessionData: null,
       settings: { isArchived: false, isMuted: false },

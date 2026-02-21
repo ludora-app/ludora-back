@@ -335,7 +335,9 @@ export class ConversationsService {
     }
 
     const conversations = await Promise.all(
-      rawConversations.map((conversation) => ConversationMapper.toCollectionDto(conversation)),
+      rawConversations.map((conversation) =>
+        ConversationMapper.toCollectionDto(conversation, userUid),
+      ),
     );
 
     return {

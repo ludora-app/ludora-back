@@ -307,7 +307,9 @@ describe('ChatGateway', () => {
   describe('handleMarkAsReadEvent', () => {
     const mockServerEmit = jest.fn();
     const mockServerExcept = jest.fn().mockReturnValue({ emit: mockServerEmit });
-    const mockServerTo = jest.fn().mockReturnValue({ except: mockServerExcept });
+    const mockServerTo = jest
+      .fn()
+      .mockReturnValue({ emit: mockServerEmit, except: mockServerExcept });
 
     beforeEach(() => {
       gateway.server = { to: mockServerTo } as any;
@@ -319,7 +321,8 @@ describe('ChatGateway', () => {
     it('should mark messages as read and notify conversation room', async () => {
       const conversationUid = 'conv-456';
       const userUid = 'user-123';
-      mockMessagesService.markMessagesAsRead.mockResolvedValue(5);
+      const messages = [{ hasAnyRead: true, hasEveryoneRead: false, uid: 'msg-1' }];
+      mockMessagesService.markMessagesAsRead.mockResolvedValue({ count: 5, messages });
 
       await gateway.handleMarkAsReadEvent({ conversationUid, userUid });
 
@@ -327,10 +330,23 @@ describe('ChatGateway', () => {
       expect(mockServerTo).toHaveBeenCalledWith(`conversation:${conversationUid}`);
       expect(mockServerExcept).toHaveBeenCalledWith(`user:${userUid}`);
       expect(mockServerEmit).toHaveBeenCalledWith('notification', {
-        conversationUid,
+        data: {
+          conversationUid,
+          messages,
+          userUid,
+        },
         message: `${userUid} marked 5 messages from ${conversationUid} as read`,
         type: NotificationType.MESSAGES_READ,
-        userUid,
+      });
+      expect(mockServerTo).toHaveBeenCalledWith(`user:${userUid}`);
+      expect(mockServerEmit).toHaveBeenCalledWith('notification', {
+        data: {
+          conversationUid,
+          messages,
+          userUid,
+        },
+        message: `${userUid} marked 5 messages from ${conversationUid} as read`,
+        type: NotificationType.CONVERSATION_READ,
       });
     });
   });

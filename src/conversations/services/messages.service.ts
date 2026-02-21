@@ -197,10 +197,6 @@ export class MessagesService {
     cursor?: string,
     limit = 50,
   ): Promise<PaginatedDataDto<MessageCollectionItemDto>> {
-    this.eventEmitter.emit(EventTypes.MARK_MESSAGES_AS_READ, {
-      conversationUid,
-      userUid,
-    });
     const messages = await this.prisma.messages.findMany({
       include: {
         messageReceipts: {
@@ -236,12 +232,18 @@ export class MessagesService {
     const hasMore = messages.length > limit;
     const paginatedMessages = hasMore ? messages.slice(0, limit) : messages;
 
-    // paginatedMessages is in DESC order (newest first)
-    // The oldest message is the last element, which becomes the nextCursor
+    // paginatedMessages[paginatedMessages.length - 1] est le plus ancien de la page
+    // c'est lui qu'on donne comme curseur pour la prochaine page (encore plus dans le passé)
     const nextCursor = hasMore ? paginatedMessages[paginatedMessages.length - 1].uid : null;
 
+    this.eventEmitter.emit(EventTypes.MARK_MESSAGES_AS_READ, {
+      conversationUid,
+      userUid,
+    });
+
     return {
-      items: paginatedMessages
+      // on reverse pour afficher du plus ancien au plus récent (ordre naturel du chat)
+      items: [...paginatedMessages]
         .reverse()
         .map((message) => MessageMapper.toCollectionItemDto(message, userUid)),
       nextCursor,
@@ -255,7 +257,13 @@ export class MessagesService {
    * @param userUid - The user uid
    * @returns Number of messages updated
    */
-  async markMessagesAsRead(conversationUid: string, userUid: string): Promise<number> {
+  async markMessagesAsRead(
+    conversationUid: string,
+    userUid: string,
+  ): Promise<{
+    count: number;
+    messages: { uid: string; hasAnyRead: boolean; hasEveryoneRead: boolean }[];
+  }> {
     await this.prisma.conversationMembers.update({
       data: {
         lastReadAt: new Date(),
@@ -296,11 +304,33 @@ export class MessagesService {
       },
     });
 
+    const updatedMessages = await this.prisma.messages.findMany({
+      include: {
+        messageReceipts: true,
+      },
+      where: { uid: { in: messageUids } },
+    });
+
+    const messagesData = updatedMessages.map((msg) => {
+      const recipientReceipts = msg.messageReceipts.filter((r) => r.userUid !== msg.senderUid);
+      const readReceipts = recipientReceipts.filter((r) => r.status === MessageStatus.READ);
+
+      return {
+        hasAnyRead: readReceipts.length > 0,
+        hasEveryoneRead:
+          recipientReceipts.length > 0 && readReceipts.length === recipientReceipts.length,
+        uid: msg.uid,
+      };
+    });
+
     this.logger.debug(
       `Marked ${result.count} messages as read for user ${userUid} in conversation ${conversationUid}`,
     );
 
-    return result.count;
+    return {
+      count: result.count,
+      messages: messagesData,
+    };
   }
 
   async getOtherMembersUids(conversationUid: string, senderUid: string): Promise<Set<string>> {

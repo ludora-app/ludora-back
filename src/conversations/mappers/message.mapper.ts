@@ -24,11 +24,12 @@ export interface RawMessageCollectionItem {
 }
 
 export class MessageMapper {
-  static toLastMessageDto(message: RawMessage): MessageDto {
+  static toLastMessageDto(message: RawMessage, connectedUserUid: string): MessageDto {
     return {
       content: message.content,
       createdAt: message.createdAt,
       globalStatus: message.globalStatus,
+      isSender: message.sender.uid === connectedUserUid,
       type: message.type,
       uid: message.uid,
     };

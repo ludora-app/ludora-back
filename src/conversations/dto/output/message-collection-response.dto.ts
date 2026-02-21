@@ -25,13 +25,6 @@ export class MessageCollectionItemDto extends MessageDto {
     type: SenderDto,
   })
   sender: SenderDto;
-
-  @ApiProperty({
-    description: 'Whether the message is sent by the connected user',
-    example: true,
-    readOnly: true,
-  })
-  isSender: boolean;
 }
 
 export class MessageCollectionResponseDto extends ResponseTypeDto<MessageCollectionItemDto> {
