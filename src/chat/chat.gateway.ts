@@ -337,12 +337,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const conversationRoom = `conversation:${conversationUid}`;
 
       if (count > 0) {
-        this.server.to(conversationRoom).emit('notification', {
-          conversationUid,
-          message: `${userUid} marked ${count} messages from ${conversationUid} as read`,
-          type: NotificationType.MESSAGES_READ,
-          userUid,
-        });
+        // Exclude the reader's own sockets using their personal room (user:{userUid})
+        this.server
+          .to(conversationRoom)
+          .except(`user:${userUid}`)
+          .emit('notification', {
+            conversationUid,
+            message: `${userUid} marked ${count} messages from ${conversationUid} as read`,
+            type: NotificationType.MESSAGES_READ,
+            userUid,
+          });
       }
 
       this.logger.debug(
