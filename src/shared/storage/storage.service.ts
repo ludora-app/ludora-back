@@ -3,6 +3,8 @@ import { DeleteObjectCommand, S3 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+
+import { StorageFolderName } from '../constants/constants';
 @Injectable()
 export class StorageService {
   private readonly s3 = new S3({
@@ -18,12 +20,13 @@ export class StorageService {
   private readonly publicUrl = this.configService.getOrThrow('CLOUDFLARE_R2_PUBLIC_URL');
 
   /**
-   * @description send/update un fichier dans le bucket S3
-   * @param folder: dossier dans lequel le fichier sera stocké
-   * @param filename: nom du fichier
-   * @param file: fichier à envoyer
+   * @description send/update a file to the S3 bucket
+   * @param folder: folder in which the file will be stored
+   * @param filename: file name
+   * @param file: file to send
+   * @returns { data: string }
    */
-  async upload(folder: string, filename: string, file: Buffer) {
+  async upload(folder: string, filename: string, file: Buffer): Promise<{ data: string }> {
     try {
       const processedFilename = Date.now() + filename;
 
@@ -47,10 +50,10 @@ export class StorageService {
 
   /**
    * @deprecated Use getUnsignedUrl instead
-   * @description Génère une URL signée pour un fichier dans le bucket S3
+   * @description Generates a signed URL for a file in the S3 bucket
    * @param filename
-   * @param expiresIn : valeur à laquelle l'URL signée expire (604800 valeur max)
-   * @returns
+   * @param expiresIn : value at which the signed URL expires (604800 max value)
+   * @returns { string }
    */
   async getSignedUrl(folder: string, filename: string, expiresIn = 7200): Promise<string> {
     if (!filename) {
@@ -76,7 +79,7 @@ export class StorageService {
   }
 
   /**
-   * @description Supprime un fichier dans le bucket S3
+   * @description Deletes a file from the S3 bucket
    * @param filename
    */
   async deleteFile(filename: string): Promise<void> {
@@ -91,5 +94,16 @@ export class StorageService {
       console.error('Erreur suppression:', error);
       throw new BadRequestException(error);
     }
+  }
+
+  /**
+   * @description Picks a random default profile picture from the default-avatars folder
+   * @returns { data: string }
+   */
+  async createDefaultProfilePicture(): Promise<{ data: string }> {
+    const randomNumber = Math.floor(Math.random() * 16) + 1;
+    const fileName = `${this.publicUrl}/${StorageFolderName.USERS}/default-avatars/ludo-${randomNumber}.png`;
+
+    return { data: fileName };
   }
 }

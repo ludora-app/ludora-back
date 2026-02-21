@@ -68,6 +68,8 @@ export class UsersService {
         createImageDto.name,
         createImageDto.file,
       );
+    } else {
+      imageUrl = await this.storageService.createDefaultProfilePicture();
     }
 
     const newUser = await prisma.users.create({
