@@ -26,6 +26,9 @@ describe('HourPreferencesService', () => {
       },
     };
     const mockPrismaService = {
+      users: {
+        findUnique: jest.fn(),
+      },
       userHourPreferences: {
         findMany: jest.fn(),
         findUnique: jest.fn(),
@@ -243,7 +246,7 @@ describe('HourPreferencesService', () => {
         },
       ];
 
-      (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.users.findUnique as jest.Mock).mockResolvedValue({ uid: mockUser.uid });
       (prismaService.userHourPreferences.findMany as jest.Mock).mockResolvedValue(mockPreferences);
 
       const result = await service.findAllByUserUid('user-uid-1');
@@ -273,7 +276,7 @@ describe('HourPreferencesService', () => {
     });
 
     it('should return empty array when user has no preferences', async () => {
-      (usersService.findOne as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.users.findUnique as jest.Mock).mockResolvedValue({ uid: mockUser.uid });
       (prismaService.userHourPreferences.findMany as jest.Mock).mockResolvedValue([]);
 
       const result = await service.findAllByUserUid('user-uid-1');
@@ -286,7 +289,7 @@ describe('HourPreferencesService', () => {
     });
 
     it('should throw NotFoundException when user does not exist', async () => {
-      (usersService.findOne as jest.Mock).mockResolvedValue(null);
+      (prismaService.users.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.findAllByUserUid('user-uid-1')).rejects.toThrow(
         new NotFoundException('User not found'),

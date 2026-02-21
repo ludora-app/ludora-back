@@ -1,7 +1,5 @@
 import { PinoLogger } from 'nestjs-pino';
-import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { USERSELECT } from 'src/shared/constants/select-user';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
@@ -12,7 +10,6 @@ import { SportPreferenceResponseData } from '../dto/output/sport-preference.resp
 @Injectable()
 export class SportPreferencesService {
   constructor(
-    private readonly usersService: UsersService,
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
   ) {
@@ -20,7 +17,10 @@ export class SportPreferencesService {
   }
 
   async findAllByUserUid(userUid: string): Promise<PaginatedDataDto<SportPreferenceResponseData>> {
-    const existingUser = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
+    const existingUser = await this.prisma.users.findUnique({
+      select: { uid: true },
+      where: { uid: userUid },
+    });
     if (!existingUser) {
       this.logger.error(`User not found: ${userUid}`);
       throw new NotFoundException('User not found');

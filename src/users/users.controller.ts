@@ -77,7 +77,7 @@ export class UsersController {
   @Get('/list/collection')
   @Protected()
   @ApiOperation({
-    summary: 'Récupère tous les utilisateurs',
+    summary: 'Retrieves all users with scoring based on preferences',
   })
   @ApiOkResponse({
     description: 'Successfully fetched users',
@@ -93,9 +93,11 @@ export class UsersController {
   })
   @HttpCode(HttpStatus.OK)
   async findAll(
+    @Req() request: Request,
     @Query() filters: UserFilterDto,
   ): Promise<PaginationResponseTypeDto<FindAllUsersResponseDataDto>> {
-    const data = await this.usersService.findAll(filters);
+    const userUid = request['user'].uid;
+    const data = await this.usersService.findAll(filters, userUid);
 
     return {
       data,

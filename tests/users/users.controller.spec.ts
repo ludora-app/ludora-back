@@ -89,19 +89,23 @@ describe('UsersController', () => {
   describe('findAll', () => {
     it('should return an array of users', async () => {
       const filters: UserFilterDto = { limit: 10 };
+      const userUid = 'current-user-uid';
+      const mockRequest = { user: { uid: userUid } } as unknown as Parameters<
+        UsersController['findAll']
+      >[0];
       mockUsersService.findAll.mockResolvedValue({
         items: [mockUser],
         nextCursor: null,
         totalCount: 1,
       });
 
-      const result = await controller.findAll(filters);
+      const result = await controller.findAll(mockRequest, filters);
 
       expect(result).toEqual({
         data: { items: [mockUser], nextCursor: null, totalCount: 1 },
         message: 'Users fetched successfully',
       });
-      expect(service.findAll).toHaveBeenCalledWith(filters);
+      expect(service.findAll).toHaveBeenCalledWith(filters, userUid);
     });
   });
 
