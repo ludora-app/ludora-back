@@ -25,6 +25,8 @@ export class EmailsService {
     this.transporter = this.createTransporter();
   }
 
+  private readonly adminEmail: string = this.configService.getOrThrow<string>('LUDORA_ADMIN_EMAIL');
+
   /**
    * Creates and configures a nodemailer transporter instance
    * @private
@@ -94,6 +96,16 @@ export class EmailsService {
       this.logger.error(`Failed to send email: ${error.message}`);
       throw error;
     }
+  }
+
+  async sendNewFieldAdministrationRequestEmail(fieldUid: string) {
+    await this.sendEmail({
+      data: {
+        link: `${this.configService.getOrThrow<string>('BASE_URL')}/fields/${fieldUid}`,
+      },
+      recipients: [this.adminEmail],
+      template: 'newFieldAdministrationRequest',
+    });
   }
 
   async testEmail() {

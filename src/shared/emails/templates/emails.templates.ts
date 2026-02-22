@@ -78,9 +78,24 @@ export const PASSWORD_RESET_REQUEST_TEMPLATE: EmailTemplate = {
   subject: 'Ton code de récupération Ludora',
 };
 
+export const NEW_FIELD_ADMINISTRATION_REQUEST_TEMPLATE: EmailTemplate = {
+  html: (data: { link: string }) => `
+    <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+        <h2 style="color: #111827;">Nouvelle demande de création de terrain à valider</h2>
+        <p style="font-size: 16px; line-height: 1.5;">Un nouveau terrain a été demandé à valider.</p>
+        <p style="font-size: 16px; line-height: 1.5;">Pour le visualiser, clique sur le bouton ci-dessous :</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="${data.link}" style="background-color: #f15924; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">Visualiser le terrain</a>
+        </div>
+    </div>
+  `,
+  subject: 'Nouvelle demande de création de terrain à valider',
+};
+
 // Objet qui regroupe tous les templates pour faciliter l'accès
 export const emailTemplates = {
   emailVerified: VERIFIED_EMAIL_TEMPLATE,
+  newFieldAdministrationRequest: NEW_FIELD_ADMINISTRATION_REQUEST_TEMPLATE,
   passwordReset: PASSWORD_RESET_TEMPLATE,
   passwordResetRequest: PASSWORD_RESET_REQUEST_TEMPLATE,
   verificationLink: VERIFICATION_LINK_TEMPLATE,

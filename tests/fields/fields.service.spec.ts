@@ -3,6 +3,7 @@ import { ConflictException, NotFoundException, BadRequestException } from '@nest
 import { PinoLogger } from 'nestjs-pino';
 
 import { PrismaService } from '../../src/prisma/prisma.service';
+import { EmailsService } from '../../src/shared/emails/emails.service';
 import { StorageService } from '../../src/shared/storage/storage.service';
 import { GeolocalisationService } from '../../src/shared/geolocalisation/geolocalisation.service';
 import { PartnersService } from '../../src/partners/partners.service';
@@ -54,6 +55,10 @@ describe('FieldsService', () => {
     warn: jest.fn(),
   };
 
+  const mockEmailsService = {
+    sendNewFieldAdministrationRequestEmail: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -63,6 +68,7 @@ describe('FieldsService', () => {
         { provide: GeolocalisationService, useValue: mockGeolocalisationService },
         { provide: PartnersService, useValue: mockPartnersService },
         { provide: PinoLogger, useValue: mockLogger },
+        { provide: EmailsService, useValue: mockEmailsService },
       ],
     }).compile();
 

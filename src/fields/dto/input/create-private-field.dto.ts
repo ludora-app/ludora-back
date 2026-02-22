@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { CreateImageDto } from 'src/auth/dto';
 import { Sport } from 'src/shared/constants/constants';
 import {
@@ -12,6 +13,18 @@ import {
 } from 'class-validator';
 
 export class CreatePrivateFieldDto {
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [value];
+      } catch {
+        return [value];
+      }
+    }
+    return value ? [value] : value;
+  })
   @IsEnum(Sport, { each: true })
   @IsNotEmpty()
   @ApiProperty({

@@ -1,11 +1,12 @@
 import { DateTime } from 'luxon';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ConflictException, Injectable } from '@nestjs/common';
+import { EmailsService } from 'src/shared/emails/emails.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { Sport, StorageFolderName } from 'src/shared/constants/constants';
 import { RankedFieldResult } from 'src/sessions/interfaces/session-interface';
 import { FieldType, Prisma, VerificationStatus } from 'generated/prisma/client';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 
@@ -30,6 +31,7 @@ export class FieldsService {
     private readonly storageService: StorageService,
     private readonly geolocalisationService: GeolocalisationService,
     private readonly logger: PinoLogger,
+    private readonly emailsService: EmailsService,
   ) {
     this.logger.setContext(FieldsService.name);
   }
@@ -105,6 +107,8 @@ export class FieldsService {
           return { order: index, uid: fieldImage.uid, url: fieldImage.url };
         }),
       );
+
+      await this.emailsService.sendNewFieldAdministrationRequestEmail(newField.uid);
 
       return { fieldImages, newField };
     });
@@ -217,6 +221,10 @@ export class FieldsService {
     address: string,
     sports: Sport[],
   ): Promise<void> {
+    if (!sports || !Array.isArray(sports) || sports.length === 0) {
+      throw new BadRequestException('sports must be a non-empty array');
+    }
+
     const field = await this.prisma.fields.findFirst({
       where: {
         address,

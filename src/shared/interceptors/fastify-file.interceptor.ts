@@ -54,13 +54,21 @@ export class FastifyFilesInterceptor implements NestInterceptor {
             await part.toBuffer(); // We drain the stream
           }
         } else {
-          // Field handling (unchanged)
-          const value = (part as any).value;
+          // Field handling
+          let value = (part as any).value;
+          if (typeof value === 'string' && value.trim().startsWith('[')) {
+            try {
+              const parsed = JSON.parse(value);
+              value = Array.isArray(parsed) ? parsed : value;
+            } catch {
+              // Keep original value if JSON parse fails
+            }
+          }
           if (body[cleanFieldName]) {
             if (!Array.isArray(body[cleanFieldName])) {
               body[cleanFieldName] = [body[cleanFieldName]];
             }
-            body[cleanFieldName].push(value);
+            body[cleanFieldName].push(...(Array.isArray(value) ? value : [value]));
           } else {
             body[cleanFieldName] = value;
           }
