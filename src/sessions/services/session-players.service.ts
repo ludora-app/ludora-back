@@ -1,10 +1,10 @@
 import { PinoLogger } from 'nestjs-pino';
-import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UserSimpleDisplayDataDto } from 'src/users/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma, SessionPlayers } from 'generated/prisma/client';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { EventTypes } from 'src/notifications/constants/event.types';
+import { Prisma, SessionPlayers, Sessions } from 'generated/prisma/client';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
@@ -142,5 +142,95 @@ export class SessionPlayersService {
     //? we only want to return 20 suggestions max
     if (suggestedPlayers.length > 20) suggestedPlayers = suggestedPlayers.slice(0, 20);
     return { items: suggestedPlayers, nextCursor: null, totalCount: suggestedPlayers.length };
+  }
+
+  async leaveSession(session: Sessions, userUid: string): Promise<void> {
+    if (session.startDate < new Date()) {
+      throw new BadRequestException('You cannot leave a session after it has started');
+    }
+
+    const player = await this.prisma.sessionPlayers.findUnique({
+      where: {
+        sessionUid_userUid: {
+          sessionUid: session.uid,
+          userUid,
+        },
+      },
+    });
+    if (!player) {
+      throw new BadRequestException('You are not a player of this session');
+    }
+    await this.prisma.sessionPlayers.delete({
+      where: {
+        sessionUid_userUid: {
+          sessionUid: session.uid,
+          userUid,
+        },
+      },
+    });
+
+    const sessionConversation = await this.prisma.conversations.findFirst({
+      where: {
+        sessionUid: session.uid,
+      },
+    });
+
+    await this.prisma.conversationMembers.delete({
+      where: {
+        conversationUid_userUid: {
+          conversationUid: sessionConversation.uid,
+          userUid,
+        },
+      },
+    });
+    this.logger.debug(`Player ${userUid} left session ${session.uid}`);
+  }
+
+  async switchPlayerToAnotherTeam(
+    session: Sessions,
+    userUid: string,
+    teamUid: string,
+  ): Promise<void> {
+    const existingTeam = await this.prisma.sessionTeams.findUnique({
+      where: {
+        sessionUid: session.uid,
+        uid: teamUid,
+      },
+    });
+
+    if (!existingTeam) {
+      throw new BadRequestException('Team not found');
+    }
+
+    const existingPlayer = await this.prisma.sessionPlayers.findUnique({
+      where: {
+        sessionUid_userUid: {
+          sessionUid: session.uid,
+          userUid,
+        },
+      },
+    });
+
+    if (!existingPlayer) {
+      throw new BadRequestException('Player not found');
+    }
+
+    if (existingPlayer.teamUid === teamUid) {
+      throw new BadRequestException('Player already on this team');
+    }
+
+    await this.prisma.sessionPlayers.update({
+      data: {
+        teamUid,
+      },
+      where: {
+        sessionUid_userUid: {
+          sessionUid: session.uid,
+          userUid,
+        },
+      },
+    });
+
+    this.logger.debug(`Player ${userUid} switched to team ${teamUid} in session ${session.uid}`);
   }
 }

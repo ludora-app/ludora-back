@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PinoLogger } from 'nestjs-pino';
@@ -14,9 +15,21 @@ describe('SessionPlayersService', () => {
       create: jest.fn(),
       findFirst: jest.fn(),
       findMany: jest.fn(),
+      findUnique: jest.fn(),
+      delete: jest.fn(),
+      update: jest.fn(),
+    },
+    sessionTeams: {
+      findUnique: jest.fn(),
     },
     sessions: {
       findMany: jest.fn(),
+    },
+    conversations: {
+      findFirst: jest.fn(),
+    },
+    conversationMembers: {
+      delete: jest.fn(),
     },
   };
 
@@ -224,6 +237,136 @@ describe('SessionPlayersService', () => {
 
       expect(result.items).toEqual([user1, user2]);
       expect(result.totalCount).toBe(2);
+    });
+  });
+
+  describe('leaveSession', () => {
+    const sessionUid = 'session-uid-123';
+    const userUid = 'user-uid-789';
+    const conversationUid = 'conversation-uid-456';
+    const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const pastDate = new Date(Date.now() - 60 * 60 * 1000);
+
+    const mockSession = {
+      uid: sessionUid,
+      startDate: futureDate,
+      endDate: new Date(futureDate.getTime() + 2 * 60 * 60 * 1000),
+    } as any;
+
+    it('should delete player and conversation membership when session has not started', async () => {
+      const mockPlayer = { sessionUid, userUid } as any;
+      (mockPrismaService.sessionPlayers.findUnique as jest.Mock).mockResolvedValue(mockPlayer);
+      (mockPrismaService.sessionPlayers.delete as jest.Mock).mockResolvedValue(undefined);
+      (mockPrismaService.conversations.findFirst as jest.Mock).mockResolvedValue({
+        uid: conversationUid,
+      });
+      (mockPrismaService.conversationMembers.delete as jest.Mock).mockResolvedValue(undefined);
+
+      await service.leaveSession(mockSession, userUid);
+
+      expect(mockPrismaService.sessionPlayers.findUnique).toHaveBeenCalledWith({
+        where: { sessionUid_userUid: { sessionUid, userUid } },
+      });
+      expect(mockPrismaService.sessionPlayers.delete).toHaveBeenCalledWith({
+        where: { sessionUid_userUid: { sessionUid, userUid } },
+      });
+      expect(mockPrismaService.conversations.findFirst).toHaveBeenCalledWith({
+        where: { sessionUid },
+      });
+      expect(mockPrismaService.conversationMembers.delete).toHaveBeenCalledWith({
+        where: { conversationUid_userUid: { conversationUid, userUid } },
+      });
+      expect(mockLogger.debug).toHaveBeenCalledWith(`Player ${userUid} left session ${sessionUid}`);
+    });
+
+    it('should throw BadRequestException when session has already started', async () => {
+      const startedSession = { ...mockSession, startDate: pastDate } as any;
+
+      await expect(service.leaveSession(startedSession, userUid)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockPrismaService.sessionPlayers.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when player is not in session', async () => {
+      (mockPrismaService.sessionPlayers.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.leaveSession(mockSession, userUid)).rejects.toThrow(BadRequestException);
+      expect(mockPrismaService.sessionPlayers.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('switchPlayerToAnotherTeam', () => {
+    const sessionUid = 'session-uid-123';
+    const userUid = 'user-uid-789';
+    const teamUid = 'team-uid-456';
+    const otherTeamUid = 'team-uid-999';
+
+    const mockSession = {
+      uid: sessionUid,
+      startDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    } as any;
+
+    it('should update player team when team and player exist and player is on another team', async () => {
+      const mockTeam = { uid: teamUid, sessionUid } as any;
+      const mockPlayer = { sessionUid, userUid, teamUid: otherTeamUid } as any;
+      (mockPrismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue(mockTeam);
+      (mockPrismaService.sessionPlayers.findUnique as jest.Mock).mockResolvedValue(mockPlayer);
+      (mockPrismaService.sessionPlayers.update as jest.Mock).mockResolvedValue({
+        ...mockPlayer,
+        teamUid,
+      });
+
+      await service.switchPlayerToAnotherTeam(mockSession, userUid, teamUid);
+
+      expect(mockPrismaService.sessionTeams.findUnique).toHaveBeenCalledWith({
+        where: { sessionUid, uid: teamUid },
+      });
+      expect(mockPrismaService.sessionPlayers.findUnique).toHaveBeenCalledWith({
+        where: { sessionUid_userUid: { sessionUid, userUid } },
+      });
+      expect(mockPrismaService.sessionPlayers.update).toHaveBeenCalledWith({
+        data: { teamUid },
+        where: { sessionUid_userUid: { sessionUid, userUid } },
+      });
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        `Player ${userUid} switched to team ${teamUid} in session ${sessionUid}`,
+      );
+    });
+
+    it('should throw BadRequestException when team does not exist', async () => {
+      (mockPrismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.switchPlayerToAnotherTeam(mockSession, userUid, teamUid),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockPrismaService.sessionPlayers.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when player does not exist', async () => {
+      const mockTeam = { uid: teamUid, sessionUid } as any;
+      (mockPrismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue(mockTeam);
+      (mockPrismaService.sessionPlayers.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.switchPlayerToAnotherTeam(mockSession, userUid, teamUid),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockPrismaService.sessionPlayers.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when player is already on the team', async () => {
+      const mockTeam = { uid: teamUid, sessionUid } as any;
+      const mockPlayer = { sessionUid, userUid, teamUid } as any;
+      (mockPrismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue(mockTeam);
+      (mockPrismaService.sessionPlayers.findUnique as jest.Mock).mockResolvedValue(mockPlayer);
+
+      await expect(
+        service.switchPlayerToAnotherTeam(mockSession, userUid, teamUid),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockPrismaService.sessionPlayers.update).not.toHaveBeenCalled();
     });
   });
 });

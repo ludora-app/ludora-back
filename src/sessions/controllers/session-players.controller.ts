@@ -1,19 +1,35 @@
+import { FastifyRequest } from 'fastify';
+import { Sessions } from 'generated/prisma/client';
 import { UserSimpleDisplayDataDto } from 'src/users/dto';
 import { SessionPlayers } from 'generated/prisma/browser';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   ApiBadRequestResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 
+import { SessionsPipe } from '../pipes/sessions.pipe';
 import { SessionsService } from '../services/sessions.service';
 import { JoinSessionDto } from '../dto/input/create-session-player.dto';
 import { SessionPlayersService } from '../services/session-players.service';
@@ -34,7 +50,7 @@ export class SessionPlayersController {
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   async joinSession(
-    @Req() request: Request,
+    @Req() request: FastifyRequest,
     @Body() joinSessionDto: JoinSessionDto,
   ): Promise<ResponseTypeDto<SessionPlayers>> {
     const userUid = request['user'].uid;
@@ -62,5 +78,36 @@ export class SessionPlayersController {
       data,
       message: 'Players suggested successfully',
     };
+  }
+
+  @Patch(':sessionUid/:teamUid/switch-team')
+  @Protected()
+  @ApiOperation({ summary: 'Allows a user to switch to another team in a session' })
+  @ApiNoContentResponse({ description: 'Player switched to another team successfully' })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async switchTeams(
+    @Param('sessionUid', SessionsPipe) session: Sessions,
+    @Req() request: FastifyRequest,
+    @Param('teamUid') teamUid: string,
+  ): Promise<void> {
+    const userUid = request['user'].uid;
+    await this.playersService.switchPlayerToAnotherTeam(session, userUid, teamUid);
+  }
+
+  @Delete(':sessionUid/leave')
+  @Protected()
+  @ApiOperation({ summary: 'Allows a user to leave a session' })
+  @ApiNoContentResponse({ description: 'Player left session successfully' })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async leaveSession(
+    @Param('sessionUid', SessionsPipe) session: Sessions,
+    @Req() request: FastifyRequest,
+  ): Promise<void> {
+    const userUid = request['user'].uid;
+    await this.playersService.leaveSession(session, userUid);
   }
 }

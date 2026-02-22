@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { SessionsPipe } from 'src/sessions/pipes/sessions.pipe';
 import { JoinSessionDto } from 'src/sessions/dto/input/create-session-player.dto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SessionPlayersController } from 'src/sessions/controllers/session-players.controller';
@@ -17,10 +19,16 @@ describe('SessionPlayersController', () => {
 
   const mockPlayersService = {
     suggestPlayerFromPreviousSessions: jest.fn(),
+    leaveSession: jest.fn(),
+    switchPlayerToAnotherTeam: jest.fn(),
   };
 
   const mockAuthGuard = {
     canActivate: jest.fn(() => true),
+  };
+
+  const mockPrismaService = {
+    sessions: { findUnique: jest.fn() },
   };
 
   beforeEach(async () => {
@@ -35,6 +43,11 @@ describe('SessionPlayersController', () => {
           provide: SessionPlayersService,
           useValue: mockPlayersService,
         },
+        {
+          provide: PrismaService,
+          useValue: mockPrismaService,
+        },
+        SessionsPipe,
       ],
     })
       .overrideGuard(AuthB2CGuard)
@@ -218,6 +231,107 @@ describe('SessionPlayersController', () => {
 
       await expect(controller.suggestPlayerFromPreviousSessions(mockRequest)).rejects.toThrow(
         'Database error',
+      );
+    });
+  });
+
+  describe('switchTeams', () => {
+    const mockSession = {
+      uid: 'session-uid-123',
+      startDate: new Date('2025-12-01T10:00:00Z'),
+      endDate: new Date('2025-12-01T12:00:00Z'),
+    } as any;
+
+    const mockRequest = {
+      user: { uid: 'user-uid-789' },
+    } as any;
+
+    const teamUid = 'team-uid-456';
+
+    it('should call playersService.switchPlayerToAnotherTeam and return void', async () => {
+      mockPlayersService.switchPlayerToAnotherTeam.mockResolvedValue(undefined);
+
+      await controller.switchTeams(mockSession, mockRequest, teamUid);
+
+      expect(playersService.switchPlayerToAnotherTeam).toHaveBeenCalledWith(
+        mockSession,
+        mockRequest.user.uid,
+        teamUid,
+      );
+    });
+
+    it('should throw BadRequestException when player not found', async () => {
+      mockPlayersService.switchPlayerToAnotherTeam.mockRejectedValue(
+        new BadRequestException('Player not found'),
+      );
+
+      await expect(controller.switchTeams(mockSession, mockRequest, teamUid)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(playersService.switchPlayerToAnotherTeam).toHaveBeenCalledWith(
+        mockSession,
+        mockRequest.user.uid,
+        teamUid,
+      );
+    });
+
+    it('should throw BadRequestException when team not found', async () => {
+      mockPlayersService.switchPlayerToAnotherTeam.mockRejectedValue(
+        new BadRequestException('Team not found'),
+      );
+
+      await expect(controller.switchTeams(mockSession, mockRequest, teamUid)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException when player already on team', async () => {
+      mockPlayersService.switchPlayerToAnotherTeam.mockRejectedValue(
+        new BadRequestException('Player already on this team'),
+      );
+
+      await expect(controller.switchTeams(mockSession, mockRequest, teamUid)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
+
+  describe('leaveSession', () => {
+    const mockSession = {
+      uid: 'session-uid-123',
+      startDate: new Date('2025-12-01T10:00:00Z'),
+      endDate: new Date('2025-12-01T12:00:00Z'),
+    } as any;
+
+    const mockRequest = {
+      user: { uid: 'user-uid-789' },
+    } as any;
+
+    it('should call playersService.leaveSession and return void', async () => {
+      mockPlayersService.leaveSession.mockResolvedValue(undefined);
+
+      await controller.leaveSession(mockSession, mockRequest);
+
+      expect(playersService.leaveSession).toHaveBeenCalledWith(mockSession, mockRequest.user.uid);
+    });
+
+    it('should throw BadRequestException when session has already started', async () => {
+      mockPlayersService.leaveSession.mockRejectedValue(
+        new BadRequestException('You cannot leave a session after it has started'),
+      );
+
+      await expect(controller.leaveSession(mockSession, mockRequest)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException when user is not a player of the session', async () => {
+      mockPlayersService.leaveSession.mockRejectedValue(
+        new BadRequestException('You are not a player of this session'),
+      );
+
+      await expect(controller.leaveSession(mockSession, mockRequest)).rejects.toThrow(
+        BadRequestException,
       );
     });
   });
