@@ -365,4 +365,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.logger.error(`Error handling mark as read event: ${error.message}`);
     }
   }
+  @OnEvent(EventTypes.MESSAGE_DELETED)
+  async handleMessageDeletedEvent(payload: {
+    conversationUid: string;
+    messageUid: string;
+    userUid: string;
+  }): Promise<void> {
+    try {
+      const { conversationUid, messageUid, userUid } = payload;
+      const conversationRoom = `conversation:${conversationUid}`;
+
+      this.server.to(conversationRoom).emit('notification', {
+        data: { conversationUid, messageUid, userUid },
+        message: `Message ${messageUid} was deleted by ${userUid}`,
+        type: NotificationType.MESSAGE_DELETED,
+      });
+
+      this.logger.debug(
+        `[Event] Message ${messageUid} deleted by ${userUid} in ${conversationUid}`,
+      );
+    } catch (error) {
+      this.logger.error(`Error handling message deleted event: ${error.message}`);
+    }
+  }
 }

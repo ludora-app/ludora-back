@@ -385,5 +385,11 @@ export class MessagesService {
       },
       where: { uid: messageUid },
     });
+
+    this.eventEmitter.emit(EventTypes.MESSAGE_DELETED, {
+      conversationUid: message.conversationUid,
+      messageUid,
+      userUid,
+    });
   }
 }

@@ -100,4 +100,21 @@ describe('NotificationsController', () => {
       });
     });
   });
+
+  describe('getUnreadCount', () => {
+    it('should call getUnreadCount and return properly formatted response', async () => {
+      const mockReq = { user: { uid: 'user-123' } };
+      const filters = {};
+      const mockResponse = { unreadCount: 5 };
+      mockNotificationsService.getUnreadCount.mockResolvedValue(mockResponse);
+
+      const result = await controller.getUnreadCount(mockReq as any, filters as any);
+
+      expect(mockNotificationsService.getUnreadCount).toHaveBeenCalledWith('user-123', filters);
+      expect(result).toEqual({
+        data: mockResponse,
+        message: 'Unread count fetched successfully',
+      });
+    });
+  });
 });

@@ -40,6 +40,9 @@ describe('ConversationsService', () => {
         findMany: jest.fn(),
         findUnique: jest.fn(),
       },
+      messageReceipts: {
+        count: jest.fn(),
+      },
     };
 
     mockMessagesService = {
@@ -1068,6 +1071,44 @@ describe('ConversationsService', () => {
           null,
         );
       });
+    });
+  });
+
+  describe('hasUnreadMessages', () => {
+    it('should return { hasUnreadMessages: true } if there are unread messages', async () => {
+      const userUid = 'user-123';
+      mockPrismaService.messageReceipts.count.mockResolvedValue(5);
+
+      const result = await service.hasUnreadMessages(userUid);
+
+      expect(result).toEqual({ hasUnreadMessages: true });
+      expect(mockPrismaService.messageReceipts.count).toHaveBeenCalledWith({
+        where: {
+          message: {
+            conversation: {
+              conversationMembers: {
+                some: {
+                  isArchived: false,
+                  isVisible: true,
+                  userUid,
+                },
+              },
+            },
+            senderUid: { not: userUid },
+          },
+          status: { notIn: [MessageStatus.READ, MessageStatus.SENT] },
+          userUid,
+        },
+      });
+    });
+
+    it('should return { hasUnreadMessages: false } if there are no unread messages', async () => {
+      const userUid = 'user-123';
+      mockPrismaService.messageReceipts.count.mockResolvedValue(0);
+
+      const result = await service.hasUnreadMessages(userUid);
+
+      expect(result).toEqual({ hasUnreadMessages: false });
     });
   });
 });

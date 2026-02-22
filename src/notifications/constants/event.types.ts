@@ -14,5 +14,6 @@ export enum EventTypes {
   NOTIFICATION_BROADCAST = 'notification.broadcast',
   NOTIFICATION_SEND_TO_MULTIPLE = 'notification.sendToMultiple',
   MARK_MESSAGES_AS_READ = 'mark.messages.as.read',
+  MESSAGE_DELETED = 'message.deleted',
   SESSION_PLAYER_ADDED = 'session.player.added',
 }

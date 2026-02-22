@@ -1,10 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
-export class UnreadCountResponse extends ResponseTypeDto<number> {
-  @ApiProperty({ example: 1 })
-  readonly data: number;
+export class UnreadCountResponseData {
+  @ApiProperty({
+    description: 'The number of unread notifications',
+    example: 5,
+  })
+  unreadCount: number;
+}
 
-  @ApiProperty({ example: 'Unread count fetched successfully' })
-  readonly message: string;
+export class UnreadCountResponseDto extends ResponseTypeDto<UnreadCountResponseData> {
+  @ApiProperty({ type: UnreadCountResponseData })
+  readonly data: UnreadCountResponseData;
 }

@@ -84,14 +84,14 @@ describe('NotificationsService', () => {
 
       expect(mockFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { userUid: 'user-1' },
+          where: {
+            userUid: 'user-1',
+            type: {
+              notIn: [NotificationType.NEW_MESSAGE, NotificationType.MESSAGE_DELETED],
+            },
+          },
           take: 20,
           orderBy: { createdAt: 'desc' },
-        }),
-      );
-      expect(mockFindMany).not.toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ type: expect.anything() }),
         }),
       );
     });
@@ -104,7 +104,12 @@ describe('NotificationsService', () => {
 
       expect(mockFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { userUid: 'user-1' },
+          where: {
+            userUid: 'user-1',
+            type: {
+              notIn: [NotificationType.NEW_MESSAGE, NotificationType.MESSAGE_DELETED],
+            },
+          },
           take: 10,
           cursor: { uid: 'cursor-uid-123' },
           skip: 1,
@@ -169,6 +174,53 @@ describe('NotificationsService', () => {
         type: mockNotification.type,
         title: mockNotification.title,
       });
+    });
+  });
+
+  describe('getUnreadCount', () => {
+    it('should return unread count as data object with default exclusion of messages', async () => {
+      const mockCount = jest.fn().mockResolvedValue(5);
+      // @ts-ignore
+      service.prisma.notifications.count = mockCount;
+
+      const result = await service.getUnreadCount('user-1');
+
+      expect(mockCount).toHaveBeenCalledWith({
+        where: {
+          isRead: false,
+          userUid: 'user-1',
+          type: {
+            notIn: [NotificationType.NEW_MESSAGE, NotificationType.MESSAGE_DELETED],
+          },
+        },
+      });
+      expect(result).toEqual({ unreadCount: 5 });
+    });
+
+    it('should filter by SESSION types when provided', async () => {
+      const mockCount = jest.fn().mockResolvedValue(2);
+      // @ts-ignore
+      service.prisma.notifications.count = mockCount;
+
+      const result = await service.getUnreadCount('user-1', {
+        type: NotificationTypeFilter.SESSION,
+      });
+
+      expect(mockCount).toHaveBeenCalledWith({
+        where: {
+          isRead: false,
+          userUid: 'user-1',
+          type: {
+            in: [
+              NotificationType.SESSION_INVITATION,
+              NotificationType.SESSION_UPDATED,
+              NotificationType.SESSION_CANCELLED,
+              NotificationType.SESSION_REMINDER,
+            ],
+          },
+        },
+      });
+      expect(result).toEqual({ unreadCount: 2 });
     });
   });
 });

@@ -12,6 +12,7 @@ enum NotificationType {
   MESSAGES_READ
   CONVERSATION_READ
   SESSION_PLAYER_ADDED
+  MESSAGE_DELETED
 
   @@map("notification_type")
   @@schema("notifications")

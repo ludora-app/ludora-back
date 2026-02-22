@@ -15,9 +15,10 @@ import { CreateMessageDto } from '../dto/input/create-message.dto';
 import { ConversationMapper } from '../mappers/conversation.mapper';
 import { ConversationMembersService } from './conversation-members.service';
 import { ConversationFilterDto } from '../dto/input/conversation-filter.dto';
+import { UnreadMessagesResponseData } from '../dto/output/unread-messages-response.dto';
 import { MessageCollectionItemDto } from '../dto/output/message-collection-response.dto';
-import { CreateSessionConversationDto } from '../dto/input/create-session-conversation.dto';
 import { CreatePrivateConversationDto } from '../dto/input/create-private-conversation.dto';
+import { CreateSessionConversationDto } from '../dto/input/create-session-conversation.dto';
 import { FindOneConversationResponseData } from '../dto/output/find-one-conversation-response.dto';
 import { ConversationCollectionResponseData } from '../dto/output/conversation-collection-response.dto';
 
@@ -345,6 +346,29 @@ export class ConversationsService {
       nextCursor,
       totalCount: conversations.length,
     };
+  }
+
+  async hasUnreadMessages(userUid: string): Promise<UnreadMessagesResponseData> {
+    const unreadCount = await this.prisma.messageReceipts.count({
+      where: {
+        message: {
+          conversation: {
+            conversationMembers: {
+              some: {
+                isArchived: false,
+                isVisible: true,
+                userUid,
+              },
+            },
+          },
+          senderUid: { not: userUid },
+        },
+        status: { notIn: [MessageStatus.READ, MessageStatus.SENT] },
+        userUid,
+      },
+    });
+
+    return { hasUnreadMessages: unreadCount > 0 };
   }
 
   async findOne(

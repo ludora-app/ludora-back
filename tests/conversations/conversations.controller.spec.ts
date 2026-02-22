@@ -21,6 +21,7 @@ describe('ConversationsController', () => {
       findAllByUserUid: jest.fn(),
       findByUserUids: jest.fn(),
       findOne: jest.fn(),
+      hasUnreadMessages: jest.fn(),
       loadMoreMessages: jest.fn(),
     };
 
@@ -832,6 +833,40 @@ describe('ConversationsController', () => {
         'user-new-1',
         'user-new-2',
       );
+    });
+  });
+
+  describe('hasUnreadMessages', () => {
+    it('should return true if the user has unread messages', async () => {
+      const mockRequest = {
+        user: { uid: 'user-123' },
+      } as any;
+
+      mockConversationsService.hasUnreadMessages.mockResolvedValue({ hasUnreadMessages: true });
+
+      const result = await controller.hasUnreadMessages(mockRequest);
+
+      expect(result).toEqual({
+        data: { hasUnreadMessages: true },
+        message: 'Unread messages checked successfully',
+      });
+      expect(mockConversationsService.hasUnreadMessages).toHaveBeenCalledWith('user-123');
+    });
+
+    it('should return false if the user has no unread messages', async () => {
+      const mockRequest = {
+        user: { uid: 'user-123' },
+      } as any;
+
+      mockConversationsService.hasUnreadMessages.mockResolvedValue({ hasUnreadMessages: false });
+
+      const result = await controller.hasUnreadMessages(mockRequest);
+
+      expect(result).toEqual({
+        data: { hasUnreadMessages: false },
+        message: 'Unread messages checked successfully',
+      });
+      expect(mockConversationsService.hasUnreadMessages).toHaveBeenCalledWith('user-123');
     });
   });
 });

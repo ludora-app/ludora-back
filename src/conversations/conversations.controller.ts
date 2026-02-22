@@ -42,8 +42,9 @@ import { MessagesService } from './services/messages.service';
 import { CreateMessageDto } from './dto/input/create-message.dto';
 import { ConversationsService } from './services/conversations.service';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
-import { ConversationMembersService } from './services/conversation-members.service';
 import { ConversationMembershipGuard } from './guards/conversation-membership.guard';
+import { ConversationMembersService } from './services/conversation-members.service';
+import { UnreadMessagesResponseDto } from './dto/output/unread-messages-response.dto';
 import { FindOneConversationByUserUidResponseDto } from './dto/output/find-one-conversation-by-user-uid-response.dto';
 import {
   ArchivedConversationSettingsDto,
@@ -120,6 +121,25 @@ export class ConversationsController {
     return {
       data: conversations,
       message: 'Conversations fetched successfully',
+    };
+  }
+
+  @Get('unread-messages')
+  @Protected()
+  @ApiOperation({ summary: 'Check if the user has any unread messages' })
+  @ApiOkResponse({
+    description: 'Returns true if the user has unread messages, false otherwise',
+    type: UnreadMessagesResponseDto,
+  })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.OK)
+  async hasUnreadMessages(@Req() request: Request): Promise<UnreadMessagesResponseDto> {
+    const userUid = request['user'].uid;
+    const data = await this.conversationsService.hasUnreadMessages(userUid);
+
+    return {
+      data,
+      message: 'Unread messages checked successfully',
     };
   }
 
