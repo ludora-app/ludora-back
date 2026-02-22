@@ -340,16 +340,27 @@ describe('ConversationsService', () => {
 
       await service.findAllByUserUid({ name: 'Group 1' }, 'user-123');
 
-      expect(mockPrismaService.conversations.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            name: {
-              contains: 'Group 1',
-              mode: 'insensitive',
-            },
-          }),
-        }),
-      );
+      // When no type: name filter uses OR (SESSION/GROUP by conversation.name, PRIVATE by other user firstname/lastname)
+      const call = mockPrismaService.conversations.findMany.mock.calls[0][0];
+      expect(call.where.OR).toBeDefined();
+      expect(call.where.OR).toHaveLength(3);
+      const nameFilter = { contains: 'Group 1', mode: 'insensitive' };
+      expect(call.where.OR[0]).toEqual({
+        name: nameFilter,
+        type: ConversationType.SESSION,
+      });
+      expect(call.where.OR[1]).toEqual({
+        name: nameFilter,
+        type: ConversationType.GROUP,
+      });
+      expect(call.where.OR[2].type).toBe(ConversationType.PRIVATE);
+      expect(call.where.OR[2].conversationMembers.some.userUid).toEqual({
+        not: 'user-123',
+      });
+      expect(call.where.OR[2].conversationMembers.some.user.OR).toEqual([
+        { firstname: nameFilter },
+        { lastname: nameFilter },
+      ]);
     });
 
     it('should handle pagination with cursor', async () => {

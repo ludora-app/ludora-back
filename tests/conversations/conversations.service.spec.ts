@@ -276,11 +276,10 @@ describe('ConversationsService', () => {
       expect(mockPrisma.conversations.findMany).toHaveBeenCalled();
     });
 
-    it('should apply filters correctly', async () => {
+    it('should apply type and limit filters correctly', async () => {
       const userUid = 'user-123';
       const filters = {
         limit: 5,
-        name: 'Test',
         type: ConversationType.GROUP,
       };
 
@@ -290,8 +289,85 @@ describe('ConversationsService', () => {
 
       const callArgs = mockPrisma.conversations.findMany.mock.calls[0][0];
       expect(callArgs.where.type).toBe(ConversationType.GROUP);
-      expect(callArgs.where.name).toEqual({ contains: 'Test', mode: 'insensitive' });
       expect(callArgs.take).toBe(6); // limit + 1 for cursor pagination
+    });
+
+    it('should filter by name on conversation.name when type is SESSION or GROUP', async () => {
+      const userUid = 'user-123';
+      const filters = {
+        name: 'Session Name',
+        type: ConversationType.SESSION,
+      };
+
+      mockPrisma.conversations.findMany.mockResolvedValue([]);
+
+      await service.findAllByUserUid(filters, userUid);
+
+      const callArgs = mockPrisma.conversations.findMany.mock.calls[0][0];
+      expect(callArgs.where.type).toBe(ConversationType.SESSION);
+      expect(callArgs.where.name).toEqual({
+        contains: 'Session Name',
+        mode: 'insensitive',
+      });
+      expect(callArgs.where.AND).toBeUndefined();
+      expect(callArgs.where.OR).toBeUndefined();
+    });
+
+    it('should filter by name on other user firstname/lastname when type is PRIVATE', async () => {
+      const userUid = 'user-123';
+      const filters = {
+        name: 'Dupont',
+        type: ConversationType.PRIVATE,
+      };
+
+      mockPrisma.conversations.findMany.mockResolvedValue([]);
+
+      await service.findAllByUserUid(filters, userUid);
+
+      const callArgs = mockPrisma.conversations.findMany.mock.calls[0][0];
+      expect(callArgs.where.type).toBe(ConversationType.PRIVATE);
+      expect(callArgs.where.name).toBeUndefined();
+      expect(callArgs.where.AND).toBeDefined();
+      expect(callArgs.where.AND).toHaveLength(1);
+      expect(callArgs.where.AND[0].conversationMembers.some.userUid).toEqual({
+        not: userUid,
+      });
+      expect(callArgs.where.AND[0].conversationMembers.some.user.OR).toEqual([
+        { firstname: { contains: 'Dupont', mode: 'insensitive' } },
+        { lastname: { contains: 'Dupont', mode: 'insensitive' } },
+      ]);
+    });
+
+    it('should filter by name with OR (SESSION/GROUP by name, PRIVATE by other user) when no type', async () => {
+      const userUid = 'user-123';
+      const filters = {
+        name: 'Search',
+      };
+
+      mockPrisma.conversations.findMany.mockResolvedValue([]);
+
+      await service.findAllByUserUid(filters, userUid);
+
+      const callArgs = mockPrisma.conversations.findMany.mock.calls[0][0];
+      expect(callArgs.where.type).toBeUndefined();
+      expect(callArgs.where.OR).toBeDefined();
+      expect(callArgs.where.OR).toHaveLength(3);
+      expect(callArgs.where.OR[0]).toEqual({
+        name: { contains: 'Search', mode: 'insensitive' },
+        type: ConversationType.SESSION,
+      });
+      expect(callArgs.where.OR[1]).toEqual({
+        name: { contains: 'Search', mode: 'insensitive' },
+        type: ConversationType.GROUP,
+      });
+      expect(callArgs.where.OR[2].type).toBe(ConversationType.PRIVATE);
+      expect(callArgs.where.OR[2].conversationMembers.some.userUid).toEqual({
+        not: userUid,
+      });
+      expect(callArgs.where.OR[2].conversationMembers.some.user.OR).toEqual([
+        { firstname: { contains: 'Search', mode: 'insensitive' } },
+        { lastname: { contains: 'Search', mode: 'insensitive' } },
+      ]);
     });
 
     it('should handle cursor pagination', async () => {

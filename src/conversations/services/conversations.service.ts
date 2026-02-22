@@ -212,6 +212,8 @@ export class ConversationsService {
           contains: string;
           mode: 'insensitive';
         };
+        AND?: Prisma.ConversationsWhereInput[];
+        OR?: Prisma.ConversationsWhereInput[];
       };
     } = {
       include: {
@@ -323,7 +325,44 @@ export class ConversationsService {
     }
 
     if (name) {
-      query.where.name = { contains: name, mode: 'insensitive' };
+      const nameFilter = { contains: name, mode: 'insensitive' as const };
+
+      if (type === ConversationType.SESSION || type === ConversationType.GROUP) {
+        // SESSION/GROUP: name comes from conversation.name
+        query.where.name = nameFilter;
+      } else if (type === ConversationType.PRIVATE) {
+        // PRIVATE: name is computed from the other user (non-connected)
+        query.where.AND = [
+          ...(query.where.AND ?? []),
+          {
+            conversationMembers: {
+              some: {
+                user: {
+                  OR: [{ firstname: nameFilter }, { lastname: nameFilter }],
+                },
+                userUid: { not: userUid },
+              },
+            },
+          },
+        ];
+      } else {
+        // No type filter: match SESSION/GROUP by name OR PRIVATE by other user's name
+        query.where.OR = [
+          { name: nameFilter, type: ConversationType.SESSION },
+          { name: nameFilter, type: ConversationType.GROUP },
+          {
+            conversationMembers: {
+              some: {
+                user: {
+                  OR: [{ firstname: nameFilter }, { lastname: nameFilter }],
+                },
+                userUid: { not: userUid },
+              },
+            },
+            type: ConversationType.PRIVATE,
+          },
+        ];
+      }
     }
 
     const rawConversations = await this.prisma.conversations.findMany(query);
