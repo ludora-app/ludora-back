@@ -40,6 +40,13 @@ export class MessageDto {
     readOnly: true,
   })
   type: MessageType;
+
+  @ApiProperty({
+    description: 'Whether the message is sent by the connected user',
+    example: true,
+    readOnly: true,
+  })
+  isSender: boolean;
 }
 
 export class SenderDto extends UserSimpleDisplayDataDto {
@@ -84,6 +91,22 @@ export class SessionData {
   sport: Sport;
 }
 
+export class ReceiverDto {
+  @ApiProperty({
+    description: 'User firstname',
+    example: 'John',
+    readOnly: true,
+  })
+  firstname: string;
+
+  @ApiProperty({
+    description: 'User lastname',
+    example: 'Doe',
+    readOnly: true,
+  })
+  lastname: string;
+}
+
 export class BasicConversationResponseData {
   @ApiProperty({
     description: 'Conversation ID',
@@ -124,6 +147,14 @@ export class BasicConversationResponseData {
     type: SenderDto,
   })
   sender: SenderDto | null;
+
+  @ApiProperty({
+    description: 'Receiver information (for private conversations)',
+    nullable: true,
+    readOnly: true,
+    type: ReceiverDto,
+  })
+  receiver: ReceiverDto | null;
 
   @ApiProperty({
     description: 'Conversation image URL, can either be the user image or the session image',

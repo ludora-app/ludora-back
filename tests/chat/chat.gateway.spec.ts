@@ -18,6 +18,12 @@ describe('ChatGateway', () => {
   let prismaService: PrismaService;
   let jwtService: JwtService;
 
+  const mockServer = {
+    emit: jest.fn(),
+    except: jest.fn().mockReturnThis(),
+    to: jest.fn().mockReturnThis(),
+  };
+
   const mockSocket = {
     id: 'socket-123',
     data: {},
@@ -116,6 +122,7 @@ describe('ChatGateway', () => {
       .compile();
 
     gateway = module.get<ChatGateway>(ChatGateway);
+    gateway.server = mockServer as any;
     messagesService = module.get<MessagesService>(MessagesService);
     conversationsService = module.get<ConversationsService>(ConversationsService);
     prismaService = module.get<PrismaService>(PrismaService);
@@ -305,32 +312,35 @@ describe('ChatGateway', () => {
   });
 
   describe('handleMarkAsReadEvent', () => {
-    const mockServerEmit = jest.fn();
-    const mockServerExcept = jest.fn().mockReturnValue({ emit: mockServerEmit });
-    const mockServerTo = jest.fn().mockReturnValue({ except: mockServerExcept });
-
-    beforeEach(() => {
-      gateway.server = { to: mockServerTo } as any;
-      mockServerEmit.mockClear();
-      mockServerTo.mockClear();
-      mockServerExcept.mockClear();
-    });
-
     it('should mark messages as read and notify conversation room', async () => {
       const conversationUid = 'conv-456';
       const userUid = 'user-123';
-      mockMessagesService.markMessagesAsRead.mockResolvedValue(5);
+      const messages = [{ hasAnyRead: true, hasEveryoneRead: false, uid: 'msg-1' }];
+      mockMessagesService.markMessagesAsRead.mockResolvedValue({ count: 5, messages });
 
       await gateway.handleMarkAsReadEvent({ conversationUid, userUid });
 
       expect(messagesService.markMessagesAsRead).toHaveBeenCalledWith(conversationUid, userUid);
-      expect(mockServerTo).toHaveBeenCalledWith(`conversation:${conversationUid}`);
-      expect(mockServerExcept).toHaveBeenCalledWith(`user:${userUid}`);
-      expect(mockServerEmit).toHaveBeenCalledWith('notification', {
-        conversationUid,
+      expect(mockServer.to).toHaveBeenCalledWith(`conversation:${conversationUid}`);
+      expect(mockServer.except).toHaveBeenCalledWith(`user:${userUid}`);
+      expect(mockServer.emit).toHaveBeenCalledWith('notification', {
+        data: {
+          conversationUid,
+          messages,
+          userUid,
+        },
         message: `${userUid} marked 5 messages from ${conversationUid} as read`,
         type: NotificationType.MESSAGES_READ,
-        userUid,
+      });
+      expect(mockServer.to).toHaveBeenCalledWith(`user:${userUid}`);
+      expect(mockServer.emit).toHaveBeenCalledWith('notification', {
+        data: {
+          conversationUid,
+          messages,
+          userUid,
+        },
+        message: `${userUid} marked 5 messages from ${conversationUid} as read`,
+        type: NotificationType.CONVERSATION_READ,
       });
     });
   });
@@ -354,6 +364,29 @@ describe('ChatGateway', () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         expect.stringContaining('Unauthenticated socket'),
       );
+    });
+  });
+
+  describe('handleMessageDeletedEvent', () => {
+    it('should notify conversation room when a message is deleted', async () => {
+      const payload = {
+        conversationUid: 'conv-123',
+        messageUid: 'msg-456',
+        userUid: 'user-789',
+      };
+
+      await gateway.handleMessageDeletedEvent(payload);
+
+      expect(mockServer.to).toHaveBeenCalledWith('conversation:conv-123');
+      expect(mockServer.emit).toHaveBeenCalledWith('notification', {
+        data: {
+          conversationUid: 'conv-123',
+          messageUid: 'msg-456',
+          userUid: 'user-789',
+        },
+        message: expect.stringContaining('Message msg-456 was deleted'),
+        type: NotificationType.MESSAGE_DELETED,
+      });
     });
   });
 });

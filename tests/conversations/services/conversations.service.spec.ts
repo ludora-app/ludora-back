@@ -40,6 +40,9 @@ describe('ConversationsService', () => {
         findMany: jest.fn(),
         findUnique: jest.fn(),
       },
+      messageReceipts: {
+        count: jest.fn(),
+      },
     };
 
     mockMessagesService = {
@@ -315,7 +318,7 @@ describe('ConversationsService', () => {
         }),
       );
       expect(toCollectionDtoSpy).toHaveBeenCalledTimes(2);
-      expect(toCollectionDtoSpy).toHaveBeenCalledWith(mockConversations[0]);
+      expect(toCollectionDtoSpy).toHaveBeenCalledWith(mockConversations[0], 'user-123');
     });
 
     it('should filter conversations by type', async () => {
@@ -427,6 +430,7 @@ describe('ConversationsService', () => {
           imageUrl: null,
           lastMessage: null,
           name: `Conv ${conversation.uid}`,
+          receiver: null,
           sender: null,
           sessionData: null,
           type: ConversationType.PRIVATE,
@@ -573,6 +577,7 @@ describe('ConversationsService', () => {
           content: 'Message 1',
           createdAt: mockRawConversation.messages[0].createdAt,
           globalStatus: MessageStatus.SENT,
+          isSender: false,
           type: MessageType.TEXT,
           uid: 'msg-1',
         },
@@ -580,11 +585,13 @@ describe('ConversationsService', () => {
           content: 'Message 2',
           createdAt: mockRawConversation.messages[1].createdAt,
           globalStatus: MessageStatus.SENT,
+          isSender: true,
           type: MessageType.TEXT,
           uid: 'msg-2',
         },
       ],
       name: 'John Doe',
+      receiver: null,
       sender: mockRawConversation.conversationMembers[0].user,
       sessionData: null,
       settings: { isArchived: false, isMuted: false },
@@ -1064,6 +1071,44 @@ describe('ConversationsService', () => {
           null,
         );
       });
+    });
+  });
+
+  describe('hasUnreadMessages', () => {
+    it('should return { hasUnreadMessages: true } if there are unread messages', async () => {
+      const userUid = 'user-123';
+      mockPrismaService.messageReceipts.count.mockResolvedValue(5);
+
+      const result = await service.hasUnreadMessages(userUid);
+
+      expect(result).toEqual({ hasUnreadMessages: true });
+      expect(mockPrismaService.messageReceipts.count).toHaveBeenCalledWith({
+        where: {
+          message: {
+            conversation: {
+              conversationMembers: {
+                some: {
+                  isArchived: false,
+                  isVisible: true,
+                  userUid,
+                },
+              },
+            },
+            senderUid: { not: userUid },
+          },
+          status: { notIn: [MessageStatus.READ, MessageStatus.SENT] },
+          userUid,
+        },
+      });
+    });
+
+    it('should return { hasUnreadMessages: false } if there are no unread messages', async () => {
+      const userUid = 'user-123';
+      mockPrismaService.messageReceipts.count.mockResolvedValue(0);
+
+      const result = await service.hasUnreadMessages(userUid);
+
+      expect(result).toEqual({ hasUnreadMessages: false });
     });
   });
 });

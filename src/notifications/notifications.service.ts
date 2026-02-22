@@ -10,6 +10,7 @@ import { MetadataMapper } from './mappers/metadata.mapper';
 import { NotificationMetadata } from './dto/input/notification-metadata';
 import { CreateNotificationDto } from './dto/input/create-notification.dto';
 import { SendPushNotificationDto } from './dto/input/send-push-notification.dto';
+import { UnreadCountResponseData } from './dto/output/unread-count-response.dto';
 import { NotificationResponseData } from './dto/output/notification-response.dto';
 import { NotificationFilterDto, NotificationTypeFilter } from './dto/input/notification-filter.dto';
 
@@ -313,6 +314,11 @@ export class NotificationsService {
       query.where['type'] = {
         in: [NotificationType.FRIEND_ACCEPTED, NotificationType.FRIEND_REQUEST],
       };
+    } else {
+      // By default, exclude message notifications from the "in-app" list
+      query.where['type'] = {
+        notIn: [NotificationType.NEW_MESSAGE, NotificationType.MESSAGE_DELETED],
+      };
     }
 
     if (limit) {
@@ -382,13 +388,39 @@ export class NotificationsService {
   /**
    * Count unread notifications
    */
-  async getUnreadCount(userUid: string): Promise<number> {
-    return this.prisma.notifications.count({
-      where: {
-        isRead: false,
-        userUid,
-      },
+  async getUnreadCount(
+    userUid: string,
+    filters: NotificationFilterDto = {},
+  ): Promise<UnreadCountResponseData> {
+    const where: any = {
+      isRead: false,
+      userUid,
+    };
+
+    if (filters.type === NotificationTypeFilter.SESSION) {
+      where.type = {
+        in: [
+          NotificationType.SESSION_INVITATION,
+          NotificationType.SESSION_UPDATED,
+          NotificationType.SESSION_CANCELLED,
+          NotificationType.SESSION_REMINDER,
+        ],
+      };
+    } else if (filters.type === NotificationTypeFilter.FRIEND) {
+      where.type = {
+        in: [NotificationType.FRIEND_ACCEPTED, NotificationType.FRIEND_REQUEST],
+      };
+    } else {
+      // By default, exclude message notifications from the "in-app" count
+      where.type = {
+        notIn: [NotificationType.NEW_MESSAGE, NotificationType.MESSAGE_DELETED],
+      };
+    }
+
+    const unreadCount = await this.prisma.notifications.count({
+      where,
     });
+    return { unreadCount };
   }
 
   /**

@@ -332,21 +332,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const { conversationUid, userUid } = payload;
 
-      const count = await this.messagesService.markMessagesAsRead(conversationUid, userUid);
+      const { count, messages } = await this.messagesService.markMessagesAsRead(
+        conversationUid,
+        userUid,
+      );
 
       const conversationRoom = `conversation:${conversationUid}`;
 
       if (count > 0) {
-        // Exclude the reader's own sockets using their personal room (user:{userUid})
+        // Notify others in the conversation that messages have been read
         this.server
           .to(conversationRoom)
           .except(`user:${userUid}`)
           .emit('notification', {
-            conversationUid,
+            data: { conversationUid, messages, userUid },
             message: `${userUid} marked ${count} messages from ${conversationUid} as read`,
             type: NotificationType.MESSAGES_READ,
-            userUid,
           });
+
+        // Notify the user who read the messages to update their conversation list (e.g. unread count)
+        this.server.to(`user:${userUid}`).emit('notification', {
+          data: { conversationUid, messages, userUid },
+          message: `${userUid} marked ${count} messages from ${conversationUid} as read`,
+          type: NotificationType.CONVERSATION_READ,
+        });
       }
 
       this.logger.debug(
@@ -354,6 +363,29 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       );
     } catch (error) {
       this.logger.error(`Error handling mark as read event: ${error.message}`);
+    }
+  }
+  @OnEvent(EventTypes.MESSAGE_DELETED)
+  async handleMessageDeletedEvent(payload: {
+    conversationUid: string;
+    messageUid: string;
+    userUid: string;
+  }): Promise<void> {
+    try {
+      const { conversationUid, messageUid, userUid } = payload;
+      const conversationRoom = `conversation:${conversationUid}`;
+
+      this.server.to(conversationRoom).emit('notification', {
+        data: { conversationUid, messageUid, userUid },
+        message: `Message ${messageUid} was deleted by ${userUid}`,
+        type: NotificationType.MESSAGE_DELETED,
+      });
+
+      this.logger.debug(
+        `[Event] Message ${messageUid} deleted by ${userUid} in ${conversationUid}`,
+      );
+    } catch (error) {
+      this.logger.error(`Error handling message deleted event: ${error.message}`);
     }
   }
 }

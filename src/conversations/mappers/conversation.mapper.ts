@@ -83,6 +83,7 @@ export interface RawMessage {
 export class ConversationMapper {
   static toCollectionDto(
     conversation: RawConversationCollectionItem,
+    userUid: string,
   ): ConversationCollectionResponseData {
     const firstMessage = conversation.messages?.[0];
     const firstSessionImage = conversation.session?.sessionImages?.[0];
@@ -98,11 +99,18 @@ export class ConversationMapper {
 
     return {
       imageUrl: signedImageUrl,
-      lastMessage: firstMessage ? MessageMapper.toLastMessageDto(firstMessage) : null,
+      lastMessage: firstMessage ? MessageMapper.toLastMessageDto(firstMessage, userUid) : null,
       name:
         conversation.type === ConversationType.PRIVATE && otherUser
           ? `${otherUser.firstname} ${otherUser.lastname}`
           : conversation.name,
+      receiver:
+        conversation.type === ConversationType.PRIVATE && otherUser
+          ? {
+              firstname: otherUser.firstname,
+              lastname: otherUser.lastname,
+            }
+          : null,
       sender: firstMessage?.sender || null,
       sessionData: {
         sessionUid: conversation.sessionUid || null,
@@ -124,14 +132,32 @@ export class ConversationMapper {
     const currentMember = conversation.conversationMembers?.find((m) => m.userUid === userUid);
     const otherMember = conversation.conversationMembers?.find((m) => m.userUid !== userUid);
     const otherUser = otherMember?.user;
+    const firstSessionImage = conversation.session?.sessionImages?.[0];
+
+    let signedImageUrl: string | null = null;
+
+    if (conversation.type === ConversationType.PRIVATE && otherUser?.imageUrl) {
+      signedImageUrl = otherUser.imageUrl;
+    } else if (conversation.type === ConversationType.SESSION && firstSessionImage?.url) {
+      signedImageUrl = firstSessionImage.url;
+    }
 
     return {
-      imageUrl: conversation.session?.sessionImages?.[0]?.url || null,
-      messages: conversation.messages.map((message) => MessageMapper.toLastMessageDto(message)),
+      imageUrl: signedImageUrl,
+      messages: conversation.messages.map((message) =>
+        MessageMapper.toLastMessageDto(message, userUid),
+      ),
       name:
         conversation.type === ConversationType.PRIVATE && otherUser
           ? `${otherUser.firstname} ${otherUser.lastname}`
           : conversation.name,
+      receiver:
+        conversation.type === ConversationType.PRIVATE && otherUser
+          ? {
+              firstname: otherUser.firstname,
+              lastname: otherUser.lastname,
+            }
+          : null,
       sender: otherUser || null,
       sessionData: {
         sessionUid: conversation.sessionUid || null,
