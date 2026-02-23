@@ -238,7 +238,7 @@ describe('FieldsService', () => {
       );
       expect(mockPrismaService.fields.findUnique).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { uid },
+          where: { status: 'APPROVED', uid },
         }),
       );
     });

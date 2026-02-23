@@ -166,6 +166,7 @@ export class FieldsService {
                   data: {
                     fieldUid: newField.uid,
                     order: index,
+                    status: VerificationStatus.APPROVED,
                     url: uploadResult.data,
                   },
                 });
@@ -185,6 +186,46 @@ export class FieldsService {
         fieldImages: {
           select: {
             order: true,
+            status: true,
+            uid: true,
+            url: true,
+          },
+          where: {
+            status: VerificationStatus.APPROVED,
+          },
+        },
+        fieldSports: {
+          select: {
+            sport: true,
+          },
+        },
+        partner: {
+          select: {
+            rank: true,
+            uid: true,
+          },
+        },
+      },
+      where: { status: VerificationStatus.APPROVED, uid },
+    });
+
+    if (!field) return null;
+
+    return FieldMapper.toFindOneDto(field);
+  }
+
+  /**
+   * @description Get a field by uid without verification status filter
+   * @param uid
+   * @returns
+   */
+  async findOneForAdmin(uid: string): Promise<FindOneFieldResponseData | null> {
+    const field = await this.prisma.fields.findUnique({
+      include: {
+        fieldImages: {
+          select: {
+            order: true,
+            status: true,
             uid: true,
             url: true,
           },
@@ -245,8 +286,20 @@ export class FieldsService {
   }
 
   // TODO : verify this method
-  async updatePublicField(uid: string, updateFieldDto: UpdateFieldDto): Promise<void> {
-    const { address, images, lat, lng, name, shortAddress } = updateFieldDto;
+  async updatePublicField(
+    uid: string,
+    updateFieldDto: UpdateFieldDto,
+    files: { buffer: Buffer; originalname: string }[],
+  ): Promise<void> {
+    const { address, lat, lng, name, shortAddress } = updateFieldDto;
+
+    const images = Array.isArray(files)
+      ? files.map((file, index) => ({
+          file: file.buffer,
+          name: file.originalname,
+          order: index,
+        }))
+      : [];
 
     const existingField = await this.prisma.fields.findUnique({
       include: { fieldImages: true, fieldSports: true },
@@ -310,80 +363,80 @@ export class FieldsService {
   }
 
   // TODO : verify this method
-  async updatePrivateField(
-    uid: string,
-    partnerUid: string,
-    updatePrivateFieldDto: UpdateFieldDto,
-  ): Promise<void> {
-    const { address, images, lat, lng, name, shortAddress } = updatePrivateFieldDto;
+  // async updatePrivateField(
+  //   uid: string,
+  //   partnerUid: string,
+  //   updatePrivateFieldDto: UpdateFieldDto,
+  // ): Promise<void> {
+  //   const { address, images, lat, lng, name, shortAddress } = updatePrivateFieldDto;
 
-    const existingField = await this.prisma.fields.findUnique({
-      include: { fieldImages: true, fieldSports: true },
-      where: { uid },
-    });
+  //   const existingField = await this.prisma.fields.findUnique({
+  //     include: { fieldImages: true, fieldSports: true },
+  //     where: { uid },
+  //   });
 
-    if (!existingField) {
-      this.logger.error(`Field with uid ${uid} not found`);
-      throw new Error(`Field with uid ${uid} not found`);
-    }
+  //   if (!existingField) {
+  //     this.logger.error(`Field with uid ${uid} not found`);
+  //     throw new Error(`Field with uid ${uid} not found`);
+  //   }
 
-    if (existingField.partnerUid !== partnerUid) {
-      this.logger.error(
-        `Field with uid ${uid} is not associated with partner with uid ${partnerUid}`,
-      );
-      throw new Error(
-        `Field with uid ${uid} is not associated with partner with uid ${partnerUid}`,
-      );
-    }
+  //   if (existingField.partnerUid !== partnerUid) {
+  //     this.logger.error(
+  //       `Field with uid ${uid} is not associated with partner with uid ${partnerUid}`,
+  //     );
+  //     throw new Error(
+  //       `Field with uid ${uid} is not associated with partner with uid ${partnerUid}`,
+  //     );
+  //   }
 
-    let coordinates;
-    const finalLat = lat ?? (address ? undefined : existingField.latitude);
-    const finalLng = lng ?? (address ? undefined : existingField.longitude);
+  //   let coordinates;
+  //   const finalLat = lat ?? (address ? undefined : existingField.latitude);
+  //   const finalLng = lng ?? (address ? undefined : existingField.longitude);
 
-    if (address) {
-      coordinates = await this.geolocalisationService.getLatitudeAndLongitude(address);
-      const sports = existingField.fieldSports.map((fieldSport) => fieldSport.sport as Sport);
-      await this.verifyFieldLocation(coordinates.lat, coordinates.lng, address, sports);
-    }
+  //   if (address) {
+  //     coordinates = await this.geolocalisationService.getLatitudeAndLongitude(address);
+  //     const sports = existingField.fieldSports.map((fieldSport) => fieldSport.sport as Sport);
+  //     await this.verifyFieldLocation(coordinates.lat, coordinates.lng, address, sports);
+  //   }
 
-    await this.prisma.$transaction(async (tx) => {
-      await tx.fields.update({
-        data: {
-          ...(address && { address }),
-          ...(shortAddress && { shortAddress }),
-          ...(coordinates && { latitude: coordinates.lat, longitude: coordinates.lng }),
-          ...(finalLat && { latitude: finalLat }),
-          ...(finalLng && { longitude: finalLng }),
-          ...(name && { name }),
-        },
-        where: { uid },
-      });
+  //   await this.prisma.$transaction(async (tx) => {
+  //     await tx.fields.update({
+  //       data: {
+  //         ...(address && { address }),
+  //         ...(shortAddress && { shortAddress }),
+  //         ...(coordinates && { latitude: coordinates.lat, longitude: coordinates.lng }),
+  //         ...(finalLat && { latitude: finalLat }),
+  //         ...(finalLng && { longitude: finalLng }),
+  //         ...(name && { name }),
+  //       },
+  //       where: { uid },
+  //     });
 
-      if (images && images.length > 0) {
-        await tx.fieldImages.deleteMany({
-          where: { fieldUid: uid },
-        });
+  //     if (images && images.length > 0) {
+  //       await tx.fieldImages.deleteMany({
+  //         where: { fieldUid: uid },
+  //       });
 
-        await Promise.all(
-          images.map(async (image, index) => {
-            const uploadResult = await this.storageService.upload(
-              StorageFolderName.FIELDS,
-              image.name,
-              image.file,
-            );
+  //       await Promise.all(
+  //         images.map(async (image, index) => {
+  //           const uploadResult = await this.storageService.upload(
+  //             StorageFolderName.FIELDS,
+  //             image.name,
+  //             image.file,
+  //           );
 
-            await tx.fieldImages.create({
-              data: {
-                fieldUid: uid,
-                order: index,
-                url: uploadResult.data,
-              },
-            });
-          }),
-        );
-      }
-    });
-  }
+  //           await tx.fieldImages.create({
+  //             data: {
+  //               fieldUid: uid,
+  //               order: index,
+  //               url: uploadResult.data,
+  //             },
+  //           });
+  //         }),
+  //       );
+  //     }
+  //   });
+  // }
 
   async findAll(filter: FieldFilterDto): Promise<PaginatedDataDto<FieldResponseDto>> {
     const {

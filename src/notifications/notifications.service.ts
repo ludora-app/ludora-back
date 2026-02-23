@@ -341,11 +341,13 @@ export class NotificationsService {
       const nextItem = notifications.pop();
       nextCursor = nextItem!.uid;
     }
-
-    const items: NotificationResponseData[] = notifications.map((n) => ({
-      ...n,
-      metadata: MetadataMapper.toMetadata(n.type, n.data),
-    }));
+    const items: NotificationResponseData[] = notifications.map((n) => {
+      const { data, ...rest } = n;
+      return {
+        ...rest,
+        metadata: MetadataMapper.toMetadata(n.type, (data ?? {}) as object),
+      } as NotificationResponseData;
+    });
 
     return {
       items,

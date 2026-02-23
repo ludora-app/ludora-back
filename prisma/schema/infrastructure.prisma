@@ -51,7 +51,7 @@ model Partners {
 model Fields {
   uid        String             @id @default(cuid())
   type       FieldType          @default(PUBLIC)
-  status     VerificationStatus @default(PENDING) @map("status")
+  status     VerificationStatus @default(PENDING)
   partnerUid String?            @map("partner_uid")
   name       String?
 
@@ -152,10 +152,12 @@ model Sports {
 }
 
 model FieldImages {
-  uid       String   @id @default(cuid())
-  fieldUid  String   @map("field_uid")
-  url       String
-  order     Int
+  uid      String             @id @default(cuid())
+  fieldUid String             @map("field_uid")
+  url      String
+  order    Int
+  status   VerificationStatus @default(PENDING)
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

@@ -74,7 +74,12 @@ export class AuthB2CGuard implements CanActivate {
         throw new UnauthorizedException('User not found');
       }
 
-      request['user'] = payload;
+      const fullPayload = {
+        ...payload,
+        userType: user.type,
+      };
+
+      request['user'] = fullPayload;
       return true;
     } catch (error) {
       // error log

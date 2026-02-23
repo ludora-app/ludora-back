@@ -35,5 +35,5 @@ export class UpdateFieldDto {
     description: 'The images of the field',
     type: [CreateImageDto],
   })
-  readonly images?: CreateImageDto[];
+  readonly files?: CreateImageDto[];
 }
