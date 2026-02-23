@@ -1,20 +1,12 @@
 import { FastifyRequest } from 'fastify';
 import { Sessions } from 'generated/prisma/client';
 import { UserSimpleDisplayDataDto } from 'src/users/dto';
-import { SessionPlayers } from 'generated/prisma/browser';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
-import {
-  ApiBadRequestResponse,
-  ApiNoContentResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -28,12 +20,24 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
 import { SessionsPipe } from '../pipes/sessions.pipe';
 import { SessionsService } from '../services/sessions.service';
 import { JoinSessionDto } from '../dto/input/create-session-player.dto';
 import { SessionPlayersService } from '../services/session-players.service';
 import { PlayerSuggestionResponseDto } from '../dto/output/player-suggestion-response.dto';
+import {
+  JoinSessionResponseData,
+  JoinSessionResponseDto,
+} from '../dto/output/join-session-response.dto';
 
 @Controller('session-players')
 @UseGuards(AuthB2CGuard)
@@ -46,13 +50,13 @@ export class SessionPlayersController {
   @Post('join')
   @Protected()
   @ApiOperation({ summary: 'Allows a user to join a session' })
-  //   @ApiCreatedResponse({ type: ResponseTypeDto<SessionPlayers> })
+  @ApiCreatedResponse({ type: JoinSessionResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   async joinSession(
     @Req() request: FastifyRequest,
     @Body() joinSessionDto: JoinSessionDto,
-  ): Promise<ResponseTypeDto<SessionPlayers>> {
+  ): Promise<ResponseTypeDto<JoinSessionResponseData>> {
     const userUid = request['user'].uid;
     const newPlayer = await this.sessionsService.joinSession({ ...joinSessionDto, userUid });
     return {

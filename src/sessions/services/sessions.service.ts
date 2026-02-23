@@ -25,7 +25,6 @@ import {
   FieldType,
   GameModes,
   InvitationStatus,
-  SessionPlayers,
   SessionVisibility,
 } from 'generated/prisma/browser';
 
@@ -37,6 +36,7 @@ import { SESSION_SUGGESTION_CONFIG } from '../constants/session.constants';
 import { SessionTeamResponseData } from '../dto/output/session-team-response';
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
 import { RawSessionFindOneItem, SessionMapper } from '../mappers/session.mapper';
+import { JoinSessionResponseData } from '../dto/output/join-session-response.dto';
 import { SessionCollectionItemDto } from '../dto/output/session-collection-response.dto';
 import { MySessionFilterDto, SessionOwnnership } from '../dto/input/my-session-filter.dto';
 import {
@@ -1047,8 +1047,13 @@ export class SessionsService {
    * This method is used to add a player to a session when a user joins a session.
    * @param createSessionPlayerDto
    */
-  async joinSession(createSessionPlayerDto: CreateSessionPlayerDto): Promise<SessionPlayers> {
-    const existingSession = await this.findOne(createSessionPlayerDto.sessionUid);
+  async joinSession(
+    createSessionPlayerDto: CreateSessionPlayerDto,
+  ): Promise<JoinSessionResponseData> {
+    const existingSession = await this.prisma.sessions.findUnique({
+      include: { conversation: { select: { uid: true } } },
+      where: { uid: createSessionPlayerDto.sessionUid },
+    });
 
     if (!existingSession) {
       this.logger.error(`Session ${createSessionPlayerDto.sessionUid} not found`);
@@ -1122,9 +1127,14 @@ export class SessionsService {
       );
     }
 
-    return this.playersService.addPlayerToSession(
+    await this.playersService.addPlayerToSession(
       createSessionPlayerDto,
       existingSession.creatorUid,
     );
+
+    return {
+      conversationUid: existingSession.conversation?.uid ?? '',
+      sessionUid: existingSession.uid,
+    };
   }
 }
