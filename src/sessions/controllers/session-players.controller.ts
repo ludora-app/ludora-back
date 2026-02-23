@@ -26,6 +26,7 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
@@ -90,6 +91,8 @@ export class SessionPlayersController {
   @ApiNoContentResponse({ description: 'Player switched to another team successfully' })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiParam({ name: 'sessionUid', type: String })
+  @ApiParam({ name: 'teamUid', type: String })
   @HttpCode(HttpStatus.NO_CONTENT)
   async switchTeams(
     @Param('sessionUid', SessionsPipe) session: Sessions,
@@ -106,6 +109,7 @@ export class SessionPlayersController {
   @ApiNoContentResponse({ description: 'Player left session successfully' })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiParam({ name: 'sessionUid', type: String })
   @HttpCode(HttpStatus.NO_CONTENT)
   async leaveSession(
     @Param('sessionUid', SessionsPipe) session: Sessions,
