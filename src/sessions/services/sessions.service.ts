@@ -763,6 +763,7 @@ export class SessionsService {
               firstname: true,
               imageUrl: true,
               lastname: true,
+              uid: true,
             },
           },
           creatorUid: true,

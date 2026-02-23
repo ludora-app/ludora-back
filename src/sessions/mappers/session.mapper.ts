@@ -57,6 +57,7 @@ export interface RawSessionFindOneItem {
     firstname: string;
     lastname: string;
     imageUrl: string | null;
+    uid: string;
   };
   field: {
     latitude: number;
@@ -120,6 +121,7 @@ export class SessionMapper {
         imageUrl: session.creator.imageUrl,
         lastname: session.creator.lastname,
         sessionsCount: session.creatorSessionsCount,
+        userUid: session.creator.uid,
       };
     }
 

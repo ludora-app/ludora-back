@@ -52,6 +52,12 @@ export class TeamFromFindOneSessionResponseData {
 }
 export class CreatorInfoResponseData extends UserSimpleDisplayDataDto {
   @ApiProperty({
+    description: 'The uid of the creator',
+    example: 'cmkiwtv9r02d65pmp40klxt2i',
+  })
+  userUid: string;
+
+  @ApiProperty({
     description: 'Number of sessions organized by the creator',
     example: 5,
   })
