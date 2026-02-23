@@ -4,8 +4,10 @@ import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   Body,
@@ -21,9 +23,11 @@ import {
   Query,
   Req,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiConsumes,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -66,13 +70,23 @@ export class SessionsController {
   @ApiCreatedResponse({ type: SessionResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @UseInterceptors(new FastifyFilesInterceptor('images'))
+  @ApiConsumes('multipart/form-data')
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createSessionDto: CreateSessionFromRequestDto,
     @Req() request: Request,
+    @UploadedFilesCustom() files: { buffer: Buffer; originalname: string }[],
   ): Promise<ResponseTypeDto<SessionResponseData>> {
     const userUid = request['user'].uid;
-    const newSession = await this.sessionsService.create({ ...createSessionDto, userUid });
+    const newSession = await this.sessionsService.create({
+      ...createSessionDto,
+      images: files.map((file) => ({
+        buffer: file.buffer,
+        originalname: file.originalname,
+      })),
+      userUid,
+    });
 
     return {
       data: SessionMapper.toDto(newSession),

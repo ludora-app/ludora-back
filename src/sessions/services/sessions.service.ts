@@ -2,10 +2,11 @@ import { PinoLogger } from 'nestjs-pino';
 import { Prisma } from 'generated/prisma/client';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SessionScope } from 'src/shared/constants/constants';
 import { FieldsService } from 'src/fields/services/fields.service';
+import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationType, Sessions } from 'generated/prisma/client';
 import { FieldSlotsService } from 'src/fields/services/field-slots.service';
+import { SessionScope, StorageFolderName } from 'src/shared/constants/constants';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
@@ -78,6 +79,7 @@ export class SessionsService {
     private readonly conversationsService: ConversationsService,
     private readonly hourPreferencesService: HourPreferencesService,
     private readonly sportPreferencesService: SportPreferencesService,
+    private readonly storageService: StorageService,
     private readonly fieldSlotsService: FieldSlotsService,
     private readonly fieldsService: FieldsService,
     private readonly logger: PinoLogger,
@@ -220,6 +222,29 @@ export class SessionsService {
         },
         tx,
       );
+
+      if (createSessionDto.images) {
+        const uploadedImages = await Promise.all(
+          createSessionDto.images.map(async (image) => {
+            const uploadResult = await this.storageService.upload(
+              StorageFolderName.SESSIONS,
+              image.originalname,
+              image.buffer,
+            );
+            return {
+              originalname: image.originalname,
+              url: uploadResult.data,
+            };
+          }),
+        );
+        await tx.sessionImages.createMany({
+          data: uploadedImages.map((image, index) => ({
+            order: index,
+            sessionUid: createdSession.uid,
+            url: image.url,
+          })),
+        });
+      }
       return createdSession;
     });
 

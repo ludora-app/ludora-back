@@ -1,8 +1,10 @@
 import { Type } from 'class-transformer';
+import { CreateImageDto } from 'src/auth/dto';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { GameModes, SessionVisibility } from 'generated/prisma/client';
 import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
 import {
+  IsArray,
   IsDateString,
   IsEnum,
   IsNotEmpty,
@@ -144,6 +146,17 @@ export class CreateSessionDto {
     required: true,
   })
   sport: Sport;
+
+  @IsArray()
+  @IsOptional()
+  @ApiProperty({
+    description: 'The images of the session',
+    type: [CreateImageDto],
+  })
+  images?: { buffer: Buffer; originalname: string }[];
 }
 
-export class CreateSessionFromRequestDto extends OmitType(CreateSessionDto, ['userUid']) {}
+export class CreateSessionFromRequestDto extends OmitType(CreateSessionDto, [
+  'userUid',
+  'images',
+]) {}

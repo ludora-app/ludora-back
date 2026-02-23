@@ -245,6 +245,8 @@ describe('SessionsService', () => {
       updatedAt: mockCurrentDate,
     };
 
+    let sessionImagesCreateManyMock: jest.Mock;
+
     beforeEach(() => {
       // Reset all mocks before each test
       jest.clearAllMocks();
@@ -254,6 +256,7 @@ describe('SessionsService', () => {
       teamAName: string = 'Equipe A',
       teamBName: string = 'Equipe B',
     ) => {
+      sessionImagesCreateManyMock = jest.fn().mockResolvedValue({ count: 0 });
       (prismaService.$transaction as jest.Mock).mockImplementation(async (cb: any) => {
         const tx = {
           conversations: {
@@ -263,6 +266,9 @@ describe('SessionsService', () => {
             createMany: jest.fn().mockResolvedValue({ count: 1 }),
           },
           sessions: prismaService.sessions,
+          sessionImages: {
+            createMany: sessionImagesCreateManyMock,
+          },
         } as any;
         return cb(tx);
       });
@@ -336,6 +342,38 @@ describe('SessionsService', () => {
             title: '',
           }),
         });
+      });
+
+      it('should upload images and create sessionImages when images are provided', async () => {
+        const imageUrl = 'https://storage.example.com/sessions/photo.jpg';
+        (mockStorageService.upload as jest.Mock).mockResolvedValue({ data: imageUrl });
+        (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPublicField);
+        (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
+        (prismaService.sessions.create as jest.Mock).mockResolvedValue(mockCreatedSession);
+        setupTransactionMock();
+
+        const dtoWithImages = {
+          ...createSessionDto,
+          images: [{ buffer: Buffer.from('fake-image-data'), originalname: 'photo.jpg' }],
+        };
+
+        const result = await service.create(dtoWithImages);
+
+        expect(mockStorageService.upload).toHaveBeenCalledWith(
+          expect.any(String),
+          'photo.jpg',
+          Buffer.from('fake-image-data'),
+        );
+        expect(sessionImagesCreateManyMock).toHaveBeenCalledWith({
+          data: [
+            {
+              sessionUid: mockCreatedSession.uid,
+              url: imageUrl,
+              order: 0,
+            },
+          ],
+        });
+        expect(result).toEqual(expect.objectContaining({ uid: 'session-uid-1' }));
       });
 
       it('should throw BadRequestException if field not found', async () => {

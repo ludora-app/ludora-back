@@ -94,6 +94,8 @@ describe('SessionsController', () => {
       userUid: 'user-uid-1',
     };
 
+    const mockFiles: { buffer: Buffer; originalname: string }[] = [];
+
     it('should create a session', async () => {
       const createdSession = {
         uid: 'session-uid-1',
@@ -110,7 +112,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.create.mockResolvedValue(createdSession);
 
-      const result = await controller.create(createSessionDto, mockRequest);
+      const result = await controller.create(createSessionDto, mockRequest, mockFiles);
 
       expect(result).toEqual({
         data: expect.objectContaining({
@@ -120,17 +122,37 @@ describe('SessionsController', () => {
         }),
         message: 'Session created successfully',
       });
-      expect(service.create).toHaveBeenCalledWith(createSessionWithUserDto);
+      expect(service.create).toHaveBeenCalledWith({ ...createSessionWithUserDto, images: [] });
+    });
+
+    it('should create a session with images when files are provided', async () => {
+      const createdSession = {
+        uid: 'session-uid-1',
+        title: 'Test Session Title',
+        sport: Sport.FOOTBALL,
+      };
+      const filesWithImages: { buffer: Buffer; originalname: string }[] = [
+        { buffer: Buffer.from('fake-image'), originalname: 'photo.jpg' },
+      ];
+
+      mockSessionsService.create.mockResolvedValue(createdSession);
+
+      await controller.create(createSessionDto, mockRequest, filesWithImages);
+
+      expect(service.create).toHaveBeenCalledWith({
+        ...createSessionWithUserDto,
+        images: [{ buffer: Buffer.from('fake-image'), originalname: 'photo.jpg' }],
+      });
     });
 
     it('should propagate errors from service', async () => {
       const errorMessage = 'Field not found';
       mockSessionsService.create.mockRejectedValue(new BadRequestException(errorMessage));
 
-      await expect(controller.create(createSessionDto, mockRequest)).rejects.toThrow(
+      await expect(controller.create(createSessionDto, mockRequest, mockFiles)).rejects.toThrow(
         BadRequestException,
       );
-      expect(service.create).toHaveBeenCalledWith(createSessionWithUserDto);
+      expect(service.create).toHaveBeenCalledWith({ ...createSessionWithUserDto, images: [] });
     });
   });
 
