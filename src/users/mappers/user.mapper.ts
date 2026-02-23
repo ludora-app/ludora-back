@@ -1,6 +1,8 @@
+import { Sport } from 'src/shared/constants/constants';
 import { SportPreferencesMapper } from 'src/user-preferences/mappers/sport-preferences.mapper';
 import {
   GameModes,
+  InvitationStatus,
   Sex,
   TimePeriod,
   UserHourPreferenceType,
@@ -55,14 +57,20 @@ export interface RawUserFindMe extends RawUserFindOne {
 }
 
 export interface RawUserFindAll {
+  bio: string;
   uid: string;
-  lastname: string;
+  city: string;
   imageUrl: string;
+  lastname: string;
   firstname: string;
   userSportPreferences: {
     sport: string;
     level: number;
     uid: string;
+    userGameModePreferences: {
+      gameMode: GameModes;
+      uid: string;
+    }[];
   }[];
 }
 
@@ -110,15 +118,29 @@ export class UserMapper {
     };
   }
 
-  static toFindAllResponseDto(user: RawUserFindAll): FindAllUsersResponseDataDto {
+  static toFindAllResponseDto(
+    user: RawUserFindAll,
+    connectedUserCity?: string | null,
+    connectedUserSports: string[] = [],
+    invitationStatus?: InvitationStatus | null,
+  ): FindAllUsersResponseDataDto {
+    const userSports = user.userSportPreferences.map((p) => p.sport);
+    const commonSports = userSports.filter((sport) => connectedUserSports.includes(sport));
+
     return {
+      bio: user.bio,
+      commonSports: commonSports as Sport[],
       firstname: user.firstname,
       imageUrl: user.imageUrl,
+      invitationStatus,
+      isSameCity: !!connectedUserCity && !!user.city && connectedUserCity === user.city,
       lastname: user.lastname,
-      sportPreferences: SportPreferencesMapper.toSimpleArrayWithGameModes(
-        user.userSportPreferences,
+      name: `${user.firstname} ${user.lastname}`,
+      sportPreferences: user.userSportPreferences.map((sportPreference) =>
+        SportPreferencesMapper.toFindAllDisplay(sportPreference),
       ),
       uid: user.uid,
+      userCity: user.city,
     };
   }
 }

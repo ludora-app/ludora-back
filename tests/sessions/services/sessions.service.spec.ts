@@ -1309,14 +1309,20 @@ describe('SessionsService', () => {
     };
 
     it('should successfully add a player to a session when all validations pass', async () => {
-      jest.spyOn(service, 'findOne').mockResolvedValue(mockSession as any);
+      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue({
+        ...mockSession,
+        conversation: { uid: 'conv-uid-123' },
+      });
       (prismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue(mockTeam);
       (sessionPlayersService.findOne as jest.Mock).mockResolvedValue(null);
       (sessionPlayersService.addPlayerToSession as jest.Mock).mockResolvedValue(mockNewPlayer);
 
       const result = await service.joinSession(mockCreateSessionPlayerDto as any);
 
-      expect(service.findOne).toHaveBeenCalledWith(mockCreateSessionPlayerDto.sessionUid);
+      expect(prismaService.sessions.findUnique).toHaveBeenCalledWith({
+        include: { conversation: { select: { uid: true } } },
+        where: { uid: mockCreateSessionPlayerDto.sessionUid },
+      });
       expect(prismaService.sessionTeams.findUnique).toHaveBeenCalledWith({
         select: {
           _count: { select: { sessionPlayers: true } },
@@ -1332,30 +1338,39 @@ describe('SessionsService', () => {
         mockCreateSessionPlayerDto,
         'creator-uid-1',
       );
-      expect(result).toEqual(mockNewPlayer);
+      expect(result).toEqual({
+        conversationUid: 'conv-uid-123',
+        sessionUid: mockCreateSessionPlayerDto.sessionUid,
+      });
     });
 
     it('should throw NotFoundException when session does not exist', async () => {
-      jest.spyOn(service, 'findOne').mockResolvedValue(null);
+      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.joinSession(mockCreateSessionPlayerDto as any)).rejects.toThrow(
         new NotFoundException(`Session ${mockCreateSessionPlayerDto.sessionUid} not found`),
       );
 
-      expect(service.findOne).toHaveBeenCalledWith(mockCreateSessionPlayerDto.sessionUid);
+      expect(prismaService.sessions.findUnique).toHaveBeenCalledWith({
+        include: { conversation: { select: { uid: true } } },
+        where: { uid: mockCreateSessionPlayerDto.sessionUid },
+      });
       expect(prismaService.sessionTeams.findUnique).not.toHaveBeenCalled();
       expect(sessionPlayersService.addPlayerToSession).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when team does not exist', async () => {
-      jest.spyOn(service, 'findOne').mockResolvedValue(mockSession as any);
+      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
       (prismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.joinSession(mockCreateSessionPlayerDto as any)).rejects.toThrow(
         new NotFoundException(`Team ${mockCreateSessionPlayerDto.teamUid} not found`),
       );
 
-      expect(service.findOne).toHaveBeenCalledWith(mockCreateSessionPlayerDto.sessionUid);
+      expect(prismaService.sessions.findUnique).toHaveBeenCalledWith({
+        include: { conversation: { select: { uid: true } } },
+        where: { uid: mockCreateSessionPlayerDto.sessionUid },
+      });
       expect(prismaService.sessionTeams.findUnique).toHaveBeenCalledWith({
         select: {
           _count: { select: { sessionPlayers: true } },
@@ -1367,7 +1382,7 @@ describe('SessionsService', () => {
     });
 
     it('should throw BadRequestException when session and team do not match', async () => {
-      jest.spyOn(service, 'findOne').mockResolvedValue(mockSession as any);
+      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
       (prismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue({
         ...mockTeam,
         sessionUid: 'different-session-uid',
@@ -1383,7 +1398,7 @@ describe('SessionsService', () => {
     });
 
     it('should throw BadRequestException when team is full', async () => {
-      jest.spyOn(service, 'findOne').mockResolvedValue(mockSession as any);
+      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
       (prismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue({
         ...mockTeam,
         _count: { sessionPlayers: 10 },
@@ -1398,7 +1413,7 @@ describe('SessionsService', () => {
     });
 
     it('should throw BadRequestException when player already exists in session', async () => {
-      jest.spyOn(service, 'findOne').mockResolvedValue(mockSession as any);
+      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSession);
       (prismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue(mockTeam);
       (sessionPlayersService.findOne as jest.Mock).mockResolvedValue({ uid: 'existing-player' });
 
