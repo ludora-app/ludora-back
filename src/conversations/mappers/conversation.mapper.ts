@@ -109,6 +109,7 @@ export class ConversationMapper {
           ? {
               firstname: otherUser.firstname,
               lastname: otherUser.lastname,
+              userUid: otherUser.uid,
             }
           : null,
       sender: firstMessage?.sender || null,
@@ -156,6 +157,7 @@ export class ConversationMapper {
           ? {
               firstname: otherUser.firstname,
               lastname: otherUser.lastname,
+              userUid: otherUser.uid,
             }
           : null,
       sender: otherUser || null,

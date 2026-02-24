@@ -341,12 +341,71 @@ export class NotificationsService {
       const nextItem = notifications.pop();
       nextCursor = nextItem!.uid;
     }
+
+    // --- Enrichment: Fetch and inject sender info ---
+    const senderUids = new Set<string>();
+    notifications.forEach((n) => {
+      const data = n.data as any;
+      if (data?.senderUid) {
+        senderUids.add(data.senderUid);
+      }
+    });
+
+    const senders =
+      senderUids.size > 0
+        ? await this.prisma.users.findMany({
+            select: {
+              firstname: true,
+              imageUrl: true,
+              lastname: true,
+              uid: true,
+            },
+            where: { uid: { in: Array.from(senderUids) } },
+          })
+        : [];
+
+    const senderMap = new Map(senders.map((s) => [s.uid, s]));
+
+    // Fetch friendship status if there are senderUids
+    const friendships =
+      senderUids.size > 0
+        ? await this.prisma.friends.findMany({
+            where: {
+              OR: [
+                { userUid1: userUid, userUid2: { in: Array.from(senderUids) } },
+                { userUid1: { in: Array.from(senderUids) }, userUid2: userUid },
+              ],
+            },
+          })
+        : [];
+
+    const friendshipMap = new Map<string, string>();
+    friendships.forEach((f) => {
+      const otherUid = f.userUid1 === userUid ? f.userUid2 : f.userUid1;
+      friendshipMap.set(otherUid, f.status);
+    });
+
     const items: NotificationResponseData[] = notifications.map((n) => {
-      const { data, ...rest } = n;
+      const data = n.data as any;
+      const metadata = MetadataMapper.toMetadata(n.type, n.data);
+
+      if (data?.senderUid && senderMap.has(data.senderUid)) {
+        const sender = senderMap.get(data.senderUid);
+        if (metadata) {
+          Object.assign(metadata, {
+            invitationStatus: friendshipMap.get(data.senderUid), // Inject friendship status
+            senderAvatar: sender.imageUrl,
+            senderFirstname: sender.firstname,
+            senderLastname: sender.lastname,
+            senderName: `${sender.firstname} ${sender.lastname}`,
+          });
+        }
+      }
+
       return {
-        ...rest,
-        metadata: MetadataMapper.toMetadata(n.type, (data ?? {}) as object),
-      } as NotificationResponseData;
+        ...n,
+        metadata,
+      };
     });
 
     return {

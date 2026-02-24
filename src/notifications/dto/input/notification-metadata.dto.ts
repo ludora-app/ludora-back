@@ -1,6 +1,7 @@
-import { IsEnum, IsString } from 'class-validator';
 import { Sport } from 'src/shared/constants/constants';
 import { ApiProperty, PickType } from '@nestjs/swagger';
+import { InvitationStatus } from 'generated/prisma/enums';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class NotificationMetadataDto {
   @ApiProperty({
@@ -8,28 +9,32 @@ export class NotificationMetadataDto {
     example: 'https://example.com/image.jpg',
   })
   @IsString()
-  imageUrl: string;
+  @IsOptional()
+  imageUrl?: string;
 
   @ApiProperty({
     description: 'Action URL for the notification',
     example: 'https://example.com/action',
   })
   @IsString()
-  actionUrl: string;
+  @IsOptional()
+  actionUrl?: string;
 
   @ApiProperty({
     description: 'Sender UID for the notification',
     example: '1234567890',
   })
   @IsString()
-  senderUid: string;
+  @IsOptional()
+  senderUid?: string;
 
   @ApiProperty({
     description: 'Session UID for the notification',
     example: '1234567890',
   })
   @IsString()
-  sessionUid: string;
+  @IsOptional()
+  sessionUid?: string;
 
   @ApiProperty({
     description: 'Session sport for the notification',
@@ -37,43 +42,81 @@ export class NotificationMetadataDto {
     example: Sport.BASKETBALL,
   })
   @IsEnum(Sport)
-  sessionSport: Sport;
+  @IsOptional()
+  sessionSport?: Sport;
 
   @ApiProperty({
     description: 'Sender firstname for the notification',
     example: 'John',
   })
   @IsString()
-  senderFirstname: string;
-  @IsString()
-  senderLastname: string;
+  @IsOptional()
+  senderFirstname?: string;
 
   @ApiProperty({
     description: 'Sender lastname for the notification',
     example: 'Doe',
   })
   @IsString()
+  @IsOptional()
+  senderLastname?: string;
+
   @ApiProperty({
-    description: 'Session date for the notification',
-    example: '2021-01-01',
+    description: 'Sender full name for the notification',
+    example: 'John Doe',
   })
   @IsString()
-  sessionDate: string;
+  @IsOptional()
+  senderName?: string;
 
   @ApiProperty({
     description: 'Sender avatar for the notification',
     example: 'https://example.com/avatar.jpg',
   })
   @IsString()
-  senderAvatar: string;
+  @IsOptional()
+  senderAvatar?: string;
 
-  @ApiProperty({ description: 'Session title for the notification', example: 'Session Title' })
+  @ApiProperty({
+    description: 'Session date for the notification',
+    example: '2021-01-01',
+  })
   @IsString()
-  sessionTitle: string;
+  @IsOptional()
+  sessionDate?: string;
 
-  @ApiProperty({ description: 'Message preview for the notification', example: 'Message Preview' })
+  @ApiProperty({
+    description: 'Session title for the notification',
+    example: 'Session Title',
+  })
   @IsString()
-  messagePreview: string;
+  @IsOptional()
+  sessionTitle?: string;
+
+  @ApiProperty({
+    description: 'Message preview for the notification',
+    example: 'Message Preview',
+  })
+  @IsString()
+  @IsOptional()
+  messagePreview?: string;
+
+  @ApiProperty({
+    description: 'Conversation UID for the notification',
+    example: '1234567890',
+  })
+  @IsString()
+  @IsOptional()
+  conversationUid?: string;
+
+  @ApiProperty({
+    description: 'Invitation status for friend request',
+    enum: InvitationStatus,
+    example: InvitationStatus.PENDING,
+  })
+  @IsEnum(InvitationStatus)
+  @IsOptional()
+  invitationStatus?: InvitationStatus;
 }
 
 export class FriendRequestData extends PickType(NotificationMetadataDto, [
@@ -81,6 +124,17 @@ export class FriendRequestData extends PickType(NotificationMetadataDto, [
   'senderUid',
   'senderFirstname',
   'senderLastname',
+  'senderName',
+  'senderAvatar',
+  'invitationStatus',
+]) {}
+
+export class FriendAcceptedData extends PickType(NotificationMetadataDto, [
+  'actionUrl',
+  'senderUid',
+  'senderFirstname',
+  'senderLastname',
+  'senderName',
   'senderAvatar',
 ]) {}
 
@@ -91,6 +145,7 @@ export class SessionInvitationData extends PickType(NotificationMetadataDto, [
   'sessionDate',
   'senderFirstname',
   'senderLastname',
+  'senderName',
   'sessionSport',
   'senderAvatar',
   'senderUid',

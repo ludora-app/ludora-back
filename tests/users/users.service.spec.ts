@@ -38,6 +38,9 @@ describe('UsersService', () => {
       findFirst: jest.fn(),
       delete: jest.fn(),
     },
+    friends: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
     $queryRaw: jest.fn(),
     $transaction: jest.fn((callback) => callback(mockPrismaService)),
   };
@@ -179,9 +182,12 @@ describe('UsersService', () => {
 
       expect(result.items.length).toBe(2);
       expect(result.items[0].uid).toBe('1');
-      expect(result.items[0].sportPreferences).toEqual(['BASKETBALL', 'FOOTBALL']);
+      expect(result.items[0].sportPreferences).toEqual([
+        { uid: 'sp1', sport: 'BASKETBALL', level: 3 },
+        { uid: 'sp2', sport: 'FOOTBALL', level: 2 },
+      ]);
       expect(result.items[1].uid).toBe('2');
-      expect(result.items[1].sportPreferences).toEqual(['TENNIS']);
+      expect(result.items[1].sportPreferences).toEqual([{ uid: 'sp3', sport: 'TENNIS', level: 4 }]);
       expect(result.totalCount).toBe(2);
       expect(result.nextCursor).toBeNull();
     });

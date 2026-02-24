@@ -5,6 +5,7 @@ import { Provider } from 'generated/prisma/browser';
 import { Prisma, Users } from 'generated/prisma/client';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { InvitationStatus } from 'generated/prisma/enums';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { StorageFolderName } from 'src/shared/constants/constants';
 import { StorageService } from 'src/shared/storage/storage.service';
@@ -270,11 +271,20 @@ export class UsersService {
     const userUids = itemsToFetch.map((r) => r.uid);
     const users = await this.prismaService.users.findMany({
       select: {
+        bio: true,
+        city: true,
         firstname: true,
         imageUrl: true,
         lastname: true,
         uid: true,
-        userSportPreferences: { select: { level: true, sport: true, uid: true } },
+        userSportPreferences: {
+          select: {
+            level: true,
+            sport: true,
+            uid: true,
+            userGameModePreferences: { select: { gameMode: true, uid: true } },
+          },
+        },
       },
       where: { uid: { in: userUids } },
     });
@@ -284,8 +294,32 @@ export class UsersService {
       (a, b) => (uidToIndex.get(a.uid) ?? 999) - (uidToIndex.get(b.uid) ?? 999),
     );
 
+    // Fetch friendship status if there are userUids
+    const friendships =
+      userUids.length > 0
+        ? await this.prismaService.friends.findMany({
+            where: {
+              OR: [
+                { userUid1: userUid, userUid2: { in: userUids } },
+                { userUid1: { in: userUids }, userUid2: userUid },
+              ],
+            },
+          })
+        : [];
+
+    const friendshipMap = new Map<string, InvitationStatus>();
+    friendships.forEach((f) => {
+      const otherUid = f.userUid1 === userUid ? f.userUid2 : f.userUid1;
+      friendshipMap.set(otherUid, f.status);
+    });
+
     const items = sortedUsers.map((user) =>
-      UserMapper.toFindAllResponseDto(user as RawUserFindAll),
+      UserMapper.toFindAllResponseDto(
+        user as RawUserFindAll,
+        connectedUser.city,
+        connectedUserSports,
+        friendshipMap.get(user.uid),
+      ),
     );
 
     return { items, nextCursor, totalCount };

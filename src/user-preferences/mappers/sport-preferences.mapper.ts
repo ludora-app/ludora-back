@@ -29,4 +29,12 @@ export class SportPreferencesMapper {
   static toSimpleArrayWithGameModes(preferences: SportPreferences[]): Sport[] {
     return preferences?.map((preference) => preference.sport as Sport) || [];
   }
+
+  static toFindAllDisplay(preference: SportPreferences) {
+    return {
+      level: preference.level,
+      sport: preference.sport as Sport,
+      uid: preference.uid,
+    };
+  }
 }

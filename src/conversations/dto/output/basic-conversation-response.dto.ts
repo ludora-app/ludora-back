@@ -93,6 +93,13 @@ export class SessionData {
 
 export class ReceiverDto {
   @ApiProperty({
+    description: 'User ID',
+    example: 'cmkpi7ca502t45imrn5ss4zki',
+    readOnly: true,
+  })
+  userUid: string;
+
+  @ApiProperty({
     description: 'User firstname',
     example: 'John',
     readOnly: true,
