@@ -16,17 +16,20 @@ export interface NotificationMetadata {
   conversationUid?: string;
 }
 
-export interface FriendNotificationMetaData extends Pick<
-  NotificationMetadata,
-  'imageUrl' | 'actionUrl' | 'senderUid' | 'senderName' | 'senderAvatar'
-> {}
+export interface FriendNotificationMetaData
+  extends Pick<
+    NotificationMetadata,
+    'imageUrl' | 'actionUrl' | 'senderUid' | 'senderName' | 'senderAvatar'
+  > {}
 
-export interface SessionNotificationMetaData extends Pick<
-  NotificationMetadata,
-  'imageUrl' | 'actionUrl' | 'sessionUid' | 'sessionTitle' | 'sessionDate' | 'senderName'
-> {}
+export interface SessionNotificationMetaData
+  extends Pick<
+    NotificationMetadata,
+    'imageUrl' | 'actionUrl' | 'sessionUid' | 'sessionTitle' | 'sessionDate' | 'senderName'
+  > {}
 
-export interface MessageNotificationMetaData extends Pick<
-  NotificationMetadata,
-  'imageUrl' | 'actionUrl' | 'senderName' | 'messagePreview' | 'conversationUid'
-> {}
+export interface MessageNotificationMetaData
+  extends Pick<
+    NotificationMetadata,
+    'imageUrl' | 'actionUrl' | 'senderName' | 'messagePreview' | 'conversationUid'
+  > {}

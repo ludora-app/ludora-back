@@ -81,7 +81,7 @@ export class SessionsController {
     const userUid = request['user'].uid;
     const newSession = await this.sessionsService.create({
       ...createSessionDto,
-      images: files.map((file) => ({
+      images: (files ?? []).map((file) => ({
         buffer: file.buffer,
         originalname: file.originalname,
       })),
