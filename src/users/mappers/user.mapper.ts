@@ -3,6 +3,7 @@ import { SportPreferencesMapper } from 'src/user-preferences/mappers/sport-prefe
 import {
   GameModes,
   InvitationStatus,
+  OnBoardingStatus,
   Sex,
   TimePeriod,
   UserHourPreferenceType,
@@ -48,6 +49,7 @@ export interface RawUserFindMe extends RawUserFindOne {
   isConnected: boolean;
   stripeAccountId: string;
   isEmailVerified: boolean;
+  onBoardingStatus: OnBoardingStatus;
   userHourPreferences: {
     date: Date;
     dayOfWeek: number;
@@ -106,6 +108,7 @@ export class UserMapper {
       lastname: user.lastname,
       matchesCount: user._count.sessionPlayers,
       name: `${user.firstname} ${user.lastname}`,
+      onBoardingStatus: user.onBoardingStatus,
       phone: user.phone,
       profileStatus: user.userSportPreferences.length > 0 ? 'COMPLETE' : 'INCOMPLETE',
       sex: user.sex,

@@ -217,13 +217,13 @@ export class UsersController {
   async update(
     @Req() request: Request,
     @Body() updateUserDto: UpdateUserDto,
-    @UploadedFilesCustom() files?: { buffer: Buffer; originalname: string }[],
+    @UploadedFilesCustom() file?: { buffer: Buffer; originalname: string },
   ): Promise<void> {
     let createImageDto: CreateImageDto | undefined;
-    if (files && files.length > 0) {
+    if (file) {
       createImageDto = {
-        file: files[0].buffer,
-        name: files[0].originalname,
+        file: file.buffer,
+        name: file.originalname,
       };
     }
     const uid = request['user'].uid;

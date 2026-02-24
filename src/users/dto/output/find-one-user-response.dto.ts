@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Sex, UserType } from 'generated/prisma/client';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { OnBoardingStatus, Sex, UserType } from 'generated/prisma/client';
 import { SportPreferenceResponseData } from 'src/user-preferences/dto/output/sport-preference.response.dto';
 
 export class FindOneUserResponseData {
@@ -64,8 +64,21 @@ export class FindMeUserResponseData extends FindOneUserResponseData {
   @ApiProperty({ example: true, nullable: false, readOnly: true, required: false })
   readonly isEmailVerified?: boolean;
 
-  @ApiProperty({ example: 'INCOMPLETE', nullable: false, readOnly: true })
-  readonly profileStatus: 'COMPLETE' | 'INCOMPLETE';
+  @ApiProperty({
+    enum: OnBoardingStatus,
+    example: OnBoardingStatus.COMPLETE,
+    nullable: true,
+    readOnly: true,
+  })
+  readonly profileStatus?: OnBoardingStatus;
+
+  @ApiProperty({
+    enum: OnBoardingStatus,
+    example: OnBoardingStatus.INCOMPLETE,
+    nullable: false,
+    readOnly: true,
+  })
+  readonly onBoardingStatus: OnBoardingStatus;
 }
 
 export class FindMeUserResponseDto extends ResponseTypeDto<FindMeUserResponseData> {
