@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
 import { CreateImageDto } from 'src/auth/dto';
+import { Transform, Type } from 'class-transformer';
 import { Sport } from 'src/shared/constants/constants';
 import {
   ArrayMaxSize,

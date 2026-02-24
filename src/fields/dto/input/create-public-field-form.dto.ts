@@ -9,13 +9,13 @@ import { CreatePublicFieldDto } from './create-public-field.dto';
  */
 export class CreatePublicFieldFormDto extends OmitType(CreatePublicFieldDto, ['images']) {
   @ApiProperty({
-    type: 'array',
-    items: {
-      type: 'string',
-      format: 'binary',
-    },
     description: 'Images du terrain (fichiers). Envoyer chaque fichier avec le champ "images".',
+    items: {
+      format: 'binary',
+      type: 'string',
+    },
     required: false,
+    type: 'array',
   })
   images?: unknown;
 }
