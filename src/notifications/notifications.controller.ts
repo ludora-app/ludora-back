@@ -23,6 +23,7 @@ import {
   PaginatedNotificationResponse,
 } from './dto/output/notification-response.dto';
 import {
+  FriendAcceptedData,
   FriendRequestData,
   SessionInvitationData,
   SessionUpdatedData,
@@ -30,7 +31,7 @@ import {
 
 @UseGuards(AuthB2CGuard)
 @Controller('notifications')
-@ApiExtraModels(FriendRequestData, SessionInvitationData, SessionUpdatedData)
+@ApiExtraModels(FriendRequestData, SessionInvitationData, SessionUpdatedData, FriendAcceptedData)
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 

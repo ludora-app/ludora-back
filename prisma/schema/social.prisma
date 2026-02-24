@@ -6,7 +6,7 @@ enum MessageStatus {
   READ
   DELETED
 
-  @@map("MessageStatus")
+  @@map("message_status")
   @@schema("social")
 }
 
@@ -16,7 +16,7 @@ enum MessageType {
   VIDEO
   AUDIO
 
-  @@map("Message_type")
+  @@map("message_type")
   @@schema("social")
 }
 
@@ -25,7 +25,7 @@ enum ConversationType {
   GROUP
   SESSION
 
-  @@map("ConversationType")
+  @@map("conversation_type")
   @@schema("social")
 }
 

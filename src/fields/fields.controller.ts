@@ -91,7 +91,7 @@ export class FieldsController {
   @ApiOperation({ summary: 'Create a public field' })
   @HttpCode(HttpStatus.CREATED)
   async create(
-    @Body() createFieldDto: Omit<CreatePublicFieldDto, 'images'>,
+    @Body() createFieldDto: CreatePublicFieldDto,
     @UploadedFilesCustom() images: { buffer: Buffer; originalname: string }[],
   ) {
     const imagesDto = Array.isArray(images)

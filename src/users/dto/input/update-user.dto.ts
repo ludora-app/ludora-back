@@ -1,7 +1,7 @@
-import { Sex } from 'generated/prisma/client';
 import { PartialType } from '@nestjs/mapped-types';
 import { ApiProperty, PickType } from '@nestjs/swagger';
-import { IsDateString, IsEnum, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
+import { OnBoardingStatus, Sex } from 'generated/prisma/client';
+import { IsDateString, IsEnum, IsIn, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
 
 import { CreateUserDto } from './create-user.dto';
 
@@ -73,6 +73,28 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
     type: 'string',
   })
   file?: any;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty({
+    description: 'The city of the user',
+    example: 'Paris',
+    required: false,
+    type: String,
+  })
+  city?: string;
+
+  @IsIn([OnBoardingStatus.COMPLETE], {
+    message: 'onBoardingStatus must be COMPLETE',
+  })
+  @IsOptional()
+  @ApiProperty({
+    description: 'The onboarding status of the user (only COMPLETE is accepted)',
+    enum: [OnBoardingStatus.COMPLETE],
+    example: OnBoardingStatus.COMPLETE,
+    required: false,
+  })
+  onBoardingStatus?: OnBoardingStatus;
 }
 
 export class UpdateUserEmailDto extends PickType(CreateUserDto, ['email']) {}

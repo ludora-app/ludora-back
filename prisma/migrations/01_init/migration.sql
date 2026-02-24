@@ -29,7 +29,10 @@ CREATE TYPE "auth"."Provider" AS ENUM ('FACEBOOK', 'GOOGLE', 'LUDORA');
 CREATE TYPE "auth"."Sex" AS ENUM ('MALE', 'FEMALE', 'OTHER');
 
 -- CreateEnum
-CREATE TYPE "auth"."UserType" AS ENUM ('USER', 'ADMIN', 'PARTNER');
+CREATE TYPE "auth"."user_type" AS ENUM ('USER', 'ADMIN', 'PARTNER');
+
+-- CreateEnum
+CREATE TYPE "auth"."on_boarding_status" AS ENUM ('COMPLETE', 'INCOMPLETE');
 
 -- CreateEnum
 CREATE TYPE "infrastructure"."field_type" AS ENUM ('PUBLIC', 'PRIVATE');
@@ -56,19 +59,19 @@ CREATE TYPE "sessions"."session_visibility" AS ENUM ('PUBLIC', 'PRIVATE');
 CREATE TYPE "shared"."InvitationStatus" AS ENUM ('PENDING', 'ACCEPTED', 'REJECTED', 'CANCELED');
 
 -- CreateEnum
-CREATE TYPE "social"."MessageStatus" AS ENUM ('SENT', 'DELIVERED', 'READ', 'DELETED');
+CREATE TYPE "social"."message_status" AS ENUM ('SENT', 'DELIVERED', 'READ', 'DELETED');
 
 -- CreateEnum
-CREATE TYPE "social"."Message_type" AS ENUM ('TEXT', 'IMAGE', 'VIDEO', 'AUDIO');
+CREATE TYPE "social"."message_type" AS ENUM ('TEXT', 'IMAGE', 'VIDEO', 'AUDIO');
 
 -- CreateEnum
-CREATE TYPE "social"."ConversationType" AS ENUM ('PRIVATE', 'GROUP', 'SESSION');
+CREATE TYPE "social"."conversation_type" AS ENUM ('PRIVATE', 'GROUP', 'SESSION');
 
 -- CreateEnum
-CREATE TYPE "user_preferences"."User_hour_preference_type" AS ENUM ('RECURRENT', 'ONE_TIME');
+CREATE TYPE "user_preferences"."user_hour_preference_type" AS ENUM ('RECURRENT', 'ONE_TIME');
 
 -- CreateEnum
-CREATE TYPE "user_preferences"."Time_period" AS ENUM ('MORNING', 'AFTERNOON', 'EVENING');
+CREATE TYPE "user_preferences"."time_period" AS ENUM ('MORNING', 'AFTERNOON', 'EVENING');
 
 -- CreateTable
 CREATE TABLE "auth"."Users" (
@@ -90,7 +93,8 @@ CREATE TABLE "auth"."Users" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "is_email_verified" BOOLEAN NOT NULL DEFAULT false,
-    "type" "auth"."UserType" NOT NULL DEFAULT 'USER',
+    "type" "auth"."user_type" NOT NULL DEFAULT 'USER',
+    "on_boarding_status" "auth"."on_boarding_status" DEFAULT 'INCOMPLETE',
 
     CONSTRAINT "Users_pkey" PRIMARY KEY ("uid")
 );
@@ -357,7 +361,7 @@ CREATE TABLE "social"."Conversations" (
     "uid" TEXT NOT NULL,
     "session_uid" TEXT,
     "name" TEXT,
-    "type" "social"."ConversationType" NOT NULL,
+    "type" "social"."conversation_type" NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -370,8 +374,8 @@ CREATE TABLE "social"."Messages" (
     "conversation_uid" TEXT NOT NULL,
     "sender_uid" TEXT NOT NULL,
     "content" TEXT NOT NULL,
-    "global_status" "social"."MessageStatus" NOT NULL DEFAULT 'SENT',
-    "type" "social"."Message_type" NOT NULL,
+    "global_status" "social"."message_status" NOT NULL DEFAULT 'SENT',
+    "type" "social"."message_type" NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -382,7 +386,7 @@ CREATE TABLE "social"."Messages" (
 CREATE TABLE "social"."Message_receipts" (
     "message_uid" TEXT NOT NULL,
     "user_uid" TEXT NOT NULL,
-    "status" "social"."MessageStatus" NOT NULL DEFAULT 'DELIVERED',
+    "status" "social"."message_status" NOT NULL DEFAULT 'DELIVERED',
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Message_receipts_pkey" PRIMARY KEY ("message_uid","user_uid")
@@ -428,10 +432,10 @@ CREATE TABLE "user_preferences"."User_sports" (
 -- CreateTable
 CREATE TABLE "user_preferences"."User_hour_preferences" (
     "uid" TEXT NOT NULL,
-    "type" "user_preferences"."User_hour_preference_type" NOT NULL,
+    "type" "user_preferences"."user_hour_preference_type" NOT NULL,
     "user_uid" TEXT NOT NULL,
     "day_of_week" INTEGER NOT NULL,
-    "time_period" "user_preferences"."Time_period" NOT NULL,
+    "time_period" "user_preferences"."time_period" NOT NULL,
     "date" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

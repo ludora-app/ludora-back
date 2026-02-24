@@ -4,7 +4,7 @@ enum UserHourPreferenceType {
   RECURRENT
   ONE_TIME
 
-  @@map("User_hour_preference_type")
+  @@map("user_hour_preference_type")
   @@schema("user_preferences")
 }
 
@@ -13,7 +13,7 @@ enum TimePeriod {
   AFTERNOON
   EVENING
 
-  @@map("Time_period")
+  @@map("time_period")
   @@schema("user_preferences")
 }
 
@@ -24,9 +24,9 @@ model UserSportPreferences {
   level     Int      @map("level")
   createdAt DateTime @default(now()) @map("created_at")
 
-  user                     Users                      @relation(fields: [userUid], references: [uid], onDelete: Cascade)
-  sportRelation            Sports                     @relation(fields: [sport], references: [name])
-  userGameModePreferences  UserGameModePreferences[]  @relation("SportGameModes")
+  user                    Users                     @relation(fields: [userUid], references: [uid], onDelete: Cascade)
+  sportRelation           Sports                    @relation(fields: [sport], references: [name])
+  userGameModePreferences UserGameModePreferences[] @relation("SportGameModes")
 
   @@unique([userUid, sport])
   @@index([userUid])
@@ -60,9 +60,9 @@ model UserGameModePreferences {
   sport     String
   createdAt DateTime  @default(now()) @map("created_at")
 
-  user                 Users                  @relation(fields: [userUid], references: [uid], onDelete: Cascade)
-  sportRelation        Sports                 @relation(fields: [sport], references: [name])
-  userSportPreference  UserSportPreferences?  @relation("SportGameModes", fields: [userUid, sport], references: [userUid, sport], onDelete: Cascade)
+  user                Users                 @relation(fields: [userUid], references: [uid], onDelete: Cascade)
+  sportRelation       Sports                @relation(fields: [sport], references: [name])
+  userSportPreference UserSportPreferences? @relation("SportGameModes", fields: [userUid, sport], references: [userUid, sport], onDelete: Cascade)
 
   @@unique([userUid, gameMode, sport])
   @@index([userUid])
