@@ -164,8 +164,10 @@ export class SessionMapper {
         teamName: team.teamName,
       })),
 
-      // Distance
-      userDistance: distData?.distance ? Math.round(Number(distData.distance)) : null,
+      // Distance (brut PostGIS en m → converti en km, 2 décimales)
+      userDistance: distData?.distance
+        ? Math.round((Number(distData.distance) / 1000) * 100) / 100
+        : null,
     };
   }
   /**

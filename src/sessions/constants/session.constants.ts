@@ -24,7 +24,8 @@ export const SESSION_SUGGESTION_CONFIG = {
   // Seuils techniques
   THRESHOLDS: {
     DEFAULT_WINDOW_MS: 2 * 24 * 60 * 60 * 1000, // 2 days
-    MAX_DISTANCE_METERS: 30000, // 30km
+    MAX_DISTANCE_KM: 30,
+    MAX_DISTANCE_METERS: 30000, // 30km (kept for backward compat / internal)
     URGENCY_HIGH_MS: 6 * 60 * 60 * 1000, // 6 hours
     URGENCY_MEDIUM_MS: 24 * 60 * 60 * 1000, // 24 hours
     WORD_SIMILARITY_THRESHOLD: 0.3, // 30% similarity threshold for search pg_trgm

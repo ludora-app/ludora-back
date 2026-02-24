@@ -162,6 +162,46 @@ export class FindOneFieldResponseDto extends ResponseTypeDto<FindOneFieldRespons
   readonly data: FindOneFieldResponseData;
 }
 
+export class MyFieldResponseData {
+  @ApiProperty({ description: 'uid of the field', example: 'cm7hvgonx0000to0mh5maqajc' })
+  readonly uid: string;
+
+  @ApiPropertyOptional({ description: 'name of the field', example: 'Terrain de foot du parc' })
+  readonly name?: string;
+
+  @ApiProperty({
+    description: 'short address of the field',
+    example: '38 Rue du Ballon, Noisy-le-Grand',
+  })
+  readonly shortAddress: string;
+
+  @ApiProperty({
+    description: 'sports of the field',
+    enum: Sport,
+    example: [Sport.BASKETBALL, Sport.FOOTBALL],
+    isArray: true,
+  })
+  readonly sports: Sport[];
+
+  @ApiProperty({
+    description: 'verification status',
+    enum: VerificationStatus,
+    example: VerificationStatus.PENDING,
+  })
+  readonly status: VerificationStatus;
+
+  @ApiPropertyOptional({
+    description: 'first image of the field',
+    example: 'https://example.com/image.jpg',
+  })
+  readonly imageUrl?: string;
+
+  @ApiProperty({ description: 'creation date', example: '2025-01-01T10:00:00.000Z' })
+  readonly createdAt: Date;
+}
+
 export const PaginatedFieldResponse = toPaginationResponseType(FieldResponseDto);
 
 export const PaginatedPublicFieldResponse = toPaginationResponseType(PublicFieldResponseData);
+
+export const PaginatedMyFieldResponse = toPaginationResponseType(MyFieldResponseData);

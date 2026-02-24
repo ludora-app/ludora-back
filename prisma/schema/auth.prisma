@@ -83,6 +83,7 @@ model Users {
   notifications           Notifications[]
   devices                 Devices[]
   userGameModePreferences UserGameModePreferences[]
+  createdFields           Fields[]  @relation("createdFields")
 
   @@index([createdAt])
   @@index([isConnected])

@@ -53,6 +53,7 @@ model Fields {
   type       FieldType          @default(PUBLIC)
   status     VerificationStatus @default(PENDING)
   partnerUid String?            @map("partner_uid")
+  creatorUid String?            @map("creator_uid")
   name       String?
 
   zipCode      String  @map("zip_code")
@@ -70,10 +71,12 @@ model Fields {
   fieldImages FieldImages[]
   fieldSlots  FieldSlots[]
   partner     Partners?     @relation(fields: [partnerUid], references: [uid], onDelete: SetNull)
+  creator     Users?        @relation("createdFields", fields: [creatorUid], references: [uid], onDelete: SetNull)
   sessions    Sessions[]
   fieldSports FieldSports[]
 
   @@index([partnerUid])
+  @@index([creatorUid])
   @@index([longitude, latitude])
   @@index([type])
   @@index([status])

@@ -545,9 +545,8 @@ export class ConversationsService {
     file?: any,
   ): Promise<{ conversationUid: string; messageUid: string }> {
     const { content, conversationUid, recipientUid, type } = dto;
-    // const existingConversation = await this.findOne(conversationUid, userUid);
 
-    //? handle the session conversation case
+    //? handle the session conversation case (client sends sessionUid)
     let sessionConversation;
     if (dto.sessionUid) {
       sessionConversation = await this.prisma.conversations.findUnique({
@@ -570,16 +569,12 @@ export class ConversationsService {
           AND: [
             {
               conversationMembers: {
-                some: {
-                  userUid: userUid,
-                },
+                some: { userUid: userUid },
               },
             },
             {
               conversationMembers: {
-                some: {
-                  userUid: recipientUid,
-                },
+                some: { userUid: recipientUid },
               },
             },
           ],
@@ -595,7 +590,19 @@ export class ConversationsService {
       }
     }
 
-    const actualConversationUid = privateConversation?.uid ?? conversationUid;
+    const actualConversationUid =
+      sessionConversation?.uid ?? privateConversation?.uid ?? conversationUid;
+
+    //? Resolve conversation to know if it's a group/session (for push notification title)
+    const conversationForMessage = await this.prisma.conversations.findUnique({
+      select: { sessionUid: true, type: true },
+      where: { uid: actualConversationUid },
+    });
+    const sessionUidForNotification =
+      conversationForMessage?.type === ConversationType.SESSION
+        ? conversationForMessage.sessionUid
+        : null;
+
     let message: { messageUid: string } | undefined;
 
     if ((type as MessageType) === MessageType.TEXT) {
@@ -603,7 +610,7 @@ export class ConversationsService {
         userUid,
         content,
         actualConversationUid,
-        sessionConversation?.uid ?? null,
+        sessionUidForNotification,
       );
     } else {
       message = await this.messagesService.createMediaMessage(
@@ -611,7 +618,7 @@ export class ConversationsService {
         actualConversationUid,
         type,
         file,
-        sessionConversation?.uid ?? null,
+        sessionUidForNotification,
       );
     }
 

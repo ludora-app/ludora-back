@@ -806,7 +806,9 @@ describe('ConversationsService', () => {
           uid: 'session-conv-123',
         };
 
-        mockPrismaService.conversations.findUnique.mockResolvedValue(mockSessionConversation);
+        mockPrismaService.conversations.findUnique
+          .mockResolvedValueOnce(mockSessionConversation)
+          .mockResolvedValueOnce({ sessionUid, type: ConversationType.SESSION });
         mockMessagesService.createTextMessage.mockResolvedValue(undefined);
 
         await service.createMessage(userUid, dto);
@@ -820,8 +822,8 @@ describe('ConversationsService', () => {
         expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
           userUid,
           content,
-          undefined,
           'session-conv-123',
+          sessionUid,
         );
         expect(mockMessagesService.createMediaMessage).not.toHaveBeenCalled();
       });
@@ -842,7 +844,9 @@ describe('ConversationsService', () => {
           uid: 'session-conv-123',
         };
 
-        mockPrismaService.conversations.findUnique.mockResolvedValue(mockSessionConversation);
+        mockPrismaService.conversations.findUnique
+          .mockResolvedValueOnce(mockSessionConversation)
+          .mockResolvedValueOnce({ sessionUid, type: ConversationType.SESSION });
         mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
 
         await service.createMessage(userUid, dto, mockFile);
@@ -855,10 +859,10 @@ describe('ConversationsService', () => {
         });
         expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
           userUid,
-          undefined,
+          'session-conv-123',
           MessageType.IMAGE,
           mockFile,
-          'session-conv-123',
+          sessionUid,
         );
         expect(mockMessagesService.createTextMessage).not.toHaveBeenCalled();
       });

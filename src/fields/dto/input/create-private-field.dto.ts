@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { CreateImageDto } from 'src/auth/dto';
 import { Sport } from 'src/shared/constants/constants';
 import {
@@ -51,16 +51,20 @@ export class CreatePrivateFieldDto {
   })
   address: string;
 
-  @IsNumber()
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === undefined ? undefined : Number(value)))
+  @Type(() => Number)
+  @IsNumber()
   @ApiProperty({
     description: 'The latitude of the field',
     example: 40.7128,
   })
   lat?: number;
 
-  @IsNumber()
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === undefined ? undefined : Number(value)))
+  @Type(() => Number)
+  @IsNumber()
   @ApiProperty({
     description: 'The longitude of the field',
     example: -74.006,

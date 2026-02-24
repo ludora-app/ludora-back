@@ -87,19 +87,23 @@ describe('FieldsController', () => {
 
       mockFieldsService.create.mockResolvedValue(mockResponse);
 
-      const result = await controller.create(createFieldDto, mockImages);
+      const mockRequest = { user: { uid: 'user-uid-1' } };
+      const result = await controller.create(createFieldDto, mockImages, mockRequest as any);
 
       expect(result).toEqual({
         data: mockResponse,
         message: 'Field created successfully',
       });
-      expect(mockFieldsService.create).toHaveBeenCalledWith({
-        ...createFieldDto,
-        images: [
-          { file: mockImages[0].buffer, name: 'image1.jpg', order: 0 },
-          { file: mockImages[1].buffer, name: 'image2.jpg', order: 1 },
-        ],
-      });
+      expect(mockFieldsService.create).toHaveBeenCalledWith(
+        {
+          ...createFieldDto,
+          images: [
+            { file: mockImages[0].buffer, name: 'image1.jpg', order: 0 },
+            { file: mockImages[1].buffer, name: 'image2.jpg', order: 1 },
+          ],
+        },
+        'user-uid-1',
+      );
     });
 
     it('should create a new field without images (undefined)', async () => {
@@ -118,17 +122,17 @@ describe('FieldsController', () => {
 
       mockFieldsService.create.mockResolvedValue(mockResponse);
 
-      // Call with undefined images (as would happen when no files are uploaded)
-      const result = await controller.create(createFieldDto, undefined as any);
+      const mockRequest = { user: { uid: 'user-uid-1' } };
+      const result = await controller.create(createFieldDto, undefined as any, mockRequest as any);
 
       expect(result).toEqual({
         data: mockResponse,
         message: 'Field created successfully',
       });
-      expect(mockFieldsService.create).toHaveBeenCalledWith({
-        ...createFieldDto,
-        images: [],
-      });
+      expect(mockFieldsService.create).toHaveBeenCalledWith(
+        { ...createFieldDto, images: [] },
+        'user-uid-1',
+      );
     });
 
     it('should create a new field without images (empty array)', async () => {
@@ -147,17 +151,17 @@ describe('FieldsController', () => {
 
       mockFieldsService.create.mockResolvedValue(mockResponse);
 
-      // Call with empty array
-      const result = await controller.create(createFieldDto, []);
+      const mockRequest = { user: { uid: 'user-uid-1' } };
+      const result = await controller.create(createFieldDto, [], mockRequest as any);
 
       expect(result).toEqual({
         data: mockResponse,
         message: 'Field created successfully',
       });
-      expect(mockFieldsService.create).toHaveBeenCalledWith({
-        ...createFieldDto,
-        images: [],
-      });
+      expect(mockFieldsService.create).toHaveBeenCalledWith(
+        { ...createFieldDto, images: [] },
+        'user-uid-1',
+      );
     });
 
     it('should handle non-array images gracefully', async () => {
@@ -176,17 +180,17 @@ describe('FieldsController', () => {
 
       mockFieldsService.create.mockResolvedValue(mockResponse);
 
-      // Call with non-array value (e.g., empty object or other unexpected value)
-      const result = await controller.create(createFieldDto, {} as any);
+      const mockRequest = { user: { uid: 'user-uid-1' } };
+      const result = await controller.create(createFieldDto, {} as any, mockRequest as any);
 
       expect(result).toEqual({
         data: mockResponse,
         message: 'Field created successfully',
       });
-      expect(mockFieldsService.create).toHaveBeenCalledWith({
-        ...createFieldDto,
-        images: [],
-      });
+      expect(mockFieldsService.create).toHaveBeenCalledWith(
+        { ...createFieldDto, images: [] },
+        'user-uid-1',
+      );
     });
   });
 

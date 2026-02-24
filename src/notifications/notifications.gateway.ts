@@ -180,7 +180,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       });
 
       if (this.isUserConnected(userUid)) {
-        // User is connected → Send via Socket.io (real-time, no persistence)
+        // User is connected → Send via Socket.io (real-time)
         const userRoom = `user:${userUid}`;
         this.server.to(userRoom).emit('notification', {
           data: enrichedMetadata,
@@ -192,18 +192,26 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
         this.logger.debug(`✓ Socket notification sent to ${userUid} - ${type}`);
       } else {
-        // User is offline → Send via Firebase Push + persist in DB
-        await this.notificationsService.sendPushNotification({
-          foreignUid,
-          message,
-          metadata: enrichedMetadata,
-          notificationUid: notification.uid,
-          title,
-          type,
-          userUid,
-        });
-
-        this.logger.debug(`✓ Push notification sent to ${userUid} - ${type}`);
+        // User is offline → Push only for certain types (notification already persisted above)
+        const pushAllowedTypes: NotificationType[] = [
+          NotificationType.FRIEND_REQUEST,
+          NotificationType.SESSION_INVITATION,
+          NotificationType.NEW_MESSAGE,
+        ];
+        if (pushAllowedTypes.includes(type)) {
+          await this.notificationsService.sendPushNotification({
+            foreignUid,
+            message,
+            metadata: enrichedMetadata,
+            notificationUid: notification.uid,
+            title,
+            type,
+            userUid,
+          });
+          this.logger.debug(`✓ Push notification sent to ${userUid} - ${type}`);
+        } else {
+          this.logger.debug(`Push skipped for ${userUid} - ${type} (not in pushAllowedTypes)`);
+        }
       }
     } catch (error) {
       this.logger.error(`Failed to send notification to ${userUid}: ${error.message}`, {
@@ -304,14 +312,14 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   }): Promise<void> {
     await this.sendNotification({
       foreignUid: payload.senderId,
-      message: `${payload.senderName} sent you a friend request`,
+      message: `${payload.senderName} t'a envoyé une demande d'ami`,
       metadata: {
-        actionUrl: `app://friends/requests/${payload.senderId}`,
+        actionUrl: 'ludora://notifications',
         senderAvatar: payload.senderAvatar,
         senderName: payload.senderName,
         senderUid: payload.senderId,
       },
-      title: 'New Friend Request',
+      title: "Nouvelle demande d'ami",
       type: NotificationType.FRIEND_REQUEST,
       userUid: payload.recipientId,
     });
@@ -354,7 +362,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       foreignUid: payload.sessionUid,
       message: `${payload.senderFirstname} ${payload.senderLastname} invited you to join a ${payload.sessionSport} session`,
       metadata: {
-        actionUrl: `app://sessions/${payload.sessionUid}`,
+        actionUrl: `app://session/${payload.sessionUid}`,
         senderAvatar: payload.senderAvatar,
         senderFirstname: payload.senderFirstname,
         senderLastname: payload.senderLastname,
@@ -364,7 +372,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         sessionTitle: payload.sessionTitle,
         sessionUid: payload.sessionUid,
       },
-      title: 'New Session Invitation',
+      title: 'Tu as été invité à une session',
       type: NotificationType.SESSION_INVITATION,
       userUid: receiverUid,
     });
@@ -391,16 +399,22 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
    */
   @OnEvent(EventTypes.NEW_MESSAGE)
   async handleNewMessage(payload: {
-    content: string;
     conversationUid: string;
-    senderUid: string;
-    senderName: string;
-    senderAvatar?: string;
     notificationTitle: string;
+    senderUid: string;
+    senderName?: string;
+    senderAvatar?: string;
+    sessionUid?: string;
   }): Promise<void> {
     try {
-      const { content, conversationUid, notificationTitle, senderAvatar, senderName, senderUid } =
-        payload;
+      const {
+        conversationUid,
+        notificationTitle,
+        senderAvatar,
+        senderName,
+        senderUid,
+        sessionUid,
+      } = payload;
 
       // Get all conversation members except sender
       const receiverUids = await this.notificationsService.getReceiverUids(
@@ -408,20 +422,21 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         senderUid,
       );
 
+      const isGroupConversation = !!sessionUid;
+
       // Send to each receiver with hybrid logic
       for (const receiver of receiverUids) {
         await this.sendNotification({
           foreignUid: conversationUid,
-          message: content,
+          message: 'Tu as reçu un nouveau message',
           metadata: {
-            actionUrl: `app://conversations/${conversationUid}`,
+            actionUrl: `app://chat-room/${conversationUid}`,
             conversationUid,
-            messagePreview: content.substring(0, 100),
             senderAvatar,
             senderName,
             senderUid,
           },
-          title: notificationTitle,
+          title: isGroupConversation ? 'Nouveau message dans une conversation' : notificationTitle,
           type: NotificationType.NEW_MESSAGE,
           userUid: receiver.userUid,
         });
