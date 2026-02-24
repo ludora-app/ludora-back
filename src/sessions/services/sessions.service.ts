@@ -163,7 +163,7 @@ export class SessionsService {
     let autoTitle = '';
 
     if (!createSessionDto.title) {
-      // autoTitle = `Session de ${field.sport} le ${DateUtils.formatDate(startDate)}`;
+      autoTitle = `Session ${sport} le ${DateUtils.formatDate(startDate)}`;
     }
     const { maxPlayersPerTeam, minPlayersPerTeam, teamsPerGame } = this.getPlayersPerTeamData(
       createSessionDto.gameMode,

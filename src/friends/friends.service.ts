@@ -134,12 +134,16 @@ export class FriendsService {
         `;
     }
 
-    // Conditionally add session invitation join
+    // Conditionally add session invitation join and session players join (for isInvited / isJoined)
     const sessionJoinSql = sessionUid
       ? Prisma.sql`
             LEFT JOIN sessions."Session_invitations" si ON (
                 si.session_uid = ${sessionUid}
                 AND si.receiver_uid = friend.uid
+            )
+            LEFT JOIN sessions."Session_players" sp ON (
+                sp.session_uid = ${sessionUid}
+                AND sp.user_uid = friend.uid
             )
           `
       : Prisma.empty;
@@ -156,7 +160,8 @@ export class FriendsService {
             friend.firstname,
             friend.lastname,
             friend.image_url as "avatarUrl",
-            CASE WHEN ${sessionUid ? Prisma.sql`si.receiver_uid IS NOT NULL` : Prisma.sql`false`} THEN true ELSE false END as "isInvited"
+            CASE WHEN ${sessionUid ? Prisma.sql`si.receiver_uid IS NOT NULL` : Prisma.sql`false`} THEN true ELSE false END as "isInvited",
+            CASE WHEN ${sessionUid ? Prisma.sql`sp.user_uid IS NOT NULL` : Prisma.sql`false`} THEN true ELSE false END as "isJoined"
         FROM social."Friends" f
         INNER JOIN auth."Users" friend ON (
             friend.uid = CASE 
