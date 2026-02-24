@@ -322,14 +322,14 @@ describe('SessionsService', () => {
         });
       });
 
-      it('should create a session with empty title when none provided', async () => {
-        // Arrange
+      it('should create a session with auto-generated title when none provided', async () => {
+        // Arrange: no title → service generates "Session {sport} le {formatDate(startDate)}" (DateUtils.formatDate mocked to '2023-01-01')
         const dtoWithoutTitle = { ...createSessionDto, title: undefined };
         (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPublicField);
         (prismaService.sessions.findFirst as jest.Mock).mockResolvedValue(null);
         (prismaService.sessions.create as jest.Mock).mockResolvedValue({
           ...mockCreatedSession,
-          title: '',
+          title: 'Session FOOTBALL le 2023-01-01',
         });
         setupTransactionMock();
 
@@ -339,7 +339,7 @@ describe('SessionsService', () => {
         // Assert
         expect(prismaService.sessions.create).toHaveBeenCalledWith({
           data: expect.objectContaining({
-            title: '',
+            title: 'Session FOOTBALL le 2023-01-01',
           }),
         });
       });
