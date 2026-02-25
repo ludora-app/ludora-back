@@ -12,6 +12,9 @@ services:
     restart: unless-stopped
     ports:
       - '2424:2424'
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
     networks:
       - ludora-network
       - traefik
@@ -36,28 +39,6 @@ services:
     tmpfs:
       - /tmp
     command: ['sh', 'scripts/start-dev.sh']
-    labels:
-      - 'dev.environment=development'
-      - 'traefik.enable=true'
-      - 'traefik.docker.network=traefik'
-      - 'traefik.http.services.ludora-api-dev.loadbalancer.server.port=2424'
-      # Add basic auth middleware for Swagger
-      - 'traefik.http.middlewares.swagger-basicauth.basicauth.users=${BASIC_AUTH_USERNAME}:${BASIC_AUTH_PASSWORD_HASH}'
-      # Router for Swagger with basic auth (higher priority)
-      - 'traefik.http.routers.ludora-api-swagger-dev.rule=Host(`ludora-api-dev.gana-f4ll.fr`) && PathPrefix(`/swagger`)'
-      - 'traefik.http.routers.ludora-api-swagger-dev.entrypoints=websecure'
-      - 'traefik.http.routers.ludora-api-swagger-dev.tls=true'
-      - 'traefik.http.routers.ludora-api-swagger-dev.tls.certresolver=myresolver'
-      - 'traefik.http.routers.ludora-api-swagger-dev.middlewares=swagger-basicauth'
-      - 'traefik.http.routers.ludora-api-swagger-dev.service=ludora-api-dev'
-      - 'traefik.http.routers.ludora-api-swagger-dev.priority=10'
-      # Main router for API (lower priority)
-      - 'traefik.http.routers.ludora-api-dev.rule=Host(`ludora-api-dev.gana-f4ll.fr`)'
-      - 'traefik.http.routers.ludora-api-dev.entrypoints=websecure'
-      - 'traefik.http.routers.ludora-api-dev.tls=true'
-      - 'traefik.http.routers.ludora-api-dev.tls.certresolver=myresolver'
-      - 'traefik.http.routers.ludora-api-dev.service=ludora-api-dev'
-      - 'traefik.http.routers.ludora-api-dev.priority=1'
 
 networks:
   ludora-network:

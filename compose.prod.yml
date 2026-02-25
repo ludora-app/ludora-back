@@ -12,6 +12,7 @@ services:
       - '2424:2424'
     environment:
       - NODE_ENV=production
+      - LOG_LEVEL=info
       # Vault AppRole configuration
       - VAULT_ADDR=${VAULT_ADDR:-https://vault.ludora.fr}
       - VAULT_ROLE_ID

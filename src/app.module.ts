@@ -24,6 +24,8 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ConversationsModule } from './conversations/conversations.module';
 
 const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV === 'development';
+// Explicit LOG_LEVEL allows overriding (e.g. in Coolify) when NODE_ENV-based logic is wrong
+const logLevel = process.env.LOG_LEVEL ?? (isDevelopment ? 'debug' : 'info');
 
 @Module({
   controllers: [AppController],
@@ -59,10 +61,10 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
     LoggerModule.forRoot({
       exclude: ['/health', '/metrics', '/swagger', '/swagger/*path'],
       pinoHttp: {
-        // Set log level based on environment
+        // Set log level based on LOG_LEVEL env or NODE_ENV
         // debug: show all logs including debug
-        // info: show info, warn, error (default)
-        level: isDevelopment ? 'debug' : 'info',
+        // info: show info, warn, error (default in production)
+        level: logLevel,
         // Exclude the health check and metrics routes from automatic logging
         autoLogging: {
           ignore: (req: any) => {
@@ -73,6 +75,15 @@ const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV =
         },
         customErrorMessage: (req, res, err) => {
           return `${req.method} ${req.url} - ${res.statusCode} - ${err.message}`;
+        },
+        customLogLevel: (_req, res, err) => {
+          // 5XX or uncaught error -> error
+          if (res.statusCode >= 500 || err) return 'error';
+          // 4XX -> warn (client errors, worth tracking)
+          if (res.statusCode >= 400) return 'warn';
+          // En production : ne logger que les erreurs (silent = pas de log)
+          if (!isDevelopment) return 'silent';
+          return 'info';
         },
         customSuccessMessage: (req, res) => {
           return `${req.method} ${req.url} - ${res.statusCode}`;

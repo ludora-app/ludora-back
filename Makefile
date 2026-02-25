@@ -31,7 +31,7 @@ local-k6:
 	docker compose -f compose.local.yml run --rm ludora-k6 run /scripts/auth/auth-load-test.js
 
 dev-up:
-	docker compose -f compose.dev.yml --env-file .env.local up --build
+	docker compose -f compose.dev.yml --env-file .env.dev up --build
 
 pg-sh:
 	docker compose -f compose.local.yml --env-file .env.local exec ludora-db sh
