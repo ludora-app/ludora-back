@@ -2,11 +2,8 @@ import { Sport } from 'src/shared/constants/constants';
 import { FieldType, VerificationStatus } from 'generated/prisma/client';
 
 import { GAME_MODE_PLAYERS_COUNT } from '../constants/fields.constants';
-import {
-  FieldResponseDto,
-  FindOneFieldResponseData,
-  PublicFieldResponseData,
-} from '../dto/output/field-response.dto';
+import { FindOneFieldResponseData } from '../dto/output/find-one-field-response.dto';
+import { FieldResponseDto, PublicFieldResponseData } from '../dto/output/field-response.dto';
 
 interface FieldInput {
   uid: string;

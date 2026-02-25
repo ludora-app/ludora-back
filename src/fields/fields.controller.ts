@@ -30,6 +30,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiConflictResponse,
   ApiConsumes,
   ApiCreatedResponse,
@@ -48,11 +49,19 @@ import { FieldSlotsService } from './services/field-slots.service';
 import { CreateFieldSlotDto } from './dto/input/create-field-slot.dto';
 import { CreatePublicFieldDto } from './dto/input/create-public-field.dto';
 import { PublicFieldFilterDto } from './dto/input/public-field-filter.dto';
+import { MyFieldsB2CFilterDto } from './dto/input/my-fields-b2c-filter.dto';
 import { CreatePrivateFieldDto } from './dto/input/create-private-field.dto';
+import { CreatePublicFieldFormDto } from './dto/input/create-public-field-form.dto';
 import {
-  FieldResponseDto,
+  MyFieldsResponseData,
+  PaginatedMyFieldsResponse,
+} from './dto/output/my-fields-response.dto';
+import {
   FindOneFieldResponseData,
   FindOneFieldResponseDto,
+} from './dto/output/find-one-field-response.dto';
+import {
+  FieldResponseDto,
   PaginatedFieldResponse,
   PaginatedPublicFieldResponse,
   PublicFieldResponseData,
@@ -84,6 +93,7 @@ export class FieldsController {
   @Protected()
   @UseInterceptors(new FastifyFilesInterceptor('images'))
   @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: CreatePublicFieldFormDto })
   @ApiCreatedResponse({ type: ResponseTypeDto<FieldResponseDto> })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
@@ -93,19 +103,22 @@ export class FieldsController {
   async create(
     @Body() createFieldDto: CreatePublicFieldDto,
     @UploadedFilesCustom() images: { buffer: Buffer; originalname: string }[],
+    @Req() request: FastifyRequest,
   ) {
-    const imagesDto = Array.isArray(images)
-      ? images.map((image, index) => ({
-          file: image.buffer,
-          name: image.originalname,
-          order: index,
-        }))
-      : [];
+    const userUid = request['user'].uid;
+    const imagesDto = (Array.isArray(images) ? images : []).map((image, index) => ({
+      file: image.buffer,
+      name: image.originalname,
+      order: index,
+    }));
 
-    const response = await this.fieldsService.create({
-      ...createFieldDto,
-      images: imagesDto,
-    });
+    const response = await this.fieldsService.create(
+      {
+        ...createFieldDto,
+        images: imagesDto,
+      },
+      userUid,
+    );
 
     return {
       data: response,
@@ -127,13 +140,11 @@ export class FieldsController {
     @Body() createFieldDto: CreatePrivateFieldDto,
     @UploadedFilesCustom() images: { buffer: Buffer; originalname: string }[],
   ) {
-    const imagesDto = Array.isArray(images)
-      ? images.map((image, index) => ({
-          file: image.buffer,
-          name: image.originalname,
-          order: index,
-        }))
-      : [];
+    const imagesDto = (Array.isArray(images) ? images : []).map((image, index) => ({
+      file: image.buffer,
+      name: image.originalname,
+      order: index,
+    }));
 
     const response = await this.fieldsService.createPrivateField({
       ...createFieldDto,
@@ -143,6 +154,26 @@ export class FieldsController {
     return {
       data: response,
       message: 'Private field created successfully',
+    };
+  }
+
+  @Get('my-fields/collection')
+  @UseGuards(AuthB2CGuard)
+  @Protected()
+  @ApiOkResponse({ type: PaginatedMyFieldsResponse })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all fields created by the connected user' })
+  async findAllMyFields(
+    @Req() request: FastifyRequest,
+    @Query() filters: MyFieldsB2CFilterDto,
+  ): Promise<PaginationResponseTypeDto<MyFieldsResponseData>> {
+    const userUid = request['user'].uid;
+    const data = await this.fieldsService.findAllMyFields(userUid, filters);
+    return {
+      data,
+      message: 'My fields fetched successfully',
     };
   }
 

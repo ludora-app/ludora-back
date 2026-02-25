@@ -166,8 +166,11 @@ describe('MessagesService', () => {
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(EventTypes.NEW_MESSAGE, {
         content,
         conversationUid,
-        notificationTitle: 'John Doe sent you a message',
+        notificationTitle: "John Doe t'a envoyé un message",
+        senderAvatar: 'image.jpg',
+        senderName: 'John Doe',
         senderUid,
+        sessionUid: undefined,
       });
     });
 
@@ -209,8 +212,11 @@ describe('MessagesService', () => {
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(EventTypes.NEW_MESSAGE, {
         content,
         conversationUid,
-        notificationTitle: `Session ${sessionUid} - Jane Smith sent you a message`,
+        notificationTitle: `Session ${sessionUid} - Jane Smith t'a envoyé un message`,
+        senderAvatar: undefined,
+        senderName: 'Jane Smith',
         senderUid,
+        sessionUid,
       });
     });
   });
@@ -290,8 +296,11 @@ describe('MessagesService', () => {
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(EventTypes.NEW_MESSAGE, {
         content: uploadedFile.data,
         conversationUid,
-        notificationTitle: 'John Doe sent you a message',
+        notificationTitle: "John Doe t'a envoyé un message",
+        senderAvatar: 'image.jpg',
+        senderName: 'John Doe',
         senderUid,
+        sessionUid: undefined,
       });
     });
 

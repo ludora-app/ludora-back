@@ -83,8 +83,8 @@ export class SessionFilterDto {
   @Type(() => Number)
   @IsNumber()
   @ApiProperty({
-    description: 'Maximum distance for location-based filtering',
-    example: 1000,
+    description: 'Maximum distance for location-based filtering (in km)',
+    example: 30,
     required: false,
   })
   maxDistance?: number;

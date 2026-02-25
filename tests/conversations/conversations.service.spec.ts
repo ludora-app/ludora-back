@@ -579,7 +579,9 @@ describe('ConversationsService', () => {
         uid: 'conv-session-123',
       };
 
-      mockPrisma.conversations.findUnique.mockResolvedValue(mockSessionConversation);
+      mockPrisma.conversations.findUnique
+        .mockResolvedValueOnce(mockSessionConversation)
+        .mockResolvedValueOnce({ sessionUid: 'session-456', type: ConversationType.SESSION });
       mockMessagesService.createTextMessage.mockResolvedValue(undefined);
 
       await service.createMessage(userUid, dto);
@@ -593,8 +595,8 @@ describe('ConversationsService', () => {
       expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
         userUid,
         'Session message',
-        undefined,
         'conv-session-123',
+        'session-456',
       );
     });
 
@@ -621,6 +623,10 @@ describe('ConversationsService', () => {
 
       mockPrisma.conversations.findFirst.mockResolvedValue(null);
       mockPrisma.conversations.create.mockResolvedValue({ uid: 'conv-new-123' });
+      mockPrisma.conversations.findUnique.mockResolvedValue({
+        sessionUid: null,
+        type: ConversationType.PRIVATE,
+      });
       mockConversationMembersService.createMany.mockResolvedValue(undefined);
       mockMessagesService.createTextMessage.mockResolvedValue(undefined);
 
@@ -649,6 +655,10 @@ describe('ConversationsService', () => {
       };
 
       mockPrisma.conversations.findFirst.mockResolvedValue(mockPrivateConversation);
+      mockPrisma.conversations.findUnique.mockResolvedValue({
+        sessionUid: null,
+        type: ConversationType.PRIVATE,
+      });
       mockMessagesService.createTextMessage.mockResolvedValue(undefined);
 
       await service.createMessage(userUid, dto);

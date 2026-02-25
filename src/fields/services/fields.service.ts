@@ -17,12 +17,11 @@ import { MyFieldsFilterDto } from '../dto/input/my-fields-filter.dto';
 import { FIELD_SUGGESTION_CONFIG } from '../constants/fields.constants';
 import { CreatePublicFieldDto } from '../dto/input/create-public-field.dto';
 import { PublicFieldFilterDto } from '../dto/input/public-field-filter.dto';
+import { MyFieldsB2CFilterDto } from '../dto/input/my-fields-b2c-filter.dto';
+import { MyFieldsResponseData } from './../dto/output/my-fields-response.dto';
 import { CreatePrivateFieldDto } from '../dto/input/create-private-field.dto';
-import {
-  FieldResponseDto,
-  FindOneFieldResponseData,
-  PublicFieldResponseData,
-} from '../dto/output/field-response.dto';
+import { FindOneFieldResponseData } from '../dto/output/find-one-field-response.dto';
+import { FieldResponseDto, PublicFieldResponseData } from '../dto/output/field-response.dto';
 
 @Injectable()
 export class FieldsService {
@@ -36,9 +35,8 @@ export class FieldsService {
     this.logger.setContext(FieldsService.name);
   }
 
-  async create(createPublicFieldDto: CreatePublicFieldDto): Promise<void> {
-    const { address, images, lat, lng, name, shortAddress, sports } = createPublicFieldDto;
-
+  async create(createPublicFieldDto: CreatePublicFieldDto, creatorUid?: string): Promise<void> {
+    const { address, images = [], lat, lng, name, shortAddress, sports } = createPublicFieldDto;
     let finalLat = lat;
     let finalLng = lng;
     let finalShortAddress = shortAddress;
@@ -46,29 +44,23 @@ export class FieldsService {
     const geo = await this.geolocalisationService.getDetailsFromAddress(address);
 
     if (!finalLat || !finalLng || !finalShortAddress) {
-      this.logger.debug(
-        `Missing geo data for address: ${address}. Fetching from geolocalisation service...`,
-      );
-
       finalLat = finalLat ?? geo.latitude;
       finalLng = finalLng ?? geo.longitude;
       finalShortAddress = finalShortAddress ?? geo.shortAddress;
     }
 
-    // Convert to numbers
     const numericLat = Number(finalLat);
     const numericLng = Number(finalLng);
 
-    // --- VÉRIFICATION D'EXISTENCE ---
     await this.verifyFieldLocation(numericLat, numericLng, address, sports);
 
-    // --- TRANSACTION DATABASE ---
-    await this.prisma.$transaction(async (tx) => {
+    const { newField } = await this.prisma.$transaction(async (tx) => {
       const newField = await tx.fields.create({
         data: {
           address,
           city: geo.city,
           country: geo.country,
+          creatorUid,
           department: geo.department,
           latitude: numericLat,
           longitude: numericLng,
@@ -108,10 +100,15 @@ export class FieldsService {
         }),
       );
 
-      await this.emailsService.sendNewFieldAdministrationRequestEmail(newField.uid);
-
       return { fieldImages, newField };
     });
+
+    this.emailsService.sendNewFieldAdministrationRequestEmail(newField.uid);
+    // .catch((err) =>
+    //   this.logger.warn(
+    //     `New field created but admin notification email failed: ${err instanceof Error ? err.message : String(err)}`,
+    //   ),
+    // );
   }
 
   async createPrivateField(createPrivateFieldDto: CreatePrivateFieldDto): Promise<void> {
@@ -190,9 +187,6 @@ export class FieldsService {
             uid: true,
             url: true,
           },
-          where: {
-            status: VerificationStatus.APPROVED,
-          },
         },
         fieldSports: {
           select: {
@@ -206,7 +200,7 @@ export class FieldsService {
           },
         },
       },
-      where: { status: VerificationStatus.APPROVED, uid },
+      where: { uid },
     });
 
     if (!field) return null;
@@ -556,7 +550,7 @@ export class FieldsService {
 
     const fieldsFromDb = await this.prisma.fields.findMany({
       include: {
-        fieldImages: { select: { order: true, url: true }, take: 1 },
+        fieldImages: { orderBy: { order: 'asc' }, select: { order: true, url: true }, take: 1 },
         fieldSlots: {
           orderBy: { startTime: 'asc' },
           where: { isReserved: false, startTime: { gte: searchStartTime, lte: searchEndTime } },
@@ -664,7 +658,7 @@ export class FieldsService {
     const fields = await this.prisma.fields.findMany({
       ...query,
       include: {
-        fieldImages: { select: { order: true, url: true }, take: 1 },
+        fieldImages: { orderBy: { order: 'asc' }, select: { order: true, url: true }, take: 1 },
         fieldSlots: {
           orderBy: { startTime: 'asc' },
           where: { startTime: { gte: searchStartTime, lte: searchEndTime } },
@@ -747,7 +741,7 @@ export class FieldsService {
     const fields = await this.prisma.fields.findMany({
       ...query,
       include: {
-        fieldImages: { select: { order: true, url: true }, take: 1 },
+        fieldImages: { orderBy: { order: 'asc' }, select: { order: true, url: true }, take: 1 },
         fieldSports: { select: { sport: true } },
       },
     });
@@ -762,5 +756,58 @@ export class FieldsService {
     const items = fields.map((field) => FieldMapper.toPublicFieldDto(field));
 
     return { items, nextCursor, totalCount: fields.length };
+  }
+
+  async findAllMyFields(
+    userUid: string,
+    filters: MyFieldsB2CFilterDto,
+  ): Promise<PaginatedDataDto<MyFieldsResponseData>> {
+    const { cursor, limit = 10, status } = filters;
+
+    const where: Prisma.FieldsWhereInput = { creatorUid: userUid };
+
+    if (status) {
+      where.status = status;
+    }
+
+    const take = limit + 1;
+
+    const [fields, totalCount] = await Promise.all([
+      this.prisma.fields.findMany({
+        cursor: cursor ? { uid: cursor } : undefined,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          createdAt: true,
+          fieldImages: { orderBy: { order: 'asc' }, select: { url: true }, take: 1 },
+          fieldSports: { select: { sport: true } },
+          name: true,
+          shortAddress: true,
+          status: true,
+          uid: true,
+        },
+        skip: cursor ? 1 : 0,
+        take,
+        where,
+      }),
+      this.prisma.fields.count({ where }),
+    ]);
+
+    let nextCursor: string | null = null;
+    if (fields.length > limit) {
+      const nextItem = fields.pop();
+      nextCursor = nextItem!.uid;
+    }
+
+    const items: MyFieldsResponseData[] = fields.map((field) => ({
+      createdAt: field.createdAt,
+      imageUrl: field.fieldImages[0]?.url,
+      name: field.name ?? undefined,
+      shortAddress: field.shortAddress,
+      sports: field.fieldSports.map((fs) => fs.sport as Sport),
+      status: field.status,
+      uid: field.uid,
+    }));
+
+    return { items, nextCursor, totalCount };
   }
 }

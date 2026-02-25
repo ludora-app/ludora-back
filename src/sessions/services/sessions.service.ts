@@ -270,7 +270,7 @@ export class SessionsService {
     gameModes: filterGameModes = [],
     levels: filterLevels = [],
     limit = 10,
-    maxDistance = SESSION_SUGGESTION_CONFIG.THRESHOLDS.MAX_DISTANCE_METERS,
+    maxDistance = SESSION_SUGGESTION_CONFIG.THRESHOLDS.MAX_DISTANCE_KM,
     search,
     sports: filterSports = [],
     startDate,
@@ -418,11 +418,12 @@ export class SessionsService {
     // 5. REMAINING SQL CONSTRUCTION
     // ---------------------------------------------------------
 
-    // C. DISTANCE
+    // C. DISTANCE (maxDistance in km, convert to meters for PostGIS)
     let distanceScoreSql = Prisma.sql`0`;
     let distanceValueSql = Prisma.sql`NULL`; // <--- NEW: Raw value by default
     let distanceWhereSql = Prisma.empty;
     if (hasLocation) {
+      const maxDistanceMeters = maxDistance * 1000;
       // 1. Define the formula once
       distanceValueSql = Prisma.sql`
         public.ST_DistanceSphere(
@@ -434,15 +435,15 @@ export class SessionsService {
       // 2. Reuse the variable in the Score (Cleaner!)
       distanceScoreSql = Prisma.sql`
         (CASE 
-            WHEN (${distanceValueSql}) < ${maxDistance}
-            THEN ${SCORES.DISTANCE_MAX_POINTS} * (1 - ((${distanceValueSql}) / ${maxDistance}))
+            WHEN (${distanceValueSql}) < ${maxDistanceMeters}
+            THEN ${SCORES.DISTANCE_MAX_POINTS} * (1 - ((${distanceValueSql}) / ${maxDistanceMeters}))
             ELSE 0 
         END)
       `;
 
       // 3. Reuse the variable in the Where
       distanceWhereSql = Prisma.sql`
-        AND (${distanceValueSql}) < ${maxDistance}
+        AND (${distanceValueSql}) < ${maxDistanceMeters}
       `;
     }
 

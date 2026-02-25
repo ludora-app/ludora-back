@@ -86,16 +86,20 @@ export class MessagesService {
     const senderName = `${message.sender.firstname ?? ''} ${message.sender.lastname ?? ''}`.trim();
 
     //? default notification title for a private conversation
-    let notificationTitle = `${senderName} sent you a message`;
+    let notificationTitle = `${senderName} t'a envoyé un message`;
 
     //? if the conversation is a Session Conversation, add the sessionUid to the notification title
-    if (sessionUid) notificationTitle = `Session ${sessionUid} - ${senderName} sent you a message`;
+    if (sessionUid)
+      notificationTitle = `Session ${sessionUid} - ${senderName} t'a envoyé un message`;
 
     this.eventEmitter.emit(EventTypes.NEW_MESSAGE, {
       content,
       conversationUid,
       notificationTitle,
+      senderAvatar: message.sender.imageUrl ?? undefined,
+      senderName,
       senderUid,
+      sessionUid: sessionUid ?? undefined,
     });
 
     return { messageUid: message.uid };
@@ -168,16 +172,20 @@ export class MessagesService {
     const senderName = `${message.sender.firstname ?? ''} ${message.sender.lastname ?? ''}`.trim();
 
     //? default notification title for a private conversation
-    let notificationTitle = `${senderName} sent you a message`;
+    let notificationTitle = `${senderName} t'a envoyé un message`;
 
     //? if the conversation is a Session Conversation, add the sessionUid to the notification title
-    if (sessionUid) notificationTitle = `Session ${sessionUid} - ${senderName} sent you a message`;
+    if (sessionUid)
+      notificationTitle = `Session ${sessionUid} - ${senderName} t'a envoyé un message`;
 
     this.eventEmitter.emit(EventTypes.NEW_MESSAGE, {
       content: uploadedFile.data,
       conversationUid,
       notificationTitle,
+      senderAvatar: message.sender.imageUrl ?? undefined,
+      senderName,
       senderUid,
+      sessionUid: sessionUid ?? undefined,
     });
 
     return { messageUid: message.uid };

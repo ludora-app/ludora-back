@@ -189,15 +189,15 @@ describe('UsersController', () => {
       const updateDto: UpdateUserDto = {
         firstname: 'Updated Name',
       };
-      const mockFile = { buffer: Buffer.from('image1'), originalname: 'profile.jpg' };
+      const mockFiles = [{ buffer: Buffer.from('image1'), originalname: 'profile.jpg' }];
       mockUsersService.update.mockResolvedValue(undefined);
 
-      const result = await controller.update(mockRequest as any, updateDto, mockFile);
+      const result = await controller.update(mockRequest as any, updateDto, mockFiles);
 
       expect(result).toBeUndefined();
       expect(service.update).toHaveBeenCalledWith('1', updateDto, {
-        file: mockFile.buffer,
-        name: mockFile.originalname,
+        file: mockFiles[0].buffer,
+        name: mockFiles[0].originalname,
       });
     });
   });

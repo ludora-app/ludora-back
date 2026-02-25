@@ -62,8 +62,8 @@ export class SessionCollectionItemDto extends OmitType(SessionResponseData, [
   fieldLongitude: number;
 
   @ApiProperty({
-    description: 'Distance to the session in meters',
-    example: 1200,
+    description: 'Distance to the session in kilometers',
+    example: 1.2,
     readOnly: true,
   })
   userDistance?: number;
