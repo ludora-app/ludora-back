@@ -42,13 +42,6 @@ services:
     command: ['sh', 'scripts/start-prod.sh']
     labels:
       - 'prod.environment=production'
-      - 'traefik.enable=true'
-      - 'traefik.docker.network=traefik'
-      - 'traefik.http.routers.ludora-api-prod.rule=Host(`ludora-api.gana-f4ll.fr`)'
-      - 'traefik.http.routers.ludora-api-prod.entrypoints=websecure'
-      - 'traefik.http.routers.ludora-api-prod.tls=true'
-      - 'traefik.http.routers.ludora-api-prod.tls.certresolver=myresolver'
-      - 'traefik.http.services.ludora-api-prod.loadbalancer.server.port=2424'
 
 networks:
   ludora-network:
