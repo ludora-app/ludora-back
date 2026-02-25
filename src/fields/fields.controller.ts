@@ -53,12 +53,16 @@ import { MyFieldsB2CFilterDto } from './dto/input/my-fields-b2c-filter.dto';
 import { CreatePrivateFieldDto } from './dto/input/create-private-field.dto';
 import { CreatePublicFieldFormDto } from './dto/input/create-public-field-form.dto';
 import {
-  FieldResponseDto,
+  MyFieldsResponseData,
+  PaginatedMyFieldsResponse,
+} from './dto/output/my-fields-response.dto';
+import {
   FindOneFieldResponseData,
   FindOneFieldResponseDto,
-  MyFieldResponseData,
+} from './dto/output/find-one-field-response.dto';
+import {
+  FieldResponseDto,
   PaginatedFieldResponse,
-  PaginatedMyFieldResponse,
   PaginatedPublicFieldResponse,
   PublicFieldResponseData,
 } from './dto/output/field-response.dto';
@@ -156,7 +160,7 @@ export class FieldsController {
   @Get('my-fields/collection')
   @UseGuards(AuthB2CGuard)
   @Protected()
-  @ApiOkResponse({ type: PaginatedMyFieldResponse })
+  @ApiOkResponse({ type: PaginatedMyFieldsResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
@@ -164,7 +168,7 @@ export class FieldsController {
   async findAllMyFields(
     @Req() request: FastifyRequest,
     @Query() filters: MyFieldsB2CFilterDto,
-  ): Promise<PaginationResponseTypeDto<MyFieldResponseData>> {
+  ): Promise<PaginationResponseTypeDto<MyFieldsResponseData>> {
     const userUid = request['user'].uid;
     const data = await this.fieldsService.findAllMyFields(userUid, filters);
     return {

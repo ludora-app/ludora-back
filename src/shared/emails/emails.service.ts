@@ -91,10 +91,9 @@ export class EmailsService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      this.logger.info(`Email sent successfully to ${dto.recipients.join(', ')}`);
+      this.logger.debug(`Email sent successfully to ${dto.recipients.join(', ')}`);
     } catch (error) {
       this.logger.error(`Failed to send email: ${error.message}`);
-      throw error;
     }
   }
 

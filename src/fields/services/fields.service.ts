@@ -18,13 +18,10 @@ import { FIELD_SUGGESTION_CONFIG } from '../constants/fields.constants';
 import { CreatePublicFieldDto } from '../dto/input/create-public-field.dto';
 import { PublicFieldFilterDto } from '../dto/input/public-field-filter.dto';
 import { MyFieldsB2CFilterDto } from '../dto/input/my-fields-b2c-filter.dto';
+import { MyFieldsResponseData } from './../dto/output/my-fields-response.dto';
 import { CreatePrivateFieldDto } from '../dto/input/create-private-field.dto';
-import {
-  FieldResponseDto,
-  FindOneFieldResponseData,
-  MyFieldResponseData,
-  PublicFieldResponseData,
-} from '../dto/output/field-response.dto';
+import { FindOneFieldResponseData } from '../dto/output/find-one-field-response.dto';
+import { FieldResponseDto, PublicFieldResponseData } from '../dto/output/field-response.dto';
 
 @Injectable()
 export class FieldsService {
@@ -106,13 +103,12 @@ export class FieldsService {
       return { fieldImages, newField };
     });
 
-    this.emailsService
-      .sendNewFieldAdministrationRequestEmail(newField.uid)
-      .catch((err) =>
-        this.logger.warn(
-          `New field created but admin notification email failed: ${err instanceof Error ? err.message : String(err)}`,
-        ),
-      );
+    this.emailsService.sendNewFieldAdministrationRequestEmail(newField.uid);
+    // .catch((err) =>
+    //   this.logger.warn(
+    //     `New field created but admin notification email failed: ${err instanceof Error ? err.message : String(err)}`,
+    //   ),
+    // );
   }
 
   async createPrivateField(createPrivateFieldDto: CreatePrivateFieldDto): Promise<void> {
@@ -765,7 +761,7 @@ export class FieldsService {
   async findAllMyFields(
     userUid: string,
     filters: MyFieldsB2CFilterDto,
-  ): Promise<PaginatedDataDto<MyFieldResponseData>> {
+  ): Promise<PaginatedDataDto<MyFieldsResponseData>> {
     const { cursor, limit = 10, status } = filters;
 
     const where: Prisma.FieldsWhereInput = { creatorUid: userUid };
@@ -802,7 +798,7 @@ export class FieldsService {
       nextCursor = nextItem!.uid;
     }
 
-    const items: MyFieldResponseData[] = fields.map((field) => ({
+    const items: MyFieldsResponseData[] = fields.map((field) => ({
       createdAt: field.createdAt,
       imageUrl: field.fieldImages[0]?.url,
       name: field.name ?? undefined,
