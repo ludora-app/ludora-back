@@ -1,23 +1,23 @@
-import * as argon2 from 'argon2';
-import { JwtService } from '@nestjs/jwt';
-import { PinoLogger } from 'nestjs-pino';
-import { CreateUserDto } from 'src/users/dto';
-import { ConfigService } from '@nestjs/config';
-import { UserType } from 'generated/prisma/client';
-import { UsersService } from 'src/users/users.service';
-import { DateUtils } from 'src/shared/utils/date.utils';
-import { CreateImageDto, LoginDto } from 'src/auth/dto';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { USERSELECT } from 'src/shared/constants/select-user';
-import { PartnersService } from 'src/partners/partners.service';
-import { CreatePartnerDto } from 'src/partners/dto/input/create-partner.dto';
-import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import * as argon2 from 'argon2';
+import { UserType } from 'generated/prisma/client';
+import { PinoLogger } from 'nestjs-pino';
+import { CreateImageDto, LoginDto } from 'src/auth/dto';
+import { CreatePartnerDto } from 'src/partners/dto/input/create-partner.dto';
+import { PartnersService } from 'src/partners/partners.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { USERSELECT } from 'src/shared/constants/select-user';
+import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
+import { DateUtils } from 'src/shared/utils/date.utils';
+import { CreateUserDto } from 'src/users/dto';
+import { UsersService } from 'src/users/users.service';
 
 import { RegisterB2BDto } from '../dto/input/register-b2b.dto';
 

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Sport } from 'src/shared/constants/constants';
 import { GameModes, SessionVisibility } from 'generated/prisma/enums';
+import { Sport } from 'src/shared/constants/constants';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
 /**

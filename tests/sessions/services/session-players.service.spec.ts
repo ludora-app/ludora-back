@@ -1,9 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { ConversationMembersService } from 'src/conversations/services/conversation-members.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
 
 describe('SessionPlayersService', () => {

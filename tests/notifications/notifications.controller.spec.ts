@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotificationTypeFilter } from 'src/notifications/dto/input/notification-filter.dto';
 import { NotificationsController } from 'src/notifications/notifications.controller';
 import { NotificationsService } from 'src/notifications/notifications.service';
-import { NotificationTypeFilter } from 'src/notifications/dto/input/notification-filter.dto';
 
 describe('NotificationsController', () => {
   let controller: NotificationsController;

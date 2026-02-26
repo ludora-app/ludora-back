@@ -1,8 +1,7 @@
-import { Type } from 'class-transformer';
-import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { Sport, UserSportLevel } from 'src/shared/constants/constants';
+import { Transform, Type } from 'class-transformer';
 import { IsArray, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { Sport, UserSportLevel } from 'src/shared/constants/constants';
 
 export class UserFilterDto {
   @IsOptional()

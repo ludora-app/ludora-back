@@ -1,16 +1,16 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Test, TestingModule } from '@nestjs/testing';
 import { InvitationStatus } from 'generated/prisma/client';
+import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { SessionInvitationsService } from 'src/sessions/services/session-invitations.service';
+import { SessionPlayersService } from 'src/sessions/services/session-players.service';
+import { SessionsService } from 'src/sessions/services/sessions.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { UsersService } from 'src/users/users.service';
 import { CreateSessionInvitationDto } from '../../../src/sessions/dto/input/create-session-invitation.dto';
 import { UpdateSessionInvitationDto } from '../../../src/sessions/dto/input/update-session-invitation.dto';
-import { SessionPlayersService } from 'src/sessions/services/session-players.service';
-import { PinoLogger } from 'nestjs-pino';
-import { SessionsService } from 'src/sessions/services/sessions.service';
-import { SessionInvitationsService } from 'src/sessions/services/session-invitations.service';
 
 describe('SessionInvitationsService', () => {
   let service: SessionInvitationsService;

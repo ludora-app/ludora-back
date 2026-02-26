@@ -2,20 +2,20 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { GameModes } from 'generated/prisma/client';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
-import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
+import { SessionsController } from 'src/sessions/controllers/sessions.controller';
 import {
   CreateSessionDto,
   CreateSessionFromRequestDto,
 } from 'src/sessions/dto/input/create-session.dto';
-import { FindAllSessionsDto } from 'src/sessions/dto/input/session-filter.dto';
-import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
-import { SessionsController } from 'src/sessions/controllers/sessions.controller';
-import { SessionScope, Sport } from 'src/shared/constants/constants';
-import { SessionsService } from 'src/sessions/services/sessions.service';
 import {
   MySessionFilterDto,
   SessionOwnnership,
 } from 'src/sessions/dto/input/my-session-filter.dto';
+import { FindAllSessionsDto } from 'src/sessions/dto/input/session-filter.dto';
+import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
+import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
+import { SessionsService } from 'src/sessions/services/sessions.service';
+import { SessionScope, Sport } from 'src/shared/constants/constants';
 
 describe('SessionsController', () => {
   let controller: SessionsController;

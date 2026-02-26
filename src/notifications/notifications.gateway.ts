@@ -1,10 +1,5 @@
-import { PinoLogger } from 'nestjs-pino';
 import { UseGuards } from '@nestjs/common';
-import { Server, Socket } from 'socket.io';
 import { OnEvent } from '@nestjs/event-emitter';
-import { NotificationType } from 'generated/prisma/enums';
-import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
-import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
 import {
   ConnectedSocket,
   OnGatewayConnection,
@@ -12,12 +7,17 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
+import { NotificationType } from 'generated/prisma/enums';
+import { PinoLogger } from 'nestjs-pino';
+import { Server, Socket } from 'socket.io';
+import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
+import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
 
 import { EventTypes } from './constants/event.types';
-import { NotificationsService } from './notifications.service';
-import { NotificationEventDto } from './dto/notification-event.dto';
 import { NotificationMetadata } from './dto/input/notification-metadata';
 import { SessionInvitationData } from './dto/input/notification-metadata.dto';
+import { NotificationEventDto } from './dto/notification-event.dto';
+import { NotificationsService } from './notifications.service';
 
 /**
  * NotificationsGateway handles real-time notifications using Socket.io

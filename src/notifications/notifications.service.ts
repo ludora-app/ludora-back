@@ -1,18 +1,17 @@
-import { PinoLogger } from 'nestjs-pino';
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { NotificationType } from 'generated/prisma/enums';
+import { PinoLogger } from 'nestjs-pino';
 import { DevicesService } from 'src/devices/devices.service';
 import { FirebaseService } from 'src/firebase/firebase.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
-
-import { MetadataMapper } from './mappers/metadata.mapper';
-import { NotificationMetadata } from './dto/input/notification-metadata';
 import { CreateNotificationDto } from './dto/input/create-notification.dto';
-import { SendPushNotificationDto } from './dto/input/send-push-notification.dto';
-import { UnreadCountResponseData } from './dto/output/unread-count-response.dto';
-import { NotificationResponseData } from './dto/output/notification-response.dto';
 import { NotificationFilterDto, NotificationTypeFilter } from './dto/input/notification-filter.dto';
+import { NotificationMetadata } from './dto/input/notification-metadata';
+import { SendPushNotificationDto } from './dto/input/send-push-notification.dto';
+import { NotificationResponseData } from './dto/output/notification-response.dto';
+import { UnreadCountResponseData } from './dto/output/unread-count-response.dto';
+import { MetadataMapper } from './mappers/metadata.mapper';
 
 @Injectable()
 export class NotificationsService {

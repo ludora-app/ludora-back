@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
-import { ConversationMembershipGuard } from 'src/conversations/guards/conversation-membership.guard';
-import { ConversationsController } from 'src/conversations/conversations.controller';
-import { ConversationsService } from 'src/conversations/services/conversations.service';
-import { ConversationMembersService } from 'src/conversations/services/conversation-members.service';
-import { MessagesService } from 'src/conversations/services/messages.service';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
+import { ConversationsController } from 'src/conversations/conversations.controller';
+import { ConversationMembershipGuard } from 'src/conversations/guards/conversation-membership.guard';
+import { ConversationMembersService } from 'src/conversations/services/conversation-members.service';
+import { ConversationsService } from 'src/conversations/services/conversations.service';
+import { MessagesService } from 'src/conversations/services/messages.service';
+import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 
 describe('ConversationsController', () => {
   let controller: ConversationsController;

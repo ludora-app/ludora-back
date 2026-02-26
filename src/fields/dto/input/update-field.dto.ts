@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CreateImageDto } from 'src/auth/dto';
 import { ArrayMaxSize, IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
+import { CreateImageDto } from 'src/auth/dto';
 
 export class UpdateFieldDto {
   @ApiProperty({ example: 'Field 1', readOnly: true })

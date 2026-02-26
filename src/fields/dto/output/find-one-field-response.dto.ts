@@ -1,6 +1,6 @@
-import { Sport } from 'src/shared/constants/constants';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { FieldType, VerificationStatus } from 'generated/prisma/enums';
+import { Sport } from 'src/shared/constants/constants';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
 import { FieldImageResponseDto, PartnerDto } from './field-response.dto';

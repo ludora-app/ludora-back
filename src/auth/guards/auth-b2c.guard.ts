@@ -1,15 +1,14 @@
-import { FastifyRequest } from 'fastify';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { UsersService } from 'src/users/users.service';
+import { FastifyRequest } from 'fastify';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TokenType } from 'src/shared/constants/constants';
 import { USERSELECT } from 'src/shared/constants/select-user';
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
-
-import { IS_PUBLIC_KEY } from '../../shared/decorators/public.decorator';
+import { UsersService } from 'src/users/users.service';
 import { RESET_PASSWORD_KEY } from '../../auth/decorators/reset-password.decorator';
+import { IS_PUBLIC_KEY } from '../../shared/decorators/public.decorator';
 
 @Injectable()
 export class AuthB2CGuard implements CanActivate {

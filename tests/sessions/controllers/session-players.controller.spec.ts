@@ -1,12 +1,12 @@
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SessionsPipe } from 'src/sessions/pipes/sessions.pipe';
-import { JoinSessionDto } from 'src/sessions/dto/input/create-session-player.dto';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SessionPlayersController } from 'src/sessions/controllers/session-players.controller';
-import { SessionsService } from 'src/sessions/services/sessions.service';
+import { JoinSessionDto } from 'src/sessions/dto/input/create-session-player.dto';
+import { SessionsPipe } from 'src/sessions/pipes/sessions.pipe';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
+import { SessionsService } from 'src/sessions/services/sessions.service';
 
 describe('SessionPlayersController', () => {
   let controller: SessionPlayersController;

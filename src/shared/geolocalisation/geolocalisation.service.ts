@@ -1,5 +1,5 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { Client, AddressType } from '@googlemaps/google-maps-services-js';
+import { AddressType, Client } from '@googlemaps/google-maps-services-js';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { AddressComponentsTypes } from './dto/input/address-components-types';
 import {

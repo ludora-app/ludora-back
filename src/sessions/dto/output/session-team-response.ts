@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { TeamLabels } from 'generated/prisma/client';
 import { SessionSportLevel } from 'src/shared/constants/constants';
-import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
 /**
  * @description session player object created by mixing the Session_players and Users table

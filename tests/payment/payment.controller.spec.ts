@@ -1,11 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { PaymentController } from 'src/payment/payment.controller';
-import { PaymentService } from 'src/payment/payment.service';
-import { PaymentIntentDto } from 'src/payment/dto/input/payment-intent.dto';
+import { Test, TestingModule } from '@nestjs/testing';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { BankDetailsDto, UpdateBankDetailsDto } from 'src/payment/dto/input/bank-details.dto';
 import { CreateStripeAccountDto } from 'src/payment/dto/input/create-stripe-account.dto';
-import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { PaymentIntentDto } from 'src/payment/dto/input/payment-intent.dto';
+import { PaymentController } from 'src/payment/payment.controller';
+import { PaymentService } from 'src/payment/payment.service';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 
 describe('PaymentController', () => {

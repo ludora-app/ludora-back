@@ -1,14 +1,17 @@
-import { UserFilterDto } from 'src/users/dto';
-import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
-import { Protected } from 'src/shared/decorators/protected.decorator';
-import { HttpCode, HttpStatus, Query, UseGuards } from '@nestjs/common';
-import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
-import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
-import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
-import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
-import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
@@ -18,20 +21,28 @@ import {
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-
-import { FriendsService } from './friends.service';
-import { UpdateFriendDto } from './dto/input/update-friend.dto';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
+import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { UserFilterDto } from 'src/users/dto';
 import { CreateFriendDto } from './dto/input/create-friend.dto';
 import { FriendFilterDto } from './dto/input/friend-filter.dto';
+import { UpdateFriendDto } from './dto/input/update-friend.dto';
+import {
+  FriendRequestResponseData,
+  PaginatedFriendRequestResponse,
+} from './dto/output/friend-request-response.dto';
 import {
   FriendResponseData,
   FriendResponseDto,
   PaginatedFriendResponse,
 } from './dto/output/friend-response.dto';
-import {
-  FriendRequestResponseData,
-  PaginatedFriendRequestResponse,
-} from './dto/output/friend-request-response.dto';
+import { FriendsService } from './friends.service';
 
 @Controller('friends')
 @UseGuards(AuthB2CGuard)

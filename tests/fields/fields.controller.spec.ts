@@ -1,16 +1,15 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-
-import { FieldsController } from '../../src/fields/fields.controller';
-import { AuthB2CGuard } from '../../src/auth/guards/auth-b2c.guard';
+import { Test, TestingModule } from '@nestjs/testing';
+import { FieldSlotsService } from 'src/fields/services/field-slots.service';
+import { FieldsService } from 'src/fields/services/fields.service';
 import { AuthB2BGuard } from '../../src/auth/guards/auth-b2b.guard';
-import { Sport } from '../../src/shared/constants/constants';
+import { AuthB2CGuard } from '../../src/auth/guards/auth-b2c.guard';
 import { CreatePublicFieldDto } from '../../src/fields/dto/input/create-public-field.dto';
-import { UpdateFieldDto } from '../../src/fields/dto/input/update-field.dto';
 import { FieldFilterDto } from '../../src/fields/dto/input/field-filter.dto';
 import { PublicFieldFilterDto } from '../../src/fields/dto/input/public-field-filter.dto';
-import { FieldsService } from 'src/fields/services/fields.service';
-import { FieldSlotsService } from 'src/fields/services/field-slots.service';
+import { UpdateFieldDto } from '../../src/fields/dto/input/update-field.dto';
+import { FieldsController } from '../../src/fields/fields.controller';
+import { Sport } from '../../src/shared/constants/constants';
 
 describe('FieldsController', () => {
   let controller: FieldsController;

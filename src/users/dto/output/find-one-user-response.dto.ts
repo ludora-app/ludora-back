@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { OnBoardingStatus, Sex, UserType } from 'generated/prisma/client';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { SportPreferenceResponseData } from 'src/user-preferences/dto/output/sport-preference.response.dto';
 
 export class FindOneUserResponseData {

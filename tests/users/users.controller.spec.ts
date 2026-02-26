@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { UpdatePasswordDto, UpdateUserDto, UserFilterDto } from 'src/users/dto';
-import { UsersController } from 'src/users/users.controller';
-import { UsersService } from 'src/users/users.service';
-import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { PasswordResetRequestDto } from 'src/users/dto/input/password-reset-request.dto';
 import { UpdateUserEmailDto } from 'src/users/dto/input/update-user.dto';
+import { UsersController } from 'src/users/users.controller';
+import { UsersService } from 'src/users/users.service';
 
 describe('UsersController', () => {
   let controller: UsersController;

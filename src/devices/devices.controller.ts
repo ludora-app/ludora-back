@@ -1,9 +1,3 @@
-import { FastifyRequest } from 'fastify';
-import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
-import { Protected } from 'src/shared/decorators/protected.decorator';
-import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
-import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import {
   Body,
   Controller,
@@ -22,6 +16,12 @@ import {
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { FastifyRequest } from 'fastify';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
 import { DevicesService } from './devices.service';
 import { RegisterDeviceDto } from './dto/input/register-device.dto';

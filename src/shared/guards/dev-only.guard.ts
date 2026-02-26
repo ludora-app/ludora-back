@@ -1,5 +1,5 @@
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 
 /**
  * This guard is used to protect endpoints that are only available in development mode.

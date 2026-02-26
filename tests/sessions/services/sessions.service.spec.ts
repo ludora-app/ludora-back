@@ -2,22 +2,22 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FieldType, GameModes } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { SessionScope, SessionSportLevel, Sport } from 'src/shared/constants/constants';
-import { DateUtils } from 'src/shared/utils/date.utils';
-import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
-import { StorageService } from 'src/shared/storage/storage.service';
 import { ConversationsService } from 'src/conversations/services/conversations.service';
-import { SessionsService } from 'src/sessions/services/sessions.service';
-import { SessionPlayersService } from 'src/sessions/services/session-players.service';
-import { FindAllSessionsDto, SessionFilterDto } from 'src/sessions/dto/input/session-filter.dto';
-import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
-import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
-import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
-import { CreateSessionDto } from 'src/sessions/dto/input/create-session.dto';
-import { SessionOwnnership } from 'src/sessions/dto/input/my-session-filter.dto';
 import { FieldSlotsService } from 'src/fields/services/field-slots.service';
 import { FieldsService } from 'src/fields/services/fields.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateSessionDto } from 'src/sessions/dto/input/create-session.dto';
+import { SessionOwnnership } from 'src/sessions/dto/input/my-session-filter.dto';
+import { FindAllSessionsDto, SessionFilterDto } from 'src/sessions/dto/input/session-filter.dto';
+import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
+import { SessionPlayersService } from 'src/sessions/services/session-players.service';
+import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
+import { SessionsService } from 'src/sessions/services/sessions.service';
+import { SessionScope, SessionSportLevel, Sport } from 'src/shared/constants/constants';
+import { StorageService } from 'src/shared/storage/storage.service';
+import { DateUtils } from 'src/shared/utils/date.utils';
+import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
+import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 
 jest.mock('src/shared/utils/date.utils', () => ({
   DateUtils: {

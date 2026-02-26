@@ -1,25 +1,24 @@
-import * as argon2 from 'argon2';
-import { PinoLogger } from 'nestjs-pino';
-import { CreateImageDto } from 'src/auth/dto';
-import { Provider } from 'generated/prisma/browser';
-import { Prisma, Users } from 'generated/prisma/client';
-import { DateUtils } from 'src/shared/utils/date.utils';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { InvitationStatus } from 'generated/prisma/enums';
-import { EmailsService } from 'src/shared/emails/emails.service';
-import { StorageFolderName } from 'src/shared/constants/constants';
-import { StorageService } from 'src/shared/storage/storage.service';
-import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
-import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import * as argon2 from 'argon2';
+import { Provider } from 'generated/prisma/browser';
+import { Prisma, Users } from 'generated/prisma/client';
+import { InvitationStatus } from 'generated/prisma/enums';
+import { PinoLogger } from 'nestjs-pino';
+import { CreateImageDto } from 'src/auth/dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { StorageFolderName } from 'src/shared/constants/constants';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+import { EmailsService } from 'src/shared/emails/emails.service';
+import { StorageService } from 'src/shared/storage/storage.service';
+import { DateUtils } from 'src/shared/utils/date.utils';
+import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
 
 import { USERSELECT } from '../shared/constants/select-user';
-import { RawUserFindAll, UserMapper } from './mappers/user.mapper';
 import { USER_SUGGESTION_CONFIG } from './constants/users.constants';
 import {
   CreateUserDto,
@@ -28,6 +27,7 @@ import {
   UpdateUserDto,
   UserFilterDto,
 } from './dto';
+import { RawUserFindAll, UserMapper } from './mappers/user.mapper';
 
 @Injectable()
 export class UsersService {

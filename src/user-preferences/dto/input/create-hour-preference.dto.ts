@@ -1,6 +1,5 @@
-import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { TimePeriod, UserHourPreferenceType } from 'generated/prisma/client';
+import { Type } from 'class-transformer';
 import {
   IsArray,
   IsDateString,
@@ -12,6 +11,7 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
+import { TimePeriod, UserHourPreferenceType } from 'generated/prisma/client';
 
 export class HourPreferenceData {
   @IsNumber()

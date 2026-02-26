@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
 import { HourPreferenceData } from '../input/create-hour-preference.dto';
 

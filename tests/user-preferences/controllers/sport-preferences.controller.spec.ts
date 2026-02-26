@@ -1,12 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { UserSportPreferences } from 'generated/prisma/browser';
-import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
-import { SportPreferencesController } from 'src/user-preferences/controllers/sport-preferences.controller';
-import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
-import { CreateSportPreferenceDto } from 'src/user-preferences/dto/input/create-sport-preference.dto';
-import { Sport, UserSportLevel } from 'src/shared/constants/constants';
 import { GameModes } from 'generated/prisma/enums';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { Sport, UserSportLevel } from 'src/shared/constants/constants';
+import { SportPreferencesController } from 'src/user-preferences/controllers/sport-preferences.controller';
+import { CreateSportPreferenceDto } from 'src/user-preferences/dto/input/create-sport-preference.dto';
+import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 
 describe('SportPreferencesController', () => {
   let controller: SportPreferencesController;

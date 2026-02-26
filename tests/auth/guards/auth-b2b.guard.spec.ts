@@ -3,10 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
+import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
+import { PartnersService } from 'src/partners/partners.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
-import { PartnersService } from 'src/partners/partners.service';
-import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
 
 describe('AuthB2BGuard', () => {
   let guard: AuthB2BGuard;
