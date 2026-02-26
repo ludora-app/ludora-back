@@ -1,5 +1,5 @@
-import { MessageType } from 'generated/prisma/enums';
 import { IsEnum, IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import { MessageType } from 'generated/prisma/enums';
 
 export class SendMessageDto {
   @IsUUID()

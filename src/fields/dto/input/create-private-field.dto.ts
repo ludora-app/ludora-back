@@ -1,7 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CreateImageDto } from 'src/auth/dto';
 import { Transform, Type } from 'class-transformer';
-import { Sport } from 'src/shared/constants/constants';
 import {
   ArrayMaxSize,
   IsArray,
@@ -11,6 +9,8 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { CreateImageDto } from 'src/auth/dto';
+import { Sport } from 'src/shared/constants/constants';
 
 export class CreatePrivateFieldDto {
   @Transform(({ value }) => {

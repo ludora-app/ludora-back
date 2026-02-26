@@ -1,15 +1,15 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
+import { NotificationType } from 'generated/prisma/enums';
 import { PinoLogger } from 'nestjs-pino';
 import { Socket } from 'socket.io';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { UsersService } from 'src/users/users.service';
+import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
+import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
 import { NotificationsGateway } from 'src/notifications/notifications.gateway';
 import { NotificationsService } from 'src/notifications/notifications.service';
-import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
-import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
-import { NotificationType } from 'generated/prisma/enums';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { Sport } from 'src/shared/constants/constants';
+import { UsersService } from 'src/users/users.service';
 
 describe('NotificationsGateway', () => {
   let gateway: NotificationsGateway;

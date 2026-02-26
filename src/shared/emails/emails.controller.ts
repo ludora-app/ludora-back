@@ -1,7 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
-
-import { EmailsService } from './emails.service';
 import { Public } from '../decorators/public.decorator';
+import { EmailsService } from './emails.service';
 
 @Controller('emails')
 export class EmailsController {

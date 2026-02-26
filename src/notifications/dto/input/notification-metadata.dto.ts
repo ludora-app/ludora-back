@@ -1,7 +1,7 @@
-import { Sport } from 'src/shared/constants/constants';
 import { ApiProperty, PickType } from '@nestjs/swagger';
-import { InvitationStatus } from 'generated/prisma/enums';
 import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { InvitationStatus } from 'generated/prisma/enums';
+import { Sport } from 'src/shared/constants/constants';
 
 export class NotificationMetadataDto {
   @ApiProperty({

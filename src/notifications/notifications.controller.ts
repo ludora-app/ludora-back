@@ -1,11 +1,17 @@
-import { FastifyRequest } from 'fastify';
-import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
-import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
-import { Protected } from 'src/shared/decorators/protected.decorator';
-import { Controller, HttpCode, HttpStatus, Param, Req } from '@nestjs/common';
-import { Get, Patch, Delete, Post, Body, UseGuards, Query } from '@nestjs/common';
-import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
-import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiExtraModels,
   ApiNoContentResponse,
@@ -13,21 +19,26 @@ import {
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-
-import { NotificationsService } from './notifications.service';
+import { FastifyRequest } from 'fastify';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
+import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { NotificationFilterDto } from './dto/input/notification-filter.dto';
-import { UnreadCountResponseDto } from './dto/output/unread-count-response.dto';
-import { SendPushNotificationDto } from './dto/input/send-push-notification.dto';
-import {
-  NotificationResponseData,
-  PaginatedNotificationResponse,
-} from './dto/output/notification-response.dto';
 import {
   FriendAcceptedData,
   FriendRequestData,
   SessionInvitationData,
   SessionUpdatedData,
 } from './dto/input/notification-metadata.dto';
+import { SendPushNotificationDto } from './dto/input/send-push-notification.dto';
+import {
+  NotificationResponseData,
+  PaginatedNotificationResponse,
+} from './dto/output/notification-response.dto';
+import { UnreadCountResponseDto } from './dto/output/unread-count-response.dto';
+import { NotificationsService } from './notifications.service';
 
 @UseGuards(AuthB2CGuard)
 @Controller('notifications')

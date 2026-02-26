@@ -1,12 +1,3 @@
-import { FastifyRequest } from 'fastify';
-import { Sessions } from 'generated/prisma/client';
-import { UserSimpleDisplayDataDto } from 'src/users/dto';
-import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
-import { Protected } from 'src/shared/decorators/protected.decorator';
-import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
-import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
-import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   Body,
   Controller,
@@ -29,16 +20,24 @@ import {
   ApiParam,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-
-import { SessionsPipe } from '../pipes/sessions.pipe';
-import { SessionsService } from '../services/sessions.service';
+import { FastifyRequest } from 'fastify';
+import { Sessions } from 'generated/prisma/client';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { UserSimpleDisplayDataDto } from 'src/users/dto';
 import { JoinSessionDto } from '../dto/input/create-session-player.dto';
-import { SessionPlayersService } from '../services/session-players.service';
-import { PlayerSuggestionResponseDto } from '../dto/output/player-suggestion-response.dto';
 import {
   JoinSessionResponseData,
   JoinSessionResponseDto,
 } from '../dto/output/join-session-response.dto';
+import { PlayerSuggestionResponseDto } from '../dto/output/player-suggestion-response.dto';
+import { SessionsPipe } from '../pipes/sessions.pipe';
+import { SessionPlayersService } from '../services/session-players.service';
+import { SessionsService } from '../services/sessions.service';
 
 @Controller('session-players')
 @UseGuards(AuthB2CGuard)

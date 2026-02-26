@@ -1,11 +1,3 @@
-import Stripe from 'stripe';
-import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
-import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
-import { Protected } from 'src/shared/decorators/protected.decorator';
-import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
-import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
-import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   Body,
   Controller,
@@ -28,19 +20,26 @@ import {
   ApiParam,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-
-import { PaymentService } from './payment.service';
-import { PaymentIntentDto } from './dto/input/payment-intent.dto';
-import { BankAccountDataDto } from './dto/output/stripe-responses.dto';
-import { ConfirmPaymentIntentDto } from './dto/input/confirm-payment.dto';
-import { PaymentIntentTestDto } from './dto/input/payment-intent-test.dto';
-import { CreateStripeAccountDto } from './dto/input/create-stripe-account.dto';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
+import Stripe from 'stripe';
 import { BankDetailsDto, UpdateBankDetailsDto } from './dto/input/bank-details.dto';
-import { StripeAccountResponseDto } from './dto/output/stripe-connect-response.dto';
+import { ConfirmPaymentIntentDto } from './dto/input/confirm-payment.dto';
+import { CreateStripeAccountDto } from './dto/input/create-stripe-account.dto';
+import { PaymentIntentDto } from './dto/input/payment-intent.dto';
+import { PaymentIntentTestDto } from './dto/input/payment-intent-test.dto';
 import {
   BankAccountListResponseDataDto,
   BankAccountListResponseDto,
 } from './dto/output/bankAccount-list-response.dto';
+import { StripeAccountResponseDto } from './dto/output/stripe-connect-response.dto';
+import { BankAccountDataDto } from './dto/output/stripe-responses.dto';
+import { PaymentService } from './payment.service';
 
 @Controller('payment')
 export class PaymentController {

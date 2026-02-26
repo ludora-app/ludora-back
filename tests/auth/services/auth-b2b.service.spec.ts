@@ -1,22 +1,22 @@
-import * as argon2 from 'argon2';
-import { Test, TestingModule } from '@nestjs/testing';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
+import * as argon2 from 'argon2';
 import { UserType } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { AuthB2BService } from 'src/auth/services/auth-b2b.service';
-import { UsersService } from 'src/users/users.service';
 import { PartnersService } from 'src/partners/partners.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
+import { UsersService } from 'src/users/users.service';
 
 describe('AuthB2BService', () => {
   let service: AuthB2BService;
-  let usersService: UsersService;
-  let partnersService: PartnersService;
-  let jwtService: JwtService;
-  let prismaService: PrismaService;
+  let _usersService: UsersService;
+  let _partnersService: PartnersService;
+  let _jwtService: JwtService;
+  let _prismaService: PrismaService;
 
   const mockUsersService = {
     findOneByEmail: jest.fn(),
@@ -93,10 +93,10 @@ describe('AuthB2BService', () => {
     }).compile();
 
     service = module.get<AuthB2BService>(AuthB2BService);
-    usersService = module.get<UsersService>(UsersService);
-    partnersService = module.get<PartnersService>(PartnersService);
-    jwtService = module.get<JwtService>(JwtService);
-    prismaService = module.get<PrismaService>(PrismaService);
+    _usersService = module.get<UsersService>(UsersService);
+    _partnersService = module.get<PartnersService>(PartnersService);
+    _jwtService = module.get<JwtService>(JwtService);
+    _prismaService = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {

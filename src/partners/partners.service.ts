@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { Partners, Prisma } from 'generated/prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
-
-import { UpdatePartnerDto } from './dto/input/update-partner.dto';
 import { CreatePartnerDto } from './dto/input/create-partner.dto';
+import { UpdatePartnerDto } from './dto/input/update-partner.dto';
 
 @Injectable()
 export class PartnersService {

@@ -1,27 +1,26 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
-import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-
-import { AppService } from './app.service';
-import { ChatModule } from './chat/chat.module';
-import { AuthModule } from './auth/auth.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { LoggerModule } from 'nestjs-pino';
 import { AppController } from './app.controller';
-import { UsersModule } from './users/users.module';
-import { PrismaModule } from './prisma/prisma.module';
-import { SharedModule } from './shared/shared.module';
-import { FieldsModule } from './fields/fields.module';
-import { PaymentModule } from './payment/payment.module';
-import { MetricsModule } from './metrics/metrics.module';
-import { FriendsModule } from './friends/friends.module';
-import { DevicesModule } from './devices/devices.module';
-import { SessionsModule } from './sessions/sessions.module';
-import { PartnersModule } from './partners/partners.module';
-import { FirebaseModule } from './firebase/firebase.module';
-import { NotificationsModule } from './notifications/notifications.module';
+import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
+import { ChatModule } from './chat/chat.module';
 import { ConversationsModule } from './conversations/conversations.module';
+import { DevicesModule } from './devices/devices.module';
+import { FieldsModule } from './fields/fields.module';
+import { FirebaseModule } from './firebase/firebase.module';
+import { FriendsModule } from './friends/friends.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { PartnersModule } from './partners/partners.module';
+import { PaymentModule } from './payment/payment.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { SessionsModule } from './sessions/sessions.module';
+import { SharedModule } from './shared/shared.module';
+import { UsersModule } from './users/users.module';
 
 const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV === 'development';
 // Explicit LOG_LEVEL allows overriding (e.g. in Coolify) when NODE_ENV-based logic is wrong

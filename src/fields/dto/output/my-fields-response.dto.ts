@@ -1,5 +1,5 @@
-import { VerificationStatus } from 'generated/prisma/enums';
 import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
+import { VerificationStatus } from 'generated/prisma/enums';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 import { FieldResponseDto } from './field-response.dto';

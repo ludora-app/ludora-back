@@ -1,25 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { GameModes } from 'generated/prisma/enums';
 import { PinoLogger } from 'nestjs-pino';
-import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
-import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Sport, UserSportLevel } from 'src/shared/constants/constants';
+import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 
 describe('SportPreferencesService', () => {
   let service: SportPreferencesService;
   let prismaService: PrismaService;
-  let usersService: UsersService;
   let logger: PinoLogger;
 
-  const mockCurrentDate = new Date('2023-01-01T12:00:00Z');
-
   beforeEach(async () => {
-    const mockUsersService = {
-      findOne: jest.fn(),
-    };
-
     const mockPrismaService = {
       users: {
         findUnique: jest.fn(),
@@ -52,14 +44,12 @@ describe('SportPreferencesService', () => {
       providers: [
         SportPreferencesService,
         { provide: PrismaService, useValue: mockPrismaService },
-        { provide: UsersService, useValue: mockUsersService },
         { provide: PinoLogger, useValue: mockPinoLogger },
       ],
     }).compile();
 
     service = module.get<SportPreferencesService>(SportPreferencesService);
     prismaService = module.get<PrismaService>(PrismaService);
-    usersService = module.get<UsersService>(UsersService);
     logger = module.get<PinoLogger>(PinoLogger);
   });
 

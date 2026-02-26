@@ -1,6 +1,6 @@
+import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
 import { FieldType } from 'generated/prisma/client';
 import { Sport } from 'src/shared/constants/constants';
-import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 
 export class FieldImageResponseDto {

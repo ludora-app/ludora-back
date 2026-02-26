@@ -1,7 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { Sport } from 'src/shared/constants/constants';
-import { FieldType, GameModes } from 'generated/prisma/enums';
 import {
   IsDateString,
   IsEnum,
@@ -12,6 +10,8 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { FieldType, GameModes } from 'generated/prisma/enums';
+import { Sport } from 'src/shared/constants/constants';
 
 /**
  * @description DTO for filtering the fields in most use cases (findAll methods)

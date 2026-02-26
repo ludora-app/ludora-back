@@ -1,6 +1,6 @@
-import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { Rate, Trend, Counter } from 'k6/metrics';
+import http from 'k6/http';
+import { Counter, Rate, Trend } from 'k6/metrics';
 
 // Custom metrics pour l'analyse des goulots
 const loginDuration = new Trend('login_duration', true);
@@ -117,7 +117,7 @@ export default function () {
     'response has access token': (r) => {
       try {
         const body = JSON.parse(r.body);
-        return body.data && body.data.accessToken;
+        return body.data?.accessToken;
       } catch {
         return false;
       }

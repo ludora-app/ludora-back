@@ -1,18 +1,17 @@
-import { PinoLogger } from 'nestjs-pino';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from 'generated/prisma/client';
+import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
-
+import {
+  ArchivedConversationSettingsDto,
+  MutedConversationSettingsDto,
+} from '../dto/input/update-conversation-settings.dto';
 import { ConversationMemberResponseData } from '../dto/output/conversation-member-response.dto';
 import {
   ConversationMembersMapper,
   RawConversationMember,
 } from '../mappers/conversation-members.mapper';
-import {
-  ArchivedConversationSettingsDto,
-  MutedConversationSettingsDto,
-} from '../dto/input/update-conversation-settings.dto';
 
 @Injectable()
 export class ConversationMembersService {
@@ -75,9 +74,9 @@ export class ConversationMembersService {
       where: { conversationUid },
     });
     if (members[0]?.conversation.sessionUid) {
-      let membersWithSessionData = [];
+      const membersWithSessionData = [];
       for (const member of members) {
-        let memberWithSessionData = await this.prisma.sessionTeams.findMany({
+        const memberWithSessionData = await this.prisma.sessionTeams.findMany({
           select: {
             teamLabel: true,
             teamName: true,

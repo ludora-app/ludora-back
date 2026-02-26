@@ -1,6 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Sex, UserType } from 'generated/prisma/client';
-import { IsStrongPassword } from 'src/users/validators/password.validator';
 import {
   IsAlpha,
   IsDateString,
@@ -14,6 +12,8 @@ import {
   Validate,
   ValidateIf,
 } from 'class-validator';
+import { Sex, UserType } from 'generated/prisma/client';
+import { IsStrongPassword } from 'src/users/validators/password.validator';
 
 export class RegisterB2CDto {
   @IsEnum(UserType)

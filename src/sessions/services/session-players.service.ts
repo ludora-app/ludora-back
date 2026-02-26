@@ -1,14 +1,13 @@
-import { PinoLogger } from 'nestjs-pino';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { UserSimpleDisplayDataDto } from 'src/users/dto';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { EventTypes } from 'src/notifications/constants/event.types';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Prisma, SessionPlayers, Sessions } from 'generated/prisma/client';
+import { PinoLogger } from 'nestjs-pino';
+import { EventTypes } from 'src/notifications/constants/event.types';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
-
-import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
+import { UserSimpleDisplayDataDto } from 'src/users/dto';
 import { ConversationMembersService } from './../../conversations/services/conversation-members.service';
+import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
 
 @Injectable()
 export class SessionPlayersService {

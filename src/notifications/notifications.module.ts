@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
-import { UsersModule } from 'src/users/users.module';
+import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
 import { DevicesModule } from 'src/devices/devices.module';
 import { FirebaseService } from 'src/firebase/firebase.service';
-import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
-
+import { UsersModule } from 'src/users/users.module';
+import { NotificationsController } from './notifications.controller';
 import { NotificationsGateway } from './notifications.gateway';
 import { NotificationsService } from './notifications.service';
-import { NotificationsController } from './notifications.controller';
 
 @Module({
   controllers: [NotificationsController],

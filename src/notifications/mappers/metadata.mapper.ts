@@ -11,7 +11,7 @@ import {
 export class MetadataMapper {
   static toMetadata(
     type: NotificationType,
-    data: Object,
+    data: object,
   ): FriendRequestData | SessionInvitationData | SessionUpdatedData | FriendAcceptedData {
     if (!data) return null;
     switch (type) {

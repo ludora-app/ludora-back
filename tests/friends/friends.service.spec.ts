@@ -1,13 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Test, TestingModule } from '@nestjs/testing';
+import { InvitationStatus } from 'generated/prisma/enums';
 import { PinoLogger } from 'nestjs-pino';
 import { FriendsService } from 'src/friends/friends.service';
-import { UsersService } from 'src/users/users.service';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { StorageService } from 'src/shared/storage/storage.service';
-import { InvitationStatus } from 'generated/prisma/enums';
 import { EventTypes } from 'src/notifications/constants/event.types';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { UsersService } from 'src/users/users.service';
 
 describe('FriendsService', () => {
   let service: FriendsService;

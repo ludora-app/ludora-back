@@ -1,19 +1,3 @@
-import { PinoLogger } from 'nestjs-pino';
-import { Prisma } from 'generated/prisma/client';
-import { DateUtils } from 'src/shared/utils/date.utils';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { FieldsService } from 'src/fields/services/fields.service';
-import { StorageService } from 'src/shared/storage/storage.service';
-import { ConversationType, Sessions } from 'generated/prisma/client';
-import { FieldSlotsService } from 'src/fields/services/field-slots.service';
-import { SessionScope, StorageFolderName } from 'src/shared/constants/constants';
-import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
-import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
-import { SessionPlayersService } from 'src/sessions/services/session-players.service';
-import { ConversationsService } from 'src/conversations/services/conversations.service';
-import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
-import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
-import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -27,22 +11,36 @@ import {
   InvitationStatus,
   SessionVisibility,
 } from 'generated/prisma/browser';
-
-import { SessionTeamsService } from './session-teams.service';
-import { UpdateSessionDto } from '../dto/input/update-session.dto';
-import { CreateSessionDto } from '../dto/input/create-session.dto';
-import { FindAllSessionsDto } from '../dto/input/session-filter.dto';
+import { ConversationType, Prisma, Sessions } from 'generated/prisma/client';
+import { PinoLogger } from 'nestjs-pino';
+import { ConversationsService } from 'src/conversations/services/conversations.service';
+import { FieldSlotsService } from 'src/fields/services/field-slots.service';
+import { FieldsService } from 'src/fields/services/fields.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { SessionPlayersService } from 'src/sessions/services/session-players.service';
+import { SessionScope, StorageFolderName } from 'src/shared/constants/constants';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
+import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
+import { StorageService } from 'src/shared/storage/storage.service';
+import { DateUtils } from 'src/shared/utils/date.utils';
+import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
+import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 import { SESSION_SUGGESTION_CONFIG } from '../constants/session.constants';
-import { SessionTeamResponseData } from '../dto/output/session-team-response';
+import { CreateSessionDto } from '../dto/input/create-session.dto';
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
-import { RawSessionFindOneItem, SessionMapper } from '../mappers/session.mapper';
-import { JoinSessionResponseData } from '../dto/output/join-session-response.dto';
-import { SessionCollectionItemDto } from '../dto/output/session-collection-response.dto';
 import { MySessionFilterDto, SessionOwnnership } from '../dto/input/my-session-filter.dto';
+import { FindAllSessionsDto } from '../dto/input/session-filter.dto';
+import { UpdateSessionDto } from '../dto/input/update-session.dto';
 import {
   FindOneSessionResponseData,
   FindOneSessionWithDistanceResponseData,
 } from '../dto/output/find-one-session-response.dto';
+import { JoinSessionResponseData } from '../dto/output/join-session-response.dto';
+import { SessionCollectionItemDto } from '../dto/output/session-collection-response.dto';
+import { SessionTeamResponseData } from '../dto/output/session-team-response';
+import { RawSessionFindOneItem, SessionMapper } from '../mappers/session.mapper';
+import { SessionTeamsService } from './session-teams.service';
 
 /**
  * This service is responsible for the creation, retrieval, and management of sessions.
@@ -566,7 +564,7 @@ export class SessionsService {
 
     const totalCount = Number(rankedSessions[0].total_count);
     let nextCursor: string | null = null;
-    let itemsToFetch = rankedSessions;
+    const itemsToFetch = rankedSessions;
 
     if (rankedSessions.length > limit) {
       itemsToFetch.pop();
@@ -743,7 +741,7 @@ export class SessionsService {
     let nextCursor: string | null = null;
     if (sessions.length > limit) {
       const nextItem = sessions.pop();
-      nextCursor = nextItem!.uid;
+      nextCursor = nextItem?.uid;
     }
 
     const items = SessionMapper.fromRawToSessionResponses(sessions, new Map());

@@ -39,6 +39,6 @@ export class FriendMapper {
   }
 
   static toCollectionDto(friends: FriendWithUsers[], currentUserUid: string): FriendResponseData[] {
-    return friends.map((friend) => this.toDto(friend, currentUserUid));
+    return friends.map((friend) => FriendMapper.toDto(friend, currentUserUid));
   }
 }

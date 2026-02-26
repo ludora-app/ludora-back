@@ -1,8 +1,7 @@
 import { MessageStatus, MessageType } from 'generated/prisma/enums';
-
-import { RawMessage } from './conversation.mapper';
 import { MessageDto } from '../dto/output/basic-conversation-response.dto';
 import { MessageCollectionItemDto } from '../dto/output/message-collection-response.dto';
+import { RawMessage } from './conversation.mapper';
 
 export interface RawMessageCollectionItem {
   uid: string;
@@ -43,8 +42,8 @@ export class MessageMapper {
       content: message.content,
       createdAt: message.createdAt,
       globalStatus: message.globalStatus,
-      hasAnyRead: this.calculateGlobalStatus(message.messageReceipts).hasAnyRead,
-      hasEveryoneRead: this.calculateGlobalStatus(message.messageReceipts).hasEveryoneRead,
+      hasAnyRead: MessageMapper.calculateGlobalStatus(message.messageReceipts).hasAnyRead,
+      hasEveryoneRead: MessageMapper.calculateGlobalStatus(message.messageReceipts).hasEveryoneRead,
       isSender: message.sender.uid === connectedUserUid,
       sender: {
         firstname: message.sender.firstname,

@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { GameModes } from 'generated/prisma/enums';
 import { Sport, UserSportLevel } from 'src/shared/constants/constants';
-import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
 /**
  * @description standard response for a userSportPreference resource

@@ -1,25 +1,24 @@
 import { Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
-import { UsersModule } from 'src/users/users.module';
-import { UsersService } from 'src/users/users.service';
-import { SharedModule } from 'src/shared/shared.module';
-import { FieldsModule } from 'src/fields/fields.module';
-import { SessionsModule } from 'src/sessions/sessions.module';
-import { SessionsService } from 'src/sessions/services/sessions.service';
-import { ConversationsModule } from 'src/conversations/conversations.module';
-import { UserPreferencesModule } from 'src/user-preferences/user-preferences.module';
-import { ConversationsService } from 'src/conversations/services/conversations.service';
-import { SessionInvitationsService } from 'src/sessions/services/session-invitations.service';
 import {
   makeGaugeProvider,
   makeHistogramProvider,
   PrometheusModule,
 } from '@willsoto/nestjs-prometheus';
-
-import { MetricsService } from './metrics.service';
-import { MetricsController } from './metrics.controller';
+import { ConversationsModule } from 'src/conversations/conversations.module';
+import { ConversationsService } from 'src/conversations/services/conversations.service';
+import { FieldsModule } from 'src/fields/fields.module';
+import { SessionInvitationsService } from 'src/sessions/services/session-invitations.service';
+import { SessionsService } from 'src/sessions/services/sessions.service';
+import { SessionsModule } from 'src/sessions/sessions.module';
+import { SharedModule } from 'src/shared/shared.module';
+import { UserPreferencesModule } from 'src/user-preferences/user-preferences.module';
+import { UsersModule } from 'src/users/users.module';
+import { UsersService } from 'src/users/users.service';
 import { HttpMetricsInterceptor } from './http-metrics.interceptor';
+import { MetricsController } from './metrics.controller';
+import { MetricsService } from './metrics.service';
 
 @Module({
   controllers: [],

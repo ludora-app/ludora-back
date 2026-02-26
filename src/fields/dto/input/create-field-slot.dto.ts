@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { GameModes } from 'generated/prisma/enums';
 import { IsDateString, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { GameModes } from 'generated/prisma/enums';
 
 export class CreateFieldSlotDto {
   @IsString()

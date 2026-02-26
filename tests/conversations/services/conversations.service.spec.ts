@@ -1,22 +1,21 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PinoLogger } from 'nestjs-pino';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { ConversationsService } from 'src/conversations/services/conversations.service';
-import { ConversationMembersService } from 'src/conversations/services/conversation-members.service';
-import { MessagesService } from 'src/conversations/services/messages.service';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { StorageService } from 'src/shared/storage/storage.service';
+import { Test, TestingModule } from '@nestjs/testing';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
+import { PinoLogger } from 'nestjs-pino';
 import {
   ConversationMapper,
   RawConversationCollectionItem,
 } from 'src/conversations/mappers/conversation.mapper';
+import { ConversationMembersService } from 'src/conversations/services/conversation-members.service';
+import { ConversationsService } from 'src/conversations/services/conversations.service';
+import { MessagesService } from 'src/conversations/services/messages.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 describe('ConversationsService', () => {
   let service: ConversationsService;
   let mockPrismaService: any;
   let mockMessagesService: any;
-  let mockStorageService: any;
+  let _mockStorageService: any;
   let mockConversationMembersService: any;
 
   const mockPinoLogger = {

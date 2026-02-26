@@ -1,14 +1,3 @@
-import { FastifyRequest } from 'fastify';
-import { Throttle } from '@nestjs/throttler';
-import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
-import { Protected } from 'src/shared/decorators/protected.decorator';
-import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
-import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
-import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
-import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
-import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
-import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   Body,
   Controller,
@@ -35,28 +24,38 @@ import {
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-
-import { SessionMapper } from '../mappers/session.mapper';
-import { SessionsService } from '../services/sessions.service';
-import { UpdateSessionDto } from '../dto/input/update-session.dto';
-import { SessionFilterDto } from '../dto/input/session-filter.dto';
-import { MySessionFilterDto } from '../dto/input/my-session-filter.dto';
+import { Throttle } from '@nestjs/throttler';
+import { FastifyRequest } from 'fastify';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
+import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
 import { CreateSessionFromRequestDto } from '../dto/input/create-session.dto';
-import { SessionResponseData, SessionResponseDto } from '../dto/output/session-response.dto';
-import {
-  UserSessionStatsResponseDataDto,
-  UserSessionStatsResponseDto,
-} from '../dto/output/user-session-stats-response.dto';
-import {
-  PaginatedSessionCollectionResponseDto,
-  SessionCollectionItemDto,
-} from '../dto/output/session-collection-response.dto';
+import { MySessionFilterDto } from '../dto/input/my-session-filter.dto';
+import { SessionFilterDto } from '../dto/input/session-filter.dto';
+import { UpdateSessionDto } from '../dto/input/update-session.dto';
 import {
   FindOneSessionResponseData,
   FindOneSessionResponseDto,
   FindOneSessionWithDistanceResponseData,
   FindOneSessionWithDistanceResponseDto,
 } from '../dto/output/find-one-session-response.dto';
+import {
+  PaginatedSessionCollectionResponseDto,
+  SessionCollectionItemDto,
+} from '../dto/output/session-collection-response.dto';
+import { SessionResponseData, SessionResponseDto } from '../dto/output/session-response.dto';
+import {
+  UserSessionStatsResponseDataDto,
+  UserSessionStatsResponseDto,
+} from '../dto/output/user-session-stats-response.dto';
+import { SessionMapper } from '../mappers/session.mapper';
+import { SessionsService } from '../services/sessions.service';
 
 @Controller('sessions')
 @UseGuards(AuthB2CGuard)

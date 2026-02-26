@@ -1,10 +1,10 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { FastifyRequest } from 'fastify';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { SessionTeamsController } from 'src/sessions/controllers/session-teams.controller';
 import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
 import { SessionsService } from 'src/sessions/services/sessions.service';
-import { FastifyRequest } from 'fastify';
 
 describe('SessionTeamsController', () => {
   let controller: SessionTeamsController;

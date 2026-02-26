@@ -1,22 +1,21 @@
-import Stripe from 'stripe';
-import { PinoLogger } from 'nestjs-pino';
-import { ConfigService } from '@nestjs/config';
-import { UsersService } from 'src/users/users.service';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { USERSELECT } from 'src/shared/constants/select-user';
-import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-
-import { PaymentIntentDto } from './dto/input/payment-intent.dto';
-import { ConfirmPaymentIntentDto } from './dto/input/confirm-payment.dto';
-import { PaymentIntentTestDto } from './dto/input/payment-intent-test.dto';
-import { CreateStripeAccountDto } from './dto/input/create-stripe-account.dto';
+import { ConfigService } from '@nestjs/config';
+import { PinoLogger } from 'nestjs-pino';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { USERSELECT } from 'src/shared/constants/select-user';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+import { UsersService } from 'src/users/users.service';
+import Stripe from 'stripe';
 import { BankDetailsDto, UpdateBankDetailsDto } from './dto/input/bank-details.dto';
+import { ConfirmPaymentIntentDto } from './dto/input/confirm-payment.dto';
+import { CreateStripeAccountDto } from './dto/input/create-stripe-account.dto';
+import { PaymentIntentDto } from './dto/input/payment-intent.dto';
+import { PaymentIntentTestDto } from './dto/input/payment-intent-test.dto';
 import { BankAccountListResponseDataDto } from './dto/output/bankAccount-list-response.dto';
 
 @Injectable()
@@ -24,7 +23,7 @@ export class PaymentService {
   private readonly stripe: Stripe;
 
   constructor(
-    private readonly prismaService: PrismaService,
+    readonly _prismaService: PrismaService,
     private readonly configService: ConfigService,
     private readonly usersService: UsersService,
     private readonly logger: PinoLogger,

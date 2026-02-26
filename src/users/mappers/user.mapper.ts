@@ -1,5 +1,3 @@
-import { Sport } from 'src/shared/constants/constants';
-import { SportPreferencesMapper } from 'src/user-preferences/mappers/sport-preferences.mapper';
 import {
   GameModes,
   InvitationStatus,
@@ -9,6 +7,8 @@ import {
   UserHourPreferenceType,
   UserType,
 } from 'generated/prisma/enums';
+import { Sport } from 'src/shared/constants/constants';
+import { SportPreferencesMapper } from 'src/user-preferences/mappers/sport-preferences.mapper';
 
 import {
   FindAllUsersResponseDataDto,

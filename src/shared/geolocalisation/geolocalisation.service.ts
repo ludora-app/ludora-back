@@ -1,5 +1,5 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { Client, AddressType } from '@googlemaps/google-maps-services-js';
+import { AddressType, Client } from '@googlemaps/google-maps-services-js';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { AddressComponentsTypes } from './dto/input/address-components-types';
 import {
@@ -249,8 +249,8 @@ export class GeolocalisationService {
     return (
       typeof lat === 'number' &&
       typeof lng === 'number' &&
-      !isNaN(lat) &&
-      !isNaN(lng) &&
+      !Number.isNaN(lat) &&
+      !Number.isNaN(lng) &&
       lat >= -90 &&
       lat <= 90 &&
       lng >= -180 &&

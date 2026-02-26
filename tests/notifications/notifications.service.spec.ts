@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotificationType } from 'generated/prisma/enums';
 import { PinoLogger } from 'nestjs-pino';
+import { DevicesService } from 'src/devices/devices.service';
+import { FirebaseService } from 'src/firebase/firebase.service';
+import { NotificationTypeFilter } from 'src/notifications/dto/input/notification-filter.dto';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { FirebaseService } from 'src/firebase/firebase.service';
-import { DevicesService } from 'src/devices/devices.service';
-import { NotificationTypeFilter } from 'src/notifications/dto/input/notification-filter.dto';
-import { NotificationType } from 'generated/prisma/enums';
 
 describe('NotificationsService', () => {
   let service: NotificationsService;
@@ -180,7 +180,7 @@ describe('NotificationsService', () => {
   describe('getUnreadCount', () => {
     it('should return unread count as data object with default exclusion of messages', async () => {
       const mockCount = jest.fn().mockResolvedValue(5);
-      // @ts-ignore
+      // @ts-expect-error
       service.prisma.notifications.count = mockCount;
 
       const result = await service.getUnreadCount('user-1');
@@ -199,7 +199,7 @@ describe('NotificationsService', () => {
 
     it('should filter by SESSION types when provided', async () => {
       const mockCount = jest.fn().mockResolvedValue(2);
-      // @ts-ignore
+      // @ts-expect-error
       service.prisma.notifications.count = mockCount;
 
       const result = await service.getUnreadCount('user-1', {

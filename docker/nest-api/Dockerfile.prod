@@ -30,7 +30,7 @@ RUN pnpm prisma generate
 # Build the application
 RUN pnpm build
 
-# Remove dev dependencies (ignore scripts to avoid husky prepare error)
+# Remove dev dependencies
 RUN pnpm prune --prod --ignore-scripts
 
 # ============================================

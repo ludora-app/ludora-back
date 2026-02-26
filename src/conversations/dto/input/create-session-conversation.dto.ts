@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ConversationType } from 'generated/prisma/enums';
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { ConversationType } from 'generated/prisma/enums';
 
 export class CreateSessionConversationDto {
   @IsString()

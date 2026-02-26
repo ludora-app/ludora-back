@@ -1,5 +1,5 @@
-import { ApiBearerAuth } from '@nestjs/swagger';
 import { applyDecorators } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 /**
  * Decorator to mark a route as protected

@@ -1,27 +1,26 @@
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { FieldType, Prisma, VerificationStatus } from 'generated/prisma/client';
 import { DateTime } from 'luxon';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { EmailsService } from 'src/shared/emails/emails.service';
-import { StorageService } from 'src/shared/storage/storage.service';
-import { Sport, StorageFolderName } from 'src/shared/constants/constants';
 import { RankedFieldResult } from 'src/sessions/interfaces/session-interface';
-import { FieldType, Prisma, VerificationStatus } from 'generated/prisma/client';
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { Sport, StorageFolderName } from 'src/shared/constants/constants';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+import { EmailsService } from 'src/shared/emails/emails.service';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
-
-import { FieldMapper } from '../mappers/field.mapper';
-import { UpdateFieldDto } from '../dto/input/update-field.dto';
-import { FieldFilterDto } from '../dto/input/field-filter.dto';
-import { MyFieldsFilterDto } from '../dto/input/my-fields-filter.dto';
+import { StorageService } from 'src/shared/storage/storage.service';
 import { FIELD_SUGGESTION_CONFIG } from '../constants/fields.constants';
-import { CreatePublicFieldDto } from '../dto/input/create-public-field.dto';
-import { PublicFieldFilterDto } from '../dto/input/public-field-filter.dto';
-import { MyFieldsB2CFilterDto } from '../dto/input/my-fields-b2c-filter.dto';
-import { MyFieldsResponseData } from './../dto/output/my-fields-response.dto';
 import { CreatePrivateFieldDto } from '../dto/input/create-private-field.dto';
-import { FindOneFieldResponseData } from '../dto/output/find-one-field-response.dto';
+import { CreatePublicFieldDto } from '../dto/input/create-public-field.dto';
+import { FieldFilterDto } from '../dto/input/field-filter.dto';
+import { MyFieldsB2CFilterDto } from '../dto/input/my-fields-b2c-filter.dto';
+import { MyFieldsFilterDto } from '../dto/input/my-fields-filter.dto';
+import { PublicFieldFilterDto } from '../dto/input/public-field-filter.dto';
+import { UpdateFieldDto } from '../dto/input/update-field.dto';
 import { FieldResponseDto, PublicFieldResponseData } from '../dto/output/field-response.dto';
+import { FindOneFieldResponseData } from '../dto/output/find-one-field-response.dto';
+import { MyFieldsResponseData } from './../dto/output/my-fields-response.dto';
+import { FieldMapper } from '../mappers/field.mapper';
 
 @Injectable()
 export class FieldsService {
@@ -305,7 +304,7 @@ export class FieldsService {
       throw new Error(`Field with uid ${uid} not found`);
     }
 
-    let coordinates;
+    let coordinates: { lat: number; lng: number } | undefined;
     const finalLat = lat ?? (address ? undefined : existingField.latitude);
     const finalLng = lng ?? (address ? undefined : existingField.longitude);
 
@@ -676,7 +675,7 @@ export class FieldsService {
     let nextCursor: string | null = null;
     if (fields.length > limit) {
       const nextItem = fields.pop();
-      nextCursor = nextItem!.uid;
+      nextCursor = nextItem?.uid;
     }
 
     const fieldsWithImageUrl = await Promise.all(
@@ -750,7 +749,7 @@ export class FieldsService {
     let nextCursor: string | null = null;
     if (fields.length > actualLimit) {
       const nextItem = fields.pop();
-      nextCursor = nextItem!.uid;
+      nextCursor = nextItem?.uid;
     }
 
     const items = fields.map((field) => FieldMapper.toPublicFieldDto(field));
@@ -792,10 +791,14 @@ export class FieldsService {
       this.prisma.fields.count({ where }),
     ]);
 
-    let nextCursor: string | null = null;
+    const nextCursor: string | null = null;
     if (fields.length > limit) {
       const nextItem = fields.pop();
-      nextCursor = nextItem!.uid;
+      <<<<<<< HEAD
+      nextCursor = nextItem!.uid
+      =======
+      nextCursor = nextItem?.uid
+      >>>>>>> 879ef17 (chore: mise en place du versionning, du changelog auto)
     }
 
     const items: MyFieldsResponseData[] = fields.map((field) => ({

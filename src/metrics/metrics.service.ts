@@ -1,11 +1,11 @@
-import { Gauge } from 'prom-client';
-import { PinoLogger } from 'nestjs-pino';
 import { Injectable } from '@nestjs/common';
-import { UsersService } from 'src/users/users.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
-import { SessionsService } from 'src/sessions/services/sessions.service';
+import { PinoLogger } from 'nestjs-pino';
+import { Gauge } from 'prom-client';
 import { SessionInvitationsService } from 'src/sessions/services/session-invitations.service';
+import { SessionsService } from 'src/sessions/services/sessions.service';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class MetricsService {

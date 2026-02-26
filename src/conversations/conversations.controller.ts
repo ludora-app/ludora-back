@@ -1,13 +1,21 @@
-import { FastifyRequest } from 'fastify';
-import { Protected } from 'src/shared/decorators/protected.decorator';
-import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
-import { ForbiddenResponseDto } from 'src/shared/dto/errors/forbidden-response.dto';
-import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
-import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
-import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
-import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
-import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConsumes,
@@ -19,53 +27,44 @@ import {
   ApiQuery,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  Req,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Body,
-  UseInterceptors,
-  ParseIntPipe,
-  DefaultValuePipe,
-  Patch,
-  Delete,
-  UseGuards,
-  BadRequestException,
-} from '@nestjs/common';
-
-import { MessagesService } from './services/messages.service';
-import { CreateMessageDto } from './dto/input/create-message.dto';
-import { ConversationsService } from './services/conversations.service';
+import { FastifyRequest } from 'fastify';
+import { Protected } from 'src/shared/decorators/protected.decorator';
+import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { ForbiddenResponseDto } from 'src/shared/dto/errors/forbidden-response.dto';
+import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
-import { ConversationMembershipGuard } from './guards/conversation-membership.guard';
-import { ConversationMembersService } from './services/conversation-members.service';
-import { UnreadMessagesResponseDto } from './dto/output/unread-messages-response.dto';
-import { FindOneConversationByUserUidResponseDto } from './dto/output/find-one-conversation-by-user-uid-response.dto';
+import { CreateMessageDto } from './dto/input/create-message.dto';
 import {
   ArchivedConversationSettingsDto,
   MutedConversationSettingsDto,
 } from './dto/input/update-conversation-settings.dto';
 import {
-  MessageCollectionItemDto,
-  PaginatedMessageCollectionResponseDto,
-} from './dto/output/message-collection-response.dto';
+  ConversationCollectionResponseData,
+  PaginatedConversationCollectionResponseDto,
+} from './dto/output/conversation-collection-response.dto';
+import {
+  ConversationMemberResponseData,
+  PaginatedConversationMemberResponseDto,
+} from './dto/output/conversation-member-response.dto';
+import { FindOneConversationByUserUidResponseDto } from './dto/output/find-one-conversation-by-user-uid-response.dto';
 import {
   FindOneConversationResponseData,
   FindOneConversationResponseDto,
 } from './dto/output/find-one-conversation-response.dto';
 import {
-  ConversationMemberResponseData,
-  PaginatedConversationMemberResponseDto,
-} from './dto/output/conversation-member-response.dto';
-import {
-  ConversationCollectionResponseData,
-  PaginatedConversationCollectionResponseDto,
-} from './dto/output/conversation-collection-response.dto';
+  MessageCollectionItemDto,
+  PaginatedMessageCollectionResponseDto,
+} from './dto/output/message-collection-response.dto';
+import { UnreadMessagesResponseDto } from './dto/output/unread-messages-response.dto';
+import { ConversationMembershipGuard } from './guards/conversation-membership.guard';
+import { ConversationMembersService } from './services/conversation-members.service';
+import { ConversationsService } from './services/conversations.service';
+import { MessagesService } from './services/messages.service';
 
 @Controller('conversations')
 export class ConversationsController {

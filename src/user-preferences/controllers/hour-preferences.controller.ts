@@ -1,19 +1,13 @@
-import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
-import { Protected } from 'src/shared/decorators/protected.decorator';
-import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
-import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
-import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
-import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
-  Controller,
-  Get,
   Body,
+  Controller,
   Delete,
-  Req,
+  Get,
   HttpCode,
   HttpStatus,
-  UseGuards,
   Put,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -23,13 +17,18 @@ import {
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-
-import { HourPreferencesService } from '../services/hour-preferences.service';
-import { PaginatedHourPreferenceResponseDto } from '../dto/output/hour-preference-response.dto';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   CreateHourPreferenceDto,
   HourPreferenceData,
 } from '../dto/input/create-hour-preference.dto';
+import { PaginatedHourPreferenceResponseDto } from '../dto/output/hour-preference-response.dto';
+import { HourPreferencesService } from '../services/hour-preferences.service';
 
 @Controller('hour-preferences')
 @UseGuards(AuthB2CGuard)

@@ -1,16 +1,16 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { PaymentController } from 'src/payment/payment.controller';
-import { PaymentService } from 'src/payment/payment.service';
-import { PaymentIntentDto } from 'src/payment/dto/input/payment-intent.dto';
+import { Test, TestingModule } from '@nestjs/testing';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { BankDetailsDto, UpdateBankDetailsDto } from 'src/payment/dto/input/bank-details.dto';
 import { CreateStripeAccountDto } from 'src/payment/dto/input/create-stripe-account.dto';
-import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { PaymentIntentDto } from 'src/payment/dto/input/payment-intent.dto';
+import { PaymentController } from 'src/payment/payment.controller';
+import { PaymentService } from 'src/payment/payment.service';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 
 describe('PaymentController', () => {
   let controller: PaymentController;
-  let service: PaymentService;
+  let _service: PaymentService;
 
   const mockStripeService = {
     createStripeConnectAccount: jest.fn(),
@@ -69,7 +69,7 @@ describe('PaymentController', () => {
       .compile();
 
     controller = module.get<PaymentController>(PaymentController);
-    service = module.get<PaymentService>(PaymentService);
+    _service = module.get<PaymentService>(PaymentService);
   });
 
   afterEach(() => {

@@ -30,6 +30,6 @@ export class SessionPlayerMapper {
   }
 
   static toDtoList(players: RawPlayer[]): FlattenedSessionPlayer[] {
-    return players.map((player) => this.toDto(player));
+    return players.map((player) => SessionPlayerMapper.toDto(player));
   }
 }

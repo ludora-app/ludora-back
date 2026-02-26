@@ -1,23 +1,3 @@
-import { Throttle } from '@nestjs/throttler';
-import { Users } from 'generated/prisma/browser';
-import { Provider } from 'generated/prisma/enums';
-import { SuccessTypeDto } from 'src/shared/dto/responses/success-type';
-import { ForgottenPasswordDto } from 'src/users/dto/input/forgotten-password.dto';
-import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
-import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
-import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
-import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
-import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
-import {
-  ApiBadRequestResponse,
-  ApiBody,
-  ApiConsumes,
-  ApiCreatedResponse,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -35,6 +15,19 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiConsumes,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
+import { Users } from 'generated/prisma/browser';
+import { Provider } from 'generated/prisma/enums';
+import {
   CreateImageDto,
   LoginDto,
   LoginResponseDto,
@@ -47,16 +40,22 @@ import {
   VerifyMailDto,
   VerifyTokenResponseDto,
 } from 'src/auth/dto';
-
-import { AuthB2CGuard } from '../guards/auth-b2c.guard';
-import { AuthB2CService } from '../services/auth-b2c.service';
-import { VerifyEmailGuard } from '../guards/verify-email.guard';
+import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { SuccessTypeDto } from 'src/shared/dto/responses/success-type';
+import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
+import { ForgottenPasswordDto } from 'src/users/dto/input/forgotten-password.dto';
+import { Protected } from '../../shared/decorators/protected.decorator';
 import { Public } from '../../shared/decorators/public.decorator';
 import { ResetPassword } from '../decorators/reset-password.decorator';
-import { Protected } from '../../shared/decorators/protected.decorator';
 import { CreateGoogleUserDto } from '../dto/input/create-google-user.dto';
-import { GenerateAccessTokenFromCodeDto } from '../dto/output/generate-access-token-from-code.dto';
 import { CreateOrConnectGoogleResponseDto } from '../dto/output/create-or-connect-google.response';
+import { GenerateAccessTokenFromCodeDto } from '../dto/output/generate-access-token-from-code.dto';
+import { AuthB2CGuard } from '../guards/auth-b2c.guard';
+import { VerifyEmailGuard } from '../guards/verify-email.guard';
+import { AuthB2CService } from '../services/auth-b2c.service';
 
 @Controller('auth-b2c')
 @UseGuards(AuthB2CGuard)
@@ -401,6 +400,5 @@ export class AuthB2CController {
       data: { accessToken: accessToken, refreshToken: refreshToken },
       message: 'Password reset successfully',
     };
-    return;
   }
 }

@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { TimePeriod, UserHourPreferenceType } from 'generated/prisma/client';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { HourPreferencesController } from 'src/user-preferences/controllers/hour-preferences.controller';
-import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
 import { CreateHourPreferenceDto } from 'src/user-preferences/dto/input/create-hour-preference.dto';
+import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
 
 describe('HourPreferencesController', () => {
   let controller: HourPreferencesController;
@@ -21,7 +21,7 @@ describe('HourPreferencesController', () => {
   };
 
   const mockCurrentDate = new Date('2023-01-01T12:00:00Z');
-  const mockFutureDate = new Date('2023-01-10T14:00:00Z');
+  const _mockFutureDate = new Date('2023-01-10T14:00:00Z');
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

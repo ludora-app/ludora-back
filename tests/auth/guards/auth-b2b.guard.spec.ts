@@ -3,16 +3,16 @@ import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
+import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
+import { PartnersService } from 'src/partners/partners.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
-import { PartnersService } from 'src/partners/partners.service';
-import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
 
 describe('AuthB2BGuard', () => {
   let guard: AuthB2BGuard;
-  let jwtService: JwtService;
-  let reflector: Reflector;
-  let prismaService: PrismaService;
+  let _jwtService: JwtService;
+  let _reflector: Reflector;
+  let _prismaService: PrismaService;
 
   const mockJwtService = {
     verifyAsync: jest.fn(),
@@ -93,9 +93,9 @@ describe('AuthB2BGuard', () => {
     }).compile();
 
     guard = module.get<AuthB2BGuard>(AuthB2BGuard);
-    jwtService = module.get<JwtService>(JwtService);
-    reflector = module.get<Reflector>(Reflector);
-    prismaService = module.get<PrismaService>(PrismaService);
+    _jwtService = module.get<JwtService>(JwtService);
+    _reflector = module.get<Reflector>(Reflector);
+    _prismaService = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {

@@ -1,13 +1,12 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Sex, Provider } from 'generated/prisma/client';
 import * as argon2 from 'argon2';
+import { Provider, Sex } from 'generated/prisma/client';
+import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { UsersService } from 'src/users/users.service';
-import { PinoLogger } from 'nestjs-pino';
-import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
 
 jest.mock('argon2', () => ({
   hash: jest.fn().mockResolvedValue('hashedPassword'),
