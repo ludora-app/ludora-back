@@ -1,12 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { ExecutionContext } from '@nestjs/common';
-import { FriendsController } from 'src/friends/friends.controller';
-import { FriendsService } from 'src/friends/friends.service';
+import { Test, TestingModule } from '@nestjs/testing';
 import { InvitationStatus } from 'generated/prisma/enums';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { CreateFriendDto } from 'src/friends/dto/input/create-friend.dto';
 import { UpdateFriendDto } from 'src/friends/dto/input/update-friend.dto';
+import { FriendsController } from 'src/friends/friends.controller';
+import { FriendsService } from 'src/friends/friends.service';
 import { UserFilterDto } from 'src/users/dto';
-import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 
 describe('FriendsController', () => {
   let controller: FriendsController;
@@ -18,7 +18,7 @@ describe('FriendsController', () => {
     },
   } as any;
 
-  const mockFriendRequest = {
+  const _mockFriendRequest = {
     userUid1: 'user-123',
     userUid2: 'user-456',
     status: InvitationStatus.PENDING,

@@ -1,7 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { GameModes } from 'generated/prisma/enums';
 import { Transform, Type } from 'class-transformer';
-import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
 import {
   IsArray,
   IsDate,
@@ -13,6 +11,8 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { GameModes } from 'generated/prisma/enums';
+import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
 
 /**
  * @description DTO for filtering the sessions in most use cases (findAll methods)
@@ -83,8 +83,8 @@ export class SessionFilterDto {
   @Type(() => Number)
   @IsNumber()
   @ApiProperty({
-    description: 'Maximum distance for location-based filtering',
-    example: 1000,
+    description: 'Maximum distance for location-based filtering (in km)',
+    example: 30,
     required: false,
   })
   maxDistance?: number;

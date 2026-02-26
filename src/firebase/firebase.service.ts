@@ -1,8 +1,8 @@
-import * as admin from 'firebase-admin';
-import { PinoLogger } from 'nestjs-pino';
-import { ConfigService } from '@nestjs/config';
 import { Injectable, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as admin from 'firebase-admin';
 import { Message, MulticastMessage } from 'firebase-admin/lib/messaging/messaging-api';
+import { PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {
@@ -26,8 +26,8 @@ export class FirebaseService implements OnModuleInit {
       const serviceAccountPath = this.configService.get<string>('FIREBASE_SERVICE_ACCOUNT_PATH');
 
       if (serviceAccountPath) {
-        const fs = require('fs');
-        const path = require('path');
+        const fs = require('node:fs');
+        const path = require('node:path');
 
         // Resolve path relative to project root
         const resolvedPath = path.resolve(process.cwd(), serviceAccountPath);

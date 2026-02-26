@@ -1,7 +1,7 @@
-import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { ConversationType } from 'generated/prisma/enums';
+import { Type } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { ConversationType } from 'generated/prisma/enums';
 
 export class ConversationFilterDto {
   @IsOptional()

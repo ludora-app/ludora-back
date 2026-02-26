@@ -1,11 +1,11 @@
 import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { ConversationMembershipGuard } from 'src/conversations/guards/conversation-membership.guard';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 describe('ConversationMembershipGuard', () => {
   let guard: ConversationMembershipGuard;
-  let prismaService: PrismaService;
+  let _prismaService: PrismaService;
 
   const mockPrismaService = {
     conversationMembers: {
@@ -43,7 +43,7 @@ describe('ConversationMembershipGuard', () => {
     }).compile();
 
     guard = module.get<ConversationMembershipGuard>(ConversationMembershipGuard);
-    prismaService = module.get<PrismaService>(PrismaService);
+    _prismaService = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {

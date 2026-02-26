@@ -1,5 +1,5 @@
-import { FastifyRequest } from 'fastify';
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { FastifyRequest } from 'fastify';
 
 /**
  * Parameter decorator to retrieve an ARRAY of uploaded files from the request.

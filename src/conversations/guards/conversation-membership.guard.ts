@@ -1,4 +1,3 @@
-import { PrismaService } from 'src/prisma/prisma.service';
 import {
   CanActivate,
   ExecutionContext,
@@ -6,6 +5,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class ConversationMembershipGuard implements CanActivate {

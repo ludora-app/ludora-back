@@ -1,6 +1,6 @@
+import { Injectable, NotFoundException, PipeTransform } from '@nestjs/common';
 import { Sessions } from 'generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { PipeTransform, Injectable, NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class SessionsPipe implements PipeTransform {

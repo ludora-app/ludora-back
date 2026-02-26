@@ -1,13 +1,11 @@
+import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Provider, Sex, UserType } from 'generated/prisma/client';
 import { AuthB2CController } from 'src/auth/controllers/auth-b2c.controller';
-
-import { VerifyEmailGuard } from 'src/auth/guards/verify-email.guard';
-import { VerifyEmailCodeDto } from 'src/auth/dto/input/verify-email-code.dto';
 import { CreateGoogleUserDto } from 'src/auth/dto/input/create-google-user.dto';
-import { UnauthorizedException } from '@nestjs/common';
-import { AuthB2CService } from 'src/auth/services/auth-b2c.service';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { VerifyEmailGuard } from 'src/auth/guards/verify-email.guard';
+import { AuthB2CService } from 'src/auth/services/auth-b2c.service';
 
 describe('AuthB2CController', () => {
   let controller: AuthB2CController;

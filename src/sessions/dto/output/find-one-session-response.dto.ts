@@ -1,11 +1,10 @@
-import { FieldType } from 'generated/prisma/enums';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
-import { UserSimpleDisplayDataDto } from 'src/users/dto';
+import { FieldType } from 'generated/prisma/enums';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
-
-import { SessionTeamResponseData } from './session-team-response';
+import { UserSimpleDisplayDataDto } from 'src/users/dto';
 import { SessionCollectionItemDto } from './session-collection-response.dto';
+import { SessionTeamResponseData } from './session-team-response';
 
 export class SessionPlayerFromFindOneSessionResponseData extends UserSimpleDisplayDataDto {
   @ApiProperty({

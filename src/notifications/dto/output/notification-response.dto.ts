@@ -1,7 +1,7 @@
-import { NotificationType } from 'generated/prisma/enums';
 import { ApiProperty, getSchemaPath } from '@nestjs/swagger';
-import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { NotificationType } from 'generated/prisma/enums';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
 import {
   FriendAcceptedData,

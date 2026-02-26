@@ -1,24 +1,22 @@
+import { ConflictException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
-
-import { PrismaService } from '../../src/prisma/prisma.service';
-import { EmailsService } from '../../src/shared/emails/emails.service';
-import { StorageService } from '../../src/shared/storage/storage.service';
-import { GeolocalisationService } from '../../src/shared/geolocalisation/geolocalisation.service';
-import { PartnersService } from '../../src/partners/partners.service';
-import { Sport, StorageFolderName } from '../../src/shared/constants/constants';
-import { CreatePublicFieldDto } from '../../src/fields/dto/input/create-public-field.dto';
-import { UpdateFieldDto } from '../../src/fields/dto/input/update-field.dto';
 import { FieldsService } from 'src/fields/services/fields.service';
+import { CreatePublicFieldDto } from '../../src/fields/dto/input/create-public-field.dto';
+import { PartnersService } from '../../src/partners/partners.service';
+import { PrismaService } from '../../src/prisma/prisma.service';
+import { Sport } from '../../src/shared/constants/constants';
+import { EmailsService } from '../../src/shared/emails/emails.service';
+import { GeolocalisationService } from '../../src/shared/geolocalisation/geolocalisation.service';
+import { StorageService } from '../../src/shared/storage/storage.service';
 
 describe('FieldsService', () => {
   let service: FieldsService;
-  let prismaService: PrismaService;
-  let storageService: StorageService;
-  let geolocalisationService: GeolocalisationService;
-  let partnersService: PartnersService;
-  let logger: PinoLogger;
+  let _prismaService: PrismaService;
+  let _storageService: StorageService;
+  let _geolocalisationService: GeolocalisationService;
+  let _partnersService: PartnersService;
+  let _logger: PinoLogger;
 
   const mockPrismaService = {
     fields: {
@@ -73,11 +71,11 @@ describe('FieldsService', () => {
     }).compile();
 
     service = module.get<FieldsService>(FieldsService);
-    prismaService = module.get<PrismaService>(PrismaService);
-    storageService = module.get<StorageService>(StorageService);
-    geolocalisationService = module.get<GeolocalisationService>(GeolocalisationService);
-    partnersService = module.get<PartnersService>(PartnersService);
-    logger = module.get<PinoLogger>(PinoLogger);
+    _prismaService = module.get<PrismaService>(PrismaService);
+    _storageService = module.get<StorageService>(StorageService);
+    _geolocalisationService = module.get<GeolocalisationService>(GeolocalisationService);
+    _partnersService = module.get<PartnersService>(PartnersService);
+    _logger = module.get<PinoLogger>(PinoLogger);
 
     jest.clearAllMocks();
   });
@@ -130,6 +128,7 @@ describe('FieldsService', () => {
 
       mockGeolocalisationService.getDetailsFromAddress.mockResolvedValue(geoDetails);
       mockPrismaService.fields.findFirst.mockResolvedValue(null);
+      mockEmailsService.sendNewFieldAdministrationRequestEmail.mockResolvedValue(undefined);
       mockPrismaService.$transaction.mockImplementation(async (callback) => {
         return callback({
           fields: {
@@ -238,7 +237,7 @@ describe('FieldsService', () => {
       );
       expect(mockPrismaService.fields.findUnique).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { status: 'APPROVED', uid },
+          where: { uid },
         }),
       );
     });
@@ -320,7 +319,7 @@ describe('FieldsService', () => {
           take: 11,
           where: { partnerUid: null },
           include: {
-            fieldImages: { select: { order: true, url: true }, take: 1 },
+            fieldImages: { orderBy: { order: 'asc' }, select: { order: true, url: true }, take: 1 },
             fieldSports: { select: { sport: true } },
           },
         }),
@@ -365,7 +364,7 @@ describe('FieldsService', () => {
             fieldSports: { some: { sport: { in: [Sport.BASKETBALL] } } },
           },
           include: {
-            fieldImages: { select: { order: true, url: true }, take: 1 },
+            fieldImages: { orderBy: { order: 'asc' }, select: { order: true, url: true }, take: 1 },
             fieldSports: { select: { sport: true } },
           },
         }),
@@ -413,7 +412,7 @@ describe('FieldsService', () => {
             ],
           },
           include: {
-            fieldImages: { select: { order: true, url: true }, take: 1 },
+            fieldImages: { orderBy: { order: 'asc' }, select: { order: true, url: true }, take: 1 },
             fieldSports: { select: { sport: true } },
           },
         }),
@@ -462,7 +461,7 @@ describe('FieldsService', () => {
           cursor: { uid: 'field-1' },
           where: { partnerUid: null },
           include: {
-            fieldImages: { select: { order: true, url: true }, take: 1 },
+            fieldImages: { orderBy: { order: 'asc' }, select: { order: true, url: true }, take: 1 },
             fieldSports: { select: { sport: true } },
           },
         }),
@@ -519,7 +518,7 @@ describe('FieldsService', () => {
           take: 3,
           where: { partnerUid: null },
           include: {
-            fieldImages: { select: { order: true, url: true }, take: 1 },
+            fieldImages: { orderBy: { order: 'asc' }, select: { order: true, url: true }, take: 1 },
             fieldSports: { select: { sport: true } },
           },
         }),
@@ -570,7 +569,7 @@ describe('FieldsService', () => {
             ],
           },
           include: {
-            fieldImages: { select: { order: true, url: true }, take: 1 },
+            fieldImages: { orderBy: { order: 'asc' }, select: { order: true, url: true }, take: 1 },
             fieldSports: { select: { sport: true } },
           },
         }),

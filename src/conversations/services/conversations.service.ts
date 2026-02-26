@@ -1,26 +1,25 @@
-import { PinoLogger } from 'nestjs-pino';
-import { Prisma } from 'generated/prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
-import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/browser';
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-
-import { MessagesService } from './messages.service';
-import { CreateMessageDto } from '../dto/input/create-message.dto';
-import { ConversationMapper } from '../mappers/conversation.mapper';
-import { ConversationMembersService } from './conversation-members.service';
+import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/browser';
+import { Prisma } from 'generated/prisma/client';
+import { PinoLogger } from 'nestjs-pino';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { ConversationFilterDto } from '../dto/input/conversation-filter.dto';
-import { UnreadMessagesResponseData } from '../dto/output/unread-messages-response.dto';
-import { MessageCollectionItemDto } from '../dto/output/message-collection-response.dto';
+import { CreateMessageDto } from '../dto/input/create-message.dto';
 import { CreatePrivateConversationDto } from '../dto/input/create-private-conversation.dto';
 import { CreateSessionConversationDto } from '../dto/input/create-session-conversation.dto';
-import { FindOneConversationResponseData } from '../dto/output/find-one-conversation-response.dto';
 import { ConversationCollectionResponseData } from '../dto/output/conversation-collection-response.dto';
+import { FindOneConversationResponseData } from '../dto/output/find-one-conversation-response.dto';
+import { MessageCollectionItemDto } from '../dto/output/message-collection-response.dto';
+import { UnreadMessagesResponseData } from '../dto/output/unread-messages-response.dto';
+import { ConversationMapper } from '../mappers/conversation.mapper';
+import { ConversationMembersService } from './conversation-members.service';
+import { MessagesService } from './messages.service';
 
 @Injectable()
 export class ConversationsService {
@@ -371,7 +370,7 @@ export class ConversationsService {
     let nextCursor: string | null = null;
     if (rawConversations.length > actualLimit) {
       const nextItem = rawConversations.pop();
-      nextCursor = nextItem!.uid;
+      nextCursor = nextItem?.uid;
     }
 
     const conversations = await Promise.all(
@@ -545,10 +544,11 @@ export class ConversationsService {
     file?: any,
   ): Promise<{ conversationUid: string; messageUid: string }> {
     const { content, conversationUid, recipientUid, type } = dto;
-    // const existingConversation = await this.findOne(conversationUid, userUid);
 
-    //? handle the session conversation case
-    let sessionConversation;
+    //? handle the session conversation case (client sends sessionUid)
+    let sessionConversation:
+      | Awaited<ReturnType<PrismaService['conversations']['findUnique']>>
+      | undefined;
     if (dto.sessionUid) {
       sessionConversation = await this.prisma.conversations.findUnique({
         where: {
@@ -563,23 +563,22 @@ export class ConversationsService {
     }
 
     //? handle the private conversation case
-    let privateConversation;
+    let privateConversation:
+      | Awaited<ReturnType<PrismaService['conversations']['findFirst']>>
+      | { uid: string }
+      | undefined;
     if (recipientUid) {
       privateConversation = await this.prisma.conversations.findFirst({
         where: {
           AND: [
             {
               conversationMembers: {
-                some: {
-                  userUid: userUid,
-                },
+                some: { userUid: userUid },
               },
             },
             {
               conversationMembers: {
-                some: {
-                  userUid: recipientUid,
-                },
+                some: { userUid: recipientUid },
               },
             },
           ],
@@ -595,7 +594,19 @@ export class ConversationsService {
       }
     }
 
-    const actualConversationUid = privateConversation?.uid ?? conversationUid;
+    const actualConversationUid =
+      sessionConversation?.uid ?? privateConversation?.uid ?? conversationUid;
+
+    //? Resolve conversation to know if it's a group/session (for push notification title)
+    const conversationForMessage = await this.prisma.conversations.findUnique({
+      select: { sessionUid: true, type: true },
+      where: { uid: actualConversationUid },
+    });
+    const sessionUidForNotification =
+      conversationForMessage?.type === ConversationType.SESSION
+        ? conversationForMessage.sessionUid
+        : null;
+
     let message: { messageUid: string } | undefined;
 
     if ((type as MessageType) === MessageType.TEXT) {
@@ -603,7 +614,7 @@ export class ConversationsService {
         userUid,
         content,
         actualConversationUid,
-        sessionConversation?.uid ?? null,
+        sessionUidForNotification,
       );
     } else {
       message = await this.messagesService.createMediaMessage(
@@ -611,7 +622,7 @@ export class ConversationsService {
         actualConversationUid,
         type,
         file,
-        sessionConversation?.uid ?? null,
+        sessionUidForNotification,
       );
     }
 

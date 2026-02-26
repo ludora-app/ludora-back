@@ -1,16 +1,16 @@
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { UsersService } from 'src/users/users.service';
 import { VerifyEmailGuard } from 'src/auth/guards/verify-email.guard';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
+import { UsersService } from 'src/users/users.service';
 
 describe('VerifyEmailGuard', () => {
   let guard: VerifyEmailGuard;
-  let jwtService: JwtService;
-  let prismaService: PrismaService;
-  let usersService: UsersService;
+  let _jwtService: JwtService;
+  let _prismaService: PrismaService;
+  let _usersService: UsersService;
 
   const mockJwtService = {
     verifyAsync: jest.fn(),
@@ -60,9 +60,9 @@ describe('VerifyEmailGuard', () => {
     }).compile();
 
     guard = module.get<VerifyEmailGuard>(VerifyEmailGuard);
-    jwtService = module.get<JwtService>(JwtService);
-    prismaService = module.get<PrismaService>(PrismaService);
-    usersService = module.get<UsersService>(UsersService);
+    _jwtService = module.get<JwtService>(JwtService);
+    _prismaService = module.get<PrismaService>(PrismaService);
+    _usersService = module.get<UsersService>(UsersService);
   });
 
   afterEach(() => {

@@ -1,10 +1,9 @@
-import { FastifyRequest } from 'fastify';
-import { ApiConsumes } from '@nestjs/swagger';
 import { Controller, Get, Post, Query, Req, UseInterceptors } from '@nestjs/common';
-
-import { StorageService } from './storage.service';
+import { ApiConsumes } from '@nestjs/swagger';
+import { FastifyRequest } from 'fastify';
 import { Public } from '../decorators/public.decorator';
 import { FastifyFilesInterceptor } from '../interceptors/fastify-file.interceptor';
+import { StorageService } from './storage.service';
 
 @Controller('storage')
 export class StorageController {

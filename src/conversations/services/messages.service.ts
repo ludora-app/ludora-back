@@ -1,20 +1,19 @@
-import { PinoLogger } from 'nestjs-pino';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { StorageFolderName } from 'src/shared/constants/constants';
-import { MessageStatus, MessageType } from 'generated/prisma/enums';
-import { StorageService } from 'src/shared/storage/storage.service';
-import { EventTypes } from 'src/notifications/constants/event.types';
-import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-
-import { MessageMapper } from '../mappers/message.mapper';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { MessageStatus, MessageType } from 'generated/prisma/enums';
+import { PinoLogger } from 'nestjs-pino';
+import { EventTypes } from 'src/notifications/constants/event.types';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { StorageFolderName } from 'src/shared/constants/constants';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+import { StorageService } from 'src/shared/storage/storage.service';
 import { MessageCollectionItemDto } from '../dto/output/message-collection-response.dto';
+import { MessageMapper } from '../mappers/message.mapper';
 
 @Injectable()
 export class MessagesService {
@@ -86,16 +85,20 @@ export class MessagesService {
     const senderName = `${message.sender.firstname ?? ''} ${message.sender.lastname ?? ''}`.trim();
 
     //? default notification title for a private conversation
-    let notificationTitle = `${senderName} sent you a message`;
+    let notificationTitle = `${senderName} t'a envoyé un message`;
 
     //? if the conversation is a Session Conversation, add the sessionUid to the notification title
-    if (sessionUid) notificationTitle = `Session ${sessionUid} - ${senderName} sent you a message`;
+    if (sessionUid)
+      notificationTitle = `Session ${sessionUid} - ${senderName} t'a envoyé un message`;
 
     this.eventEmitter.emit(EventTypes.NEW_MESSAGE, {
       content,
       conversationUid,
       notificationTitle,
+      senderAvatar: message.sender.imageUrl ?? undefined,
+      senderName,
       senderUid,
+      sessionUid: sessionUid ?? undefined,
     });
 
     return { messageUid: message.uid };
@@ -168,16 +171,20 @@ export class MessagesService {
     const senderName = `${message.sender.firstname ?? ''} ${message.sender.lastname ?? ''}`.trim();
 
     //? default notification title for a private conversation
-    let notificationTitle = `${senderName} sent you a message`;
+    let notificationTitle = `${senderName} t'a envoyé un message`;
 
     //? if the conversation is a Session Conversation, add the sessionUid to the notification title
-    if (sessionUid) notificationTitle = `Session ${sessionUid} - ${senderName} sent you a message`;
+    if (sessionUid)
+      notificationTitle = `Session ${sessionUid} - ${senderName} t'a envoyé un message`;
 
     this.eventEmitter.emit(EventTypes.NEW_MESSAGE, {
       content: uploadedFile.data,
       conversationUid,
       notificationTitle,
+      senderAvatar: message.sender.imageUrl ?? undefined,
+      senderName,
       senderUid,
+      sessionUid: sessionUid ?? undefined,
     });
 
     return { messageUid: message.uid };

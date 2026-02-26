@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MessageType } from 'generated/prisma/enums';
 import { IsEnum, IsNotEmpty, IsOptional, IsString, ValidateIf } from 'class-validator';
+import { MessageType } from 'generated/prisma/enums';
 
 export class CreateMessageDto {
   @ValidateIf((o) => o.type === MessageType.TEXT)

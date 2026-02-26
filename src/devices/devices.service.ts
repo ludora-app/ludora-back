@@ -1,7 +1,7 @@
-import { PinoLogger } from 'nestjs-pino';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { FirebaseService } from 'src/firebase/firebase.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { PinoLogger } from 'nestjs-pino';
+import { FirebaseService } from 'src/firebase/firebase.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 import { RegisterDeviceDto } from './dto/input/register-device.dto';
 import { DeviceResponseData } from './dto/output/device-response.dto';

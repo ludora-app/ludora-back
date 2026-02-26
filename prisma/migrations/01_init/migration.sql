@@ -162,6 +162,7 @@ CREATE TABLE "infrastructure"."Fields" (
     "type" "infrastructure"."field_type" NOT NULL DEFAULT 'PUBLIC',
     "status" "infrastructure"."verification_status" NOT NULL DEFAULT 'PENDING',
     "partner_uid" TEXT,
+    "creator_uid" TEXT,
     "name" TEXT,
     "zip_code" TEXT NOT NULL,
     "city" TEXT NOT NULL,
@@ -493,6 +494,9 @@ CREATE INDEX "Partners_zip_code_idx" ON "infrastructure"."Partners"("zip_code");
 CREATE INDEX "Fields_partner_uid_idx" ON "infrastructure"."Fields"("partner_uid");
 
 -- CreateIndex
+CREATE INDEX "Fields_creator_uid_idx" ON "infrastructure"."Fields"("creator_uid");
+
+-- CreateIndex
 CREATE INDEX "Fields_longitude_latitude_idx" ON "infrastructure"."Fields"("longitude", "latitude");
 
 -- CreateIndex
@@ -656,6 +660,9 @@ ALTER TABLE "auth"."Refresh_tokens" ADD CONSTRAINT "Refresh_tokens_organisation_
 
 -- AddForeignKey
 ALTER TABLE "infrastructure"."Fields" ADD CONSTRAINT "Fields_partner_uid_fkey" FOREIGN KEY ("partner_uid") REFERENCES "infrastructure"."Partners"("uid") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "infrastructure"."Fields" ADD CONSTRAINT "Fields_creator_uid_fkey" FOREIGN KEY ("creator_uid") REFERENCES "auth"."Users"("uid") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "infrastructure"."Field_slots" ADD CONSTRAINT "Field_slots_field_uid_fkey" FOREIGN KEY ("field_uid") REFERENCES "infrastructure"."Fields"("uid") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -1,7 +1,7 @@
-import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { NotificationType } from 'generated/prisma/enums';
+import { Type } from 'class-transformer';
 import { IsArray, IsEnum, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { NotificationType } from 'generated/prisma/enums';
 
 /**
  * One notification payload for createMany (userUid is set from the connected user).

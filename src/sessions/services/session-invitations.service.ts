@@ -1,19 +1,18 @@
-import { PinoLogger } from 'nestjs-pino';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { UsersService } from 'src/users/users.service';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { USERSELECT } from 'src/shared/constants/select-user';
-import { EventTypes } from 'src/notifications/constants/event.types';
-import { SessionsService } from 'src/sessions/services/sessions.service';
-import { InvitationStatus, SessionInvitations } from 'generated/prisma/client';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
-import { SessionPlayersService } from 'src/sessions/services/session-players.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { InvitationStatus, SessionInvitations } from 'generated/prisma/client';
+import { PinoLogger } from 'nestjs-pino';
+import { EventTypes } from 'src/notifications/constants/event.types';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSessionPlayerDto } from 'src/sessions/dto/input/create-session-player.dto';
-
+import { SessionPlayersService } from 'src/sessions/services/session-players.service';
+import { SessionsService } from 'src/sessions/services/sessions.service';
+import { USERSELECT } from 'src/shared/constants/select-user';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+import { UsersService } from 'src/users/users.service';
+import { CreateManySessionInvitationDto } from '../dto/input/create-many-session-invitation.dto';
 import { SessionInvitationFilterDto } from '../dto/input/session-invitation-filter.dto';
 import { UpdateSessionInvitationDto } from '../dto/input/update-session-invitation.dto';
-import { CreateManySessionInvitationDto } from '../dto/input/create-many-session-invitation.dto';
 
 @Injectable()
 export class SessionInvitationsService {
@@ -82,7 +81,7 @@ export class SessionInvitationsService {
           this.eventEmitter.emit(
             EventTypes.SESSION_INVITATION,
             {
-              invitedBy: existingSender.firstname + ' ' + existingSender.lastname,
+              invitedBy: `${existingSender.firstname} ${existingSender.lastname}`,
               inviterAvatar: existingSender.imageUrl,
               senderAvatar: existingSender.imageUrl,
               senderFirstname: existingSender.firstname,
@@ -314,8 +313,8 @@ export class SessionInvitationsService {
     if (updateSessionInvitationDto.status === existingInvitation.status) {
       throw new BadRequestException(`Status ${updateSessionInvitationDto.status} is already set`);
     }
-    let isSender;
-    let isReceiver;
+    let isSender: boolean | undefined;
+    let isReceiver: boolean | undefined;
     if (updateSessionInvitationDto.userUid === existingInvitation.senderUid) {
       isSender = true;
     }
@@ -418,7 +417,7 @@ export class SessionInvitationsService {
     sessionUid: string,
     receiverUids: string[],
   ): Promise<Set<string>> {
-    let validUids = new Set<string>();
+    const validUids = new Set<string>();
 
     for (const receiverUid of receiverUids) {
       if (senderUid === receiverUid) {

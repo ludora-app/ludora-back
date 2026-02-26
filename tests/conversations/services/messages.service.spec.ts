@@ -1,13 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PinoLogger } from 'nestjs-pino';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { StorageService } from 'src/shared/storage/storage.service';
-import { MessagesService } from 'src/conversations/services/messages.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Test, TestingModule } from '@nestjs/testing';
 import { MessageStatus, MessageType } from 'generated/prisma/enums';
+import { PinoLogger } from 'nestjs-pino';
+import { MessagesService } from 'src/conversations/services/messages.service';
 import { EventTypes } from 'src/notifications/constants/event.types';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageFolderName } from 'src/shared/constants/constants';
+import { StorageService } from 'src/shared/storage/storage.service';
 
 describe('MessagesService', () => {
   let service: MessagesService;
@@ -166,8 +166,11 @@ describe('MessagesService', () => {
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(EventTypes.NEW_MESSAGE, {
         content,
         conversationUid,
-        notificationTitle: 'John Doe sent you a message',
+        notificationTitle: "John Doe t'a envoyé un message",
+        senderAvatar: 'image.jpg',
+        senderName: 'John Doe',
         senderUid,
+        sessionUid: undefined,
       });
     });
 
@@ -209,8 +212,11 @@ describe('MessagesService', () => {
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(EventTypes.NEW_MESSAGE, {
         content,
         conversationUid,
-        notificationTitle: `Session ${sessionUid} - Jane Smith sent you a message`,
+        notificationTitle: `Session ${sessionUid} - Jane Smith t'a envoyé un message`,
+        senderAvatar: undefined,
+        senderName: 'Jane Smith',
         senderUid,
+        sessionUid,
       });
     });
   });
@@ -290,8 +296,11 @@ describe('MessagesService', () => {
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(EventTypes.NEW_MESSAGE, {
         content: uploadedFile.data,
         conversationUid,
-        notificationTitle: 'John Doe sent you a message',
+        notificationTitle: "John Doe t'a envoyé un message",
+        senderAvatar: 'image.jpg',
+        senderName: 'John Doe',
         senderUid,
+        sessionUid: undefined,
       });
     });
 

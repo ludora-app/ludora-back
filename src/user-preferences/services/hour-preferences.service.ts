@@ -1,7 +1,7 @@
-import { PinoLogger } from 'nestjs-pino';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserHourPreferenceType } from 'generated/prisma/client';
+import { PinoLogger } from 'nestjs-pino';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 
 import { HourPreferenceData } from '../dto/input/create-hour-preference.dto';

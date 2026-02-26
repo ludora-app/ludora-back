@@ -1,12 +1,12 @@
-import { Observable } from 'rxjs';
-import { FastifyRequest } from 'fastify';
 import {
+  BadRequestException,
   CallHandler,
   ExecutionContext,
   Injectable,
   NestInterceptor,
-  BadRequestException,
 } from '@nestjs/common';
+import { FastifyRequest } from 'fastify';
+import { Observable } from 'rxjs';
 
 /**
  * Interceptor to handle multipart/form-data requests and extract files from the request body.

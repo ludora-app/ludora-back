@@ -1,10 +1,3 @@
-import { Public } from 'src/shared/decorators/public.decorator';
-import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
-import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
-import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
-import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
-import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
-import { CreateImageDto, LoginDto, LoginResponseDto, RegisterResponseDto } from 'src/auth/dto';
 import {
   Body,
   Controller,
@@ -24,10 +17,16 @@ import {
   ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
-
+import { CreateImageDto, LoginDto, LoginResponseDto, RegisterResponseDto } from 'src/auth/dto';
+import { Public } from 'src/shared/decorators/public.decorator';
+import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
+import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
+import { RegisterB2BWithFileDto } from '../dto/input/register-b2b.dto';
 import { AuthB2BGuard } from '../guards/auth-b2b.guard';
 import { AuthB2BService } from '../services/auth-b2b.service';
-import { RegisterB2BWithFileDto } from '../dto/input/register-b2b.dto';
 
 @Controller('auth-b2b')
 @UseGuards(AuthB2BGuard)

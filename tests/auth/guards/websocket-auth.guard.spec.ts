@@ -5,7 +5,7 @@ import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
 
 describe('WebSocketAuthGuard', () => {
   let guard: WebSocketAuthGuard;
-  let webSocketAuthService: WebSocketAuthService;
+  let _webSocketAuthService: WebSocketAuthService;
 
   const mockWebSocketAuthService = {
     authenticateSocket: jest.fn(),
@@ -38,7 +38,7 @@ describe('WebSocketAuthGuard', () => {
     }).compile();
 
     guard = module.get<WebSocketAuthGuard>(WebSocketAuthGuard);
-    webSocketAuthService = module.get<WebSocketAuthService>(WebSocketAuthService);
+    _webSocketAuthService = module.get<WebSocketAuthService>(WebSocketAuthService);
   });
 
   afterEach(() => {

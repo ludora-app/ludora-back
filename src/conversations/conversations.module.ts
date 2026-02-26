@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { SharedModule } from 'src/shared/shared.module';
 import { StorageService } from 'src/shared/storage/storage.service';
-
-import { MessagesService } from './services/messages.service';
 import { ConversationsController } from './conversations.controller';
-import { ConversationsService } from './services/conversations.service';
 import { ConversationMembersService } from './services/conversation-members.service';
+import { ConversationsService } from './services/conversations.service';
+import { MessagesService } from './services/messages.service';
 
 @Module({
   controllers: [ConversationsController],

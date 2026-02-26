@@ -1,22 +1,21 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PinoLogger } from 'nestjs-pino';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { ConversationsService } from 'src/conversations/services/conversations.service';
-import { ConversationMembersService } from 'src/conversations/services/conversation-members.service';
-import { MessagesService } from 'src/conversations/services/messages.service';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { StorageService } from 'src/shared/storage/storage.service';
+import { Test, TestingModule } from '@nestjs/testing';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
+import { PinoLogger } from 'nestjs-pino';
 import {
   ConversationMapper,
   RawConversationCollectionItem,
 } from 'src/conversations/mappers/conversation.mapper';
+import { ConversationMembersService } from 'src/conversations/services/conversation-members.service';
+import { ConversationsService } from 'src/conversations/services/conversations.service';
+import { MessagesService } from 'src/conversations/services/messages.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 describe('ConversationsService', () => {
   let service: ConversationsService;
   let mockPrismaService: any;
   let mockMessagesService: any;
-  let mockStorageService: any;
+  let _mockStorageService: any;
   let mockConversationMembersService: any;
 
   const mockPinoLogger = {
@@ -806,7 +805,9 @@ describe('ConversationsService', () => {
           uid: 'session-conv-123',
         };
 
-        mockPrismaService.conversations.findUnique.mockResolvedValue(mockSessionConversation);
+        mockPrismaService.conversations.findUnique
+          .mockResolvedValueOnce(mockSessionConversation)
+          .mockResolvedValueOnce({ sessionUid, type: ConversationType.SESSION });
         mockMessagesService.createTextMessage.mockResolvedValue(undefined);
 
         await service.createMessage(userUid, dto);
@@ -820,8 +821,8 @@ describe('ConversationsService', () => {
         expect(mockMessagesService.createTextMessage).toHaveBeenCalledWith(
           userUid,
           content,
-          undefined,
           'session-conv-123',
+          sessionUid,
         );
         expect(mockMessagesService.createMediaMessage).not.toHaveBeenCalled();
       });
@@ -842,7 +843,9 @@ describe('ConversationsService', () => {
           uid: 'session-conv-123',
         };
 
-        mockPrismaService.conversations.findUnique.mockResolvedValue(mockSessionConversation);
+        mockPrismaService.conversations.findUnique
+          .mockResolvedValueOnce(mockSessionConversation)
+          .mockResolvedValueOnce({ sessionUid, type: ConversationType.SESSION });
         mockMessagesService.createMediaMessage.mockResolvedValue(undefined);
 
         await service.createMessage(userUid, dto, mockFile);
@@ -855,10 +858,10 @@ describe('ConversationsService', () => {
         });
         expect(mockMessagesService.createMediaMessage).toHaveBeenCalledWith(
           userUid,
-          undefined,
+          'session-conv-123',
           MessageType.IMAGE,
           mockFile,
-          'session-conv-123',
+          sessionUid,
         );
         expect(mockMessagesService.createTextMessage).not.toHaveBeenCalled();
       });

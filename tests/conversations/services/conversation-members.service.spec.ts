@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { ConversationMembersService } from 'src/conversations/services/conversation-members.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 describe('ConversationMembersService', () => {
   let service: ConversationMembersService;

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { InvitationStatus } from 'generated/prisma/client';
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { InvitationStatus } from 'generated/prisma/client';
 
 export class UpdateSessionInvitationDto {
   @IsEnum(InvitationStatus)

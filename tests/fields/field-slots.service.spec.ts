@@ -6,9 +6,9 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 describe('FieldSlotsService', () => {
   let service: FieldSlotsService;
-  let logger: PinoLogger;
-  let prismaService: PrismaService;
-  let fieldsService: FieldsService;
+  let _logger: PinoLogger;
+  let _prismaService: PrismaService;
+  let _fieldsService: FieldsService;
 
   const mockLogger = {
     setContext: jest.fn(),
@@ -39,9 +39,9 @@ describe('FieldSlotsService', () => {
     }).compile();
 
     service = module.get<FieldSlotsService>(FieldSlotsService);
-    prismaService = module.get<PrismaService>(PrismaService);
-    fieldsService = module.get<FieldsService>(FieldsService);
-    logger = module.get<PinoLogger>(PinoLogger);
+    _prismaService = module.get<PrismaService>(PrismaService);
+    _fieldsService = module.get<FieldsService>(FieldsService);
+    _logger = module.get<PinoLogger>(PinoLogger);
   });
 
   it('should be defined', () => {

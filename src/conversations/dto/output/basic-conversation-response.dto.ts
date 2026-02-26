@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
 import { Sport } from 'src/shared/constants/constants';
 import { UserSimpleDisplayDataDto } from 'src/users/dto';
-import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
 
 export class MessageDto {
   @ApiProperty({

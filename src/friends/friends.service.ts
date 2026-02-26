@@ -1,24 +1,24 @@
-import { PinoLogger } from 'nestjs-pino';
-import { UserFilterDto } from 'src/users/dto';
-import { Prisma } from 'generated/prisma/client';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { UsersService } from 'src/users/users.service';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { InvitationStatus } from 'generated/prisma/enums';
-import { USERSELECT } from 'src/shared/constants/select-user';
-import { EventTypes } from 'src/notifications/constants/event.types';
-import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Prisma } from 'generated/prisma/client';
+import { InvitationStatus } from 'generated/prisma/enums';
+import { PinoLogger } from 'nestjs-pino';
+import { EventTypes } from 'src/notifications/constants/event.types';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { USERSELECT } from 'src/shared/constants/select-user';
+import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+import { UserFilterDto } from 'src/users/dto';
+import { UsersService } from 'src/users/users.service';
 
 import { FriendFilterDto } from './dto/input/friend-filter.dto';
+import { FriendRequestResponseData } from './dto/output/friend-request-response.dto';
 import { FriendResponseData } from './dto/output/friend-response.dto';
 import { FriendMapper, FriendWithUsers } from './mappers/friend.mapper';
-import { FriendRequestResponseData } from './dto/output/friend-request-response.dto';
 
 @Injectable()
 export class FriendsService {
@@ -103,7 +103,7 @@ export class FriendsService {
     this.eventEmitter.emit(EventTypes.FRIEND_REQUEST, {
       recipientId: receiverUid,
       senderId: senderUid,
-      senderName: newFriendRequest.user1.firstname + ' ' + newFriendRequest.user1.lastname,
+      senderName: `${newFriendRequest.user1.firstname} ${newFriendRequest.user1.lastname}`,
     });
 
     return;
@@ -134,12 +134,16 @@ export class FriendsService {
         `;
     }
 
-    // Conditionally add session invitation join
+    // Conditionally add session invitation join and session players join (for isInvited / isJoined)
     const sessionJoinSql = sessionUid
       ? Prisma.sql`
             LEFT JOIN sessions."Session_invitations" si ON (
                 si.session_uid = ${sessionUid}
                 AND si.receiver_uid = friend.uid
+            )
+            LEFT JOIN sessions."Session_players" sp ON (
+                sp.session_uid = ${sessionUid}
+                AND sp.user_uid = friend.uid
             )
           `
       : Prisma.empty;
@@ -156,7 +160,8 @@ export class FriendsService {
             friend.firstname,
             friend.lastname,
             friend.image_url as "avatarUrl",
-            CASE WHEN ${sessionUid ? Prisma.sql`si.receiver_uid IS NOT NULL` : Prisma.sql`false`} THEN true ELSE false END as "isInvited"
+            CASE WHEN ${sessionUid ? Prisma.sql`si.receiver_uid IS NOT NULL` : Prisma.sql`false`} THEN true ELSE false END as "isInvited",
+            CASE WHEN ${sessionUid ? Prisma.sql`sp.user_uid IS NOT NULL` : Prisma.sql`false`} THEN true ELSE false END as "isJoined"
         FROM social."Friends" f
         INNER JOIN auth."Users" friend ON (
             friend.uid = CASE 
@@ -176,7 +181,7 @@ export class FriendsService {
     let nextCursor: string | null = null;
     if (friends.length > limit) {
       const nextItem = friends.pop();
-      nextCursor = nextItem!.friendUid;
+      nextCursor = nextItem?.friendUid;
     }
 
     return {
@@ -243,7 +248,7 @@ export class FriendsService {
     let nextCursor: string | null = null;
     if (friends.length > limit) {
       const nextItem = friends.pop();
-      nextCursor = nextItem!.senderUid;
+      nextCursor = nextItem?.senderUid;
     }
 
     return {
@@ -430,7 +435,7 @@ export class FriendsService {
 
       this.eventEmitter.emit(EventTypes.FRIEND_ACCEPTED, {
         recipientUid: eventReceiverUserUid,
-        senderName: friendDto.firstname + ' ' + friendDto.lastname,
+        senderName: `${friendDto.firstname} ${friendDto.lastname}`,
         senderUid: requestAccepterUserUid,
       });
     }

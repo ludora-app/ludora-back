@@ -1,8 +1,5 @@
-import { Type } from 'class-transformer';
-import { CreateImageDto } from 'src/auth/dto';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
-import { GameModes, SessionVisibility } from 'generated/prisma/client';
-import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
+import { Type } from 'class-transformer';
 import {
   IsArray,
   IsDateString,
@@ -14,6 +11,9 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { GameModes, SessionVisibility } from 'generated/prisma/client';
+import { CreateImageDto } from 'src/auth/dto';
+import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
 
 /**
  * @description DTO for creating a session

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { InvitationStatus } from 'generated/prisma/enums';
-import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
 export class FriendResponseData {
   @ApiProperty({
@@ -56,11 +56,18 @@ export class FriendResponseData {
   avatarUrl: string;
 
   @ApiProperty({
-    description: 'If the friend has been invited to a session',
+    description: 'If the friend has been invited to the session (when sessionUid is provided)',
     example: true,
     readOnly: true,
   })
   isInvited?: boolean;
+
+  @ApiProperty({
+    description: 'If the friend has already joined the session (when sessionUid is provided)',
+    example: false,
+    readOnly: true,
+  })
+  isJoined?: boolean;
 }
 
 export class FriendResponseDto extends ResponseTypeDto<FriendResponseData> {

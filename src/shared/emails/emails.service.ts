@@ -1,7 +1,7 @@
-import * as nodemailer from 'nodemailer';
-import { PinoLogger } from 'nestjs-pino';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PinoLogger } from 'nestjs-pino';
+import * as nodemailer from 'nodemailer';
 
 import { emailTemplates } from './templates/emails.templates';
 
@@ -49,27 +49,6 @@ export class EmailsService {
   }
 
   /**
-   * Creates email options for sending
-   * @private
-   * @param {string[]} recipients - Array of recipient email addresses
-   * @param {string} subject - Email subject
-   * @param {string} html - HTML content of the email
-   * @returns {nodemailer.SendMailOptions} Configured email options
-   */
-  private createEmailOptions(
-    recipients: string[],
-    subject: string,
-    html: string,
-  ): nodemailer.SendMailOptions {
-    return {
-      from: this.configService.getOrThrow<string>('EMAIL_USER'),
-      html,
-      subject,
-      to: recipients.join(', '),
-    };
-  }
-
-  /**
    * Sends an email to the specified recipients
    * @param {CreateEmailDto} dto - Data transfer object containing email details
    * @throws Error if email sending fails
@@ -91,10 +70,9 @@ export class EmailsService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      this.logger.info(`Email sent successfully to ${dto.recipients.join(', ')}`);
+      this.logger.debug(`Email sent successfully to ${dto.recipients.join(', ')}`);
     } catch (error) {
       this.logger.error(`Failed to send email: ${error.message}`);
-      throw error;
     }
   }
 

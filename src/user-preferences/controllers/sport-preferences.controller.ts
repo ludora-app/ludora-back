@@ -1,21 +1,14 @@
-import { FastifyRequest } from 'fastify';
-import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
-import { Protected } from 'src/shared/decorators/protected.decorator';
-import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
-import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
-import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
-import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
+  Body,
   Controller,
-  Get,
-  Param,
   Delete,
-  Req,
+  Get,
   HttpCode,
   HttpStatus,
-  UseGuards,
+  Param,
   Put,
-  Body,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -26,13 +19,19 @@ import {
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-
-import { SportPreferencesService } from '../services/sport-preferences.service';
+import { FastifyRequest } from 'fastify';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { CreateSportPreferenceDto } from '../dto/input/create-sport-preference.dto';
 import {
   PaginatedSportPreferenceResponseDto,
   SportPreferenceResponseData,
 } from '../dto/output/sport-preference.response.dto';
+import { SportPreferencesService } from '../services/sport-preferences.service';
 
 @Controller('sport-preferences')
 @UseGuards(AuthB2CGuard)

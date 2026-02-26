@@ -1,6 +1,6 @@
+import { Controller, Get, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
 import { register } from 'prom-client';
-import { Controller, Get, Res } from '@nestjs/common';
 import { Public } from 'src/shared/decorators/public.decorator';
 
 /**

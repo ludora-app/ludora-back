@@ -1,7 +1,3 @@
-import { PinoLogger } from 'nestjs-pino';
-import { FieldSlots } from 'generated/prisma/browser';
-import { DateUtils } from 'src/shared/utils/date.utils';
-import { PrismaService } from 'src/prisma/prisma.service';
 import {
   BadRequestException,
   ConflictException,
@@ -9,10 +5,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-
-import { FieldsService } from './fields.service';
+import { FieldSlots } from 'generated/prisma/browser';
+import { PinoLogger } from 'nestjs-pino';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { DateUtils } from 'src/shared/utils/date.utils';
 import { CreateFieldSlotDto } from '../dto/input/create-field-slot.dto';
 import { FindAllFieldSlotsDto } from '../dto/input/find-all-field-slots.dto';
+import { FieldsService } from './fields.service';
 
 @Injectable()
 export class FieldSlotsService {

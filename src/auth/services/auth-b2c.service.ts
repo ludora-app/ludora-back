@@ -1,19 +1,16 @@
-import * as argon2 from 'argon2';
-import { JwtService } from '@nestjs/jwt';
-import { PinoLogger } from 'nestjs-pino';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { JwtService } from '@nestjs/jwt';
+import * as argon2 from 'argon2';
 import { Users } from 'generated/prisma/browser';
 import { UserType } from 'generated/prisma/client';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { UsersService } from 'src/users/users.service';
-import { DateUtils } from 'src/shared/utils/date.utils';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { TokenType } from 'src/shared/constants/constants';
-import { USERSELECT } from 'src/shared/constants/select-user';
-import { EmailsService } from 'src/shared/emails/emails.service';
-import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
-import { EventTypes } from 'src/notifications/constants/event.types';
-import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
+import { PinoLogger } from 'nestjs-pino';
 import {
   CreateImageDto,
   LoginDto,
@@ -21,12 +18,15 @@ import {
   RegisterB2CDto,
   VerifyMailDto,
 } from 'src/auth/dto';
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { EventTypes } from 'src/notifications/constants/event.types';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { TokenType } from 'src/shared/constants/constants';
+import { USERSELECT } from 'src/shared/constants/select-user';
+import { EmailsService } from 'src/shared/emails/emails.service';
+import { DateUtils } from 'src/shared/utils/date.utils';
+import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
+import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
+import { UsersService } from 'src/users/users.service';
 
 import { CreateGoogleUserDto } from '../dto/input/create-google-user.dto';
 
@@ -56,7 +56,7 @@ export class AuthB2CService {
     const { type } = registerDto;
 
     const result = await this.prismaService.$transaction(async (tx) => {
-      let newUser;
+      let newUser: Users | null;
 
       if (!DateUtils.isBefore(registerDto.birthdate, this.MINIMUM_AGE_DATE)) {
         this.logger.error(

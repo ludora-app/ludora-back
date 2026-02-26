@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
+import { IsDate, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 import { SessionVisibility } from 'generated/prisma/enums';
 import { SortOrder } from 'generated/prisma/internal/prismaNamespace';
 import { SessionScope, SessionSportLevel, Sport } from 'src/shared/constants/constants';
-import { IsDate, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export enum SessionOwnnership {
   CREATOR = 'CREATOR',

@@ -1,11 +1,10 @@
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
-
-import { SportPreferencesMapper } from '../mappers/sport-preferences.mapper';
 import { CreateSportPreferenceData } from '../dto/input/create-sport-preference.dto';
 import { SportPreferenceResponseData } from '../dto/output/sport-preference.response.dto';
+import { SportPreferencesMapper } from '../mappers/sport-preferences.mapper';
 
 @Injectable()
 export class SportPreferencesService {

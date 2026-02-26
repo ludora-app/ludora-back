@@ -1,3 +1,4 @@
+import * as argon2 from 'argon2';
 import {
   ConversationType,
   FieldType,
@@ -14,7 +15,6 @@ import {
   UserType,
   VerificationStatus,
 } from '../generated/prisma/client';
-import * as argon2 from 'argon2';
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
@@ -1221,8 +1221,7 @@ async function seed() {
   }
 
   const userCities = ['Paris', 'Créteil', 'Clichy', 'Saint-Denis'];
-  const getRandomUserCity = () =>
-    userCities[Math.floor(Math.random() * userCities.length)];
+  const getRandomUserCity = () => userCities[Math.floor(Math.random() * userCities.length)];
 
   const users = [
     {
@@ -1777,7 +1776,7 @@ async function seed() {
           },
         });
         createdUserSports.push(userSport);
-      } catch (e) {
+      } catch (_e) {
         // Skip if duplicate
       }
     }
@@ -1808,7 +1807,7 @@ async function seed() {
           },
         });
         createdUserHourPreferences.push(userHourPreference);
-      } catch (e) {
+      } catch (_e) {
         // Skip if duplicate or error
       }
     }
@@ -1961,7 +1960,7 @@ async function seed() {
           const { maxPlayersPerTeam, minPlayersPerTeam } = getPlayersPerTeamData(gameMode);
 
           const dayLabels: Record<number, string> = {
-            [-2]: "il y a 2 jours",
+            [-2]: 'il y a 2 jours',
             [-1]: 'hier',
             0: "aujourd'hui",
             1: 'demain',
@@ -2130,7 +2129,7 @@ async function seed() {
             teamUid: createdPlayer.teamUid,
             userUid: createdPlayer.userUid,
           });
-        } catch (e) {
+        } catch (_e) {
           // Skip if duplicate
         }
       }
@@ -2313,7 +2312,7 @@ async function seed() {
         create: relationship,
       });
       createdCount++;
-    } catch (e) {
+    } catch (_e) {
       // Skip duplicates
     }
   }
