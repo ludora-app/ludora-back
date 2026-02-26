@@ -1,5 +1,5 @@
-import { NotificationType } from 'generated/prisma/enums';
 import { IsEnum, IsNotEmpty, IsObject, IsOptional, IsString, IsUUID } from 'class-validator';
+import { NotificationType } from 'generated/prisma/enums';
 
 export class NotificationEventDto {
   @IsUUID()

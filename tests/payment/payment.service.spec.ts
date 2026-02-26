@@ -1,18 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
-
-import { ConfigService } from '@nestjs/config';
 import {
   BadRequestException,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { PaymentIntentDto } from 'src/payment/dto/input/payment-intent.dto';
+
+import { ConfigService } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
+import { PinoLogger } from 'nestjs-pino';
 import { BankDetailsDto, UpdateBankDetailsDto } from 'src/payment/dto/input/bank-details.dto';
+import { CreateStripeAccountDto } from 'src/payment/dto/input/create-stripe-account.dto';
+import { PaymentIntentDto } from 'src/payment/dto/input/payment-intent.dto';
 import { PaymentService } from 'src/payment/payment.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateStripeAccountDto } from 'src/payment/dto/input/create-stripe-account.dto';
 import { UsersService } from 'src/users/users.service';
-import { PinoLogger } from 'nestjs-pino';
 
 describe('PaymentService', () => {
   let service: PaymentService;

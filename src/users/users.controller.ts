@@ -1,15 +1,3 @@
-import { CreateImageDto } from 'src/auth/dto';
-import { Users } from 'generated/prisma/client';
-import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
-import { Public } from 'src/shared/decorators/public.decorator';
-import { Protected } from 'src/shared/decorators/protected.decorator';
-import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
-import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
-import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
-import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
-import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
-import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   Body,
   Controller,
@@ -36,11 +24,19 @@ import {
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-
-import { UsersService } from './users.service';
+import { Users } from 'generated/prisma/client';
+import { CreateImageDto } from 'src/auth/dto';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
+import { Public } from 'src/shared/decorators/public.decorator';
+import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
 import { USERSELECT } from '../shared/constants/select-user';
-import { PasswordResetRequestDto } from './dto/input/password-reset-request.dto';
-import { UserMapper, RawUserFindMe, RawUserFindOne } from './mappers/user.mapper';
 import {
   FindAllUsersResponseDataDto,
   FindAllUsersResponseDto,
@@ -53,6 +49,9 @@ import {
   UpdateUserEmailDto,
   UserFilterDto,
 } from './dto';
+import { PasswordResetRequestDto } from './dto/input/password-reset-request.dto';
+import { RawUserFindMe, RawUserFindOne, UserMapper } from './mappers/user.mapper';
+import { UsersService } from './users.service';
 
 @Controller('users')
 @UseGuards(AuthB2CGuard)

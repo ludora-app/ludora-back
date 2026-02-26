@@ -1,19 +1,19 @@
 import { BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Provider, Sex, UserType } from 'generated/prisma/client';
 import * as argon2 from 'argon2';
+import { Provider, Sex, UserType } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RefreshTokenDto } from 'src/auth/dto';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { EmailsService } from 'src/shared/emails/emails.service';
-import { UsersService } from 'src/users/users.service';
 import { CreateGoogleUserDto } from 'src/auth/dto/input/create-google-user.dto';
-import { DateUtils } from 'src/shared/utils/date.utils';
-import { USERSELECT } from 'src/shared/constants/select-user';
 import { AuthB2CService } from 'src/auth/services/auth-b2c.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { USERSELECT } from 'src/shared/constants/select-user';
+import { EmailsService } from 'src/shared/emails/emails.service';
+import { DateUtils } from 'src/shared/utils/date.utils';
+import { UsersService } from 'src/users/users.service';
 
 describe('AuthB2CService', () => {
   let service: AuthB2CService;

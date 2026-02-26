@@ -1,8 +1,8 @@
-import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsArray, IsEnum, IsNotEmpty, IsString, Max, Min, ValidateNested } from 'class-validator';
 import { GameModes } from 'generated/prisma/enums';
 import { Sport, UserSportLevel } from 'src/shared/constants/constants';
-import { IsArray, IsEnum, IsNotEmpty, IsString, Max, Min, ValidateNested } from 'class-validator';
 
 export class CreateSportPreferenceData {
   @IsString()

@@ -1,10 +1,9 @@
-import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
 import { FieldType, GameModes, Sessions, SessionVisibility } from 'generated/prisma/client';
-
+import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
+import { FindOneSessionResponseData } from '../dto/output/find-one-session-response.dto';
+import { SessionCollectionItemDto } from '../dto/output/session-collection-response.dto';
 import { SessionResponseData } from '../dto/output/session-response.dto';
 import { SessionTeamMapper, SessionTeamWithPlayers } from './session-team.mapper';
-import { SessionCollectionItemDto } from '../dto/output/session-collection-response.dto';
-import { FindOneSessionResponseData } from '../dto/output/find-one-session-response.dto';
 
 /**
  * @description Raw session data retrieved for the findAll operations

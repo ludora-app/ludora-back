@@ -1,9 +1,9 @@
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import { InjectMetric } from '@willsoto/nestjs-prometheus';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { Histogram } from 'prom-client';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { Histogram } from 'prom-client';
-import { FastifyRequest, FastifyReply } from 'fastify';
-import { InjectMetric } from '@willsoto/nestjs-prometheus';
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 
 /* The `HttpMetricsInterceptor` class in TypeScript is an Injectable NestInterceptor that observes and
 records HTTP request durations using a specified metric. */

@@ -1,7 +1,7 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { ApiProperty, PickType } from '@nestjs/swagger';
-import { OnBoardingStatus, Sex } from 'generated/prisma/client';
 import { IsDateString, IsEnum, IsIn, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
+import { OnBoardingStatus, Sex } from 'generated/prisma/client';
 
 import { CreateUserDto } from './create-user.dto';
 

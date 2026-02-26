@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { PartnersService } from 'src/partners/partners.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 
 describe('PartnersService', () => {

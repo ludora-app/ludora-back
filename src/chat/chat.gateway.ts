@@ -1,12 +1,5 @@
-import { PinoLogger } from 'nestjs-pino';
-import { Server, Socket } from 'socket.io';
-import { OnEvent } from '@nestjs/event-emitter';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { NotificationType } from 'generated/prisma/enums';
 import { UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
-import { EventTypes } from 'src/notifications/constants/event.types';
-import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
-import { CreateMessageDto } from 'src/conversations/dto/input/create-message.dto';
+import { OnEvent } from '@nestjs/event-emitter';
 import {
   ConnectedSocket,
   MessageBody,
@@ -16,10 +9,16 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-
-import { TypingIndicatorDto } from './dto/input/typing-indicator.dto';
-import { MessagesService } from '../conversations/services/messages.service';
+import { NotificationType } from 'generated/prisma/enums';
+import { PinoLogger } from 'nestjs-pino';
+import { Server, Socket } from 'socket.io';
+import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
+import { CreateMessageDto } from 'src/conversations/dto/input/create-message.dto';
+import { EventTypes } from 'src/notifications/constants/event.types';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { ConversationsService } from '../conversations/services/conversations.service';
+import { MessagesService } from '../conversations/services/messages.service';
+import { TypingIndicatorDto } from './dto/input/typing-indicator.dto';
 
 /**
  * ChatGateway handles real-time chat messaging using Socket.io

@@ -1,5 +1,5 @@
-import { DateTime } from 'luxon';
 import { BadRequestException } from '@nestjs/common';
+import { DateTime } from 'luxon';
 
 export class DateUtils {
   /**

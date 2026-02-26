@@ -1,15 +1,15 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
+import { MessageType, NotificationType } from 'generated/prisma/enums';
 import { PinoLogger } from 'nestjs-pino';
 import { Socket } from 'socket.io';
-import { MessageType, NotificationType } from 'generated/prisma/enums';
+import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
+import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
+import { ChatGateway } from 'src/chat/chat.gateway';
+import { ConversationsService } from 'src/conversations/services/conversations.service';
+import { MessagesService } from 'src/conversations/services/messages.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
-import { ChatGateway } from 'src/chat/chat.gateway';
-import { MessagesService } from 'src/conversations/services/messages.service';
-import { ConversationsService } from 'src/conversations/services/conversations.service';
-import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
-import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
 
 describe('ChatGateway', () => {
   let gateway: ChatGateway;

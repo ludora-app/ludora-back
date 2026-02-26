@@ -1,9 +1,8 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { ConversationType } from 'generated/prisma/enums';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-
-import { ConversationSettingsDto } from './conversation-settings.dto';
 import { BasicConversationResponseData, MessageDto } from './basic-conversation-response.dto';
+import { ConversationSettingsDto } from './conversation-settings.dto';
 
 export class FindOneConversationResponseData extends OmitType(BasicConversationResponseData, [
   'updatedAt',

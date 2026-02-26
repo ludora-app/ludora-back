@@ -1,11 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { TimePeriod, UserHourPreferenceType } from 'generated/prisma/client';
-import { UsersService } from 'src/users/users.service';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
 import { PinoLogger } from 'nestjs-pino';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { HourPreferenceData } from 'src/user-preferences/dto/input/create-hour-preference.dto';
+import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
+import { UsersService } from 'src/users/users.service';
 
 describe('HourPreferencesService', () => {
   let service: HourPreferencesService;

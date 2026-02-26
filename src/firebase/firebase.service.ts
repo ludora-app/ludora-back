@@ -1,8 +1,8 @@
-import * as admin from 'firebase-admin';
-import { PinoLogger } from 'nestjs-pino';
-import { ConfigService } from '@nestjs/config';
 import { Injectable, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as admin from 'firebase-admin';
 import { Message, MulticastMessage } from 'firebase-admin/lib/messaging/messaging-api';
+import { PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {

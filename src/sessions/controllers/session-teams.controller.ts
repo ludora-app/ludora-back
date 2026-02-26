@@ -1,12 +1,4 @@
-import { FastifyRequest } from 'fastify';
-import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
-import { Protected } from 'src/shared/decorators/protected.decorator';
-import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
-import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
-import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { Controller, Get, NotFoundException, Param, Req, UseGuards } from '@nestjs/common';
-import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
@@ -14,14 +6,21 @@ import {
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-
-import { SessionsService } from '../services/sessions.service';
-import { SessionTeamsService } from '../services/session-teams.service';
+import { FastifyRequest } from 'fastify';
+import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { Protected } from 'src/shared/decorators/protected.decorator';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
+import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
+import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
+import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import {
   PaginatedSessionTeamResponseDto,
   SessionTeamResponseData,
   SessionTeamResponseDto,
 } from '../dto/output/session-team-response';
+import { SessionTeamsService } from '../services/session-teams.service';
+import { SessionsService } from '../services/sessions.service';
 
 @Controller('session-teams')
 @UseGuards(AuthB2CGuard)

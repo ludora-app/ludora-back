@@ -1,10 +1,10 @@
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { UsersService } from 'src/users/users.service';
 import { VerifyEmailGuard } from 'src/auth/guards/verify-email.guard';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
+import { UsersService } from 'src/users/users.service';
 
 describe('VerifyEmailGuard', () => {
   let guard: VerifyEmailGuard;

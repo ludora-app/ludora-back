@@ -1,11 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { SessionInvitationsController } from '../../../src/sessions/controllers/session-invitations.controller';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { CreateSessionInvitationDto } from '../../../src/sessions/dto/input/create-session-invitation.dto';
-import { UpdateSessionInvitationDto } from '../../../src/sessions/dto/input/update-session-invitation.dto';
-import { SessionInvitationFilterDto } from '../../../src/sessions/dto/input/session-invitation-filter.dto';
-import { AuthB2CGuard } from '../../../src/auth/guards/auth-b2c.guard';
+import { Test, TestingModule } from '@nestjs/testing';
 import { SessionInvitationsService } from 'src/sessions/services/session-invitations.service';
+import { AuthB2CGuard } from '../../../src/auth/guards/auth-b2c.guard';
+import { SessionInvitationsController } from '../../../src/sessions/controllers/session-invitations.controller';
+import { CreateSessionInvitationDto } from '../../../src/sessions/dto/input/create-session-invitation.dto';
+import { SessionInvitationFilterDto } from '../../../src/sessions/dto/input/session-invitation-filter.dto';
+import { UpdateSessionInvitationDto } from '../../../src/sessions/dto/input/update-session-invitation.dto';
 
 describe('SessionInvitationsController', () => {
   let controller: SessionInvitationsController;

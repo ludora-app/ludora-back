@@ -1,9 +1,8 @@
-import { Sport } from 'src/shared/constants/constants';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
-
-import { MessageMapper } from './message.mapper';
-import { FindOneConversationResponseData } from '../dto/output/find-one-conversation-response.dto';
+import { Sport } from 'src/shared/constants/constants';
 import { ConversationCollectionResponseData } from '../dto/output/conversation-collection-response.dto';
+import { FindOneConversationResponseData } from '../dto/output/find-one-conversation-response.dto';
+import { MessageMapper } from './message.mapper';
 
 export interface RawConversationCollectionItem {
   uid: string;

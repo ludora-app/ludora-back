@@ -2,8 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SessionTeams, TeamLabels } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { StorageService } from 'src/shared/storage/storage.service';
 import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
+import { StorageService } from 'src/shared/storage/storage.service';
 
 describe('SessionTeamsService', () => {
   let service: SessionTeamsService;

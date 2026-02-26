@@ -1,7 +1,7 @@
-import * as nodemailer from 'nodemailer';
-import { PinoLogger } from 'nestjs-pino';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PinoLogger } from 'nestjs-pino';
+import * as nodemailer from 'nodemailer';
 
 import { emailTemplates } from './templates/emails.templates';
 

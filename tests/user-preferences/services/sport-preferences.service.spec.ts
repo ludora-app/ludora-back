@@ -1,11 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { GameModes } from 'generated/prisma/enums';
 import { PinoLogger } from 'nestjs-pino';
-import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
-import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Sport, UserSportLevel } from 'src/shared/constants/constants';
+import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
+import { UsersService } from 'src/users/users.service';
 
 describe('SportPreferencesService', () => {
   let service: SportPreferencesService;

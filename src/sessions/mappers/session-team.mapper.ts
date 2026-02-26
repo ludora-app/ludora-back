@@ -1,7 +1,6 @@
 import { TeamLabels } from 'generated/prisma/enums';
-
-import { RawPlayer, SessionPlayerMapper } from './session-player.mapper';
 import { SessionTeamResponseData } from '../dto/output/session-team-response';
+import { RawPlayer, SessionPlayerMapper } from './session-player.mapper';
 
 export type SessionTeamWithPlayers = {
   teamName: string;
@@ -52,6 +51,6 @@ export class SessionTeamMapper {
     sessionTeams: SessionTeamWithPlayers[],
     maxPlayersPerTeam?: number,
   ): SessionTeamResponseData[] {
-    return sessionTeams.map((team) => this.toDto(team, maxPlayersPerTeam));
+    return sessionTeams.map((team) => SessionTeamMapper.toDto(team, maxPlayersPerTeam));
   }
 }
