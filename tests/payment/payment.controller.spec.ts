@@ -10,7 +10,7 @@ import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 
 describe('PaymentController', () => {
   let controller: PaymentController;
-  let service: PaymentService;
+  let _service: PaymentService;
 
   const mockStripeService = {
     createStripeConnectAccount: jest.fn(),
@@ -69,7 +69,7 @@ describe('PaymentController', () => {
       .compile();
 
     controller = module.get<PaymentController>(PaymentController);
-    service = module.get<PaymentService>(PaymentService);
+    _service = module.get<PaymentService>(PaymentService);
   });
 
   afterEach(() => {

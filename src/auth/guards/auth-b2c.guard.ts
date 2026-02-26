@@ -15,7 +15,7 @@ export class AuthB2CGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     private readonly reflector: Reflector,
-    private readonly configService: ConfigService,
+    readonly _configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
   ) {}

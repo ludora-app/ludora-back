@@ -249,8 +249,8 @@ export class GeolocalisationService {
     return (
       typeof lat === 'number' &&
       typeof lng === 'number' &&
-      !isNaN(lat) &&
-      !isNaN(lng) &&
+      !Number.isNaN(lat) &&
+      !Number.isNaN(lng) &&
       lat >= -90 &&
       lat <= 90 &&
       lng >= -180 &&

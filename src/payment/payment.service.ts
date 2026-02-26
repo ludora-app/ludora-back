@@ -23,7 +23,7 @@ export class PaymentService {
   private readonly stripe: Stripe;
 
   constructor(
-    private readonly prismaService: PrismaService,
+    readonly _prismaService: PrismaService,
     private readonly configService: ConfigService,
     private readonly usersService: UsersService,
     private readonly logger: PinoLogger,

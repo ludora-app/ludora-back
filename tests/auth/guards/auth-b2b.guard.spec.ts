@@ -10,9 +10,9 @@ import { UsersService } from 'src/users/users.service';
 
 describe('AuthB2BGuard', () => {
   let guard: AuthB2BGuard;
-  let jwtService: JwtService;
-  let reflector: Reflector;
-  let prismaService: PrismaService;
+  let _jwtService: JwtService;
+  let _reflector: Reflector;
+  let _prismaService: PrismaService;
 
   const mockJwtService = {
     verifyAsync: jest.fn(),
@@ -93,9 +93,9 @@ describe('AuthB2BGuard', () => {
     }).compile();
 
     guard = module.get<AuthB2BGuard>(AuthB2BGuard);
-    jwtService = module.get<JwtService>(JwtService);
-    reflector = module.get<Reflector>(Reflector);
-    prismaService = module.get<PrismaService>(PrismaService);
+    _jwtService = module.get<JwtService>(JwtService);
+    _reflector = module.get<Reflector>(Reflector);
+    _prismaService = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {

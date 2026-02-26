@@ -414,7 +414,7 @@ describe('SessionsController', () => {
   });
 
   describe('findAllByUserUid', () => {
-    const mockRequest = {
+    const _mockRequest = {
       user: {
         uid: 'user-uid-1',
       },

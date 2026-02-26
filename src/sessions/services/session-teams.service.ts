@@ -13,7 +13,7 @@ export class SessionTeamsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
-    private readonly storageService: StorageService,
+    readonly _storageService: StorageService,
   ) {
     this.logger.setContext(SessionTeamsService.name);
   }

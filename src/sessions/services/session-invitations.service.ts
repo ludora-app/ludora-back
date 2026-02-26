@@ -81,7 +81,7 @@ export class SessionInvitationsService {
           this.eventEmitter.emit(
             EventTypes.SESSION_INVITATION,
             {
-              invitedBy: existingSender.firstname + ' ' + existingSender.lastname,
+              invitedBy: `${existingSender.firstname} ${existingSender.lastname}`,
               inviterAvatar: existingSender.imageUrl,
               senderAvatar: existingSender.imageUrl,
               senderFirstname: existingSender.firstname,
@@ -313,8 +313,8 @@ export class SessionInvitationsService {
     if (updateSessionInvitationDto.status === existingInvitation.status) {
       throw new BadRequestException(`Status ${updateSessionInvitationDto.status} is already set`);
     }
-    let isSender;
-    let isReceiver;
+    let isSender: boolean | undefined;
+    let isReceiver: boolean | undefined;
     if (updateSessionInvitationDto.userUid === existingInvitation.senderUid) {
       isSender = true;
     }

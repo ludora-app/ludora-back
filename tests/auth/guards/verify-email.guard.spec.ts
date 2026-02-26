@@ -8,9 +8,9 @@ import { UsersService } from 'src/users/users.service';
 
 describe('VerifyEmailGuard', () => {
   let guard: VerifyEmailGuard;
-  let jwtService: JwtService;
-  let prismaService: PrismaService;
-  let usersService: UsersService;
+  let _jwtService: JwtService;
+  let _prismaService: PrismaService;
+  let _usersService: UsersService;
 
   const mockJwtService = {
     verifyAsync: jest.fn(),
@@ -60,9 +60,9 @@ describe('VerifyEmailGuard', () => {
     }).compile();
 
     guard = module.get<VerifyEmailGuard>(VerifyEmailGuard);
-    jwtService = module.get<JwtService>(JwtService);
-    prismaService = module.get<PrismaService>(PrismaService);
-    usersService = module.get<UsersService>(UsersService);
+    _jwtService = module.get<JwtService>(JwtService);
+    _prismaService = module.get<PrismaService>(PrismaService);
+    _usersService = module.get<UsersService>(UsersService);
   });
 
   afterEach(() => {

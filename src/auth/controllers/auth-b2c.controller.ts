@@ -400,6 +400,5 @@ export class AuthB2CController {
       data: { accessToken: accessToken, refreshToken: refreshToken },
       message: 'Password reset successfully',
     };
-    return;
   }
 }

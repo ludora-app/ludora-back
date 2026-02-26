@@ -741,7 +741,7 @@ export class SessionsService {
     let nextCursor: string | null = null;
     if (sessions.length > limit) {
       const nextItem = sessions.pop();
-      nextCursor = nextItem!.uid;
+      nextCursor = nextItem?.uid;
     }
 
     const items = SessionMapper.fromRawToSessionResponses(sessions, new Map());

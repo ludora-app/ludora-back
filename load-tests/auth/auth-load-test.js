@@ -117,7 +117,7 @@ export default function () {
     'response has access token': (r) => {
       try {
         const body = JSON.parse(r.body);
-        return body.data && body.data.accessToken;
+        return body.data?.accessToken;
       } catch {
         return false;
       }

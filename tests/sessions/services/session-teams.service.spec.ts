@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SessionTeams, TeamLabels } from 'generated/prisma/client';
+import { TeamLabels } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
@@ -7,7 +7,7 @@ import { StorageService } from 'src/shared/storage/storage.service';
 
 describe('SessionTeamsService', () => {
   let service: SessionTeamsService;
-  let prismaService: PrismaService;
+  let _prismaService: PrismaService;
   let logger: PinoLogger;
 
   const mockPrismaService = {
@@ -57,7 +57,7 @@ describe('SessionTeamsService', () => {
     }).compile();
 
     service = module.get<SessionTeamsService>(SessionTeamsService);
-    prismaService = module.get<PrismaService>(PrismaService);
+    _prismaService = module.get<PrismaService>(PrismaService);
     logger = module.get<PinoLogger>(PinoLogger);
 
     // Mock the logger to avoid console output during tests

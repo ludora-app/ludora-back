@@ -7,13 +7,12 @@ import { AuthB2CGuard } from '../../src/auth/guards/auth-b2c.guard';
 import { CreatePublicFieldDto } from '../../src/fields/dto/input/create-public-field.dto';
 import { FieldFilterDto } from '../../src/fields/dto/input/field-filter.dto';
 import { PublicFieldFilterDto } from '../../src/fields/dto/input/public-field-filter.dto';
-import { UpdateFieldDto } from '../../src/fields/dto/input/update-field.dto';
 import { FieldsController } from '../../src/fields/fields.controller';
 import { Sport } from '../../src/shared/constants/constants';
 
 describe('FieldsController', () => {
   let controller: FieldsController;
-  let service: FieldsService;
+  let _service: FieldsService;
 
   const mockFieldsService = {
     create: jest.fn(),
@@ -55,7 +54,7 @@ describe('FieldsController', () => {
       .compile();
 
     controller = module.get<FieldsController>(FieldsController);
-    service = module.get<FieldsService>(FieldsService);
+    _service = module.get<FieldsService>(FieldsService);
 
     jest.clearAllMocks();
   });

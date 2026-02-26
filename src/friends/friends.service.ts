@@ -103,7 +103,7 @@ export class FriendsService {
     this.eventEmitter.emit(EventTypes.FRIEND_REQUEST, {
       recipientId: receiverUid,
       senderId: senderUid,
-      senderName: newFriendRequest.user1.firstname + ' ' + newFriendRequest.user1.lastname,
+      senderName: `${newFriendRequest.user1.firstname} ${newFriendRequest.user1.lastname}`,
     });
 
     return;
@@ -181,7 +181,7 @@ export class FriendsService {
     let nextCursor: string | null = null;
     if (friends.length > limit) {
       const nextItem = friends.pop();
-      nextCursor = nextItem!.friendUid;
+      nextCursor = nextItem?.friendUid;
     }
 
     return {
@@ -248,7 +248,7 @@ export class FriendsService {
     let nextCursor: string | null = null;
     if (friends.length > limit) {
       const nextItem = friends.pop();
-      nextCursor = nextItem!.senderUid;
+      nextCursor = nextItem?.senderUid;
     }
 
     return {
@@ -435,7 +435,7 @@ export class FriendsService {
 
       this.eventEmitter.emit(EventTypes.FRIEND_ACCEPTED, {
         recipientUid: eventReceiverUserUid,
-        senderName: friendDto.firstname + ' ' + friendDto.lastname,
+        senderName: `${friendDto.firstname} ${friendDto.lastname}`,
         senderUid: requestAccepterUserUid,
       });
     }

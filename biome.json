@@ -1,58 +1,21 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "vcs": {
-    "enabled": true,
-    "clientKind": "git",
-    "useIgnoreFile": true
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "space",
-    "indentWidth": 2,
-    "lineWidth": 100,
-    "lineEnding": "lf"
-  },
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 100, "lineEnding": "lf" },
   "linter": {
     "enabled": true,
     "rules": {
       "recommended": true,
-      "correctness": {
-        "noUnusedVariables": "error",
-        "noUnusedImports": "error"
-      },
-      "style": {
-        "useImportType": "off",
-        "useConst": "error",
-        "noNonNullAssertion": "warn"
-      },
-      "suspicious": {
-        "noExplicitAny": "off"
-      }
+      "correctness": { "noUnusedVariables": "error", "noUnusedImports": "error" },
+      "style": { "useImportType": "off", "useConst": "error", "noNonNullAssertion": "warn" },
+      "suspicious": { "noExplicitAny": "off" },
+      "complexity": { "noStaticOnlyClass": "off", "useLiteralKeys": "off" }
     }
   },
   "javascript": {
-    "parser": {
-      "unsafeParameterDecoratorsEnabled": true
-    },
-    "formatter": {
-      "quoteStyle": "single",
-      "semicolons": "always",
-      "trailingCommas": "all",
-      "arrowParentheses": "always",
-      "bracketSpacing": true
-    }
+    "parser": { "unsafeParameterDecoratorsEnabled": true },
+    "formatter": { "quoteStyle": "single", "semicolons": "always", "trailingCommas": "all", "arrowParentheses": "always", "bracketSpacing": true }
   },
-  "json": {
-    "formatter": {
-      "lineWidth": 200
-    }
-  },
-  "overrides": [
-    {
-      "includes": ["**/*.html"],
-      "formatter": {
-        "lineWidth": 120
-      }
-    }
-  ]
+  "json": { "formatter": { "lineWidth": 200 } },
+  "overrides": [{ "includes": ["**/*.html"], "formatter": { "lineWidth": 120 } }]
 }

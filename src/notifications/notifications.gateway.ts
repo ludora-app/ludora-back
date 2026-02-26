@@ -88,10 +88,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       if (!this.connectedUsers.has(userUid)) {
         this.connectedUsers.set(userUid, new Set());
       }
-      this.connectedUsers.get(userUid)!.add(client.id);
+      this.connectedUsers.get(userUid)?.add(client.id);
 
       this.logger.info(
-        `User ${userUid} connected to notifications (socket: ${client.id}, total sockets: ${this.connectedUsers.get(userUid)!.size})`,
+        `User ${userUid} connected to notifications (socket: ${client.id}, total sockets: ${this.connectedUsers.get(userUid)?.size})`,
       );
 
       // Send unread count on connection
@@ -145,7 +145,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
    * Check if a user is currently connected via WebSocket
    */
   private isUserConnected(userUid: string): boolean {
-    return this.connectedUsers.has(userUid) && this.connectedUsers.get(userUid)!.size > 0;
+    return this.connectedUsers.has(userUid) && this.connectedUsers.get(userUid)?.size > 0;
   }
 
   /**

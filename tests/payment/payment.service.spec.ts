@@ -16,10 +16,10 @@ import { UsersService } from 'src/users/users.service';
 
 describe('PaymentService', () => {
   let service: PaymentService;
-  let prismaService: PrismaService;
-  let usersService: UsersService;
-  let configService: ConfigService;
-  let logger: PinoLogger;
+  let _prismaService: PrismaService;
+  let _usersService: UsersService;
+  let _configService: ConfigService;
+  let _logger: PinoLogger;
 
   const mockPrismaService = {
     users: {
@@ -89,10 +89,10 @@ describe('PaymentService', () => {
     }).compile();
 
     service = module.get<PaymentService>(PaymentService);
-    prismaService = module.get<PrismaService>(PrismaService);
-    usersService = module.get<UsersService>(UsersService);
-    configService = module.get<ConfigService>(ConfigService);
-    logger = module.get<PinoLogger>(PinoLogger);
+    _prismaService = module.get<PrismaService>(PrismaService);
+    _usersService = module.get<UsersService>(UsersService);
+    _configService = module.get<ConfigService>(ConfigService);
+    _logger = module.get<PinoLogger>(PinoLogger);
     // Mock Stripe instance
     (service as any).stripe = mockStripe;
   });

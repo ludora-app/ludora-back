@@ -13,10 +13,10 @@ export class AuthB2BGuard implements CanActivate {
   constructor(
     private readonly prisma: PrismaService,
     private readonly reflector: Reflector,
-    private readonly configService: ConfigService,
+    readonly _configService: ConfigService,
     private readonly jwtService: JwtService,
-    private readonly userService: UsersService,
-    private readonly partnerService: PartnersService,
+    readonly _userService: UsersService,
+    readonly _partnerService: PartnersService,
   ) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [

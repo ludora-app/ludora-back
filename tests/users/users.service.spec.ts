@@ -6,7 +6,6 @@ import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { StorageService } from 'src/shared/storage/storage.service';
-import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
 import { UsersService } from 'src/users/users.service';
 
 jest.mock('argon2', () => ({

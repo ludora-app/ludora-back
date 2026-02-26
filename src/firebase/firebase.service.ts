@@ -26,8 +26,8 @@ export class FirebaseService implements OnModuleInit {
       const serviceAccountPath = this.configService.get<string>('FIREBASE_SERVICE_ACCOUNT_PATH');
 
       if (serviceAccountPath) {
-        const fs = require('fs');
-        const path = require('path');
+        const fs = require('node:fs');
+        const path = require('node:path');
 
         // Resolve path relative to project root
         const resolvedPath = path.resolve(process.cwd(), serviceAccountPath);

@@ -21,7 +21,7 @@ describe('HourPreferencesController', () => {
   };
 
   const mockCurrentDate = new Date('2023-01-01T12:00:00Z');
-  const mockFutureDate = new Date('2023-01-10T14:00:00Z');
+  const _mockFutureDate = new Date('2023-01-10T14:00:00Z');
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

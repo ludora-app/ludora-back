@@ -18,7 +18,7 @@ describe('FriendsController', () => {
     },
   } as any;
 
-  const mockFriendRequest = {
+  const _mockFriendRequest = {
     userUid1: 'user-123',
     userUid2: 'user-456',
     status: InvitationStatus.PENDING,

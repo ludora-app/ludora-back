@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
 import { InvitationStatus } from 'generated/prisma/client';
@@ -9,16 +9,15 @@ import { SessionPlayersService } from 'src/sessions/services/session-players.ser
 import { SessionsService } from 'src/sessions/services/sessions.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { UsersService } from 'src/users/users.service';
-import { CreateSessionInvitationDto } from '../../../src/sessions/dto/input/create-session-invitation.dto';
 import { UpdateSessionInvitationDto } from '../../../src/sessions/dto/input/update-session-invitation.dto';
 
 describe('SessionInvitationsService', () => {
   let service: SessionInvitationsService;
   let prismaService: PrismaService;
-  let sessionsService: SessionsService;
-  let usersService: UsersService;
+  let _sessionsService: SessionsService;
+  let _usersService: UsersService;
   let playersService: SessionPlayersService;
-  let logger: PinoLogger;
+  let _logger: PinoLogger;
   const mockPrismaService = {
     sessionInvitations: {
       create: jest.fn(),
@@ -82,7 +81,7 @@ describe('SessionInvitationsService', () => {
 
   const senderUid = 'sender-123';
 
-  const mockPlayerWithUser = {
+  const _mockPlayerWithUser = {
     userUid: senderUid,
     user: {
       firstname: 'John',
@@ -124,8 +123,8 @@ describe('SessionInvitationsService', () => {
 
     service = module.get<SessionInvitationsService>(SessionInvitationsService);
     prismaService = module.get<PrismaService>(PrismaService);
-    sessionsService = module.get<SessionsService>(SessionsService);
-    usersService = module.get<UsersService>(UsersService);
+    _sessionsService = module.get<SessionsService>(SessionsService);
+    _usersService = module.get<UsersService>(UsersService);
     playersService = module.get<SessionPlayersService>(SessionPlayersService);
 
     // Reset all mocks before each test

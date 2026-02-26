@@ -338,7 +338,7 @@ export class NotificationsService {
     let nextCursor: string | null = null;
     if (notifications.length > limit) {
       const nextItem = notifications.pop();
-      nextCursor = nextItem!.uid;
+      nextCursor = nextItem?.uid;
     }
 
     // --- Enrichment: Fetch and inject sender info ---
@@ -386,7 +386,7 @@ export class NotificationsService {
 
     const items: NotificationResponseData[] = notifications.map((n) => {
       const data = n.data as any;
-      const metadata = MetadataMapper.toMetadata(n.type, n.data);
+      const metadata = MetadataMapper.toMetadata(n.type, n.data as object);
 
       if (data?.senderUid && senderMap.has(data.senderUid)) {
         const sender = senderMap.get(data.senderUid);

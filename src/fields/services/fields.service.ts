@@ -304,7 +304,7 @@ export class FieldsService {
       throw new Error(`Field with uid ${uid} not found`);
     }
 
-    let coordinates;
+    let coordinates: { lat: number; lng: number } | undefined;
     const finalLat = lat ?? (address ? undefined : existingField.latitude);
     const finalLng = lng ?? (address ? undefined : existingField.longitude);
 
@@ -675,7 +675,7 @@ export class FieldsService {
     let nextCursor: string | null = null;
     if (fields.length > limit) {
       const nextItem = fields.pop();
-      nextCursor = nextItem!.uid;
+      nextCursor = nextItem?.uid;
     }
 
     const fieldsWithImageUrl = await Promise.all(
@@ -749,7 +749,7 @@ export class FieldsService {
     let nextCursor: string | null = null;
     if (fields.length > actualLimit) {
       const nextItem = fields.pop();
-      nextCursor = nextItem!.uid;
+      nextCursor = nextItem?.uid;
     }
 
     const items = fields.map((field) => FieldMapper.toPublicFieldDto(field));
@@ -794,7 +794,7 @@ export class FieldsService {
     let nextCursor: string | null = null;
     if (fields.length > limit) {
       const nextItem = fields.pop();
-      nextCursor = nextItem!.uid;
+      nextCursor = nextItem?.uid;
     }
 
     const items: MyFieldsResponseData[] = fields.map((field) => ({

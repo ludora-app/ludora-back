@@ -10,7 +10,7 @@ import { UsersService } from 'src/users/users.service';
 describe('HourPreferencesService', () => {
   let service: HourPreferencesService;
   let prismaService: PrismaService;
-  let usersService: UsersService;
+  let _usersService: UsersService;
   let logger: PinoLogger;
 
   const mockCurrentDate = new Date('2023-01-01T12:00:00Z');
@@ -55,7 +55,7 @@ describe('HourPreferencesService', () => {
 
     service = module.get<HourPreferencesService>(HourPreferencesService);
     prismaService = module.get<PrismaService>(PrismaService);
-    usersService = module.get<UsersService>(UsersService);
+    _usersService = module.get<UsersService>(UsersService);
     logger = module.get<PinoLogger>(PinoLogger);
   });
 

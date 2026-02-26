@@ -8,14 +8,13 @@ import { FieldsService } from 'src/fields/services/fields.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSessionDto } from 'src/sessions/dto/input/create-session.dto';
 import { SessionOwnnership } from 'src/sessions/dto/input/my-session-filter.dto';
-import { FindAllSessionsDto, SessionFilterDto } from 'src/sessions/dto/input/session-filter.dto';
+import { FindAllSessionsDto } from 'src/sessions/dto/input/session-filter.dto';
 import { UpdateSessionDto } from 'src/sessions/dto/input/update-session.dto';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
 import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
 import { SessionsService } from 'src/sessions/services/sessions.service';
 import { SessionScope, SessionSportLevel, Sport } from 'src/shared/constants/constants';
 import { StorageService } from 'src/shared/storage/storage.service';
-import { DateUtils } from 'src/shared/utils/date.utils';
 import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
 import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 
@@ -40,7 +39,7 @@ jest.mock('src/shared/utils/date.utils', () => ({
         throw new Error('The end date must be after the start date');
       }
     }),
-    getHoursForPeriod: jest.fn().mockImplementation((period) => {
+    getHoursForPeriod: jest.fn().mockImplementation((_period) => {
       // Mock implementation for time period
       return { min: 0, max: 24 };
     }),
@@ -63,7 +62,7 @@ describe('SessionsService', () => {
   let prismaService: PrismaService;
   let sessionTeamsService: SessionTeamsService;
   let sessionPlayersService: SessionPlayersService;
-  let conversationsService: ConversationsService;
+  let _conversationsService: ConversationsService;
   let fieldSlotsService: FieldSlotsService;
   let fieldsService: FieldsService;
 
@@ -171,7 +170,7 @@ describe('SessionsService', () => {
     prismaService = module.get<PrismaService>(PrismaService);
     sessionTeamsService = module.get<SessionTeamsService>(SessionTeamsService);
     sessionPlayersService = module.get<SessionPlayersService>(SessionPlayersService);
-    conversationsService = module.get<ConversationsService>(ConversationsService);
+    _conversationsService = module.get<ConversationsService>(ConversationsService);
     fieldSlotsService = module.get<FieldSlotsService>(FieldSlotsService);
     fieldsService = module.get<FieldsService>(FieldsService);
   });
@@ -1579,7 +1578,7 @@ describe('SessionsService', () => {
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession2]);
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
-      const result = await service.findAllByUserUid(userUid, {
+      const _result = await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
         minStart,
       });
@@ -1602,7 +1601,7 @@ describe('SessionsService', () => {
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession1]);
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
-      const result = await service.findAllByUserUid(userUid, {
+      const _result = await service.findAllByUserUid(userUid, {
         ownership: SessionOwnnership.CREATOR,
         maxStart,
       });

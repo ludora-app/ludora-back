@@ -1776,7 +1776,7 @@ async function seed() {
           },
         });
         createdUserSports.push(userSport);
-      } catch (e) {
+      } catch (_e) {
         // Skip if duplicate
       }
     }
@@ -1807,7 +1807,7 @@ async function seed() {
           },
         });
         createdUserHourPreferences.push(userHourPreference);
-      } catch (e) {
+      } catch (_e) {
         // Skip if duplicate or error
       }
     }
@@ -2129,7 +2129,7 @@ async function seed() {
             teamUid: createdPlayer.teamUid,
             userUid: createdPlayer.userUid,
           });
-        } catch (e) {
+        } catch (_e) {
           // Skip if duplicate
         }
       }
@@ -2312,7 +2312,7 @@ async function seed() {
         create: relationship,
       });
       createdCount++;
-    } catch (e) {
+    } catch (_e) {
       // Skip duplicates
     }
   }

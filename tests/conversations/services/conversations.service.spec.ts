@@ -10,13 +10,12 @@ import { ConversationMembersService } from 'src/conversations/services/conversat
 import { ConversationsService } from 'src/conversations/services/conversations.service';
 import { MessagesService } from 'src/conversations/services/messages.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { StorageService } from 'src/shared/storage/storage.service';
 
 describe('ConversationsService', () => {
   let service: ConversationsService;
   let mockPrismaService: any;
   let mockMessagesService: any;
-  let mockStorageService: any;
+  let _mockStorageService: any;
   let mockConversationMembersService: any;
 
   const mockPinoLogger = {
