@@ -32,8 +32,7 @@
     "seed:fields": "prisma generate && ts-node prisma/seedFields.ts",
     "migrate:reset": "pnpm exec prisma migrate reset",
     "db-push": "pnpm exec prisma db push",
-    "studio": "pnpm exec prisma studio --browser none",
-    "prepare": "husky"
+    "studio": "pnpm exec prisma studio --browser none"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.998.0",
