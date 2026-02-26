@@ -212,31 +212,28 @@ jobs:
             compose.*.yml
           retention-days: 3
 
-  # ============================================
-  # JOB 5: Versioning & Changelog
+# ============================================
+  # JOB 4: Versioning & Changelog
   # ============================================
   release:
     name: SEMANTIC RELEASE
     runs-on: ubuntu-latest
     needs: build
+    # On ne release que sur push (pas sur PR)
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
-    # Concurrence propre au job release : on ne cancelle JAMAIS un release en cours.
-    # Le cancel-in-progress global créait une race condition : un run pouvait pusher
-    # le tag et être annulé avant de finir, laissant le repo dans un état incohérent.
-    concurrency:
-      group: semantic-release-${{ github.ref }}
-      cancel-in-progress: false
     permissions:
-      contents: write
+      contents: write # Important pour pousser les tags/changelog
       issues: write
       pull-requests: write
-
-    env:
-      HUSKY: 0
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Requis pour l'analyse des commits
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -299,31 +296,12 @@ jobs:
         if: steps.check.outputs.should_release == 'true'
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Prisma Client
-        if: steps.check.outputs.should_release == 'true'
-        run: pnpm prisma generate
-
-      - name: Semantic Release
-        if: steps.check.outputs.should_release == 'true'
+      - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # set +e pour capturer le code de sortie sans interrompre le script.
-          # Nécessaire car le workflow-level cancel-in-progress:true peut avoir
-          # tué un run précédent APRÈS le push du tag mais AVANT le commit
-          # chore(release), laissant le repo dans un état incohérent.
-          set +e
-          npx semantic-release 2>&1 | tee /tmp/sr-output.txt
-          SR_EXIT=${PIPESTATUS[0]}
-          set -e
-          if [ $SR_EXIT -ne 0 ] && grep -qE "already exists" /tmp/sr-output.txt; then
-            echo "::warning::Tag already exists from a previous cancelled run. Release already done, skipping."
-            exit 0
-          fi
-          exit $SR_EXIT
-
+        run: npx semantic-release
   # ============================================
-  # JOB 6: Deploy (Development or Production)
+  # JOB 5: Deploy (Development or Production)
   # ============================================
   # DEPLOY:
   #   name: Deploy to ${{ github.ref == 'refs/heads/main' && 'Production' || 'Development' }}
