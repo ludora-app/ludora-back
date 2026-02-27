@@ -11,11 +11,7 @@ services:
     ports:
       - '2424:2424'
     environment:
-      - NODE_ENV=production
-      # Vault AppRole configuration
-      - VAULT_ADDR=${VAULT_ADDR:-https://vault.ludora.fr}
-      - VAULT_ROLE_ID
-      - VAULT_SECRET_ID
+      - "NODE_ENV=production"
     networks:
       - ludora-network
       - traefik
