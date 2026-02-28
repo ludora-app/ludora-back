@@ -79,7 +79,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         await client.join(conversationRoom);
       }
 
-      this.logger.info(
+      this.logger.debug(
         `User ${userUid} connected to chat (socket: ${client.id}). Joined ${conversations.length} conversations.`,
       );
 
@@ -107,9 +107,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleDisconnect(client: Socket): void {
     const userUid = client.data.userUid;
     if (userUid) {
-      this.logger.info(`User ${userUid} disconnected from chat (socket: ${client.id})`);
+      this.logger.debug(`User ${userUid} disconnected from chat (socket: ${client.id})`);
     } else {
-      this.logger.info(`Unauthenticated socket ${client.id} disconnected`);
+      this.logger.debug(`Unauthenticated socket ${client.id} disconnected`);
     }
   }
 
