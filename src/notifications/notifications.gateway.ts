@@ -90,7 +90,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       }
       this.connectedUsers.get(userUid)?.add(client.id);
 
-      this.logger.info(
+      this.logger.debug(
         `User ${userUid} connected to notifications (socket: ${client.id}, total sockets: ${this.connectedUsers.get(userUid)?.size})`,
       );
 
@@ -129,15 +129,15 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         // Remove user entirely if no more sockets
         if (userSockets.size === 0) {
           this.connectedUsers.delete(userUid);
-          this.logger.info(`User ${userUid} fully disconnected (last socket: ${client.id})`);
+          this.logger.debug(`User ${userUid} fully disconnected (last socket: ${client.id})`);
         } else {
-          this.logger.info(
+          this.logger.debug(
             `User ${userUid} socket ${client.id} disconnected (${userSockets.size} remaining)`,
           );
         }
       }
     } else {
-      this.logger.info(`Unauthenticated socket ${client.id} disconnected`);
+      this.logger.debug(`Unauthenticated socket ${client.id} disconnected`);
     }
   }
 
@@ -257,7 +257,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         type,
       });
 
-      this.logger.info(`Broadcast notification sent - Type: ${type}, Title: ${title}`);
+      this.logger.debug(`Broadcast notification sent - Type: ${type}, Title: ${title}`);
     } catch (error) {
       this.logger.error(`Error broadcasting notification: ${error.message}`);
     }
