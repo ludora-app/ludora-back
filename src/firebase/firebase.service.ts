@@ -16,6 +16,7 @@ export class FirebaseService implements OnModuleInit {
   }
 
   async onModuleInit() {
+    if (process.env.SWAGGER_ONLY === 'true') return;
     try {
       if (admin.apps.length > 0) {
         this.app = admin.app();
