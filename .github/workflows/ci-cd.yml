@@ -112,8 +112,20 @@ jobs:
     env:
       SWAGGER_ONLY: 'true'
       NODE_ENV: development
+      # Auth
       JWT_SECRET: swagger-ci-dummy-secret
+      # Prisma (Pool créé dans le constructor, $connect() skippé par SWAGGER_ONLY)
       DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+      # PaymentService constructor: new Stripe(getOrThrow('STRIPE_SECRET_KEY'))
+      STRIPE_SECRET_KEY: sk_test_swagger_dummy
+      # EmailsService class property + createTransporter() dans le constructor
+      LUDORA_ADMIN_EMAIL: swagger@dummy.local
+      EMAIL_HOST: smtp.dummy.local
+      EMAIL_PORT: '587'
+      EMAIL_USER: swagger@dummy.local
+      EMAIL_PASSWORD: dummy
+      # StorageService class property: getOrThrow('CLOUDFLARE_R2_PUBLIC_URL')
+      CLOUDFLARE_R2_PUBLIC_URL: https://dummy.r2.dev
 
     steps:
       - name: Checkout code
