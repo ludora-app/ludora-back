@@ -189,6 +189,15 @@ jobs:
       - name: Check for releasable commits
         id: check
         run: |
+          # Guard 1 : si HEAD est déjà taggué, un run précédent a terminé le
+          # tagging. On évite ainsi la re-création du même tag (exit 128).
+          HEAD_TAG=$(git tag --points-at HEAD | grep -E "^v[0-9]" | head -1 || true)
+          if [ -n "$HEAD_TAG" ]; then
+            echo "HEAD already tagged as ${HEAD_TAG}, skipping release."
+            echo "should_release=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -z "$LAST_TAG" ]; then
             echo "No previous tag, proceeding with release."
@@ -235,7 +244,20 @@ jobs:
         if: steps.check.outputs.should_release == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
+        run: |
+          # set +e pour capturer le code de sortie sans interrompre le script.
+          # Nécessaire car le workflow-level cancel-in-progress:true peut avoir
+          # tué un run précédent APRÈS le push du tag mais AVANT le commit
+          # chore(release), laissant le repo dans un état incohérent.
+          set +e
+          npx semantic-release 2>&1 | tee /tmp/sr-output.txt
+          SR_EXIT=${PIPESTATUS[0]}
+          set -e
+          if [ $SR_EXIT -ne 0 ] && grep -qE "already exists" /tmp/sr-output.txt; then
+            echo "::warning::Tag already exists from a previous cancelled run. Release already done, skipping."
+            exit 0
+          fi
+          exit $SR_EXIT
 
   # ============================================
   # JOB 5: Deploy (Development or Production)
