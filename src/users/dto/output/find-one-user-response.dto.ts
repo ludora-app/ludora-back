@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { OnBoardingStatus, Sex, UserType } from 'generated/prisma/client';
+import { OnBoardingStatus, Provider, Sex, UserType } from 'generated/prisma/client';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { SportPreferenceResponseData } from 'src/user-preferences/dto/output/sport-preference.response.dto';
 
@@ -79,6 +79,13 @@ export class FindMeUserResponseData extends FindOneUserResponseData {
     readOnly: true,
   })
   readonly onBoardingStatus: OnBoardingStatus;
+
+  @ApiProperty({
+    enum: Provider,
+    example: Provider.GOOGLE,
+    readOnly: true,
+  })
+  readonly provider: Provider;
 }
 
 export class FindMeUserResponseDto extends ResponseTypeDto<FindMeUserResponseData> {

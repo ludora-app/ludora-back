@@ -2,6 +2,7 @@ import {
   GameModes,
   InvitationStatus,
   OnBoardingStatus,
+  Provider,
   Sex,
   TimePeriod,
   UserHourPreferenceType,
@@ -9,7 +10,6 @@ import {
 } from 'generated/prisma/enums';
 import { Sport } from 'src/shared/constants/constants';
 import { SportPreferencesMapper } from 'src/user-preferences/mappers/sport-preferences.mapper';
-
 import {
   FindAllUsersResponseDataDto,
   FindMeUserResponseData,
@@ -50,6 +50,7 @@ export interface RawUserFindMe extends RawUserFindOne {
   stripeAccountId: string;
   isEmailVerified: boolean;
   onBoardingStatus: OnBoardingStatus;
+  provider: Provider;
   userHourPreferences: {
     date: Date;
     dayOfWeek: number;
@@ -111,6 +112,7 @@ export class UserMapper {
       onBoardingStatus: user.onBoardingStatus,
       phone: user.phone,
       profileStatus: user.userSportPreferences.length > 0 ? 'COMPLETE' : 'INCOMPLETE',
+      provider: user.provider,
       sex: user.sex,
       sportPreferences: user.userSportPreferences.map((sportPreference) =>
         SportPreferencesMapper.toSimpleDisplay(sportPreference),
