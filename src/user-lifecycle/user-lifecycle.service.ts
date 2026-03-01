@@ -90,8 +90,7 @@ export class UserLifecycleService {
    * Anonymizes users who have been marked for deletion and are older than 2 years
    * @returns void - This function does not return anything.
    */
-  // @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async anonymizeExpiredUsers(): Promise<void> {
     const now = new Date();
 
@@ -111,8 +110,7 @@ export class UserLifecycleService {
   /* The `@Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)` decorator in the `purgeAnonymizedUsers` method is
 used in NestJS to schedule a task to run at midnight every day. This method is responsible for
 purging anonymized users who have been marked for deletion and are older than 2 years. */
-  // @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async purgeAnonymizedUsers(): Promise<void> {
     const twoYearsAgo = new Date();
     twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
