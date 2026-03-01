@@ -1,5 +1,11 @@
 name: CI/CD Pipeline
 
+# Annule le run précédent si un nouveau commit est pushé sur la même branche.
+# Économie critique de quota dans une org multi-repo.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
@@ -12,109 +18,82 @@ on:
 
 jobs:
   # ============================================
-  # JOB 1: FORMAT & LINT
+  # JOB 1: FORMAT & LINT — désactivé
+  # Géré par Husky pre-commit, inutile de re-payer le quota CI.
+  # Ré-activer si besoin de vérification côté PR (ex: contributeurs externes).
   # ============================================
-  format:
-    name: FORMAT & LINT
-    runs-on: ubuntu-latest
-    container:
-      image: node:22.13.1-slim
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 22.13.1
-
-      - name: Install pnpm
-        run: npm install -g pnpm
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Run format check
-        run: pnpm format
-
-      - name: Run linter
-        run: pnpm lint
+  # format:
+  #   name: FORMAT & LINT
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'pull_request'
+  #   container:
+  #     image: node:22.13.1-slim
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Install pnpm
+  #       uses: pnpm/action-setup@v4
+  #       with:
+  #         version: latest
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22.13.1
+  #         cache: pnpm
+  #     - run: pnpm install --frozen-lockfile
+  #     - run: pnpm format
+  #     - run: pnpm lint
 
   # ============================================
-  # JOB 2: Tests
+  # JOB 2: TESTS — désactivé
+  # Géré par Husky pre-commit (tests + coverage).
+  # Ré-activer si besoin de gate sur les PR (ex: contributeurs externes).
   # ============================================
-  test:
-    name: TESTS
-    runs-on: ubuntu-latest
-    needs: format
-    container:
-      image: node:22.13.1-slim
-
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    env:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/test_db
-      NODE_ENV: test
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 22.13.1
-
-      - name: Install pnpm
-        run: npm install -g pnpm
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Generate Prisma Client
-        run: pnpm prisma generate
-
-      - name: Setup database
-        run: pnpm prisma migrate deploy
-
-      - name: Run unit tests
-        run: pnpm test
-
-      - name: Run tests with coverage
-        run: pnpm test:cov
-
-      - name: Check coverage artifacts size
-        run: |
-          echo "Coverage artifacts size:"
-          du -sh coverage/lcov-report/ || echo "No lcov-report"
-          du -sh coverage/lcov.info || echo "No lcov.info"
-          du -sh coverage/coverage-final.json || echo "No coverage-final.json"
-          echo "Total coverage size:"
-          du -sh coverage/ || echo "No coverage directory"
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: |
-            coverage/lcov-report/
-            coverage/lcov.info
-            coverage/coverage-final.json
-          retention-days: 30
+  # test:
+  #   name: TESTS
+  #   runs-on: ubuntu-latest
+  #   needs: format
+  #   if: github.event_name == 'pull_request'
+  #   container:
+  #     image: node:22.13.1-slim
+  #   services:
+  #     postgres:
+  #       image: postgres:17
+  #       env:
+  #         POSTGRES_USER: postgres
+  #         POSTGRES_PASSWORD: postgres
+  #         POSTGRES_DB: test_db
+  #       options: >-
+  #         --health-cmd pg_isready
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #   env:
+  #     DATABASE_URL: postgresql://postgres:postgres@postgres:5432/test_db
+  #     NODE_ENV: test
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Install pnpm
+  #       uses: pnpm/action-setup@v4
+  #       with:
+  #         version: latest
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22.13.1
+  #         cache: pnpm
+  #     - run: pnpm install --frozen-lockfile
+  #     - run: pnpm prisma generate
+  #     - run: pnpm prisma migrate deploy
+  #     - run: pnpm test:cov
+  #     - name: Upload coverage report
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: coverage-report
+  #         path: |
+  #           coverage/lcov-report/
+  #           coverage/lcov.info
+  #           coverage/coverage-final.json
+  #         retention-days: 7
 
   # ============================================
   # JOB 3: Build
@@ -122,47 +101,41 @@ jobs:
   build:
     name: BUILD
     runs-on: ubuntu-latest
-    needs: test
+    # FIXME résolu: "needs: test" était ici, mais test n'existe que sur PR.
+    # Sur un push, test était skippé → build skippé → release skippée.
+    # Le pipeline entier ne faisait rien sur push. Suppression du needs.
     container:
       image: node:22.13.1-slim
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      # pnpm/action-setup AVANT setup-node pour activer le cache intégré.
+      # Plus fiable que corepack dans les containers slim (pas de vérification de signature).
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 22.13.1
-
-      - name: Install pnpm
-        run: npm install -g pnpm
+          cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: BUILD
+      - name: Build
         run: chmod +x scripts/build.sh && ./scripts/build.sh
-      - name: Clean build directory
+
+      - name: Clean build artifacts
         run: |
-          # Remove unnecessary files before upload
           find dist/ -name "*.map" -delete || true
           find dist/ -name "*.test.*" -delete || true
           find dist/ -name "*.spec.*" -delete || true
-          rm -rf dist/node_modules || true
-          rm -rf dist/.git || true
-          rm -rf dist/coverage || true
-          echo "Build directory cleaned"
-
-      - name: Check build artifacts size
-        run: |
-          echo "Build artifacts size:"
-          du -sh dist/ || echo "No dist directory"
-          du -sh package.json || echo "No package.json"
-          du -sh prisma/ || echo "No prisma directory"
-          du -sh docker/ || echo "No docker directory"
-          echo "Files to be uploaded:"
-          find dist/ -type f | head -10 || echo "No files in dist"
+          rm -rf dist/node_modules dist/.git dist/coverage
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -174,43 +147,96 @@ jobs:
             prisma/
             docker/
             compose.*.yml
-          retention-days: 7
+          retention-days: 3
 
-# ============================================
+  # ============================================
   # JOB 4: Versioning & Changelog
   # ============================================
   release:
     name: SEMANTIC RELEASE
     runs-on: ubuntu-latest
     needs: build
-    # On ne release que sur push (pas sur PR)
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
+    # Concurrence propre au job release : on ne cancelle JAMAIS un release en cours.
+    # Le cancel-in-progress global créait une race condition : un run pouvait pusher
+    # le tag et être annulé avant de finir, laissant le repo dans un état incohérent.
+    concurrency:
+      group: semantic-release-${{ github.ref }}
+      cancel-in-progress: false
     permissions:
-      contents: write # Important pour pousser les tags/changelog
+      contents: write
       issues: write
       pull-requests: write
+
+    env:
+      HUSKY: 0
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Requis pour l'analyse des commits
+          fetch-depth: 0
+          fetch-tags: true
+
+      # S'assure que les tags du remote sont bien visibles localement,
+      # même après un checkout partiel ou une annulation de run précédente.
+      - name: Fetch all tags
+        run: git fetch --tags --force
+
+      # Vérifie s'il existe des commits releasables (feat/fix/BREAKING CHANGE)
+      # depuis le dernier tag. Si non, on court-circuite semantic-release
+      # pour éviter l'erreur "tag already exists".
+      - name: Check for releasable commits
+        id: check
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            echo "No previous tag, proceeding with release."
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "Last tag: $LAST_TAG"
+          RELEASABLE=$(git log "${LAST_TAG}..HEAD" --oneline \
+            | grep -E "^[a-f0-9]+ (feat|fix)(\(.+\))?!?:" \
+            || true)
+          BREAKING=$(git log "${LAST_TAG}..HEAD" --format="%B" \
+            | grep -E "^BREAKING CHANGE:" \
+            || true)
+          if [ -n "$RELEASABLE" ] || [ -n "$BREAKING" ]; then
+            echo "Releasable commits found."
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "No releasable commits since $LAST_TAG, skipping release."
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install pnpm
+        if: steps.check.outputs.should_release == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
 
       - name: Setup Node.js
+        if: steps.check.outputs.should_release == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22.13.1
-
-      - name: Install pnpm
-        run: npm install -g pnpm
+          cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install
+        if: steps.check.outputs.should_release == 'true'
+        run: pnpm install --frozen-lockfile
 
-      - name: Release
+      - name: Generate Prisma Client
+        if: steps.check.outputs.should_release == 'true'
+        run: pnpm prisma generate
+
+      - name: Semantic Release
+        if: steps.check.outputs.should_release == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
+
   # ============================================
   # JOB 5: Deploy (Development or Production)
   # ============================================

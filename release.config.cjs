@@ -12,22 +12,21 @@ module.exports = {
         preset: 'conventionalcommits',
         presetConfig: {
           types: [
-            { type: 'feat', section: 'Added' },
-            { type: 'feature', section: 'Added' },
-            { type: 'fix', section: 'Fixed' },
-            { type: 'perf', section: 'Performance Improvements' },
-            { type: 'revert', section: 'Reverts' },
-            { type: 'docs', section: 'Documentation', hidden: true },
-            { type: 'style', section: 'Styles', hidden: true },
-            { type: 'chore', section: 'Miscellaneous Chores', hidden: true },
-            { type: 'refactor', section: 'Code Refactoring', hidden: true },
-            { type: 'test', section: 'Tests', hidden: true },
-            { type: 'build', section: 'Build System', hidden: true },
-            { type: 'ci', section: 'Continuous Integration', hidden: true },
+            { section: 'Added', type: 'feat' },
+            { section: 'Added', type: 'feature' },
+            { section: 'Fixed', type: 'fix' },
+            { section: 'Performance Improvements', type: 'perf' },
+            { section: 'Reverts', type: 'revert' },
+            { hidden: true, section: 'Documentation', type: 'docs' },
+            { hidden: true, section: 'Styles', type: 'style' },
+            { hidden: true, section: 'Miscellaneous Chores', type: 'chore' },
+            { hidden: true, section: 'Code Refactoring', type: 'refactor' },
+            { hidden: true, section: 'Tests', type: 'test' },
+            { hidden: true, section: 'Build System', type: 'build' },
+            { hidden: true, section: 'Continuous Integration', type: 'ci' },
           ],
         },
         writerOpts: {
-          headerPartial: '## **v{{version}}** · {{date}}\n\n',
           commitPartial: [
             '  - {{#if scope}}**{{scope}}:** {{/if}}{{#if subject}}{{subject}}{{else}}{{header}}{{/if}}',
             '{{~#if shortHash}}{{#if @root.linkReferences}} ([{{shortHash}}]({{@root.host}}/{{@root.owner}}/{{@root.repository}}/commit/{{shortHash}})){{/if}}{{/if}}',
@@ -36,6 +35,7 @@ module.exports = {
             '{{/if}}',
             '',
           ].join('\n'),
+          headerPartial: '## **v{{version}}** · {{date}}\n\n',
         },
       },
     ],
@@ -47,6 +47,16 @@ module.exports = {
         message: 'chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}',
       },
     ],
-    '@semantic-release/github',
+    [
+      '@semantic-release/github',
+      {
+        failComment: false,
+        // Désactive les commentaires automatiques sur les PRs et issues associées.
+        // Par défaut, le plugin remonte tout l'historique et commente toutes les PRs
+        // mergées depuis le début du repo — particulièrement destructeur après
+        // une suppression/recréation de tag ou un premier run sur un repo existant.
+        successComment: false,
+      },
+    ],
   ],
 };
