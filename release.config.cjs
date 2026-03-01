@@ -1,10 +1,26 @@
 /**
  * semantic-release configuration with custom changelog format
  * Style: version + date on header, "Fixed"/"Added" sections, readable sentences
+ *
+ * Le plugin "fetch-tags" assure que les tags distants sont récupérés avant l'analyse,
+ * pour éviter l'erreur "fatal: tag 'vX.Y.Z' already exists" quand un run précédent
+ * a déjà créé le tag (re-run, concurrence, ou commit chore après release).
  */
+const { execSync } = require('child_process');
+
+/** Plugin minimal : fetch des tags avant analyse pour que semantic-release voie les releases existantes */
+function fetchTagsPlugin() {
+  return {
+    async verifyConditions() {
+      execSync('git fetch origin --tags --force', { stdio: 'inherit' });
+    },
+  };
+}
+
 module.exports = {
   branches: ['main', { name: 'dev', prerelease: 'beta' }],
   plugins: [
+    fetchTagsPlugin(),
     '@semantic-release/commit-analyzer',
     [
       '@semantic-release/release-notes-generator',
@@ -12,22 +28,21 @@ module.exports = {
         preset: 'conventionalcommits',
         presetConfig: {
           types: [
-            { type: 'feat', section: 'Added' },
-            { type: 'feature', section: 'Added' },
-            { type: 'fix', section: 'Fixed' },
-            { type: 'perf', section: 'Performance Improvements' },
-            { type: 'revert', section: 'Reverts' },
-            { type: 'docs', section: 'Documentation', hidden: true },
-            { type: 'style', section: 'Styles', hidden: true },
-            { type: 'chore', section: 'Miscellaneous Chores', hidden: true },
-            { type: 'refactor', section: 'Code Refactoring', hidden: true },
-            { type: 'test', section: 'Tests', hidden: true },
-            { type: 'build', section: 'Build System', hidden: true },
-            { type: 'ci', section: 'Continuous Integration', hidden: true },
+            { section: 'Added', type: 'feat' },
+            { section: 'Added', type: 'feature' },
+            { section: 'Fixed', type: 'fix' },
+            { section: 'Performance Improvements', type: 'perf' },
+            { section: 'Reverts', type: 'revert' },
+            { hidden: true, section: 'Documentation', type: 'docs' },
+            { hidden: true, section: 'Styles', type: 'style' },
+            { hidden: true, section: 'Miscellaneous Chores', type: 'chore' },
+            { hidden: true, section: 'Code Refactoring', type: 'refactor' },
+            { hidden: true, section: 'Tests', type: 'test' },
+            { hidden: true, section: 'Build System', type: 'build' },
+            { hidden: true, section: 'Continuous Integration', type: 'ci' },
           ],
         },
         writerOpts: {
-          headerPartial: '## **v{{version}}** · {{date}}\n\n',
           commitPartial: [
             '  - {{#if scope}}**{{scope}}:** {{/if}}{{#if subject}}{{subject}}{{else}}{{header}}{{/if}}',
             '{{~#if shortHash}}{{#if @root.linkReferences}} ([{{shortHash}}]({{@root.host}}/{{@root.owner}}/{{@root.repository}}/commit/{{shortHash}})){{/if}}{{/if}}',
@@ -36,6 +51,7 @@ module.exports = {
             '{{/if}}',
             '',
           ].join('\n'),
+          headerPartial: '## **v{{version}}** · {{date}}\n\n',
         },
       },
     ],
