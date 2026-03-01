@@ -116,7 +116,7 @@
     "start:dev": "sh scripts/start-dev.sh",
     "start:prod": "node dist/main",
     "studio": "pnpm exec prisma studio --browser none",
-    "swagger:generate": "SWAGGER_ONLY=true ts-node -r tsconfig-paths/register scripts/generate-swagger.ts",
+    "swagger:generate": "SWAGGER_ONLY=true ts-node --transpile-only -r tsconfig-paths/register scripts/generate-swagger.ts",
     "test": "jest",
     "test:ci": "jest --watch=false",
     "test:cov": "jest --coverage",
