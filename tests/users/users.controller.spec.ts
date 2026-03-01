@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { USERSELECT } from 'src/shared/constants/select-user';
+import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { UpdatePasswordDto, UpdateUserDto, UserFilterDto } from 'src/users/dto';
 import { PasswordResetRequestDto } from 'src/users/dto/input/password-reset-request.dto';
 import { UpdateUserEmailDto } from 'src/users/dto/input/update-user.dto';
@@ -12,33 +13,40 @@ describe('UsersController', () => {
   let service: UsersService;
 
   const mockUsersService = {
+    cancelDeletionRequest: jest.fn(),
     deactivate: jest.fn(),
+    deletionRequest: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
     findOneByEmail: jest.fn(),
     remove: jest.fn(),
-    update: jest.fn(),
-    updatePassword: jest.fn(),
-    updateEmail: jest.fn(),
     sendCodeForPasswordResetRequest: jest.fn(),
+    update: jest.fn(),
+    updateEmail: jest.fn(),
+    updatePassword: jest.fn(),
   };
 
   const mockUser = {
-    bio: 'test bio',
-    firstname: 'John',
-    uid: '1',
-    imageUrl: 'test-url',
-    lastname: 'Doe',
-    name: 'Test User',
     _count: {
       friendsReceived: 0,
       friendsSent: 0,
       sessionPlayers: 0,
     },
+    bio: 'test bio',
+    firstname: 'John',
+    imageUrl: 'test-url',
+    lastname: 'Doe',
+    name: 'Test User',
+    uid: '1',
     userSportPreferences: [],
   };
 
   const mockUserFindMe = {
+    _count: {
+      friendsReceived: 0,
+      friendsSent: 0,
+      sessionPlayers: 0,
+    },
     bio: 'test bio',
     birthdate: new Date('1990-01-01'),
     email: 'test@test.com',
@@ -53,11 +61,6 @@ describe('UsersController', () => {
     uid: '1',
     userHourPreferences: [],
     userSportPreferences: [],
-    _count: {
-      friendsReceived: 0,
-      friendsSent: 0,
-      sessionPlayers: 0,
-    },
   };
 
   const mockAuthGuard = {
@@ -76,6 +79,8 @@ describe('UsersController', () => {
     })
       .overrideGuard(AuthB2CGuard)
       .useValue(mockAuthGuard)
+      .overrideGuard(DevOnlyGuard)
+      .useValue({ canActivate: () => true })
       .compile();
 
     controller = module.get<UsersController>(UsersController);
@@ -274,21 +279,51 @@ describe('UsersController', () => {
     });
   });
 
-  describe('remove', () => {
-    it('should remove a user', async () => {
-      const mockRequest = {
-        user: { uid: '1' },
-      };
-      mockUsersService.remove.mockResolvedValue({
-        message: 'User 1 has been deleted',
-      });
+  describe('deletionRequest', () => {
+    it('should request user deletion successfully', async () => {
+      const mockRequest = { user: { uid: 'user-123' } };
+      mockUsersService.deletionRequest.mockResolvedValue(undefined);
 
-      const result = await controller.remove(mockRequest as any);
+      const result = await controller.deletionRequest(mockRequest as any);
 
-      expect(result).toEqual({
-        message: 'User 1 has been deleted',
-      });
-      expect(service.remove).toHaveBeenCalledWith('1');
+      expect(result).toBeUndefined();
+      expect(service.deletionRequest).toHaveBeenCalledWith('user-123');
+    });
+
+    it('should propagate BadRequestException when user already has a deletion request', async () => {
+      const mockRequest = { user: { uid: 'user-123' } };
+      mockUsersService.deletionRequest.mockRejectedValue(
+        new Error('User already has a deletion request'),
+      );
+
+      await expect(controller.deletionRequest(mockRequest as any)).rejects.toThrow(
+        'User already has a deletion request',
+      );
+      expect(service.deletionRequest).toHaveBeenCalledWith('user-123');
+    });
+  });
+
+  describe('cancelDeletionRequest', () => {
+    it('should cancel deletion request successfully', async () => {
+      const mockRequest = { user: { uid: 'user-123' } };
+      mockUsersService.cancelDeletionRequest.mockResolvedValue(undefined);
+
+      const result = await controller.cancelDeletionRequest(mockRequest as any);
+
+      expect(result).toBeUndefined();
+      expect(service.cancelDeletionRequest).toHaveBeenCalledWith('user-123');
+    });
+
+    it('should propagate BadRequestException when user has no deletion request', async () => {
+      const mockRequest = { user: { uid: 'user-123' } };
+      mockUsersService.cancelDeletionRequest.mockRejectedValue(
+        new Error('User does not have a deletion request'),
+      );
+
+      await expect(controller.cancelDeletionRequest(mockRequest as any)).rejects.toThrow(
+        'User does not have a deletion request',
+      );
+      expect(service.cancelDeletionRequest).toHaveBeenCalledWith('user-123');
     });
   });
 

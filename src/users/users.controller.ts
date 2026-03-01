@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -309,27 +308,46 @@ export class UsersController {
     return this.usersService.deactivate(uid);
   }
 
-  @Delete('/delete')
+  @Patch('/request-deletion')
   @Protected()
   @ApiOperation({
-    summary: 'delete user requires to be connected',
+    summary:
+      'request deletion of user, the deletion will be processed after a 30 days retraction period',
   })
   @ApiBadRequestResponse({
-    description: 'Error deleting user',
+    description: 'Error requesting deletion',
     type: BadRequestResponseDto,
   })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-    type: NotFoundResponseDto,
-  })
+  @ApiNotFoundResponse({ description: 'User not found', type: NotFoundResponseDto })
   @ApiUnauthorizedResponse({
     description: 'Token invalid: user missing',
     type: UnauthorizedResponseDto,
   })
-  @ApiNoContentResponse({ description: 'User deleted successfully' })
+  @ApiNoContentResponse({ description: 'User deletion request sent successfully' })
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Req() request: Request) {
+  deletionRequest(@Req() request: Request) {
     const uid = request['user'].uid;
-    return this.usersService.remove(uid);
+    return this.usersService.deletionRequest(uid);
+  }
+
+  @Patch('/cancel-deletion-request')
+  @Protected()
+  @ApiOperation({
+    summary: 'cancel deletion request of user requires to be connected',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error canceling deletion request',
+    type: BadRequestResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'User not found', type: NotFoundResponseDto })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
+  })
+  @ApiNoContentResponse({ description: 'User deletion request canceled successfully' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  cancelDeletionRequest(@Req() request: Request) {
+    const uid = request['user'].uid;
+    return this.usersService.cancelDeletionRequest(uid);
   }
 }

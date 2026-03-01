@@ -54,6 +54,8 @@ model Users {
   isEmailVerified  Boolean           @default(false) @map("is_email_verified")
   type             UserType          @default(USER)
   onBoardingStatus OnBoardingStatus? @default(INCOMPLETE) @map("on_boarding_status")
+  isAnonymized     Boolean           @default(false) @map("is_anonymized")
+  deletedAt        DateTime?         @map("deleted_at")
 
   messages            Messages[]
   // Event               Events[]
@@ -83,7 +85,7 @@ model Users {
   notifications           Notifications[]
   devices                 Devices[]
   userGameModePreferences UserGameModePreferences[]
-  createdFields           Fields[]  @relation("createdFields")
+  createdFields           Fields[]                  @relation("createdFields")
 
   @@index([createdAt])
   @@index([isConnected])

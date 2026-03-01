@@ -18,11 +18,11 @@ describe('NotificationsGateway', () => {
   const mockJwtService = {};
   const mockUsersService = {};
   const mockLogger = {
-    setContext: jest.fn(),
-    info: jest.fn(),
     debug: jest.fn(),
-    warn: jest.fn(),
     error: jest.fn(),
+    info: jest.fn(),
+    setContext: jest.fn(),
+    warn: jest.fn(),
   };
 
   const mockWebSocketAuthService = {
@@ -34,9 +34,9 @@ describe('NotificationsGateway', () => {
     findAll: jest.fn(),
     findAllByReceiver: jest.fn(),
     findOne: jest.fn(),
-    markAsRead: jest.fn(),
-    markAllAsRead: jest.fn(),
     getUnreadCount: jest.fn(),
+    markAllAsRead: jest.fn(),
+    markAsRead: jest.fn(),
   };
 
   const mockWebSocketAuthGuard = {
@@ -95,11 +95,11 @@ describe('NotificationsGateway', () => {
       mockNotificationsService.getUnreadCount.mockResolvedValue(unreadCount);
 
       const mockAuthenticatedSocket = {
-        id: 'socket-123',
         data: { userUid },
-        join: jest.fn(),
-        emit: jest.fn(),
         disconnect: jest.fn(),
+        emit: jest.fn(),
+        id: 'socket-123',
+        join: jest.fn(),
       } as unknown as Socket;
 
       await gateway.handleConnection(mockAuthenticatedSocket);
@@ -114,11 +114,11 @@ describe('NotificationsGateway', () => {
 
     it('should handle connection errors gracefully', async () => {
       const mockErrorSocket = {
-        id: 'socket-123',
         data: { userUid: 'user-123' },
-        join: jest.fn().mockRejectedValue(new Error('Connection failed')),
-        emit: jest.fn(),
         disconnect: jest.fn(),
+        emit: jest.fn(),
+        id: 'socket-123',
+        join: jest.fn().mockRejectedValue(new Error('Connection failed')),
       } as unknown as Socket;
 
       await gateway.handleConnection(mockErrorSocket);
@@ -134,16 +134,16 @@ describe('NotificationsGateway', () => {
   describe('handleNotificationSend', () => {
     it('should send notification to specific user', async () => {
       const payload = {
-        userId: 'user-123',
-        type: NotificationType.FRIEND_REQUEST,
-        title: 'New Friend Request',
-        message: 'John Doe sent you a friend request',
         data: { requestId: 'req-456' },
+        message: 'John Doe sent you a friend request',
+        title: 'New Friend Request',
+        type: NotificationType.FRIEND_REQUEST,
+        userId: 'user-123',
       };
 
       mockNotificationsService.create.mockResolvedValue({
-        uid: 'notif-123',
         createdAt: new Date(),
+        uid: 'notif-123',
       });
 
       const mockEmit = jest.fn();
@@ -167,9 +167,9 @@ describe('NotificationsGateway', () => {
   describe('handleNotificationBroadcast', () => {
     it('should broadcast notification to all users', () => {
       const payload = {
-        type: NotificationType.GENERAL,
-        title: 'System Maintenance',
         message: 'Maintenance in 10 minutes',
+        title: 'System Maintenance',
+        type: NotificationType.GENERAL,
       };
 
       const mockServerEmit = jest.fn();
@@ -182,9 +182,9 @@ describe('NotificationsGateway', () => {
       expect(mockServerEmit).toHaveBeenCalledWith(
         'notification',
         expect.objectContaining({
-          type: 'GENERAL',
-          title: 'System Maintenance',
           message: 'Maintenance in 10 minutes',
+          title: 'System Maintenance',
+          type: 'GENERAL',
         }),
       );
     });
@@ -193,16 +193,16 @@ describe('NotificationsGateway', () => {
   describe('handleNotificationSendToMultiple', () => {
     it('should send notification to multiple users', async () => {
       const payload = {
-        userIds: ['user-1', 'user-2', 'user-3'],
-        type: NotificationType.SESSION_REMINDER,
-        title: 'Session Starting Soon',
-        message: 'Your session starts in 30 minutes',
         data: { sessionId: 'session-123' },
+        message: 'Your session starts in 30 minutes',
+        title: 'Session Starting Soon',
+        type: NotificationType.SESSION_REMINDER,
+        userIds: ['user-1', 'user-2', 'user-3'],
       };
 
       mockNotificationsService.create.mockResolvedValue({
-        uid: 'notif-123',
         createdAt: new Date(),
+        uid: 'notif-123',
       });
 
       const mockEmit = jest.fn();
@@ -231,14 +231,14 @@ describe('NotificationsGateway', () => {
     it('should send friend request notification', async () => {
       const payload = {
         recipientId: 'user-123',
+        requestId: 'req-789',
         senderId: 'user-456',
         senderName: 'John Doe',
-        requestId: 'req-789',
       };
 
       mockNotificationsService.create.mockResolvedValue({
-        uid: 'notif-123',
         createdAt: new Date(),
+        uid: 'notif-123',
       });
 
       const mockEmit = jest.fn();
@@ -262,19 +262,19 @@ describe('NotificationsGateway', () => {
   describe('handleSessionInvitationNotification', () => {
     it('should send session invitation notification', async () => {
       const payload = {
-        sessionUid: 'session-456',
-        sessionTitle: 'Basketball Game',
-        sessionDate: '2025-06-01',
+        senderAvatar: 'https://example.com/avatar.jpg',
         senderFirstname: 'Jane',
         senderLastname: 'Smith',
-        sessionSport: Sport.BASKETBALL,
-        senderAvatar: 'https://example.com/avatar.jpg',
         senderUid: 'user-sender',
+        sessionDate: '2025-06-01',
+        sessionSport: Sport.BASKETBALL,
+        sessionTitle: 'Basketball Game',
+        sessionUid: 'session-456',
       };
 
       mockNotificationsService.create.mockResolvedValue({
-        uid: 'notif-123',
         createdAt: new Date(),
+        uid: 'notif-123',
       });
 
       const mockEmit = jest.fn();
@@ -298,8 +298,8 @@ describe('NotificationsGateway', () => {
   describe('handleDisconnect', () => {
     it('should log user disconnection', () => {
       const mockAuthenticatedSocket = {
-        id: 'socket-123',
         data: { userUid: 'user-123' },
+        id: 'socket-123',
       } as unknown as Socket;
 
       // Set up a connected user with the socket
@@ -307,18 +307,18 @@ describe('NotificationsGateway', () => {
 
       gateway.handleDisconnect(mockAuthenticatedSocket);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining('User user-123'));
+      expect(mockLogger.debug).toHaveBeenCalledWith(expect.stringContaining('User user-123'));
     });
 
     it('should handle unauthenticated socket disconnection', () => {
       const mockUnauthenticatedSocket = {
-        id: 'socket-123',
         data: {},
+        id: 'socket-123',
       } as unknown as Socket;
 
       gateway.handleDisconnect(mockUnauthenticatedSocket);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         expect.stringContaining('Unauthenticated socket'),
       );
     });
