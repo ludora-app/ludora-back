@@ -23,32 +23,33 @@ describe('UsersService', () => {
   let service: UsersService;
 
   const mockPrismaService = {
+    $queryRaw: jest.fn(),
+    $transaction: jest.fn((callback) => callback(mockPrismaService)),
+    emailVerification: {
+      create: jest.fn(),
+      delete: jest.fn(),
+      deleteMany: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    friends: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
     users: {
+      count: jest.fn(),
       create: jest.fn(),
       delete: jest.fn(),
       findMany: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
-      count: jest.fn(),
+      updateMany: jest.fn(),
     },
-    emailVerification: {
-      deleteMany: jest.fn(),
-      create: jest.fn(),
-      findFirst: jest.fn(),
-      delete: jest.fn(),
-    },
-    friends: {
-      findMany: jest.fn().mockResolvedValue([]),
-    },
-    $queryRaw: jest.fn(),
-    $transaction: jest.fn((callback) => callback(mockPrismaService)),
   };
 
   const mockStorageService = {
-    upload: jest.fn(),
     createDefaultProfilePicture: jest
       .fn()
       .mockResolvedValue({ data: 'https://example.com/default-avatar.png' }),
+    upload: jest.fn(),
   };
 
   const mockEmailsService = {
@@ -56,14 +57,14 @@ describe('UsersService', () => {
   };
 
   const mockLogger = {
-    info: jest.fn(),
+    child: jest.fn(),
     debug: jest.fn(),
     error: jest.fn(),
-    warn: jest.fn(),
     fatal: jest.fn(),
-    trace: jest.fn(),
-    child: jest.fn(),
+    info: jest.fn(),
     setContext: jest.fn(),
+    trace: jest.fn(),
+    warn: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -114,7 +115,6 @@ describe('UsersService', () => {
     it('should create a new user successfully', async () => {
       mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
       mockPrismaService.users.create.mockResolvedValueOnce({
-        uid: '1',
         bio: 'test bio',
         birthdate: new Date('1990-01-01'),
         email: 'test@test.com',
@@ -123,6 +123,7 @@ describe('UsersService', () => {
         password: 'hashedPassword',
         phone: '1234567890',
         sex: Sex.MALE,
+        uid: '1',
       });
       mockStorageService.upload.mockResolvedValueOnce({
         data: 'image-url',
@@ -149,31 +150,31 @@ describe('UsersService', () => {
     it('should return a list of users', async () => {
       const mockUsers = [
         {
-          uid: '1',
           firstname: 'John',
-          lastname: 'Doe',
           imageUrl: '',
+          lastname: 'Doe',
+          uid: '1',
           userSportPreferences: [
-            { uid: 'sp1', sport: 'BASKETBALL', level: 3 },
-            { uid: 'sp2', sport: 'FOOTBALL', level: 2 },
+            { level: 3, sport: 'BASKETBALL', uid: 'sp1' },
+            { level: 2, sport: 'FOOTBALL', uid: 'sp2' },
           ],
         },
         {
-          uid: '2',
           firstname: 'Jane',
-          lastname: 'Doe',
           imageUrl: '',
-          userSportPreferences: [{ uid: 'sp3', sport: 'TENNIS', level: 4 }],
+          lastname: 'Doe',
+          uid: '2',
+          userSportPreferences: [{ level: 4, sport: 'TENNIS', uid: 'sp3' }],
         },
       ];
 
       mockPrismaService.users.findUnique.mockResolvedValueOnce({
         city: 'Paris',
-        userSportPreferences: [{ sport: 'BASKETBALL', level: 3 }],
+        userSportPreferences: [{ level: 3, sport: 'BASKETBALL' }],
       });
       mockPrismaService.$queryRaw.mockResolvedValueOnce([
-        { uid: '1', score: 1000, total_count: BigInt(2) },
-        { uid: '2', score: 500, total_count: BigInt(2) },
+        { score: 1000, total_count: BigInt(2), uid: '1' },
+        { score: 500, total_count: BigInt(2), uid: '2' },
       ]);
       mockPrismaService.users.findMany.mockResolvedValueOnce(mockUsers);
 
@@ -182,11 +183,11 @@ describe('UsersService', () => {
       expect(result.items.length).toBe(2);
       expect(result.items[0].uid).toBe('1');
       expect(result.items[0].sportPreferences).toEqual([
-        { uid: 'sp1', sport: 'BASKETBALL', level: 3 },
-        { uid: 'sp2', sport: 'FOOTBALL', level: 2 },
+        { level: 3, sport: 'BASKETBALL', uid: 'sp1' },
+        { level: 2, sport: 'FOOTBALL', uid: 'sp2' },
       ]);
       expect(result.items[1].uid).toBe('2');
-      expect(result.items[1].sportPreferences).toEqual([{ uid: 'sp3', sport: 'TENNIS', level: 4 }]);
+      expect(result.items[1].sportPreferences).toEqual([{ level: 4, sport: 'TENNIS', uid: 'sp3' }]);
       expect(result.totalCount).toBe(2);
       expect(result.nextCursor).toBeNull();
     });
@@ -194,29 +195,29 @@ describe('UsersService', () => {
     it('should handle pagination correctly', async () => {
       const mockUsers = [
         {
-          uid: '1',
           firstname: 'John',
-          lastname: 'Doe',
           imageUrl: '',
-          userSportPreferences: [{ uid: 'sp1', sport: 'BASKETBALL', level: 3 }],
+          lastname: 'Doe',
+          uid: '1',
+          userSportPreferences: [{ level: 3, sport: 'BASKETBALL', uid: 'sp1' }],
         },
         {
-          uid: '2',
           firstname: 'Jane',
-          lastname: 'Doe',
           imageUrl: '',
-          userSportPreferences: [{ uid: 'sp2', sport: 'FOOTBALL', level: 2 }],
+          lastname: 'Doe',
+          uid: '2',
+          userSportPreferences: [{ level: 2, sport: 'FOOTBALL', uid: 'sp2' }],
         },
       ];
 
       mockPrismaService.users.findUnique.mockResolvedValueOnce({
         city: null,
-        userSportPreferences: [{ sport: 'BASKETBALL', level: 3 }],
+        userSportPreferences: [{ level: 3, sport: 'BASKETBALL' }],
       });
       mockPrismaService.$queryRaw.mockResolvedValueOnce([
-        { uid: '1', score: 1000, total_count: BigInt(3) },
-        { uid: '2', score: 500, total_count: BigInt(3) },
-        { uid: '3', score: 200, total_count: BigInt(3) },
+        { score: 1000, total_count: BigInt(3), uid: '1' },
+        { score: 500, total_count: BigInt(3), uid: '2' },
+        { score: 200, total_count: BigInt(3), uid: '3' },
       ]);
       mockPrismaService.users.findMany.mockResolvedValueOnce(mockUsers);
 
@@ -261,10 +262,10 @@ describe('UsersService', () => {
       const select = {
         bio: true,
         firstname: true,
-        uid: true,
         imageUrl: true,
         lastname: true,
         name: true,
+        uid: true,
       };
 
       mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
@@ -361,16 +362,16 @@ describe('UsersService', () => {
 
     it('should update password successfully', async () => {
       mockPrismaService.users.findUnique.mockResolvedValueOnce({
-        uid: '1',
-        firstname: 'John',
         email: 'test@test.com',
+        firstname: 'John',
         password: 'hashedOldPassword',
         provider: 'LUDORA',
+        uid: '1',
       });
       mockPrismaService.users.update.mockResolvedValueOnce({
-        uid: '1',
-        firstname: 'John',
         email: 'test@test.com',
+        firstname: 'John',
+        uid: '1',
       });
 
       const result = await service.updatePassword('1', updatePasswordDto);
@@ -386,8 +387,8 @@ describe('UsersService', () => {
 
     it('should throw BadRequestException if old password is invalid', async () => {
       mockPrismaService.users.findUnique.mockResolvedValueOnce({
-        uid: '1',
         password: 'hashedOldPassword',
+        uid: '1',
       });
       (argon2.verify as jest.Mock).mockResolvedValueOnce(false);
 
@@ -402,14 +403,14 @@ describe('UsersService', () => {
       const newEmail = 'newemail@test.com';
 
       mockPrismaService.users.findUnique.mockResolvedValueOnce({
-        uid: '1',
         email: 'oldemail@test.com',
         firstname: 'John',
+        uid: '1',
       });
       mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
       mockPrismaService.users.update.mockResolvedValueOnce({
-        uid: '1',
         email: newEmail,
+        uid: '1',
       });
 
       const result = await service.updateEmail('1', newEmail);
@@ -433,14 +434,14 @@ describe('UsersService', () => {
       const newEmail = 'existing@test.com';
 
       mockPrismaService.users.findUnique.mockResolvedValueOnce({
-        uid: '1',
         email: 'oldemail@test.com',
         firstname: 'John',
+        uid: '1',
       });
       mockPrismaService.users.findUnique.mockResolvedValueOnce({
-        uid: '2',
         email: newEmail,
         firstname: 'Jane',
+        uid: '2',
       });
 
       await expect(service.updateEmail('1', newEmail)).rejects.toThrow(ConflictException);
@@ -452,8 +453,8 @@ describe('UsersService', () => {
     it('should deactivate user successfully', async () => {
       mockPrismaService.users.findUnique.mockResolvedValueOnce({ uid: '1' });
       mockPrismaService.users.update.mockResolvedValueOnce({
-        uid: '1',
         isConnected: false,
+        uid: '1',
       });
 
       const result = await service.deactivate('1');
@@ -492,6 +493,58 @@ describe('UsersService', () => {
     });
   });
 
+  describe('deletionRequest', () => {
+    it('should set deletedAt when user has no deletion request', async () => {
+      mockPrismaService.users.updateMany.mockResolvedValueOnce({ count: 1 });
+
+      await service.deletionRequest('user-123');
+
+      expect(mockPrismaService.users.updateMany).toHaveBeenCalledWith({
+        data: { deletedAt: expect.any(Date) },
+        where: { deletedAt: null, uid: 'user-123' },
+      });
+      expect(mockPrismaService.users.updateMany).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw BadRequestException when user already has a deletion request', async () => {
+      mockPrismaService.users.updateMany.mockResolvedValueOnce({ count: 0 });
+
+      await expect(service.deletionRequest('user-123')).rejects.toThrow(
+        new BadRequestException('User already has a deletion request'),
+      );
+      expect(mockPrismaService.users.updateMany).toHaveBeenCalledWith({
+        data: { deletedAt: expect.any(Date) },
+        where: { deletedAt: null, uid: 'user-123' },
+      });
+    });
+  });
+
+  describe('cancelDeletionRequest', () => {
+    it('should clear deletedAt when user has a deletion request', async () => {
+      mockPrismaService.users.updateMany.mockResolvedValueOnce({ count: 1 });
+
+      await service.cancelDeletionRequest('user-123');
+
+      expect(mockPrismaService.users.updateMany).toHaveBeenCalledWith({
+        data: { deletedAt: null },
+        where: { deletedAt: { not: null }, uid: 'user-123' },
+      });
+      expect(mockPrismaService.users.updateMany).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw BadRequestException when user has no deletion request', async () => {
+      mockPrismaService.users.updateMany.mockResolvedValueOnce({ count: 0 });
+
+      await expect(service.cancelDeletionRequest('user-123')).rejects.toThrow(
+        new BadRequestException('User does not have a deletion request'),
+      );
+      expect(mockPrismaService.users.updateMany).toHaveBeenCalledWith({
+        data: { deletedAt: null },
+        where: { deletedAt: { not: null }, uid: 'user-123' },
+      });
+    });
+  });
+
   describe('sendVerificationEmail', () => {
     it('should send verification email successfully', async () => {
       // Mock Math.random to return a predictable value for the verification code
@@ -523,9 +576,9 @@ describe('UsersService', () => {
   describe('sendCodeForPasswordReset', () => {
     it('should send password reset code successfully', async () => {
       const mockUser = {
-        uid: '1',
-        firstname: 'John',
         email: 'test@test.com',
+        firstname: 'John',
+        uid: '1',
       };
 
       await service.sendCodeForPasswordReset(mockUser as any);
@@ -552,10 +605,10 @@ describe('UsersService', () => {
   describe('sendCodeForPasswordResetRequest', () => {
     it('should initiate password reset request successfully', async () => {
       const mockUser = {
-        uid: '1',
-        firstname: 'John',
         email: 'test@test.com',
+        firstname: 'John',
         provider: Provider.LUDORA,
+        uid: '1',
       };
 
       mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
@@ -564,13 +617,13 @@ describe('UsersService', () => {
 
       expect(mockPrismaService.users.findUnique).toHaveBeenCalledWith({
         select: {
+          city: true,
           email: true,
-          isEmailVerified: true,
           firstname: true,
           imageUrl: true,
+          isEmailVerified: true,
           lastname: true,
           provider: true,
-          city: true,
           uid: true,
         },
         where: { email: 'test@test.com' },
@@ -593,10 +646,10 @@ describe('UsersService', () => {
 
     it('should return silently and log error if user is GOOGLE provider', async () => {
       const mockUser = {
-        uid: '1',
-        firstname: 'John',
         email: 'test@test.com',
+        firstname: 'John',
         provider: 'GOOGLE',
+        uid: '1',
       };
 
       mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);

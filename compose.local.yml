@@ -22,6 +22,8 @@ services:
       - "NODE_ENV=debug"
       # Vault AppRole configuration
       - "VAULT_ADDR=${VAULT_ADDR:-https://vault.ludora.fr}"
+      - VAULT_ROLE_ID
+      - VAULT_SECRET_ID
     command: ['sh', 'scripts/start-local.sh']
     networks:
       - ludora-network

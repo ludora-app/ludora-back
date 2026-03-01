@@ -20,6 +20,7 @@ import { PaymentModule } from './payment/payment.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { SharedModule } from './shared/shared.module';
+import { UserLifecycleModule } from './user-lifecycle/user-lifecycle.module';
 import { UsersModule } from './users/users.module';
 
 const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV === 'development';
@@ -60,10 +61,6 @@ const logLevel = process.env.LOG_LEVEL ?? (isDevelopment ? 'debug' : 'info');
     LoggerModule.forRoot({
       exclude: ['/health', '/metrics', '/swagger', '/swagger/*path'],
       pinoHttp: {
-        // Set log level based on LOG_LEVEL env or NODE_ENV
-        // debug: show all logs including debug
-        // info: show info, warn, error (default in production)
-        level: logLevel,
         // Exclude the health check and metrics routes from automatic logging
         autoLogging: {
           ignore: (req: any) => {
@@ -87,6 +84,11 @@ const logLevel = process.env.LOG_LEVEL ?? (isDevelopment ? 'debug' : 'info');
         customSuccessMessage: (req, res) => {
           return `${req.method} ${req.url} - ${res.statusCode}`;
         },
+        // Set log level based on LOG_LEVEL env or NODE_ENV
+        // debug: show all logs including debug
+        // info: show info, warn, error (default in production)
+        level: logLevel,
+
         serializers: {
           req: (req) => ({
             method: req.method,
@@ -124,6 +126,7 @@ const logLevel = process.env.LOG_LEVEL ?? (isDevelopment ? 'debug' : 'info');
     UsersModule,
     FirebaseModule,
     DevicesModule,
+    UserLifecycleModule,
   ],
   providers: [
     AppService,

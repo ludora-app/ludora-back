@@ -247,6 +247,7 @@ export class UsersService {
         WHERE
           u.uid != ${userUid}
           AND u.email != ${this.GOOGLE_TESTER_ACCOUNT_EMAIL}
+          AND u.isAnonymized = false
           ${sportWhereSql}
           ${levelWhereSql}
           ${searchWhereSql}
@@ -625,5 +626,42 @@ export class UsersService {
     }
 
     await this.sendCodeForPasswordReset(user);
+  }
+
+  /**
+   * Marks a user for deletion in the database, the deletion will be processed after a 30 days retraction period
+   * @param uid
+   * @description This method is used to request the deletion of a user
+   * @returns void - This function does not return anything.
+   */
+  async deletionRequest(uid: string): Promise<void> {
+    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    /* we use updateMany to avoid calling the database one more time than necessary
+      The existence of the user is already checked in the controller via the Guard
+    */
+
+    const result = await this.prismaService.users.updateMany({
+      data: { deletedAt: thirtyDaysFromNow },
+      where: { deletedAt: null, uid },
+    });
+
+    if (result.count === 0) {
+      throw new BadRequestException('User already has a deletion request');
+    }
+  }
+
+  async cancelDeletionRequest(uid: string): Promise<void> {
+    /* we use updateMany to avoid calling the database one more time than necessary
+      The existence of the user is already checked in the controller via the Guard
+    */
+    const result = await this.prismaService.users.updateMany({
+      data: { deletedAt: null },
+      where: { deletedAt: { not: null }, uid },
+    });
+
+    if (result.count === 0) {
+      throw new BadRequestException('User does not have a deletion request');
+    }
   }
 }

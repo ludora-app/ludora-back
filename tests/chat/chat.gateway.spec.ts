@@ -25,18 +25,18 @@ describe('ChatGateway', () => {
   };
 
   const mockSocket = {
-    id: 'socket-123',
     data: {},
-    join: jest.fn(),
-    leave: jest.fn(),
-    emit: jest.fn(),
-    to: jest.fn().mockReturnThis(),
     disconnect: jest.fn(),
+    emit: jest.fn(),
     handshake: {
       auth: {
         token: 'valid-token',
       },
     },
+    id: 'socket-123',
+    join: jest.fn(),
+    leave: jest.fn(),
+    to: jest.fn().mockReturnThis(),
   } as unknown as Socket;
 
   const mockMessagesService = {
@@ -47,16 +47,16 @@ describe('ChatGateway', () => {
 
   const mockConversationsService = {
     createMessage: jest.fn(),
-    getConversations: jest.fn(),
     getConversationByUid: jest.fn(),
+    getConversations: jest.fn(),
   };
 
   const mockPrismaService = {
-    userTokens: {
-      findFirst: jest.fn(),
-    },
     conversationMembers: {
+      findFirst: jest.fn(),
       findMany: jest.fn(),
+    },
+    userTokens: {
       findFirst: jest.fn(),
     },
   };
@@ -68,11 +68,11 @@ describe('ChatGateway', () => {
   const mockUsersService = {};
 
   const mockLogger = {
-    setContext: jest.fn(),
-    info: jest.fn(),
     debug: jest.fn(),
-    warn: jest.fn(),
     error: jest.fn(),
+    info: jest.fn(),
+    setContext: jest.fn(),
+    warn: jest.fn(),
   };
 
   const mockWebSocketAuthService = {
@@ -141,10 +141,10 @@ describe('ChatGateway', () => {
       const userUid = 'user-123';
       const conversationUid = 'conv-456';
       const mockAuthenticatedSocket = {
-        id: 'socket-123',
         data: { userUid },
-        join: jest.fn(),
         emit: jest.fn(),
+        id: 'socket-123',
+        join: jest.fn(),
       } as unknown as Socket;
 
       mockPrismaService.conversationMembers.findMany.mockResolvedValue([{ conversationUid }]);
@@ -162,20 +162,20 @@ describe('ChatGateway', () => {
       expect(mockAuthenticatedSocket.join).toHaveBeenCalledWith(`user:${userUid}`);
       expect(mockAuthenticatedSocket.join).toHaveBeenCalledWith(`conversation:${conversationUid}`);
       expect(mockAuthenticatedSocket.emit).toHaveBeenCalledWith('connected', {
+        conversations: [conversationUid],
         message: 'Successfully connected to chat',
         userUid,
-        conversations: [conversationUid],
       });
     });
 
     it('should handle connection errors gracefully', async () => {
       const userUid = 'user-123';
       const mockErrorSocket = {
-        id: 'socket-123',
         data: { userUid },
-        join: jest.fn(),
-        emit: jest.fn(),
         disconnect: jest.fn(),
+        emit: jest.fn(),
+        id: 'socket-123',
+        join: jest.fn(),
       } as unknown as Socket;
 
       mockPrismaService.conversationMembers.findMany.mockRejectedValue(new Error('Database error'));
@@ -258,8 +258,8 @@ describe('ChatGateway', () => {
       const conversationUid = 'conv-456';
 
       mockPrismaService.conversationMembers.findFirst.mockResolvedValue({
-        uid: 'member-uid',
         conversationUid,
+        uid: 'member-uid',
         userUid: 'user-123',
       });
 
@@ -284,8 +284,8 @@ describe('ChatGateway', () => {
       await gateway.handleJoinConversation(mockSocket, { conversationUid: 'conv-456' });
 
       expect(mockSocket.emit).toHaveBeenCalledWith('error', {
-        message: 'You are not a member of this conversation',
         code: 'NOT_MEMBER',
+        message: 'You are not a member of this conversation',
       });
       expect(mockSocket.join).not.toHaveBeenCalled();
     });
@@ -351,7 +351,7 @@ describe('ChatGateway', () => {
 
       gateway.handleDisconnect(mockSocket);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         expect.stringContaining('User user-123 disconnected'),
       );
     });
@@ -361,7 +361,7 @@ describe('ChatGateway', () => {
 
       gateway.handleDisconnect(mockSocket);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         expect.stringContaining('Unauthenticated socket'),
       );
     });

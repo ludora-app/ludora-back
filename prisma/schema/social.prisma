@@ -46,14 +46,14 @@ model Conversations {
 model Messages {
   uid             String        @id @default(cuid())
   conversationUid String        @map("conversation_uid")
-  senderUid       String        @map("sender_uid")
+  senderUid       String?       @map("sender_uid")
   content         String
   globalStatus    MessageStatus @default(SENT) @map("global_status")
   type            MessageType
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
-  sender          Users             @relation(fields: [senderUid], references: [uid])
+  sender          Users?            @relation(fields: [senderUid], references: [uid], onDelete: SetNull)
   conversation    Conversations     @relation(fields: [conversationUid], references: [uid])
   messageReceipts MessageReceipts[]
 
@@ -83,7 +83,7 @@ model ConversationMembers {
   isAdmin         Boolean @default(false) @map("is_admin")
 
   conversation Conversations @relation(fields: [conversationUid], references: [uid])
-  user         Users         @relation(fields: [userUid], references: [uid])
+  user         Users         @relation(fields: [userUid], references: [uid], onDelete: Cascade)
 
   isArchived Boolean @default(false) @map("is_archived")
   isMuted    Boolean @default(false) @map("is_muted")

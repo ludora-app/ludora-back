@@ -44,7 +44,7 @@ model Sessions {
   sport             String            @map("sport")
   gameMode          GameModes         @map("game_mode")
   level             Int               @default(0)
-  creatorUid        String            @map("creator_uid")
+  creatorUid        String?           @map("creator_uid")
   maxPlayersPerTeam Int               @map("max_players_per_team")
   teamsPerGame      Int               @map("teams_per_game")
   minPlayersPerTeam Int               @map("min_players_per_team")
@@ -55,7 +55,7 @@ model Sessions {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  creator       Users       @relation(fields: [creatorUid], references: [uid])
+  creator       Users?      @relation(fields: [creatorUid], references: [uid], onDelete: SetNull)
   field         Fields      @relation(fields: [fieldUid], references: [uid])
   slot          FieldSlots? @relation(fields: [slotUid], references: [uid])
   sportRelation Sports      @relation(fields: [sport], references: [name])
@@ -79,8 +79,8 @@ model SessionInvitations {
   updatedAt   DateTime         @updatedAt @map("updated_at")
 
   session  Sessions @relation(fields: [sessionUid], references: [uid], onDelete: Cascade)
-  sender   Users    @relation(fields: [senderUid], references: [uid], name: "senderRelation")
-  receiver Users    @relation(fields: [receiverUid], references: [uid], name: "receiverRelation")
+  sender   Users    @relation(fields: [senderUid], references: [uid], name: "senderRelation", onDelete: Cascade)
+  receiver Users    @relation(fields: [receiverUid], references: [uid], name: "receiverRelation", onDelete: Cascade)
 
   @@unique([sessionUid, senderUid, receiverUid])
   @@index([sessionUid])
@@ -121,15 +121,16 @@ model SessionTeams {
 }
 
 model SessionPlayers {
+  uid        String   @id @default(cuid())
   sessionUid String   @map("session_uid")
   teamUid    String   @map("team_uid")
-  userUid    String   @map("user_uid")
+  userUid    String?  @map("user_uid")
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
   session Sessions     @relation(fields: [sessionUid], references: [uid], onDelete: Cascade)
   team    SessionTeams @relation(fields: [teamUid], references: [uid])
-  user    Users        @relation(fields: [userUid], references: [uid])
+  user    Users?       @relation(fields: [userUid], references: [uid], onDelete: SetNull)
 
   @@unique([sessionUid, userUid])
   @@index([sessionUid])
