@@ -19,10 +19,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   async onModuleInit() {
+    if (process.env.SWAGGER_ONLY === 'true') return;
     await this.$connect();
   }
 
   async onModuleDestroy() {
+    if (process.env.SWAGGER_ONLY === 'true') return;
     await this.$disconnect();
   }
 }
