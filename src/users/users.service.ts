@@ -243,7 +243,7 @@ export class UsersService {
         FROM auth."Users" u
         WHERE
           u.uid != ${userUid}
-          AND u.isAnonymized = false
+          AND u.is_anonymized = false
           ${sportWhereSql}
           ${levelWhereSql}
           ${searchWhereSql}
