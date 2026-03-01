@@ -15,6 +15,7 @@ on:
     branches:
       - main
       - dev
+      - staging
 
 jobs:
   # ============================================
@@ -96,7 +97,57 @@ jobs:
   #         retention-days: 7
 
   # ============================================
-  # JOB 3: Build
+  # JOB 3: Swagger — génération de swagger.json en artifact
+  # Déclenché uniquement sur les PR vers main, dev ou staging.
+  # SWAGGER_ONLY=true empêche Prisma et Firebase de tenter une vraie connexion.
+  # JWT_SECRET est requis par JwtModule.registerAsync() au démarrage.
+  # ============================================
+  swagger:
+    name: SWAGGER
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    container:
+      image: node:22.13.1-slim
+
+    env:
+      SWAGGER_ONLY: 'true'
+      NODE_ENV: development
+      JWT_SECRET: swagger-ci-dummy-secret
+      DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm prisma generate
+
+      - name: Generate swagger.json
+        run: pnpm swagger:generate
+
+      - name: Upload swagger.json artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: swagger-${{ github.event.pull_request.head.sha }}
+          path: swagger.json
+          retention-days: 7
+
+  # ============================================
+  # JOB 4: Build
   # ============================================
   build:
     name: BUILD
@@ -150,7 +201,7 @@ jobs:
           retention-days: 3
 
   # ============================================
-  # JOB 4: Versioning & Changelog
+  # JOB 5: Versioning & Changelog
   # ============================================
   release:
     name: SEMANTIC RELEASE
@@ -260,7 +311,7 @@ jobs:
           exit $SR_EXIT
 
   # ============================================
-  # JOB 5: Deploy (Development or Production)
+  # JOB 6: Deploy (Development or Production)
   # ============================================
   # DEPLOY:
   #   name: Deploy to ${{ github.ref == 'refs/heads/main' && 'Production' || 'Development' }}
