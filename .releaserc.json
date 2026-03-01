@@ -1,0 +1,96 @@
+{
+  "branches": [
+    "main",
+    {
+      "channel": "next",
+      "name": "staging",
+      "prerelease": "next"
+    },
+    {
+      "channel": "alpha",
+      "name": "develop",
+      "prerelease": "alpha"
+    }
+  ],
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits",
+        "releaseRules": [
+          { "release": "minor", "type": "feat" },
+          { "release": "patch", "type": "fix" },
+          { "release": "patch", "type": "perf" },
+          { "release": "patch", "type": "revert" },
+          { "release": "patch", "type": "docs" },
+          { "release": "patch", "type": "style" },
+          { "release": "patch", "type": "refactor" },
+          { "release": false, "type": "test" },
+          { "release": false, "type": "build" },
+          { "release": false, "type": "ci" },
+          { "release": false, "type": "chore" },
+          { "breaking": true, "release": "major" }
+        ]
+      }
+    ],
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        "preset": "conventionalcommits",
+        "presetConfig": {
+          "types": [
+            { "section": "✨ Features", "type": "feat" },
+            { "section": "Bug Fixes", "type": "fix" },
+            { "section": "Performance Improvements", "type": "perf" },
+            { "section": "⏪ Reverts", "type": "revert" },
+            { "section": "Documentation", "type": "docs" },
+            { "section": "Styles", "type": "style" },
+            { "section": "♻️ Code Refactoring", "type": "refactor" },
+            { "hidden": true, "section": "✅ Tests", "type": "test" },
+            { "hidden": true, "section": "🏗️ Build System", "type": "build" },
+            { "hidden": true, "section": "👷 CI/CD", "type": "ci" },
+            { "hidden": true, "section": "🔧 Chores", "type": "chore" }
+          ]
+        }
+      }
+    ],
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md"
+      }
+    ],
+    [
+      "@semantic-release/npm",
+      {
+        "npmPublish": false
+      }
+    ],
+    [
+      "semantic-release-expo",
+      {
+        "versions": {
+          "android": false,
+          "ios": false,
+          "version": true
+        }
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["CHANGELOG.md", "package.json", "app.json", "bun.lock"],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "failComment": false,
+        "releasedLabels": ["released"],
+        "successComment": false
+      }
+    ]
+  ],
+  "tagFormat": "v${version}"
+}
