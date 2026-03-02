@@ -50,7 +50,7 @@ jobs:
                 { \"name\": \"🌿 Repo\", \"value\": \"\`$REPO\`\", \"inline\": true },
                 { \"name\": \"👤 Auteur\", \"value\": \"**$AUTHOR**\", \"inline\": true }
               ],
-              \"footer\": { \"text\": \"Ludora App Frontend\" },
+              \"footer\": { \"text\": \"Ludora App Backend\" },
               \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
             }]
           }" $SELECTED_WEBHOOK

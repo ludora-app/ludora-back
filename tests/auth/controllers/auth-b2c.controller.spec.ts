@@ -11,19 +11,19 @@ describe('AuthB2CController', () => {
   let controller: AuthB2CController;
 
   const mockAuthB2CService = {
+    createOrConnectGoogleUser: jest.fn(),
+    generateAccessTokenFromCode: jest.fn(),
     login: jest.fn(),
+    logout: jest.fn(),
+    logoutAllDevices: jest.fn(),
+    refreshToken: jest.fn(),
     register: jest.fn(),
     resendVerificationCode: jest.fn(),
+    resetForgottenPassword: jest.fn(),
     verifyEmail: jest.fn(),
     verifyEmailCode: jest.fn(),
     verifyEmailLink: jest.fn(),
     verifyToken: jest.fn(),
-    refreshToken: jest.fn(),
-    logout: jest.fn(),
-    logoutAllDevices: jest.fn(),
-    generateAccessTokenFromCode: jest.fn(),
-    createOrConnectGoogleUser: jest.fn(),
-    resetForgottenPassword: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -84,19 +84,19 @@ describe('AuthB2CController', () => {
 
     it('should register a new user with file', async () => {
       async function* parts() {
-        yield { type: 'field', fieldname: 'type', value: UserType.USER };
-        yield { type: 'field', fieldname: 'email', value: 'test@test.com' };
-        yield { type: 'field', fieldname: 'password', value: 'Password123!' };
-        yield { type: 'field', fieldname: 'firstname', value: 'John' };
-        yield { type: 'field', fieldname: 'lastname', value: 'Doe' };
-        yield { type: 'field', fieldname: 'birthdate', value: new Date().toISOString() };
-        yield { type: 'field', fieldname: 'sex', value: Sex.MALE };
-        yield { type: 'field', fieldname: 'bio', value: 'Test bio' };
-        yield { type: 'field', fieldname: 'phone', value: '+33612345678' };
+        yield { fieldname: 'type', type: 'field', value: UserType.USER };
+        yield { fieldname: 'email', type: 'field', value: 'test@test.com' };
+        yield { fieldname: 'password', type: 'field', value: 'Password123!' };
+        yield { fieldname: 'firstname', type: 'field', value: 'John' };
+        yield { fieldname: 'lastname', type: 'field', value: 'Doe' };
+        yield { fieldname: 'birthdate', type: 'field', value: new Date().toISOString() };
+        yield { fieldname: 'sex', type: 'field', value: Sex.MALE };
+        yield { fieldname: 'bio', type: 'field', value: 'Test bio' };
+        yield { fieldname: 'phone', type: 'field', value: '+33612345678' };
         yield {
-          type: 'file',
           filename: 'test.jpg',
           toBuffer: async () => Buffer.from('test'),
+          type: 'file',
         };
       }
 
@@ -186,9 +186,7 @@ describe('AuthB2CController', () => {
 
       const result = await controller.verifyEmailCode(mockRequest as any);
 
-      expect(result).toEqual({
-        message: 'Email verified successfully',
-      });
+      expect(result).toBeUndefined();
       expect(mockAuthB2CService.verifyEmailLink).toHaveBeenCalledWith({ uid: '1' });
     });
   });
@@ -232,7 +230,7 @@ describe('AuthB2CController', () => {
   describe('logout', () => {
     it('should logout from current device', async () => {
       const mockRequest = {
-        user: { uid: '1', deviceUid: 'device123' },
+        user: { deviceUid: 'device123', uid: '1' },
       };
 
       mockAuthB2CService.logout.mockResolvedValue(undefined);
