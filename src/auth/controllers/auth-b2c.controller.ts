@@ -8,6 +8,7 @@ import {
   NotFoundException,
   Patch,
   Post,
+  Redirect,
   Req,
   Request,
   Res,
@@ -171,6 +172,7 @@ export class AuthB2CController {
   @Public() //? bypass the auth-b2c guard
   @UseGuards(VerifyEmailGuard)
   @Get('verify-email-link')
+  @Redirect('https://www.ludora.fr/email-verified', 302)
   @ApiOperation({
     summary: 'Allows a user to verify his email by clicking on the link in the email',
   })
@@ -183,17 +185,11 @@ export class AuthB2CController {
     type: UnauthorizedResponseDto,
   })
   @ApiOkResponse({
-    description: 'Email code verified successfully',
-    type: VerifyEmailResponseDto,
+    description: 'Redirects to the email verified page',
   })
-  @HttpCode(HttpStatus.OK)
-  async verifyEmailCode(@Request() req): Promise<SuccessTypeDto> {
+  async verifyEmailCode(@Request() req): Promise<void> {
     const user = req.user as Users;
     await this.authService.verifyEmailLink(user);
-
-    return {
-      message: 'Email verified successfully',
-    };
   }
 
   @Protected()
