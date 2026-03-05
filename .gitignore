@@ -64,4 +64,6 @@ STRIPE_TESTING.md
 /generated
 /config
 prisma/seedFields.ts
+prisma/seedFieldsGoogle.ts
 /prisma/seeds
+/prisma/seeds/terrains_confirmes_publics.json
