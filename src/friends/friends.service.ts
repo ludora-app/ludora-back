@@ -154,7 +154,7 @@ export class FriendsService {
 
     const friends = await this.prisma.$queryRaw<FriendResponseData[]>`
         SELECT 
-            uid,
+            friend.uid,
             friend.uid as "friendUid",
             f.created_at as "createdAt",
             friend.firstname,
