@@ -14,7 +14,9 @@ import { WebSocketAuthGuard } from 'src/auth/guards/websocket-auth.guard';
 import { WebSocketAuthService } from 'src/auth/services/websocket-auth.service';
 
 import { EventTypes } from './constants/event.types';
-
+import { NotificationMetadata } from './dto/input/notification-metadata';
+import { SessionInvitationData } from './dto/input/notification-metadata.dto';
+import { NotificationEventDto } from './dto/notification-event.dto';
 import { NotificationsService } from './notifications.service';
 
 /**
@@ -86,10 +88,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       if (!this.connectedUsers.has(userUid)) {
         this.connectedUsers.set(userUid, new Set());
       }
-      this.connectedUsers.get(userUid)?.add(client.id);
+      this.connectedUsers.get(userUid)!.add(client.id);
 
-      this.logger.debug(
-        `User $userUidconnected to notifications (socket: ${client.id}, total sockets: ${this.connectedUsers.get(userUid)?.size})`,
+      this.logger.info(
+        `User ${userUid} connected to notifications (socket: ${client.id}, total sockets: ${this.connectedUsers.get(userUid)!.size})`,
       );
 
       // Send unread count on connection
@@ -101,7 +103,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         userUid,
       });
     } catch (error) {
-      this.logger.error(`Notification connection error: $error.message`, {
+      this.logger.error(`Notification connection error: ${error.message}`, {
         error: error.stack,
       });
       client.emit('error', {
@@ -127,15 +129,15 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         // Remove user entirely if no more sockets
         if (userSockets.size === 0) {
           this.connectedUsers.delete(userUid);
-          this.logger.debug(`User $userUidfully disconnected (last socket: ${client.id})`);
+          this.logger.debug(`User ${userUid} fully disconnected (last socket: ${client.id})`);
         } else {
           this.logger.debug(
-            `User $userUidsocket $client.iddisconnected (${userSockets.size} remaining)`,
+            `User ${userUid} socket ${client.id} disconnected (${userSockets.size} remaining)`,
           );
         }
       }
     } else {
-      this.logger.debug(`Unauthenticated socket $client.iddisconnected`);
+      this.logger.debug(`Unauthenticated socket ${client.id} disconnected`);
     }
   }
 
@@ -143,7 +145,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
    * Check if a user is currently connected via WebSocket
    */
   private isUserConnected(userUid: string): boolean {
-    return this.connectedUsers.has(userUid) && this.connectedUsers.get(userUid)?.size > 0;
+    return this.connectedUsers.has(userUid) && this.connectedUsers.get(userUid)!.size > 0;
   }
 
   /**
@@ -179,7 +181,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
       if (this.isUserConnected(userUid)) {
         // User is connected → Send via Socket.io (real-time)
-        const userRoom = `user:$userUid`;
+        const userRoom = `user:${userUid}`;
         this.server.to(userRoom).emit('notification', {
           data: enrichedMetadata,
           message,
@@ -188,7 +190,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
           type,
         });
 
-        this.logger.debug(`✓ Socket notification sent to $userUid- $type`);
+        this.logger.debug(`✓ Socket notification sent to ${userUid} - ${type}`);
       } else {
         // User is offline → Push only for certain types (notification already persisted above)
         const pushAllowedTypes: NotificationType[] = [
@@ -206,13 +208,13 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
             type,
             userUid,
           });
-          this.logger.debug(`✓ Push notification sent to $userUid- $type`);
+          this.logger.debug(`✓ Push notification sent to ${userUid} - ${type}`);
         } else {
           this.logger.debug(`Push skipped for ${userUid} - ${type} (not in pushAllowedTypes)`);
         }
       }
     } catch (error) {
-      this.logger.error(`Failed to send notification to $userUid: $error.message`, {
+      this.logger.error(`Failed to send notification to ${userUid}: ${error.message}`, {
         error: error.stack,
         payload,
       });
@@ -255,9 +257,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         type,
       });
 
-      this.logger.debug(`Broadcast notification sent - Type: $type, Title: $title`);
+      this.logger.info(`Broadcast notification sent - Type: ${type}, Title: ${title}`);
     } catch (error) {
-      this.logger.error(`Error broadcasting notification: $error.message`);
+      this.logger.error(`Error broadcasting notification: ${error.message}`);
     }
   }
 
@@ -291,10 +293,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       }
 
       this.logger.debug(
-        `Notification sent to $userIds.lengthusers - Type: $type, Title: $title`,
+        `Notification sent to ${userIds.length} users - Type: ${type}, Title: ${title}`,
       );
     } catch (error) {
-      this.logger.error(`Error sending notification to multiple users: $error.message`);
+      this.logger.error(`Error sending notification to multiple users: ${error.message}`);
     }
   }
 
@@ -310,7 +312,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   }): Promise<void> {
     await this.sendNotification({
       foreignUid: payload.senderId,
-      message: `$payload.senderNamet'a envoyé une demande d'ami`,
+      message: `${payload.senderName} t'a envoyé une demande d'ami`,
       metadata: {
         actionUrl: 'ludora://notifications',
         senderAvatar: payload.senderAvatar,
@@ -335,154 +337,148 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   }): Promise<void> {
     await this.sendNotification({
       foreignUid: payload.senderUid,
-      message: `$payload.senderNameaccepted your friend request`,
+      message: `${payload.senderName} accepted your friend request`,
       metadata: {
         actionUrl: `app://profile/${payload.senderUid}`,
         senderAvatar: payload.senderAvatar,
         senderName: payload.senderName,
         senderUid: payload.senderUid,
-      }
-    ,
+      },
       title: 'Friend Request Accepted',
-    type: NotificationType.FRIEND_ACCEPTED, userUid;
-    : payload.recipientUid,
-  }
-  )
-}
-
-/**
- * SESSION_INVITATION: Send via hybrid delivery
- */
-@OnEvent(EventTypes.SESSION_INVITATION)
-async;
-handleSessionInvitationNotification(
-    payload: Omit<SessionInvitationData, 'actionUrl'>,
-    receiverUid: string,
-  )
-: Promise<void>
-{
-  await this.sendNotification({
-    foreignUid: payload.sessionUid,
-    message: `${payload.senderFirstname} ${payload.senderLastname} invited you to join a ${payload.sessionSport} session`,
-    metadata: {
-      actionUrl: `app://session/${payload.sessionUid}`,
-      senderAvatar: payload.senderAvatar,
-      senderFirstname: payload.senderFirstname,
-      senderLastname: payload.senderLastname,
-      senderUid: payload.senderUid,
-      sessionDate: payload.sessionDate,
-      sessionSport: payload.sessionSport,
-      sessionTitle: payload.sessionTitle,
-      sessionUid: payload.sessionUid,
-    },
-    title: 'Tu as été invité à une session',
-    type: NotificationType.SESSION_INVITATION,
-    userUid: receiverUid,
-  });
-}
-
-/**
- * EMAIL_VERIFIED: Send via hybrid delivery
- */
-@OnEvent(EventTypes.EMAIL_VERIFIED)
-async;
-handleEmailVerified(payload: { userUid: string })
-: Promise<void>
-{
-  await this.sendNotification({
-    message: 'Your email has been verified successfully',
-    metadata: {
-      actionUrl: 'app://profile',
-    },
-    title: 'Email Verified',
-    type: NotificationType.EMAIL_VERIFIED,
-    userUid: payload.userUid,
-  });
-}
-
-/**
- * NEW_MESSAGE: Send to multiple recipients via hybrid delivery
- */
-@OnEvent(EventTypes.NEW_MESSAGE)
-async;
-handleNewMessage(payload: {
-    conversationUid: string;
-notificationTitle: string;
-senderUid: string;
-senderName?: string;
-senderAvatar?: string;
-sessionUid?: string;
-}): Promise<void>
-{
-  try {
-    const { conversationUid, notificationTitle, senderAvatar, senderName, senderUid, sessionUid } =
-      payload;
-
-    // Get all conversation members except sender
-    const receiverUids = await this.notificationsService.getReceiverUids(
-      conversationUid,
-      senderUid,
-    );
-
-    const isGroupConversation = !!sessionUid;
-
-    // Send to each receiver with hybrid logic
-    for (const receiver of receiverUids) {
-      await this.sendNotification({
-        foreignUid: conversationUid,
-        message: 'Tu as reçu un nouveau message',
-        metadata: {
-          actionUrl: `app://chat-room/${conversationUid}`,
-          conversationUid,
-          senderAvatar,
-          senderName,
-          senderUid,
-        },
-        title: isGroupConversation ? 'Nouveau message dans une conversation' : notificationTitle,
-        type: NotificationType.NEW_MESSAGE,
-        userUid: receiver.userUid,
-      });
-    }
-
-    this.logger.debug(
-      `New message notification sent to ${receiverUids.length} recipients in conversation ${conversationUid}`,
-    );
-  } catch (error) {
-    this.logger.error(`Error sending new message notification: ${error.message}`, {
-      error: error.stack,
-      payload,
+      type: NotificationType.FRIEND_ACCEPTED,
+      userUid: payload.recipientUid,
     });
   }
-}
 
-/**
- * @description Sends a notification to the session creator when a is added to his session
- */
-@OnEvent(EventTypes.SESSION_PLAYER_ADDED)
-async;
-handleSessionPlayerAdded(payload: {
+  /**
+   * SESSION_INVITATION: Send via hybrid delivery
+   */
+  @OnEvent(EventTypes.SESSION_INVITATION)
+  async handleSessionInvitationNotification(
+    payload: Omit<SessionInvitationData, 'actionUrl'>,
+    receiverUid: string,
+  ): Promise<void> {
+    await this.sendNotification({
+      foreignUid: payload.sessionUid,
+      message: `${payload.senderFirstname} ${payload.senderLastname} invited you to join a ${payload.sessionSport} session`,
+      metadata: {
+        actionUrl: `app://session/${payload.sessionUid}`,
+        senderAvatar: payload.senderAvatar,
+        senderFirstname: payload.senderFirstname,
+        senderLastname: payload.senderLastname,
+        senderUid: payload.senderUid,
+        sessionDate: payload.sessionDate,
+        sessionSport: payload.sessionSport,
+        sessionTitle: payload.sessionTitle,
+        sessionUid: payload.sessionUid,
+      },
+      title: 'Tu as été invité à une session',
+      type: NotificationType.SESSION_INVITATION,
+      userUid: receiverUid,
+    });
+  }
+
+  /**
+   * EMAIL_VERIFIED: Send via hybrid delivery
+   */
+  @OnEvent(EventTypes.EMAIL_VERIFIED)
+  async handleEmailVerified(payload: { userUid: string }): Promise<void> {
+    await this.sendNotification({
+      message: 'Your email has been verified successfully',
+      metadata: {
+        actionUrl: 'app://profile',
+      },
+      title: 'Email Verified',
+      type: NotificationType.EMAIL_VERIFIED,
+      userUid: payload.userUid,
+    });
+  }
+
+  /**
+   * NEW_MESSAGE: Send to multiple recipients via hybrid delivery
+   */
+  @OnEvent(EventTypes.NEW_MESSAGE)
+  async handleNewMessage(payload: {
+    conversationUid: string;
+    notificationTitle: string;
+    senderUid: string;
+    senderName?: string;
+    senderAvatar?: string;
+    sessionUid?: string;
+  }): Promise<void> {
+    try {
+      const {
+        conversationUid,
+        notificationTitle,
+        senderAvatar,
+        senderName,
+        senderUid,
+        sessionUid,
+      } = payload;
+
+      // Get all conversation members except sender
+      const receiverUids = await this.notificationsService.getReceiverUids(
+        conversationUid,
+        senderUid,
+      );
+
+      const isGroupConversation = !!sessionUid;
+
+      // Send to each receiver with hybrid logic
+      for (const receiver of receiverUids) {
+        await this.sendNotification({
+          foreignUid: conversationUid,
+          message: 'Tu as reçu un nouveau message',
+          metadata: {
+            actionUrl: `app://chat-room/${conversationUid}`,
+            conversationUid,
+            senderAvatar,
+            senderName,
+            senderUid,
+          },
+          title: isGroupConversation ? 'Nouveau message dans une conversation' : notificationTitle,
+          type: NotificationType.NEW_MESSAGE,
+          userUid: receiver.userUid,
+        });
+      }
+
+      this.logger.debug(
+        `New message notification sent to ${receiverUids.length} recipients in conversation ${conversationUid}`,
+      );
+    } catch (error) {
+      this.logger.error(`Error sending new message notification: ${error.message}`, {
+        error: error.stack,
+        payload,
+      });
+    }
+  }
+
+  /**
+   * @description Sends a notification to the session creator when a is added to his session
+   */
+  @OnEvent(EventTypes.SESSION_PLAYER_ADDED)
+  async handleSessionPlayerAdded(payload: {
     sessionUid: string;
-playerUid: string;
-playerFirstname: string;
-playerLastname: string;
-playerAvatar?: string;
-creatorUid: string;
-}): Promise<void>
-{
-  const content = `${payload.playerFirstname} ${payload.playerLastname} joined your session`;
-  await this.sendNotification({
-    foreignUid: payload.sessionUid,
-    message: content,
-    metadata: {
-      actionUrl: `app://sessions/${payload.sessionUid}`,
-      senderAvatar: payload.playerAvatar,
-      senderFirstname: payload.playerFirstname,
-      senderLastname: payload.playerLastname,
-      senderUid: payload.playerUid,
-    },
-    title: 'New Session Player',
-    type: NotificationType.SESSION_PLAYER_ADDED,
-    userUid: payload.creatorUid,
-  });
-}
+    playerUid: string;
+    playerFirstname: string;
+    playerLastname: string;
+    playerAvatar?: string;
+    creatorUid: string;
+  }): Promise<void> {
+    const content = `${payload.playerFirstname} ${payload.playerLastname} joined your session`;
+    await this.sendNotification({
+      foreignUid: payload.sessionUid,
+      message: content,
+      metadata: {
+        actionUrl: `app://sessions/${payload.sessionUid}`,
+        senderAvatar: payload.playerAvatar,
+        senderFirstname: payload.playerFirstname,
+        senderLastname: payload.playerLastname,
+        senderUid: payload.playerUid,
+      },
+      title: 'New Session Player',
+      type: NotificationType.SESSION_PLAYER_ADDED,
+      userUid: payload.creatorUid,
+    });
+  }
 }

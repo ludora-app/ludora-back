@@ -1,4 +1,5 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as argon2 from 'argon2';
 import { Provider, Sex } from 'generated/prisma/client';
@@ -86,6 +87,10 @@ describe('UsersService', () => {
         {
           provide: PinoLogger,
           useValue: mockLogger,
+        },
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn().mockReturnValue('') },
         },
       ],
     }).compile();
