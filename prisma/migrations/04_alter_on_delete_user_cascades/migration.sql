@@ -7,42 +7,47 @@
 
 */
 -- DropForeignKey
-ALTER TABLE "ratings"."User_ratings" DROP CONSTRAINT "User_ratings_evaluator_uid_fkey";
+ALTER TABLE "ratings"."User_ratings" DROP CONSTRAINT IF EXISTS "User_ratings_evaluator_uid_fkey";
 
 -- DropForeignKey
-ALTER TABLE "sessions"."Session_invitations" DROP CONSTRAINT "Session_invitations_receiver_uid_fkey";
+ALTER TABLE "sessions"."Session_invitations" DROP CONSTRAINT IF EXISTS "Session_invitations_receiver_uid_fkey";
 
 -- DropForeignKey
-ALTER TABLE "sessions"."Session_invitations" DROP CONSTRAINT "Session_invitations_sender_uid_fkey";
+ALTER TABLE "sessions"."Session_invitations" DROP CONSTRAINT IF EXISTS "Session_invitations_sender_uid_fkey";
 
 -- DropForeignKey
-ALTER TABLE "sessions"."Session_players" DROP CONSTRAINT "Session_players_user_uid_fkey";
+ALTER TABLE "sessions"."Session_players" DROP CONSTRAINT IF EXISTS "Session_players_user_uid_fkey";
 
 -- DropForeignKey
-ALTER TABLE "sessions"."Sessions" DROP CONSTRAINT "Sessions_creator_uid_fkey";
+ALTER TABLE "sessions"."Sessions" DROP CONSTRAINT IF EXISTS "Sessions_creator_uid_fkey";
 
 -- DropForeignKey
-ALTER TABLE "social"."Conversation_members" DROP CONSTRAINT "Conversation_members_user_uid_fkey";
+ALTER TABLE "social"."Conversation_members" DROP CONSTRAINT IF EXISTS "Conversation_members_user_uid_fkey";
 
 -- DropForeignKey
-ALTER TABLE "social"."Messages" DROP CONSTRAINT "Messages_sender_uid_fkey";
+ALTER TABLE "social"."Messages" DROP CONSTRAINT IF EXISTS "Messages_sender_uid_fkey";
 
 
--- AlterTable
-ALTER TABLE "auth"."Users" ADD COLUMN     "deleted_at" TIMESTAMP(3),
-ADD COLUMN     "is_anonymized" BOOLEAN NOT NULL DEFAULT false;
+-- AlterTable Users
+ALTER TABLE "auth"."Users" ADD COLUMN IF NOT EXISTS "deleted_at" TIMESTAMP(3),
+ADD COLUMN IF NOT EXISTS "is_anonymized" BOOLEAN NOT NULL DEFAULT false;
 
--- AlterTable
-ALTER TABLE "ratings"."User_ratings" DROP CONSTRAINT "User_ratings_pkey",
-ADD COLUMN     "id" TEXT NOT NULL,
-ALTER COLUMN "evaluator_uid" DROP NOT NULL,
-ALTER COLUMN "evaluated_uid" DROP NOT NULL,
-ADD CONSTRAINT "User_ratings_pkey" PRIMARY KEY ("id");
+-- AlterTable User_ratings: add id as nullable, backfill, then set NOT NULL and change PK (safe for existing data)
+ALTER TABLE "ratings"."User_ratings" ADD COLUMN IF NOT EXISTS "id" TEXT;
+UPDATE "ratings"."User_ratings" SET "id" = gen_random_uuid()::text WHERE "id" IS NULL;
+ALTER TABLE "ratings"."User_ratings" ALTER COLUMN "id" SET NOT NULL;
+ALTER TABLE "ratings"."User_ratings" DROP CONSTRAINT IF EXISTS "User_ratings_pkey";
+ALTER TABLE "ratings"."User_ratings" ALTER COLUMN "evaluator_uid" DROP NOT NULL;
+ALTER TABLE "ratings"."User_ratings" ALTER COLUMN "evaluated_uid" DROP NOT NULL;
+ALTER TABLE "ratings"."User_ratings" ADD CONSTRAINT "User_ratings_pkey" PRIMARY KEY ("id");
 
--- AlterTable
-ALTER TABLE "sessions"."Session_players" ADD COLUMN     "uid" TEXT NOT NULL,
-ALTER COLUMN "user_uid" DROP NOT NULL,
-ADD CONSTRAINT "Session_players_pkey" PRIMARY KEY ("uid");
+-- AlterTable Session_players: add uid as nullable, backfill, then set NOT NULL and change PK (safe for existing data)
+ALTER TABLE "sessions"."Session_players" ADD COLUMN IF NOT EXISTS "uid" TEXT;
+UPDATE "sessions"."Session_players" SET "uid" = gen_random_uuid()::text WHERE "uid" IS NULL;
+ALTER TABLE "sessions"."Session_players" ALTER COLUMN "uid" SET NOT NULL;
+ALTER TABLE "sessions"."Session_players" DROP CONSTRAINT IF EXISTS "Session_players_pkey";
+ALTER TABLE "sessions"."Session_players" ALTER COLUMN "user_uid" DROP NOT NULL;
+ALTER TABLE "sessions"."Session_players" ADD CONSTRAINT "Session_players_pkey" PRIMARY KEY ("uid");
 
 -- AlterTable
 ALTER TABLE "sessions"."Sessions" ALTER COLUMN "creator_uid" DROP NOT NULL;
