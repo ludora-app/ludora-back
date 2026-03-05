@@ -44,6 +44,7 @@ export interface RawUserFindMe extends RawUserFindOne {
   sex: Sex;
   email: string;
   phone: string;
+  deletedAt: Date;
   type: UserType;
   birthdate: Date;
   isConnected: boolean;
@@ -101,6 +102,7 @@ export class UserMapper {
       bio: user.bio,
       birthdate: user.birthdate,
       city: user.city,
+      deletedAt: user.deletedAt ?? null,
       email: user.email,
       firstname: user.firstname,
       friendsCount: user._count.friendsReceived + user._count.friendsSent,

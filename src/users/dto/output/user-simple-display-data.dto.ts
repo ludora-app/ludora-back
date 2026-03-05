@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class UserSimpleDisplayDataDto {
+export class UserSimpleDisplayData {
   @ApiProperty({
     description: 'User first name',
     example: 'John',
@@ -19,4 +19,12 @@ export class UserSimpleDisplayDataDto {
     nullable: true,
   })
   imageUrl: string | null;
+}
+
+export class UserSimpleDisplayWithUidData extends UserSimpleDisplayData {
+  @ApiProperty({
+    description: 'User ID',
+    example: 'cmkpi7ca502t45imrn5ss4zki',
+  })
+  uid: string;
 }

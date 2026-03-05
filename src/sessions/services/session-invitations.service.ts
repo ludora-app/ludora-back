@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InvitationStatus, SessionInvitations } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
@@ -355,6 +360,36 @@ export class SessionInvitationsService {
       return;
     }
     if (isReceiver && updateSessionInvitationDto.status === InvitationStatus.ACCEPTED) {
+      const existingPlayerUids = (
+        await this.prisma.sessionPlayers.findMany({
+          select: { userUid: true },
+          where: { sessionUid: existingInvitation.sessionUid },
+        })
+      ).map((p) => p.userUid);
+      // ? check if the receiver is blocked by any of the players
+      if (existingPlayerUids.length > 0) {
+        const block = await this.prisma.userBlocks.findFirst({
+          where: {
+            OR: [
+              {
+                blockedUid: { in: existingPlayerUids },
+                blockerUid: existingInvitation.receiverUid,
+              },
+              {
+                blockedUid: existingInvitation.receiverUid,
+                blockerUid: { in: existingPlayerUids },
+              },
+            ],
+          },
+        });
+        if (block) {
+          this.logger.warn(
+            `Block relationship detected, user ${existingInvitation.receiverUid} cannot join session ${existingInvitation.sessionUid}`,
+          );
+          throw new ForbiddenException('Action not allowed due to blocked user relationship');
+        }
+      }
+
       await this.prisma.$transaction(async (tx) => {
         const updated = await tx.sessionInvitations.update({
           data: { status: updateSessionInvitationDto.status },
@@ -431,6 +466,20 @@ export class SessionInvitationsService {
 
       if (!existingReceiver) {
         this.logger.error(`User ${receiverUid} not found`);
+        continue;
+      }
+
+      const block = await this.prisma.userBlocks.findFirst({
+        where: {
+          OR: [
+            { blockedUid: receiverUid, blockerUid: senderUid },
+            { blockedUid: senderUid, blockerUid: receiverUid },
+          ],
+        },
+      });
+
+      if (block) {
+        this.logger.debug(`User ${receiverUid} is blocked by ${senderUid}`);
         continue;
       }
 

@@ -2,11 +2,11 @@ import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { FieldType } from 'generated/prisma/enums';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
-import { UserSimpleDisplayDataDto } from 'src/users/dto';
+import { UserSimpleDisplayData } from 'src/users/dto';
 import { SessionCollectionItemDto } from './session-collection-response.dto';
 import { SessionTeamResponseData } from './session-team-response';
 
-export class SessionPlayerFromFindOneSessionResponseData extends UserSimpleDisplayDataDto {
+export class SessionPlayerFromFindOneSessionResponseData extends UserSimpleDisplayData {
   @ApiProperty({
     example: 'cmgoxfs3t002hob8arwdna80g',
     readOnly: true,
@@ -49,7 +49,7 @@ export class TeamFromFindOneSessionResponseData {
   })
   isJoined?: boolean;
 }
-export class CreatorInfoResponseData extends UserSimpleDisplayDataDto {
+export class CreatorInfoResponseData extends UserSimpleDisplayData {
   @ApiProperty({
     description: 'The uid of the creator',
     example: 'cmkiwtv9r02d65pmp40klxt2i',

@@ -25,7 +25,7 @@
     "argon2": "^0.41.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.4",
-    "fastify": "^5.7.4",
+    "fastify": "^5.8.1",
     "firebase-admin": "^13.7.0",
     "luxon": "^3.7.2",
     "nestjs-pino": "^4.6.0",
@@ -74,6 +74,7 @@
   "name": "ludora-backend",
   "pnpm": {
     "overrides": {
+      "fastify": ">=5.8.1",
       "@isaacs/brace-expansion": ">=5.0.1",
       "ajv@>=7.0.0-alpha.0 <8.18.0": ">=8.18.0",
       "fast-xml-parser": ">=5.3.6",

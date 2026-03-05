@@ -791,14 +791,10 @@ export class FieldsService {
       this.prisma.fields.count({ where }),
     ]);
 
-    const nextCursor: string | null = null;
+    let nextCursor: string | null = null;
     if (fields.length > limit) {
       const nextItem = fields.pop();
-      <<<<<<< HEAD
-      nextCursor = nextItem!.uid
-      =======
-      nextCursor = nextItem?.uid
-      >>>>>>> 879ef17 (chore: mise en place du versionning, du changelog auto)
+      nextCursor = nextItem?.uid;
     }
 
     const items: MyFieldsResponseData[] = fields.map((field) => ({

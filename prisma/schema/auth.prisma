@@ -86,6 +86,10 @@ model Users {
   devices                 Devices[]
   userGameModePreferences UserGameModePreferences[]
   createdFields           Fields[]                  @relation("createdFields")
+  blockedByUsers          UserBlocks[]              @relation("BlockedRelation")
+  blockerUsers            UserBlocks[]              @relation("BlockerRelation")
+  reportedByUsers         UserReports[]             @relation("ReportedRelation")
+  reporterUsers           UserReports[]             @relation("ReporterRelation")
 
   @@index([createdAt])
   @@index([isConnected])

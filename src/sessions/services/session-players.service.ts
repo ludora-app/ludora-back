@@ -5,7 +5,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { EventTypes } from 'src/notifications/constants/event.types';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
-import { UserSimpleDisplayDataDto } from 'src/users/dto';
+import { UserSimpleDisplayData } from 'src/users/dto';
 import { ConversationMembersService } from './../../conversations/services/conversation-members.service';
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
 
@@ -102,7 +102,7 @@ export class SessionPlayersService {
 
   async suggestPlayerFromPreviousSessions(
     userUid: string,
-  ): Promise<PaginatedDataDto<UserSimpleDisplayDataDto>> {
+  ): Promise<PaginatedDataDto<UserSimpleDisplayData>> {
     const previousSessions = await this.prisma.sessions.findMany({
       select: {
         sessionPlayers: {

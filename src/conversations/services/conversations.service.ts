@@ -568,6 +568,19 @@ export class ConversationsService {
       | { uid: string }
       | undefined;
     if (recipientUid) {
+      const block = await this.prisma.userBlocks.findFirst({
+        where: {
+          OR: [
+            { blockedUid: recipientUid, blockerUid: userUid },
+            { blockedUid: userUid, blockerUid: recipientUid },
+          ],
+        },
+      });
+      if (block) {
+        this.logger.debug(`User ${userUid} is blocked by ${recipientUid}`);
+        throw new ForbiddenException('Action not allowed due to blocked user relationship');
+      }
+
       privateConversation = await this.prisma.conversations.findFirst({
         where: {
           AND: [
@@ -606,6 +619,28 @@ export class ConversationsService {
       conversationForMessage?.type === ConversationType.SESSION
         ? conversationForMessage.sessionUid
         : null;
+
+    //? For direct conversationUid path (no recipientUid), check block for PRIVATE conversations
+    if (!recipientUid && conversationForMessage?.type === ConversationType.PRIVATE) {
+      const otherMember = await this.prisma.conversationMembers.findFirst({
+        select: { userUid: true },
+        where: { conversationUid: actualConversationUid, userUid: { not: userUid } },
+      });
+      if (otherMember) {
+        const block = await this.prisma.userBlocks.findFirst({
+          where: {
+            OR: [
+              { blockedUid: otherMember.userUid, blockerUid: userUid },
+              { blockedUid: userUid, blockerUid: otherMember.userUid },
+            ],
+          },
+        });
+        if (block) {
+          this.logger.debug(`User ${userUid} is blocked by ${otherMember.userUid}`);
+          throw new ForbiddenException('Action not allowed due to blocked user relationship');
+        }
+      }
+    }
 
     let message: { messageUid: string } | undefined;
 

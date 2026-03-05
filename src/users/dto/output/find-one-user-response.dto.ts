@@ -40,6 +40,9 @@ export class FindOneUserResponseData {
 }
 
 export class FindMeUserResponseData extends FindOneUserResponseData {
+  @ApiProperty({ example: null, nullable: true, readOnly: true })
+  readonly deletedAt?: Date;
+
   @ApiProperty({ example: 'toto@gmail.com', nullable: true, readOnly: true })
   readonly email?: string;
 

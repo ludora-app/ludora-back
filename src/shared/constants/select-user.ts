@@ -51,6 +51,7 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     bio: true,
     birthdate: true,
     city: true,
+    deletedAt: true,
     email: true,
     firstname: true,
     imageUrl: true,

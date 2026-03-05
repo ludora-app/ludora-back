@@ -171,6 +171,14 @@ export class UsersService {
         )`;
     }
 
+    const blockFilterSql = Prisma.sql`
+    AND NOT EXISTS (
+      SELECT 1 FROM moderation."User_blocks" ub
+        WHERE (ub.blocker_uid = ${userUid} AND ub.blocked_uid = u.uid)
+         OR (ub.blocker_uid = u.uid AND ub.blocked_uid = ${userUid})
+    )
+  `;
+
     // -------------------------------------------------------------------------
     // 3. CITY — +CITY_BONUS if same city as connected user
     // -------------------------------------------------------------------------
@@ -251,6 +259,7 @@ export class UsersService {
           ${sportWhereSql}
           ${levelWhereSql}
           ${searchWhereSql}
+          ${blockFilterSql}
       ) AS ranked_users
       ORDER BY ranked_users.score DESC, ranked_users.uid ASC
       LIMIT ${take}

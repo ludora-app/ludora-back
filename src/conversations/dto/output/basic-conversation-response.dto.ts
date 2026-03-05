@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
 import { Sport } from 'src/shared/constants/constants';
-import { UserSimpleDisplayDataDto } from 'src/users/dto';
+import { UserSimpleDisplayWithUidData } from 'src/users/dto';
 
 export class MessageDto {
   @ApiProperty({
@@ -47,15 +47,6 @@ export class MessageDto {
     readOnly: true,
   })
   isSender: boolean;
-}
-
-export class SenderDto extends UserSimpleDisplayDataDto {
-  @ApiProperty({
-    description: 'User ID',
-    example: 'cmkpi7ca502t45imrn5ss4zki',
-    readOnly: true,
-  })
-  uid: string;
 }
 
 export class SessionData {
@@ -151,9 +142,9 @@ export class BasicConversationResponseData {
     description: 'Sender information',
     nullable: true,
     readOnly: true,
-    type: SenderDto,
+    type: UserSimpleDisplayWithUidData,
   })
-  sender: SenderDto | null;
+  sender: UserSimpleDisplayWithUidData | null;
 
   @ApiProperty({
     description: 'Receiver information (for private conversations)',

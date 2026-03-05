@@ -19,6 +19,7 @@ describe('SessionInvitationsService', () => {
   let playersService: SessionPlayersService;
   let _logger: PinoLogger;
   const mockPrismaService = {
+    $transaction: jest.fn(),
     sessionInvitations: {
       create: jest.fn(),
       findFirst: jest.fn(),
@@ -27,12 +28,14 @@ describe('SessionInvitationsService', () => {
       upsert: jest.fn(),
     },
     sessionPlayers: {
-      findFirst: jest.fn(),
-      findMany: jest.fn(),
       create: jest.fn(),
+      findFirst: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
       update: jest.fn(),
     },
-    $transaction: jest.fn(),
+    userBlocks: {
+      findFirst: jest.fn().mockResolvedValue(null),
+    },
   } as unknown as PrismaService;
 
   const mockSessionsService = {
@@ -47,47 +50,47 @@ describe('SessionInvitationsService', () => {
     findOne: jest.fn(),
   };
   const mockLogger = {
-    setContext: jest.fn(),
-    info: jest.fn(),
-    error: jest.fn(),
     debug: jest.fn(),
-    warn: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
     log: jest.fn(),
+    setContext: jest.fn(),
+    warn: jest.fn(),
   };
 
   const mockEventEmitter = {
     emit: jest.fn(),
     on: jest.fn(),
     once: jest.fn(),
-    removeListener: jest.fn(),
     removeAllListeners: jest.fn(),
+    removeListener: jest.fn(),
   };
 
   const mockSession = {
-    id: 'session-123',
     date: new Date('2024-01-15T10:00:00Z'),
+    id: 'session-123',
   } as any;
 
   const mockUser = { id: 'user-123' } as any;
 
   const mockInvitation = {
-    sessionUid: 'session-123',
-    senderUid: 'sender-123',
-    receiverUid: 'user-123',
-    status: InvitationStatus.PENDING,
     createdAt: new Date('2023-01-01T12:00:00Z'),
+    receiverUid: 'user-123',
+    senderUid: 'sender-123',
+    sessionUid: 'session-123',
+    status: InvitationStatus.PENDING,
     updatedAt: new Date('2023-01-01T12:00:00Z'),
   } as any;
 
   const senderUid = 'sender-123';
 
   const _mockPlayerWithUser = {
-    userUid: senderUid,
     user: {
       firstname: 'John',
-      lastname: 'Doe',
       imageUrl: 'https://example.com/avatar.jpg',
+      lastname: 'Doe',
     },
+    userUid: senderUid,
   };
 
   beforeEach(async () => {
@@ -207,11 +210,11 @@ describe('SessionInvitationsService', () => {
 
   describe('update', () => {
     const existingInvitation = {
-      sessionUid: 'session-123',
-      senderUid: 'sender-123',
       receiverUid: 'user-123',
-      status: InvitationStatus.PENDING,
+      senderUid: 'sender-123',
       session: { creatorUid: 'creator-123' },
+      sessionUid: 'session-123',
+      status: InvitationStatus.PENDING,
     } as any;
 
     it('should update status to ACCEPTED and add player', async () => {
@@ -228,9 +231,9 @@ describe('SessionInvitationsService', () => {
       });
 
       const dto: UpdateSessionInvitationDto = {
+        sessionUid: 'session-123',
         status: InvitationStatus.ACCEPTED,
         userUid: 'user-123',
-        sessionUid: 'session-123',
       };
 
       await expect(service.update(dto)).resolves.toBeUndefined();
@@ -255,9 +258,9 @@ describe('SessionInvitationsService', () => {
     it('should throw NotFoundException when invitation does not exist', async () => {
       (prismaService.sessionInvitations.findFirst as jest.Mock).mockResolvedValue(null);
       const dto: UpdateSessionInvitationDto = {
+        sessionUid: 'session-123',
         status: InvitationStatus.ACCEPTED,
         userUid: 'user-123',
-        sessionUid: 'session-123',
       };
       await expect(service.update(dto)).rejects.toThrow(NotFoundException);
     });
@@ -267,9 +270,9 @@ describe('SessionInvitationsService', () => {
         existingInvitation,
       );
       const dto: UpdateSessionInvitationDto = {
+        sessionUid: 'session-123',
         status: InvitationStatus.PENDING,
         userUid: 'user-123',
-        sessionUid: 'session-123',
       };
       await expect(service.update(dto)).rejects.toThrow(BadRequestException);
     });
@@ -279,16 +282,16 @@ describe('SessionInvitationsService', () => {
         existingInvitation,
       );
       const dtoPending: UpdateSessionInvitationDto = {
+        sessionUid: 'session-123',
         status: InvitationStatus.PENDING,
         userUid: 'user-123',
-        sessionUid: 'session-123',
       };
       await expect(service.update(dtoPending)).rejects.toThrow(BadRequestException);
 
       const dtoCanceled: UpdateSessionInvitationDto = {
+        sessionUid: 'session-123',
         status: InvitationStatus.CANCELED,
         userUid: 'user-123',
-        sessionUid: 'session-123',
       };
       await expect(service.update(dtoCanceled)).rejects.toThrow(BadRequestException);
     });
@@ -307,16 +310,16 @@ describe('SessionInvitationsService', () => {
     const sessionUid = 'session-123';
     const dto = { receiverUids: ['user-1', 'user-2'] };
     const mockSender = {
-      uid: senderUid,
       firstname: 'John',
-      lastname: 'Doe',
       imageUrl: 'https://example.com/avatar.jpg',
+      lastname: 'Doe',
+      uid: senderUid,
     };
     const mockSession = {
-      uid: sessionUid,
-      title: 'Session Title',
-      startDate: new Date(),
       sport: 'BASKETBALL',
+      startDate: new Date(),
+      title: 'Session Title',
+      uid: sessionUid,
     };
 
     it('should throw NotFoundException when sender not found', async () => {
@@ -367,22 +370,22 @@ describe('SessionInvitationsService', () => {
       expect(prismaService.$transaction).toHaveBeenCalled();
       expect(prismaService.sessionInvitations.upsert).toHaveBeenCalledTimes(2);
       expect(prismaService.sessionInvitations.upsert).toHaveBeenCalledWith({
+        create: { receiverUid: 'user-1', senderUid, sessionUid },
+        update: { status: InvitationStatus.PENDING },
         where: {
           sessionUid_senderUid_receiverUid: {
-            sessionUid,
-            senderUid,
             receiverUid: 'user-1',
+            senderUid,
+            sessionUid,
           },
         },
-        create: { sessionUid, senderUid, receiverUid: 'user-1' },
-        update: { status: InvitationStatus.PENDING },
       });
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
           senderUid,
-          sessionUid: mockSession.uid,
           sessionTitle: mockSession.title,
+          sessionUid: mockSession.uid,
         }),
         'user-1',
       );
