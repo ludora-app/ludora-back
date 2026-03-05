@@ -26,6 +26,9 @@ describe('ConversationsService', () => {
         findMany: jest.fn(),
         findUnique: jest.fn(),
       },
+      userBlocks: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
     };
 
     mockLogger = {

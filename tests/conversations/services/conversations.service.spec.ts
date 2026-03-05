@@ -42,11 +42,14 @@ describe('ConversationsService', () => {
       messageReceipts: {
         count: jest.fn(),
       },
+      userBlocks: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
     };
 
     mockMessagesService = {
-      createTextMessage: jest.fn(),
       createMediaMessage: jest.fn(),
+      createTextMessage: jest.fn(),
     };
 
     mockConversationMembersService = {
@@ -466,10 +469,10 @@ describe('ConversationsService', () => {
               select: expect.objectContaining({
                 user: expect.objectContaining({
                   select: expect.objectContaining({
-                    uid: true,
                     firstname: true,
-                    lastname: true,
                     imageUrl: true,
+                    lastname: true,
+                    uid: true,
                   }),
                 }),
               }),
@@ -486,10 +489,10 @@ describe('ConversationsService', () => {
               select: expect.objectContaining({
                 content: true,
                 createdAt: true,
-                uid: true,
-                senderUid: true,
-                updatedAt: true,
                 sender: expect.any(Object),
+                senderUid: true,
+                uid: true,
+                updatedAt: true,
               }),
               take: 1,
             }),
@@ -629,7 +632,6 @@ describe('ConversationsService', () => {
             select: {
               isArchived: true,
               isMuted: true,
-              userUid: true,
               user: {
                 select: {
                   firstname: true,
@@ -638,6 +640,7 @@ describe('ConversationsService', () => {
                   uid: true,
                 },
               },
+              userUid: true,
             },
           },
           messages: {
@@ -761,8 +764,8 @@ describe('ConversationsService', () => {
               select: expect.objectContaining({
                 isArchived: true,
                 isMuted: true,
-                userUid: true,
                 user: expect.any(Object),
+                userUid: true,
               }),
             }),
           }),

@@ -14,6 +14,7 @@ import { FieldsModule } from './fields/fields.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { FriendsModule } from './friends/friends.module';
 import { MetricsModule } from './metrics/metrics.module';
+import { ModerationModule } from './moderation/moderation.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PartnersModule } from './partners/partners.module';
 import { PaymentModule } from './payment/payment.module';
@@ -127,6 +128,7 @@ const logLevel = process.env.LOG_LEVEL ?? (isDevelopment ? 'debug' : 'info');
     FirebaseModule,
     DevicesModule,
     UserLifecycleModule,
+    ModerationModule,
   ],
   providers: [
     AppService,

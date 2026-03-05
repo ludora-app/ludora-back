@@ -416,6 +416,15 @@ export class SessionsService {
     // 5. REMAINING SQL CONSTRUCTION
     // ---------------------------------------------------------
 
+    // F. BLOCK FILTER — exclude sessions whose creator has a block relationship with the current user
+    const blockFilterSql = Prisma.sql`
+      AND NOT EXISTS (
+        SELECT 1 FROM moderation."User_blocks" ub
+        WHERE (ub.blocker_uid = ${userUid} AND ub.blocked_uid = s.creator_uid)
+           OR (ub.blocker_uid = s.creator_uid AND ub.blocked_uid = ${userUid})
+      )
+    `;
+
     // C. DISTANCE (maxDistance in km, convert to meters for PostGIS)
     let distanceScoreSql = Prisma.sql`0`;
     let distanceValueSql = Prisma.sql`NULL`; // <--- NEW: Raw value by default
@@ -540,6 +549,7 @@ export class SessionsService {
           ${gameModeWhereSql}
           ${searchWhereSql}
           ${durationWhereSql}
+          ${blockFilterSql}
           AND s.visibility = ${SessionVisibility.PUBLIC}
       ) as ranked_sessions
       
@@ -1124,6 +1134,30 @@ export class SessionsService {
       throw new BadRequestException(
         `Player ${createSessionPlayerDto.userUid} already in session ${createSessionPlayerDto.sessionUid}`,
       );
+    }
+
+    const existingPlayerUids = (
+      await this.prisma.sessionPlayers.findMany({
+        select: { userUid: true },
+        where: { sessionUid: createSessionPlayerDto.sessionUid },
+      })
+    ).map((p) => p.userUid);
+
+    if (existingPlayerUids.length > 0) {
+      const block = await this.prisma.userBlocks.findFirst({
+        where: {
+          OR: [
+            { blockedUid: { in: existingPlayerUids }, blockerUid: createSessionPlayerDto.userUid },
+            { blockedUid: createSessionPlayerDto.userUid, blockerUid: { in: existingPlayerUids } },
+          ],
+        },
+      });
+      if (block) {
+        this.logger.warn(
+          `Block relationship detected, user ${createSessionPlayerDto.userUid} cannot join session ${createSessionPlayerDto.sessionUid}`,
+        );
+        throw new ForbiddenException('Action not allowed due to blocked user relationship');
+      }
     }
 
     await this.playersService.addPlayerToSession(

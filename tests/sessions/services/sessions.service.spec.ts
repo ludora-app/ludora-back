@@ -20,13 +20,6 @@ import { SportPreferencesService } from 'src/user-preferences/services/sport-pre
 
 jest.mock('src/shared/utils/date.utils', () => ({
   DateUtils: {
-    formatDate: jest.fn().mockReturnValue('2023-01-01'),
-    timeStringToMinutes: jest.fn().mockImplementation((time) => {
-      if (time === '08:00:00') return 480; // 8 hours * 60 minutes
-      if (time === '22:00:00') return 1320; // 22 hours * 60 minutes
-      if (time === '16:00:00') return 960; // 16 hours * 60 minutes
-      return 0;
-    }),
     checkValidityForCreation: jest.fn().mockImplementation((startDate: string, endDate: string) => {
       const start = new Date(startDate);
       const end = new Date(endDate);
@@ -39,9 +32,16 @@ jest.mock('src/shared/utils/date.utils', () => ({
         throw new Error('The end date must be after the start date');
       }
     }),
+    formatDate: jest.fn().mockReturnValue('2023-01-01'),
     getHoursForPeriod: jest.fn().mockImplementation((_period) => {
       // Mock implementation for time period
-      return { min: 0, max: 24 };
+      return { max: 24, min: 0 };
+    }),
+    timeStringToMinutes: jest.fn().mockImplementation((time) => {
+      if (time === '08:00:00') return 480; // 8 hours * 60 minutes
+      if (time === '22:00:00') return 1320; // 22 hours * 60 minutes
+      if (time === '16:00:00') return 960; // 16 hours * 60 minutes
+      return 0;
     }),
   },
 }));
@@ -87,22 +87,28 @@ describe('SessionsService', () => {
         {
           provide: PrismaService,
           useValue: {
-            $transaction: jest.fn(),
-            $queryRawUnsafe: jest.fn(),
             $executeRawUnsafe: jest.fn(),
+            $queryRawUnsafe: jest.fn(),
+            $transaction: jest.fn(),
             fields: {
               findUnique: jest.fn(),
             },
+            sessionPlayers: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
             sessions: {
+              count: jest.fn(),
               create: jest.fn(),
               findFirst: jest.fn(),
-              findUnique: jest.fn(),
               findMany: jest.fn(),
+              findUnique: jest.fn(),
               update: jest.fn(),
-              count: jest.fn(),
             },
             sessionTeams: {
               findUnique: jest.fn(),
+            },
+            userBlocks: {
+              findFirst: jest.fn().mockResolvedValue(null),
             },
           },
         },
@@ -110,8 +116,8 @@ describe('SessionsService', () => {
           provide: SessionTeamsService,
           useValue: {
             createDefaultTeams: jest.fn(),
-            findTeamsBySessionUid: jest.fn(),
             findOneByUid: jest.fn(),
+            findTeamsBySessionUid: jest.fn(),
           },
         },
         {
@@ -155,12 +161,12 @@ describe('SessionsService', () => {
         {
           provide: PinoLogger,
           useValue: {
-            setContext: jest.fn(),
-            info: jest.fn(),
-            error: jest.fn(),
             debug: jest.fn(),
-            warn: jest.fn(),
+            error: jest.fn(),
+            info: jest.fn(),
             log: jest.fn(),
+            setContext: jest.fn(),
+            warn: jest.fn(),
           },
         },
       ],
@@ -186,61 +192,61 @@ describe('SessionsService', () => {
 
   describe('create', () => {
     const createSessionDto: CreateSessionDto = {
+      description: 'Test session',
       endDate: mockFutureEndDate.toISOString(),
       fieldUid: 'field-uid-1',
-      startDate: mockFutureDate.toISOString(),
-      description: 'Test session',
-      title: 'Test Session Title',
       gameMode: GameModes.FIVE_V_FIVE,
-      userUid: 'user-uid-1',
       level: SessionSportLevel.BEGINNER,
       sport: Sport.FOOTBALL,
+      startDate: mockFutureDate.toISOString(),
+      title: 'Test Session Title',
+      userUid: 'user-uid-1',
     };
 
     const mockPublicField = {
-      uid: 'field-uid-1',
-      sports: [Sport.FOOTBALL],
       gameMode: '5v5',
       partnerUid: 'partner-uid-1',
+      sports: [Sport.FOOTBALL],
       type: FieldType.PUBLIC,
+      uid: 'field-uid-1',
     };
 
     const mockPrivateField = {
-      uid: 'field-uid-2',
-      sports: [Sport.FOOTBALL],
       gameMode: '5v5',
       partnerUid: 'partner-uid-1',
+      sports: [Sport.FOOTBALL],
       type: FieldType.PRIVATE,
+      uid: 'field-uid-2',
     };
 
     const mockCreatedSession = {
-      uid: 'session-uid-1',
+      createdAt: mockCurrentDate,
       creatorUid: 'user-uid-1',
       description: 'Test session',
       endDate: mockFutureEndDate,
       fieldUid: 'field-uid-1',
       gameMode: GameModes.FIVE_V_FIVE,
+      level: SessionSportLevel.BEGINNER,
       maxPlayersPerTeam: 5,
       minPlayersPerTeam: 3,
+      slotUid: null,
       sport: Sport.FOOTBALL,
       startDate: mockFutureDate,
       teamsPerGame: 2,
       title: 'Test Session Title',
-      level: SessionSportLevel.BEGINNER,
-      slotUid: null,
-      createdAt: mockCurrentDate,
+      uid: 'session-uid-1',
       updatedAt: mockCurrentDate,
     };
 
     const mockFieldSlot = {
-      uid: 'slot-uid-1',
-      fieldUid: 'field-uid-2',
-      startTime: mockFutureDate,
-      endTime: mockFutureEndDate,
-      gameMode: GameModes.FIVE_V_FIVE,
-      price: 50,
-      isReserved: false,
       createdAt: mockCurrentDate,
+      endTime: mockFutureEndDate,
+      fieldUid: 'field-uid-2',
+      gameMode: GameModes.FIVE_V_FIVE,
+      isReserved: false,
+      price: 50,
+      startTime: mockFutureDate,
+      uid: 'slot-uid-1',
       updatedAt: mockCurrentDate,
     };
 
@@ -258,34 +264,34 @@ describe('SessionsService', () => {
       sessionImagesCreateManyMock = jest.fn().mockResolvedValue({ count: 0 });
       (prismaService.$transaction as jest.Mock).mockImplementation(async (cb: any) => {
         const tx = {
-          conversations: {
-            create: jest.fn().mockResolvedValue({ uid: 'conv-123' }),
-          },
           conversationMembers: {
             createMany: jest.fn().mockResolvedValue({ count: 1 }),
           },
-          sessions: prismaService.sessions,
+          conversations: {
+            create: jest.fn().mockResolvedValue({ uid: 'conv-123' }),
+          },
           sessionImages: {
             createMany: sessionImagesCreateManyMock,
           },
+          sessions: prismaService.sessions,
         } as any;
         return cb(tx);
       });
       (sessionTeamsService.createDefaultTeams as jest.Mock).mockResolvedValue([
         {
-          uid: 'team-a',
+          createdAt: mockCurrentDate,
           sessionUid: 'session-uid-1',
           teamLabel: 'A',
           teamName: teamAName,
-          createdAt: mockCurrentDate,
+          uid: 'team-a',
           updatedAt: mockCurrentDate,
         },
         {
-          uid: 'team-b',
+          createdAt: mockCurrentDate,
           sessionUid: 'session-uid-1',
           teamLabel: 'B',
           teamName: teamBName,
-          createdAt: mockCurrentDate,
+          uid: 'team-b',
           updatedAt: mockCurrentDate,
         },
       ]);
@@ -305,8 +311,8 @@ describe('SessionsService', () => {
         // Assert
         expect(result).toEqual(
           expect.objectContaining({
-            uid: 'session-uid-1',
             title: 'Test Session Title',
+            uid: 'session-uid-1',
           }),
         );
         expect(fieldsService.findOne).toHaveBeenCalledWith('field-uid-1');
@@ -315,8 +321,8 @@ describe('SessionsService', () => {
         expect(prismaService.sessions.create).toHaveBeenCalledWith({
           data: expect.objectContaining({
             fieldUid: 'field-uid-1',
-            title: 'Test Session Title',
             level: SessionSportLevel.BEGINNER,
+            title: 'Test Session Title',
           }),
         });
       });
@@ -366,9 +372,9 @@ describe('SessionsService', () => {
         expect(sessionImagesCreateManyMock).toHaveBeenCalledWith({
           data: [
             {
+              order: 0,
               sessionUid: mockCreatedSession.uid,
               url: imageUrl,
-              order: 0,
             },
           ],
         });
@@ -391,8 +397,8 @@ describe('SessionsService', () => {
         const pastEndDate = new Date('2022-01-01T14:00:00Z');
         const pastSessionDto = {
           ...createSessionDto,
-          startDate: pastStartDate.toISOString(),
           endDate: pastEndDate.toISOString(),
+          startDate: pastStartDate.toISOString(),
         };
 
         (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPublicField);
@@ -494,8 +500,8 @@ describe('SessionsService', () => {
         // Arrange
         const differentSlotTimes = {
           ...mockFieldSlot,
-          startTime: new Date('2023-01-10T10:00:00Z'),
           endTime: new Date('2023-01-10T12:00:00Z'),
+          startTime: new Date('2023-01-10T10:00:00Z'),
         };
 
         (fieldsService.findOne as jest.Mock).mockResolvedValue(mockPrivateField);
@@ -538,8 +544,8 @@ describe('SessionsService', () => {
         // Assert
         expect(result).toEqual(
           expect.objectContaining({
-            uid: 'session-uid-1',
             slotUid: 'slot-uid-1',
+            uid: 'session-uid-1',
           }),
         );
         expect(fieldSlotsService.findOne).toHaveBeenCalledWith('slot-uid-1');
@@ -760,69 +766,69 @@ describe('SessionsService', () => {
     // Mock data for raw query result format
     const mockRawQueryResult = [
       {
-        uid: 'session-uid-1',
+        distance_val: 500,
         score: 1000,
         start_date: new Date('2023-01-10T14:00:00Z'),
         total_count: BigInt(2),
-        distance_val: 500,
+        uid: 'session-uid-1',
       },
       {
-        uid: 'session-uid-2',
+        distance_val: 1000,
         score: 900,
         start_date: new Date('2023-01-11T14:00:00Z'),
         total_count: BigInt(2),
-        distance_val: 1000,
+        uid: 'session-uid-2',
       },
     ];
 
     const mockSessionsFromDb = [
       {
-        uid: 'session-uid-1',
         creatorUid: 'user-uid-1',
         endDate: new Date('2023-01-10T16:00:00Z'),
-        startDate: new Date('2023-01-10T14:00:00Z'),
-        sport: Sport.FOOTBALL,
-        gameMode: 'FIVE_V_FIVE',
-        maxPlayersPerTeam: 5,
         field: {
-          shortAddress: '123 Main St, Paris',
+          fieldImages: [{ url: 'https://example.com/field1.jpg' }],
           latitude: 48.8566,
           longitude: 2.3522,
-          fieldImages: [{ url: 'https://example.com/field1.jpg' }],
+          shortAddress: '123 Main St, Paris',
         },
-        sessionTeams: [
-          { teamName: 'Team A', _count: { sessionPlayers: 3 } },
-          { teamName: 'Team B', _count: { sessionPlayers: 2 } },
-        ],
-      },
-      {
-        uid: 'session-uid-2',
-        creatorUid: 'user-uid-2',
-        endDate: new Date('2023-01-11T16:00:00Z'),
-        startDate: new Date('2023-01-11T14:00:00Z'),
-        sport: 'BASKETBALL',
         gameMode: 'FIVE_V_FIVE',
         maxPlayersPerTeam: 5,
+        sessionTeams: [
+          { _count: { sessionPlayers: 3 }, teamName: 'Team A' },
+          { _count: { sessionPlayers: 2 }, teamName: 'Team B' },
+        ],
+        sport: Sport.FOOTBALL,
+        startDate: new Date('2023-01-10T14:00:00Z'),
+        uid: 'session-uid-1',
+      },
+      {
+        creatorUid: 'user-uid-2',
+        endDate: new Date('2023-01-11T16:00:00Z'),
         field: {
-          shortAddress: '456 Rue de Test, Paris',
+          fieldImages: [],
           latitude: 48.8567,
           longitude: 2.3523,
-          fieldImages: [],
+          shortAddress: '456 Rue de Test, Paris',
         },
+        gameMode: 'FIVE_V_FIVE',
+        maxPlayersPerTeam: 5,
         sessionTeams: [
-          { teamName: 'Team A', _count: { sessionPlayers: 4 } },
-          { teamName: 'Team B', _count: { sessionPlayers: 5 } },
+          { _count: { sessionPlayers: 4 }, teamName: 'Team A' },
+          { _count: { sessionPlayers: 5 }, teamName: 'Team B' },
         ],
+        sport: 'BASKETBALL',
+        startDate: new Date('2023-01-11T14:00:00Z'),
+        uid: 'session-uid-2',
       },
     ];
 
     it('should return a list of sessions when user has location', async () => {
       // Arrange
       const filter: FindAllSessionsDto = {
-        userUid: 'user-uid-1',
+        limit: 10,
         userLat: 48.8566,
         userLon: 2.3522,
-        limit: 10,
+        userUid: 'user-uid-1',
       };
       (prismaService.$queryRaw as jest.Mock) = jest.fn().mockResolvedValue(mockRawQueryResult);
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue(mockSessionsFromDb);
@@ -845,8 +851,8 @@ describe('SessionsService', () => {
     it('should return empty result when no filtering criteria provided', async () => {
       // Arrange - no location, no sports, no time prefs, no urgent, no date
       const filter: FindAllSessionsDto = {
-        userUid: 'user-uid-1',
         limit: 10,
+        userUid: 'user-uid-1',
       };
 
       // Act
@@ -863,11 +869,11 @@ describe('SessionsService', () => {
     it('should handle pagination with cursor', async () => {
       // Arrange
       const filter: FindAllSessionsDto = {
-        userUid: 'user-uid-1',
+        cursor: '1',
+        limit: 1,
         userLat: 48.8566,
         userLon: 2.3522,
-        limit: 1,
-        cursor: '1',
+        userUid: 'user-uid-1',
       };
       (prismaService.$queryRaw as jest.Mock) = jest.fn().mockResolvedValue([mockRawQueryResult[1]]);
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSessionsFromDb[1]]);
@@ -883,10 +889,10 @@ describe('SessionsService', () => {
     it('should return the next cursor when more results exist', async () => {
       // Arrange
       const filter: FindAllSessionsDto = {
-        userUid: 'user-uid-1',
+        limit: 1,
         userLat: 48.8566,
         userLon: 2.3522,
-        limit: 1,
+        userUid: 'user-uid-1',
       };
       (prismaService.$queryRaw as jest.Mock) = jest.fn().mockResolvedValue(mockRawQueryResult);
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSessionsFromDb[0]]);
@@ -902,8 +908,8 @@ describe('SessionsService', () => {
     it('should filter by sports when provided', async () => {
       // Arrange
       const filter: FindAllSessionsDto = {
-        userUid: 'user-uid-1',
         sports: [Sport.FOOTBALL, Sport.BASKETBALL],
+        userUid: 'user-uid-1',
       };
       (prismaService.$queryRaw as jest.Mock) = jest.fn().mockResolvedValue(mockRawQueryResult);
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue(mockSessionsFromDb);
@@ -918,9 +924,9 @@ describe('SessionsService', () => {
     it('should filter by start and end date range', async () => {
       // Arrange
       const filter: FindAllSessionsDto = {
-        userUid: 'user-uid-1',
-        startDate: new Date('2023-01-01T00:00:00Z'),
         endDate: new Date('2023-01-31T23:59:59Z'),
+        startDate: new Date('2023-01-01T00:00:00Z'),
+        userUid: 'user-uid-1',
       };
       (prismaService.$queryRaw as jest.Mock) = jest.fn().mockResolvedValue(mockRawQueryResult);
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue(mockSessionsFromDb);
@@ -935,10 +941,10 @@ describe('SessionsService', () => {
     it('should filter urgent sessions when urgent flag is set', async () => {
       // Arrange
       const filter: FindAllSessionsDto = {
-        userUid: 'user-uid-1',
+        urgent: true,
         userLat: 48.8566,
         userLon: 2.3522,
-        urgent: true,
+        userUid: 'user-uid-1',
       };
       (prismaService.$queryRaw as jest.Mock) = jest.fn().mockResolvedValue(mockRawQueryResult);
       (prismaService.sessions.findMany as jest.Mock).mockResolvedValue(mockSessionsFromDb);
@@ -953,41 +959,41 @@ describe('SessionsService', () => {
 
   describe('findOne', () => {
     const mockSession = {
-      uid: 'session-uid-1',
       creatorUid: 'creator-uid-1',
       endDate: new Date('2023-01-10T16:00:00Z'),
-      gameMode: GameModes.FIVE_V_FIVE,
-      level: SessionSportLevel.INTERMEDIATE,
-      maxPlayersPerTeam: 5,
-      sport: Sport.FOOTBALL,
-      startDate: new Date('2023-01-10T14:00:00Z'),
-      visibility: 'PUBLIC',
       field: {
-        latitude: 48.8566,
-        longitude: 2.3522,
-        shortAddress: 'Paris, France',
         fieldImages: [
           { order: 1, url: 'image1.jpg' },
           { order: 2, url: 'image2.jpg' },
         ],
+        latitude: 48.8566,
+        longitude: 2.3522,
+        shortAddress: 'Paris, France',
       },
+      gameMode: GameModes.FIVE_V_FIVE,
+      level: SessionSportLevel.INTERMEDIATE,
+      maxPlayersPerTeam: 5,
       sessionTeams: [
         {
-          teamName: 'Team A',
-          teamLabel: 'A',
           sessionPlayers: [
             {
-              userUid: 'user-1',
               teamUid: 'team-1',
               user: {
                 firstname: 'John',
-                lastname: 'Doe',
                 imageUrl: 'user1.jpg',
+                lastname: 'Doe',
               },
+              userUid: 'user-1',
             },
           ],
+          teamLabel: 'A',
+          teamName: 'Team A',
         },
       ],
+      sport: Sport.FOOTBALL,
+      startDate: new Date('2023-01-10T14:00:00Z'),
+      uid: 'session-uid-1',
+      visibility: 'PUBLIC',
     };
 
     it('should return a session by uid', async () => {
@@ -1001,17 +1007,17 @@ describe('SessionsService', () => {
       // Assert
       expect(result).toEqual(
         expect.objectContaining({
-          uid: 'session-uid-1',
           fieldImages: expect.arrayContaining([
             expect.objectContaining({ order: 1 }),
             expect.objectContaining({ order: 2 }),
           ]),
           sessionTeams: expect.arrayContaining([
             expect.objectContaining({
-              teamName: 'Team A',
               numberOfPlayers: 1,
+              teamName: 'Team A',
             }),
           ]),
+          uid: 'session-uid-1',
         }),
       );
       expect(prismaService.sessions.findUnique).toHaveBeenCalled();
@@ -1030,43 +1036,43 @@ describe('SessionsService', () => {
 
   describe('findOneWithDistance', () => {
     const mockSession = {
-      uid: 'session-uid-1',
       creatorUid: 'creator-uid-1',
       endDate: new Date('2023-01-10T16:00:00Z'),
-      gameMode: GameModes.FIVE_V_FIVE,
-      level: SessionSportLevel.INTERMEDIATE,
-      maxPlayersPerTeam: 5,
-      sport: Sport.FOOTBALL,
-      startDate: new Date('2023-01-10T14:00:00Z'),
-      visibility: 'PUBLIC',
-      fieldLatitude: 48.8566,
-      fieldLongitude: 2.3522,
       field: {
-        latitude: 48.8566,
-        longitude: 2.3522,
-        shortAddress: 'Paris, France',
         fieldImages: [
           { order: 1, url: 'image1.jpg' },
           { order: 2, url: 'image2.jpg' },
         ],
+        latitude: 48.8566,
+        longitude: 2.3522,
+        shortAddress: 'Paris, France',
       },
+      fieldLatitude: 48.8566,
+      fieldLongitude: 2.3522,
+      gameMode: GameModes.FIVE_V_FIVE,
+      level: SessionSportLevel.INTERMEDIATE,
+      maxPlayersPerTeam: 5,
       sessionTeams: [
         {
-          teamName: 'Team A',
-          teamLabel: 'A',
           sessionPlayers: [
             {
-              userUid: 'user-1',
               teamUid: 'team-1',
               user: {
                 firstname: 'John',
-                lastname: 'Doe',
                 imageUrl: 'user1.jpg',
+                lastname: 'Doe',
               },
+              userUid: 'user-1',
             },
           ],
+          teamLabel: 'A',
+          teamName: 'Team A',
         },
       ],
+      sport: Sport.FOOTBALL,
+      startDate: new Date('2023-01-10T14:00:00Z'),
+      uid: 'session-uid-1',
+      visibility: 'PUBLIC',
     };
 
     it('should return a session with user distance', async () => {
@@ -1089,9 +1095,9 @@ describe('SessionsService', () => {
       // Assert
       expect(result).toEqual(
         expect.objectContaining({
-          uid: 'session-uid-1',
           fieldLatitude: 48.8566,
           fieldLongitude: 2.3522,
+          uid: 'session-uid-1',
           userDistance: expect.any(Number),
         }),
       );
@@ -1156,52 +1162,52 @@ describe('SessionsService', () => {
 
   describe('update', () => {
     const updateSessionDto: UpdateSessionDto = {
-      endDate: mockFutureEndDate.toISOString(),
-      startDate: mockFutureDate.toISOString(),
       description: 'Updated session',
+      endDate: mockFutureEndDate.toISOString(),
       gameMode: GameModes.FIVE_V_FIVE,
       maxPlayersPerTeam: 6,
       minPlayersPerTeam: 4,
+      startDate: mockFutureDate.toISOString(),
       teamsPerGame: 2,
       title: 'Updated Session Title',
     };
 
     const mockSessionForFindOne = {
-      uid: 'session-uid-1',
       creatorUid: 'creator-uid-1',
       endDate: new Date('2023-01-10T16:00:00Z'),
+      field: {
+        fieldImages: [{ order: 1, url: 'image1.jpg' }],
+        latitude: 48.8566,
+        longitude: 2.3522,
+        shortAddress: 'Paris, France',
+      },
       fieldUid: 'field-uid-1',
       gameMode: GameModes.FIVE_V_FIVE,
       level: SessionSportLevel.INTERMEDIATE,
       maxPlayersPerTeam: 5,
-      sport: Sport.FOOTBALL,
-      startDate: new Date('2023-01-10T14:00:00Z'),
-      visibility: 'PUBLIC',
-      field: {
-        latitude: 48.8566,
-        longitude: 2.3522,
-        shortAddress: 'Paris, France',
-        fieldImages: [{ order: 1, url: 'image1.jpg' }],
-      },
       sessionTeams: [
         {
-          teamName: 'Team A',
-          teamLabel: 'A',
           sessionPlayers: [],
+          teamLabel: 'A',
+          teamName: 'Team A',
         },
       ],
+      sport: Sport.FOOTBALL,
+      startDate: new Date('2023-01-10T14:00:00Z'),
+      uid: 'session-uid-1',
+      visibility: 'PUBLIC',
     };
 
     const mockField = {
-      uid: 'field-uid-1',
-      sports: [Sport.FOOTBALL],
       gameMode: '5v5',
       partnerUid: 'partner-uid-1',
+      sports: [Sport.FOOTBALL],
       type: FieldType.PUBLIC,
+      uid: 'field-uid-1',
     };
 
     const mockUpdatedSession = {
-      uid: 'session-uid-1',
+      createdAt: mockCurrentDate,
       description: 'Updated session',
       endDate: mockFutureEndDate,
       fieldUid: 'field-uid-1',
@@ -1212,7 +1218,7 @@ describe('SessionsService', () => {
       startDate: mockFutureDate,
       teamsPerGame: 2,
       title: 'Updated Session Title',
-      createdAt: mockCurrentDate,
+      uid: 'session-uid-1',
       updatedAt: mockCurrentDate,
     };
 
@@ -1274,37 +1280,37 @@ describe('SessionsService', () => {
     };
 
     const mockSession = {
-      uid: 'session-uid-123',
-      maxPlayersPerTeam: 10,
       creatorUid: 'creator-uid-1',
       endDate: new Date('2023-01-10T16:00:00Z'),
-      gameMode: GameModes.FIVE_V_FIVE,
-      level: SessionSportLevel.INTERMEDIATE,
-      sport: Sport.FOOTBALL,
-      startDate: new Date('2023-01-10T14:00:00Z'),
-      visibility: 'PUBLIC',
       fieldImages: [],
       fieldLatitude: 48.8566,
       fieldLongitude: 2.3522,
       fieldShortAddress: 'Paris, France',
+      gameMode: GameModes.FIVE_V_FIVE,
+      level: SessionSportLevel.INTERMEDIATE,
+      maxPlayersPerTeam: 10,
       sessionTeams: [],
+      sport: Sport.FOOTBALL,
+      startDate: new Date('2023-01-10T14:00:00Z'),
+      uid: 'session-uid-123',
+      visibility: 'PUBLIC',
     };
 
     const mockTeam = {
-      uid: 'team-uid-456',
-      sessionUid: 'session-uid-123',
       _count: {
         sessionPlayers: 5,
       },
+      sessionUid: 'session-uid-123',
+      uid: 'team-uid-456',
     };
 
     const mockNewPlayer = {
-      uid: 'player-uid-101',
+      createdAt: new Date(),
       sessionUid: 'session-uid-123',
       teamUid: 'team-uid-456',
-      userUid: 'user-uid-789',
-      createdAt: new Date(),
+      uid: 'player-uid-101',
       updatedAt: new Date(),
+      userUid: 'user-uid-789',
     };
 
     it('should successfully add a player to a session when all validations pass', async () => {
@@ -1429,81 +1435,81 @@ describe('SessionsService', () => {
   describe('findAllByUserUid', () => {
     const userUid = 'user-uid-1';
     const mockSession1 = {
-      uid: 'session-uid-1',
-      title: 'Test Session 1',
-      description: 'Test session 1',
-      sport: Sport.FOOTBALL,
-      gameMode: GameModes.FIVE_V_FIVE,
-      startDate: mockFutureDate,
-      endDate: mockFutureEndDate,
-      maxPlayersPerTeam: 5,
-      minPlayersPerTeam: 3,
-      teamsPerGame: 2,
-      creatorUid: userUid,
-      fieldUid: 'field-uid-1',
       createdAt: new Date('2023-01-05T10:00:00Z'),
+      creatorUid: userUid,
+      description: 'Test session 1',
+      endDate: mockFutureEndDate,
       field: {
+        fieldImages: [{ url: 'image1.jpg' }],
         latitude: 48.8566,
         longitude: 2.3522,
         shortAddress: 'Paris',
-        fieldImages: [{ url: 'image1.jpg' }],
       },
+      fieldUid: 'field-uid-1',
+      gameMode: GameModes.FIVE_V_FIVE,
+      maxPlayersPerTeam: 5,
+      minPlayersPerTeam: 3,
       sessionTeams: [
-        { teamName: 'Team A', _count: { sessionPlayers: 3 } },
-        { teamName: 'Team B', _count: { sessionPlayers: 2 } },
+        { _count: { sessionPlayers: 3 }, teamName: 'Team A' },
+        { _count: { sessionPlayers: 2 }, teamName: 'Team B' },
       ],
+      sport: Sport.FOOTBALL,
+      startDate: mockFutureDate,
+      teamsPerGame: 2,
+      title: 'Test Session 1',
+      uid: 'session-uid-1',
     };
 
     const mockSession2 = {
-      uid: 'session-uid-2',
-      title: 'Test Session 2',
-      description: 'Test session 2',
-      sport: Sport.BASKETBALL,
-      gameMode: GameModes.FIVE_V_FIVE,
-      startDate: new Date('2023-01-12T14:00:00Z'),
-      endDate: new Date('2023-01-12T16:00:00Z'),
-      maxPlayersPerTeam: 5,
-      minPlayersPerTeam: 3,
-      teamsPerGame: 2,
-      creatorUid: 'other-user-uid',
-      fieldUid: 'field-uid-2',
       createdAt: new Date('2023-01-06T10:00:00Z'),
+      creatorUid: 'other-user-uid',
+      description: 'Test session 2',
+      endDate: new Date('2023-01-12T16:00:00Z'),
       field: {
+        fieldImages: [{ url: 'image2.jpg' }],
         latitude: 48.8566,
         longitude: 2.3522,
         shortAddress: 'Paris',
-        fieldImages: [{ url: 'image2.jpg' }],
       },
+      fieldUid: 'field-uid-2',
+      gameMode: GameModes.FIVE_V_FIVE,
+      maxPlayersPerTeam: 5,
+      minPlayersPerTeam: 3,
       sessionTeams: [
-        { teamName: 'Team A', _count: { sessionPlayers: 4 } },
-        { teamName: 'Team B', _count: { sessionPlayers: 3 } },
+        { _count: { sessionPlayers: 4 }, teamName: 'Team A' },
+        { _count: { sessionPlayers: 3 }, teamName: 'Team B' },
       ],
+      sport: Sport.BASKETBALL,
+      startDate: new Date('2023-01-12T14:00:00Z'),
+      teamsPerGame: 2,
+      title: 'Test Session 2',
+      uid: 'session-uid-2',
     };
 
     const mockPastSession = {
-      uid: 'session-uid-3',
-      title: 'Past Session',
-      description: 'Past session',
-      sport: Sport.FOOTBALL,
-      gameMode: GameModes.FIVE_V_FIVE,
-      startDate: new Date('2022-12-01T14:00:00Z'),
-      endDate: new Date('2022-12-01T16:00:00Z'),
-      maxPlayersPerTeam: 5,
-      minPlayersPerTeam: 3,
-      teamsPerGame: 2,
-      creatorUid: userUid,
-      fieldUid: 'field-uid-1',
       createdAt: new Date('2022-11-25T10:00:00Z'),
+      creatorUid: userUid,
+      description: 'Past session',
+      endDate: new Date('2022-12-01T16:00:00Z'),
       field: {
+        fieldImages: [{ url: 'image3.jpg' }],
         latitude: 48.8566,
         longitude: 2.3522,
         shortAddress: 'Paris',
-        fieldImages: [{ url: 'image3.jpg' }],
       },
+      fieldUid: 'field-uid-1',
+      gameMode: GameModes.FIVE_V_FIVE,
+      maxPlayersPerTeam: 5,
+      minPlayersPerTeam: 3,
       sessionTeams: [
-        { teamName: 'Team A', _count: { sessionPlayers: 5 } },
-        { teamName: 'Team B', _count: { sessionPlayers: 5 } },
+        { _count: { sessionPlayers: 5 }, teamName: 'Team A' },
+        { _count: { sessionPlayers: 5 }, teamName: 'Team B' },
       ],
+      sport: Sport.FOOTBALL,
+      startDate: new Date('2022-12-01T14:00:00Z'),
+      teamsPerGame: 2,
+      title: 'Past Session',
+      uid: 'session-uid-3',
     };
 
     beforeEach(() => {
@@ -1579,8 +1585,8 @@ describe('SessionsService', () => {
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       const _result = await service.findAllByUserUid(userUid, {
-        ownership: SessionOwnnership.CREATOR,
         minStart,
+        ownership: SessionOwnnership.CREATOR,
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
@@ -1602,8 +1608,8 @@ describe('SessionsService', () => {
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       const _result = await service.findAllByUserUid(userUid, {
-        ownership: SessionOwnnership.CREATOR,
         maxStart,
+        ownership: SessionOwnnership.CREATOR,
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
@@ -1626,9 +1632,9 @@ describe('SessionsService', () => {
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       await service.findAllByUserUid(userUid, {
-        ownership: SessionOwnnership.CREATOR,
-        minStart,
         maxStart,
+        minStart,
+        ownership: SessionOwnnership.CREATOR,
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
@@ -1650,8 +1656,8 @@ describe('SessionsService', () => {
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       await service.findAllByUserUid(userUid, {
-        ownership: SessionOwnnership.CREATOR,
         endDate,
+        ownership: SessionOwnnership.CREATOR,
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
@@ -1683,9 +1689,9 @@ describe('SessionsService', () => {
         cursor: undefined,
         orderBy: [{ uid: 'asc' }],
         select: expect.objectContaining({
-          uid: true,
           sport: true,
           startDate: true,
+          uid: true,
         }),
         skip: 0,
         take: 11,
@@ -1709,9 +1715,9 @@ describe('SessionsService', () => {
         cursor: undefined,
         orderBy: [{ uid: 'asc' }],
         select: expect.objectContaining({
-          uid: true,
           sport: true,
           startDate: true,
+          uid: true,
         }),
         skip: 0,
         take: 11,
@@ -1821,8 +1827,8 @@ describe('SessionsService', () => {
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(2);
 
       await service.findAllByUserUid(userUid, {
-        ownership: SessionOwnnership.CREATOR,
         createdAtSortOrder: 'desc',
+        ownership: SessionOwnnership.CREATOR,
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
@@ -1843,9 +1849,9 @@ describe('SessionsService', () => {
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(2);
 
       await service.findAllByUserUid(userUid, {
+        createdAtSortOrder: 'desc',
         ownership: SessionOwnnership.CREATOR,
         startDateSortOrder: 'asc',
-        createdAtSortOrder: 'desc',
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
@@ -1865,11 +1871,11 @@ describe('SessionsService', () => {
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       await service.findAllByUserUid(userUid, {
-        ownership: SessionOwnnership.CREATOR,
-        minStart,
         maxStart,
-        sports: [Sport.FOOTBALL],
+        minStart,
+        ownership: SessionOwnnership.CREATOR,
         scope: SessionScope.UPCOMING,
+        sports: [Sport.FOOTBALL],
         startDateSortOrder: 'asc',
       });
 
@@ -1877,9 +1883,9 @@ describe('SessionsService', () => {
         cursor: undefined,
         orderBy: [{ startDate: 'asc' }, { uid: 'asc' }],
         select: expect.objectContaining({
-          uid: true,
           sport: true,
           startDate: true,
+          uid: true,
         }),
         skip: 0,
         take: 11,
@@ -1917,8 +1923,8 @@ describe('SessionsService', () => {
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       await service.findAllByUserUid(userUid, {
-        ownership: SessionOwnnership.CREATOR,
         level: SessionSportLevel.BEGINNER,
+        ownership: SessionOwnnership.CREATOR,
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
@@ -1961,9 +1967,9 @@ describe('SessionsService', () => {
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       await service.findAllByUserUid(userUid, {
-        ownership: SessionOwnnership.CREATOR,
         cursor: 'session-uid-1',
         limit: 10,
+        ownership: SessionOwnnership.CREATOR,
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
@@ -1989,8 +1995,8 @@ describe('SessionsService', () => {
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(20);
 
       const result = await service.findAllByUserUid(userUid, {
-        ownership: SessionOwnnership.CREATOR,
         limit: 10,
+        ownership: SessionOwnnership.CREATOR,
       });
 
       expect(result.items).toHaveLength(10);
@@ -2003,8 +2009,8 @@ describe('SessionsService', () => {
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       const result = await service.findAllByUserUid(userUid, {
-        ownership: SessionOwnnership.CREATOR,
         limit: 10,
+        ownership: SessionOwnnership.CREATOR,
       });
 
       expect(result.items).toHaveLength(1);
@@ -2018,12 +2024,12 @@ describe('SessionsService', () => {
       (prismaService.sessions.count as jest.Mock).mockResolvedValue(1);
 
       await service.findAllByUserUid(userUid, {
-        ownership: SessionOwnnership.CREATOR,
         level: SessionSportLevel.INTERMEDIATE,
-        visibility: 'PUBLIC',
-        sports: [Sport.FOOTBALL],
         minStart,
+        ownership: SessionOwnnership.CREATOR,
+        sports: [Sport.FOOTBALL],
         startDateSortOrder: 'asc',
+        visibility: 'PUBLIC',
       });
 
       expect(prismaService.sessions.findMany).toHaveBeenCalledWith({
@@ -2035,9 +2041,9 @@ describe('SessionsService', () => {
         where: {
           creatorUid: userUid,
           level: SessionSportLevel.INTERMEDIATE,
-          visibility: 'PUBLIC',
           sport: { in: [Sport.FOOTBALL] },
           startDate: { gte: minStart },
+          visibility: 'PUBLIC',
         },
       });
     });

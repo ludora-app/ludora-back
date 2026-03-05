@@ -1,0 +1,37 @@
+enum ReportReason {
+    SPAM
+    HARASSMENT
+    NUDITY
+    OTHER
+
+    @@map("report_reason")
+    @@schema("moderation")
+}
+
+model UserBlocks {
+    blockerUid String   @map("blocker_uid")
+    blockedUid String   @map("blocked_uid")
+    createdAt  DateTime @default(now()) @map("created_at")
+
+    blocker Users @relation("BlockerRelation", fields: [blockerUid], references: [uid], onDelete: Cascade)
+    blocked Users @relation("BlockedRelation", fields: [blockedUid], references: [uid], onDelete: Cascade)
+
+    @@id([blockerUid, blockedUid])
+    @@map("User_blocks")
+    @@schema("moderation")
+}
+
+model UserReports {
+    id          String       @id @default(cuid())
+    reporterUid String       @map("reporter_uid")
+    reportedUid String       @map("reported_uid")
+    reason      ReportReason @default(OTHER)
+    description String?
+    createdAt   DateTime     @default(now()) @map("created_at")
+
+    reporter Users @relation("ReporterRelation", fields: [reporterUid], references: [uid], onDelete: Cascade)
+    reported Users @relation("ReportedRelation", fields: [reportedUid], references: [uid], onDelete: Cascade)
+
+    @@map("User_reports")
+    @@schema("moderation")
+}

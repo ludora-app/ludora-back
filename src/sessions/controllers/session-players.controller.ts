@@ -28,7 +28,7 @@ import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-respons
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import { UserSimpleDisplayDataDto } from 'src/users/dto';
+import { UserSimpleDisplayData } from 'src/users/dto';
 import { JoinSessionDto } from '../dto/input/create-session-player.dto';
 import {
   JoinSessionResponseData,
@@ -75,7 +75,7 @@ export class SessionPlayersController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   async suggestPlayerFromPreviousSessions(
     @Req() request: Request,
-  ): Promise<PaginationResponseTypeDto<UserSimpleDisplayDataDto>> {
+  ): Promise<PaginationResponseTypeDto<UserSimpleDisplayData>> {
     const userUid = request['user'].uid;
     const data = await this.playersService.suggestPlayerFromPreviousSessions(userUid);
     return {
