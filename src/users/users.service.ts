@@ -255,7 +255,7 @@ export class UsersService {
         WHERE
           u.uid != ${userUid}
           AND u.email != ${this.GOOGLE_TESTER_ACCOUNT_EMAIL}
-          AND u.isAnonymized = false
+          AND u.is_anonymized = false
           ${sportWhereSql}
           ${levelWhereSql}
           ${searchWhereSql}

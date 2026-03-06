@@ -14,6 +14,7 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
@@ -23,8 +24,10 @@ import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-resp
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { UserSimpleDisplayWithUidData } from 'src/users/dto';
 import { CreateReportDto } from './dto/input/create-report.dto';
+import { PaginatedBlockedUsersResponseDto } from './dto/output/blocked-users-response.dto';
 import { ModerationService } from './moderation.service';
 
+@ApiTags('moderation')
 @Controller('moderation')
 @UseGuards(AuthB2CGuard)
 export class ModerationController {
@@ -63,7 +66,10 @@ export class ModerationController {
   @Get('list-blocked-users')
   @Protected()
   @ApiOperation({ summary: 'Get all blocked users' })
-  @ApiOkResponse({ isArray: true, type: [UserSimpleDisplayWithUidData] })
+  @ApiOkResponse({
+    description: 'Blocked users fetched successfully',
+    type: PaginatedBlockedUsersResponseDto,
+  })
   async findAllBlockedUsers(
     @Req() request: Request,
   ): Promise<PaginationResponseTypeDto<UserSimpleDisplayWithUidData>> {
