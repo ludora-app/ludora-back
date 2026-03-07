@@ -11,6 +11,7 @@ on:
     branches:
       - main
       - dev
+      - staging
   pull_request:
     branches:
       - main
@@ -105,7 +106,13 @@ jobs:
   swagger:
     name: SWAGGER
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'push' && (
+        github.ref == 'refs/heads/dev' ||
+        github.ref == 'refs/heads/main' ||
+        github.ref == 'refs/heads/staging'
+      ))
     container:
       image: node:22.13.1-slim
 
@@ -154,7 +161,7 @@ jobs:
       - name: Upload swagger.json artifact
         uses: actions/upload-artifact@v4
         with:
-          name: swagger-${{ github.event.pull_request.head.sha }}
+          name: swagger-${{ github.event.pull_request.head.sha || github.sha }}
           path: swagger.json
           retention-days: 7
 
