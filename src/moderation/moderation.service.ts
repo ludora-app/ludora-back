@@ -89,6 +89,7 @@ export class ModerationService {
     const existingReport = await this.prisma.userReports.findFirst({
       where: {
         reason: report.reason,
+        reportedUid: report.reportedUid,
         reporterUid,
       },
     });
