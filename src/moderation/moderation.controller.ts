@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -10,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiConflictResponse,
   ApiNoContentResponse,
   ApiOkResponse,
@@ -19,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
+import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
@@ -79,5 +82,20 @@ export class ModerationController {
       data,
       message: 'Blocked users fetched successfully',
     };
+  }
+
+  @Delete('unblock/:userToUnblockUid')
+  @Protected()
+  @ApiOperation({ summary: 'Unblock a user' })
+  @ApiNoContentResponse({ description: 'User unblocked successfully' })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async unblockUser(
+    @Req() request: Request,
+    @Param('userToUnblockUid') userToUnblockUid: string,
+  ): Promise<void> {
+    const blockerUid = request['user'].uid;
+    return await this.moderationService.unblockUser(blockerUid, userToUnblockUid);
   }
 }

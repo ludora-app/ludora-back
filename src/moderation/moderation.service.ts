@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
@@ -58,6 +63,28 @@ export class ModerationService {
     ]);
 
     this.logger.debug(`User ${blockerUid} blocked user ${userToBlockUid}`);
+    return;
+  }
+
+  async unblockUser(blockerUid: string, userToUnblockUid: string): Promise<void> {
+    const existingBlock = await this.prisma.userBlocks.findUnique({
+      where: {
+        blockerUid_blockedUid: {
+          blockedUid: userToUnblockUid,
+          blockerUid,
+        },
+      },
+    });
+    if (!existingBlock) {
+      this.logger.warn(`User ${blockerUid} not blocked user ${userToUnblockUid}`);
+      throw new BadRequestException("You haven't blocked this user");
+    }
+
+    await this.prisma.userBlocks.delete({
+      where: { blockerUid_blockedUid: { blockedUid: userToUnblockUid, blockerUid } },
+    });
+
+    this.logger.debug(`User ${blockerUid} unblocked user ${userToUnblockUid}`);
     return;
   }
 
