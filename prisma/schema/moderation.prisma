@@ -32,6 +32,7 @@ model UserReports {
     reporter Users @relation("ReporterRelation", fields: [reporterUid], references: [uid], onDelete: Cascade)
     reported Users @relation("ReportedRelation", fields: [reportedUid], references: [uid], onDelete: Cascade)
 
+    @@unique([reporterUid, reportedUid, reason])
     @@map("User_reports")
     @@schema("moderation")
 }
