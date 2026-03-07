@@ -53,7 +53,7 @@ export class RegisterB2CDto {
 
   @IsOptional()
   @IsPhoneNumber('FR')
-  @ApiProperty({ description: 'phone number', example: '+33612345678' })
+  @ApiProperty({ description: 'phone number', example: '+33612345678', required: false })
   readonly phone?: string;
 
   @IsOptional()
@@ -61,6 +61,7 @@ export class RegisterB2CDto {
   @ApiProperty({
     description: 'Bio',
     example: "I'm a user of the application.",
+    required: false,
   })
   readonly bio?: string;
 
