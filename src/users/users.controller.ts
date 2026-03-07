@@ -23,6 +23,7 @@ import {
   ApiOperation,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { FastifyRequest } from 'fastify';
 import { Users } from 'generated/prisma/client';
 import { CreateImageDto } from 'src/auth/dto';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
@@ -120,9 +121,12 @@ export class UsersController {
     description: 'User not found',
     type: NotFoundResponseDto,
   })
-  @Public()
-  async findOne(@Param('uid') uid: string): Promise<ResponseTypeDto<FindOneUserResponseData>> {
-    const data = await this.usersService.findOne(uid, USERSELECT.findOne);
+  async findOne(
+    @Param('uid') uid: string,
+    @Req() request: FastifyRequest,
+  ): Promise<ResponseTypeDto<FindOneUserResponseData>> {
+    const searcherUid = request['user'].uid;
+    const data = await this.usersService.findOne(uid, USERSELECT.findOne, searcherUid);
 
     if (!data) {
       throw new NotFoundException('User not found');

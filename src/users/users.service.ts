@@ -339,7 +339,7 @@ export class UsersService {
     return { items, nextCursor, totalCount };
   }
 
-  async findOne(uid: string, select: Prisma.UsersSelect): Promise<Users> {
+  async findOne(uid: string, select: Prisma.UsersSelect, searcherUid?: string): Promise<Users> {
     const existingUser = await this.prismaService.users.findUnique({
       select: {
         ...select,
@@ -349,6 +349,21 @@ export class UsersService {
 
     if (!existingUser) {
       return null;
+    }
+
+    if (searcherUid) {
+      const existingBlock = await this.prismaService.userBlocks.findFirst({
+        where: {
+          OR: [
+            { blockerUid: searcherUid, blockedUid: uid },
+            { blockerUid: uid, blockedUid: searcherUid },
+          ],
+        },
+      });
+
+      if (existingBlock) {
+        return null;
+      }
     }
 
     return existingUser;

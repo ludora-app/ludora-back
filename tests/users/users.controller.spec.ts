@@ -1,3 +1,4 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { USERSELECT } from 'src/shared/constants/select-user';
@@ -115,10 +116,13 @@ describe('UsersController', () => {
   });
 
   describe('findOne', () => {
-    it('should return a single user by uid', async () => {
+    it('should return a single user by uid with searcherUid from request', async () => {
+      const mockRequest = { user: { uid: 'searcher-uid' } } as unknown as Parameters<
+        UsersController['findOne']
+      >[1];
       mockUsersService.findOne.mockResolvedValue(mockUser);
 
-      const result = await controller.findOne('1');
+      const result = await controller.findOne('1', mockRequest);
 
       expect(result).toEqual({
         data: {
@@ -134,7 +138,50 @@ describe('UsersController', () => {
         },
         message: 'User fetched successfully',
       });
-      expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findOne);
+      expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findOne, 'searcher-uid');
+    });
+
+    it('should throw NotFoundException when user is not found', async () => {
+      const mockRequest = { user: { uid: 'searcher-uid' } } as unknown as Parameters<
+        UsersController['findOne']
+      >[1];
+      mockUsersService.findOne.mockResolvedValue(null);
+
+      await expect(controller.findOne('unknown-uid', mockRequest)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(service.findOne).toHaveBeenCalledWith(
+        'unknown-uid',
+        USERSELECT.findOne,
+        'searcher-uid',
+      );
+    });
+
+    it('should throw NotFoundException when a block exists between searcher and target', async () => {
+      const mockRequest = { user: { uid: 'searcher-uid' } } as unknown as Parameters<
+        UsersController['findOne']
+      >[1];
+      mockUsersService.findOne.mockResolvedValue(null);
+
+      await expect(controller.findOne('blocked-uid', mockRequest)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(service.findOne).toHaveBeenCalledWith(
+        'blocked-uid',
+        USERSELECT.findOne,
+        'searcher-uid',
+      );
+    });
+
+    it('should return user with undefined searcherUid when called without auth token (public access)', async () => {
+      // request.user exists but has no uid (e.g. optional auth guard leaves user empty)
+      const mockRequest = { user: {} } as unknown as Parameters<UsersController['findOne']>[1];
+      mockUsersService.findOne.mockResolvedValue(mockUser);
+
+      const result = await controller.findOne('1', mockRequest);
+
+      expect(result).toBeDefined();
+      expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findOne, undefined);
     });
   });
 
