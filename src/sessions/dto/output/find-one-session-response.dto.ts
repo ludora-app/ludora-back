@@ -73,6 +73,7 @@ export class FindOneSessionResponseData extends OmitType(SessionCollectionItemDt
         teamName: 'Team A',
       },
     ],
+   type: [SessionTeamResponseData],
   })
   sessionTeams: SessionTeamResponseData[];
 
