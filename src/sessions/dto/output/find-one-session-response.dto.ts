@@ -83,6 +83,16 @@ export class FindOneSessionResponseData extends OmitType(SessionCollectionItemDt
   })
   fieldUid: string;
 
+  @ApiProperty({
+    type: [ImageResponseDto],
+    description: 'The images of the field',
+    example: [
+      {
+        uid: 'cmgoxfs3t002hob8arwdna80g',
+        url: 'https://example.com/image.jpg',
+      },
+    ],
+  })
   fieldImages: ImageResponseDto[];
 
   @ApiProperty({

@@ -126,6 +126,11 @@ export class AuthB2CController {
 
   @Public()
   @Post('/login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description: 'User logged in successfully',
+    type: LoginResponseDto,
+  })
   @Throttle({
     default: {
       limit: process.env.NODE_ENV === 'production' ? 5 : 1000,

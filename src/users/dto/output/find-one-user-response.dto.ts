@@ -23,6 +23,7 @@ export class FindOneUserResponseData {
   readonly imageUrl?: string;
 
   @ApiProperty({
+    type: [SportPreferenceResponseData],
     example: [{ sport: 'BASKETBALL' }],
     nullable: true,
     readOnly: true,
