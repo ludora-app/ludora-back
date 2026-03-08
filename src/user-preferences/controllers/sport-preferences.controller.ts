@@ -17,6 +17,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
@@ -26,6 +27,7 @@ import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-respons
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
+import { SWAGGER_TAG_SPORT_PREFERENCES } from 'src/swagger.config';
 import { CreateSportPreferenceDto } from '../dto/input/create-sport-preference.dto';
 import {
   PaginatedSportPreferenceResponseDto,
@@ -33,6 +35,7 @@ import {
 } from '../dto/output/sport-preference.response.dto';
 import { SportPreferencesService } from '../services/sport-preferences.service';
 
+@ApiTags(SWAGGER_TAG_SPORT_PREFERENCES)
 @Controller('sport-preferences')
 @UseGuards(AuthB2CGuard)
 export class SportPreferencesController {

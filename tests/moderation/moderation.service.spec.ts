@@ -218,6 +218,7 @@ describe('ModerationService', () => {
       expect(prisma.userReports.findFirst).toHaveBeenCalledWith({
         where: {
           reason: createReportDto.reason,
+          reportedUid: createReportDto.reportedUid,
           reporterUid,
         },
       });
@@ -269,6 +270,7 @@ describe('ModerationService', () => {
       expect(prisma.userReports.findFirst).toHaveBeenCalledWith({
         where: {
           reason: createReportDto.reason,
+          reportedUid: createReportDto.reportedUid,
           reporterUid,
         },
       });

@@ -22,6 +22,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -35,6 +36,7 @@ import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-resp
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
+import { SWAGGER_TAG_SESSIONS } from 'src/swagger.config';
 import { CreateSessionFromRequestDto } from '../dto/input/create-session.dto';
 import { MySessionFilterDto } from '../dto/input/my-session-filter.dto';
 import { SessionFilterDto } from '../dto/input/session-filter.dto';
@@ -57,6 +59,7 @@ import {
 import { SessionMapper } from '../mappers/session.mapper';
 import { SessionsService } from '../services/sessions.service';
 
+@ApiTags(SWAGGER_TAG_SESSIONS)
 @Controller('sessions')
 @UseGuards(AuthB2CGuard)
 export class SessionsController {

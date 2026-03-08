@@ -17,6 +17,7 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
@@ -25,6 +26,7 @@ import { Protected } from 'src/shared/decorators/protected.decorator';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
+import { SWAGGER_TAG_NOTIFICATIONS } from 'src/swagger.config';
 import { NotificationFilterDto } from './dto/input/notification-filter.dto';
 import {
   FriendAcceptedData,
@@ -40,6 +42,7 @@ import {
 import { UnreadCountResponseDto } from './dto/output/unread-count-response.dto';
 import { NotificationsService } from './notifications.service';
 
+@ApiTags(SWAGGER_TAG_NOTIFICATIONS)
 @UseGuards(AuthB2CGuard)
 @Controller('notifications')
 @ApiExtraModels(FriendRequestData, SessionInvitationData, SessionUpdatedData, FriendAcceptedData)

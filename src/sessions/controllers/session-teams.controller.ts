@@ -4,6 +4,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
@@ -14,6 +15,7 @@ import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dt
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { SWAGGER_TAG_SESSION_TEAMS } from 'src/swagger.config';
 import {
   PaginatedSessionTeamResponseDto,
   SessionTeamResponseData,
@@ -22,6 +24,7 @@ import {
 import { SessionTeamsService } from '../services/session-teams.service';
 import { SessionsService } from '../services/sessions.service';
 
+@ApiTags(SWAGGER_TAG_SESSION_TEAMS)
 @Controller('session-teams')
 @UseGuards(AuthB2CGuard)
 export class SessionTeamsController {

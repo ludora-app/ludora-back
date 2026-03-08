@@ -22,12 +22,13 @@ import { Protected } from 'src/shared/decorators/protected.decorator';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
+import { SWAGGER_TAG_MODERATION } from 'src/swagger.config';
 import { UserSimpleDisplayWithUidData } from 'src/users/dto';
 import { CreateReportDto } from './dto/input/create-report.dto';
 import { PaginatedBlockedUsersResponseDto } from './dto/output/blocked-users-response.dto';
 import { ModerationService } from './moderation.service';
 
-@ApiTags('moderation')
+@ApiTags(SWAGGER_TAG_MODERATION)
 @Controller('moderation')
 @UseGuards(AuthB2CGuard)
 export class ModerationController {

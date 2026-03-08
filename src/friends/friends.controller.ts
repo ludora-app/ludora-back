@@ -19,6 +19,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
@@ -29,6 +30,7 @@ import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dt
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { SWAGGER_TAG_FRIENDS } from 'src/swagger.config';
 import { UserFilterDto } from 'src/users/dto';
 import { CreateFriendDto } from './dto/input/create-friend.dto';
 import { FriendFilterDto } from './dto/input/friend-filter.dto';
@@ -44,6 +46,7 @@ import {
 } from './dto/output/friend-response.dto';
 import { FriendsService } from './friends.service';
 
+@ApiTags(SWAGGER_TAG_FRIENDS)
 @Controller('friends')
 @UseGuards(AuthB2CGuard)
 export class FriendsController {

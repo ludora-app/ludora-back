@@ -1,10 +1,12 @@
 import { Controller, Get, Post, Query, Req, UseInterceptors } from '@nestjs/common';
-import { ApiConsumes } from '@nestjs/swagger';
+import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
+import { SWAGGER_TAG_STORAGE } from 'src/swagger.config';
 import { Public } from '../decorators/public.decorator';
 import { FastifyFilesInterceptor } from '../interceptors/fastify-file.interceptor';
 import { StorageService } from './storage.service';
 
+@ApiTags(SWAGGER_TAG_STORAGE)
 @Controller('storage')
 export class StorageController {
   constructor(private readonly storageService: StorageService) {}
