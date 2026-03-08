@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
@@ -14,6 +14,7 @@ describe('ModerationController', () => {
     blockUser: jest.fn(),
     createReport: jest.fn(),
     findAllBlockedUsers: jest.fn(),
+    unblockUser: jest.fn(),
   };
 
   const mockPrismaService = {
@@ -98,6 +99,47 @@ describe('ModerationController', () => {
       );
       await expect(controller.blockUser(mockRequest, userToBlockUid)).rejects.toThrow(
         'User already blocked',
+      );
+    });
+  });
+
+  describe('unblockUser', () => {
+    const mockRequest = {
+      user: { uid: 'blocker-uid-123' },
+    } as unknown as Request;
+    const userToUnblockUid = 'blocked-uid-456';
+
+    it('should call service.unblockUser with request user uid and param, return void', async () => {
+      mockModerationService.unblockUser.mockResolvedValue(undefined);
+
+      await controller.unblockUser(mockRequest, userToUnblockUid);
+
+      expect(moderationService.unblockUser).toHaveBeenCalledWith(
+        mockRequest['user'].uid,
+        userToUnblockUid,
+      );
+      expect(moderationService.unblockUser).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw BadRequestException when user was not blocked', async () => {
+      mockModerationService.unblockUser.mockRejectedValue(
+        new BadRequestException("You haven't blocked this user"),
+      );
+
+      await expect(controller.unblockUser(mockRequest, userToUnblockUid)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(controller.unblockUser(mockRequest, userToUnblockUid)).rejects.toThrow(
+        "You haven't blocked this user",
+      );
+    });
+
+    it('should propagate errors from the service', async () => {
+      const error = new Error('Database error');
+      mockModerationService.unblockUser.mockRejectedValue(error);
+
+      await expect(controller.unblockUser(mockRequest, userToUnblockUid)).rejects.toThrow(
+        'Database error',
       );
     });
   });

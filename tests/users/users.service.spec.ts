@@ -35,6 +35,9 @@ describe('UsersService', () => {
     friends: {
       findMany: jest.fn().mockResolvedValue([]),
     },
+    userBlocks: {
+      findFirst: jest.fn(),
+    },
     users: {
       count: jest.fn(),
       create: jest.fn(),
@@ -258,52 +261,91 @@ describe('UsersService', () => {
   });
 
   describe('findOne', () => {
-    it('should return a user if found', async () => {
-      const mockUser = {
-        email: 'test@test.com',
-        firstname: 'John',
-        uid: '1',
-      };
-      const select = {
-        bio: true,
-        firstname: true,
-        imageUrl: true,
-        lastname: true,
-        name: true,
-        uid: true,
-      };
+    const select = {
+      bio: true,
+      firstname: true,
+      imageUrl: true,
+      lastname: true,
+      name: true,
+      uid: true,
+    };
 
+    const mockUser = {
+      email: 'test@test.com',
+      firstname: 'John',
+      uid: '1',
+    };
+
+    it('should return a user if found and no searcherUid provided', async () => {
       mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
 
       const result = await service.findOne('1', select);
 
       expect(result).toBeDefined();
       expect(result.uid).toBe('1');
+      expect(mockPrismaService.userBlocks.findFirst).not.toHaveBeenCalled();
     });
 
-    // todo: fix this test
-    // it('should handle null user from database', async () => {
-    //   mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
-    //   mockImagesService.getProfilePic.mockResolvedValueOnce('');
+    it('should return null when user does not exist', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
 
-    //   const select = {
-    //     active: true,
-    //     bio: true,
-    //     birthdate: true,
-    //     email: true,
-    //     firstname: true,
-    //     uid: true,
-    //     imageUrl: true,
-    //     lastname: true,
-    //     name: true,
-    //     phone: true,
-    //     sex: true,
-    //     type: true,
-    //   };
+      const result = await service.findOne('unknown-uid', select);
 
-    //   // The current implementation will throw TypeError when trying to access null.uid
-    //   await expect(service.findOne('1', select)).rejects.toThrow(TypeError);
-    // });
+      expect(result).toBeNull();
+      expect(mockPrismaService.userBlocks.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('should return user when searcherUid provided and no block exists', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
+      mockPrismaService.userBlocks.findFirst.mockResolvedValueOnce(null);
+
+      const result = await service.findOne('1', select, 'searcher-uid');
+
+      expect(result).toBeDefined();
+      expect(result.uid).toBe('1');
+      expect(mockPrismaService.userBlocks.findFirst).toHaveBeenCalledWith({
+        where: {
+          OR: [
+            { blockerUid: 'searcher-uid', blockedUid: '1' },
+            { blockerUid: '1', blockedUid: 'searcher-uid' },
+          ],
+        },
+      });
+    });
+
+    it('should return null when searcher has blocked the target user', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
+      mockPrismaService.userBlocks.findFirst.mockResolvedValueOnce({
+        blockedUid: '1',
+        blockerUid: 'searcher-uid',
+      });
+
+      const result = await service.findOne('1', select, 'searcher-uid');
+
+      expect(result).toBeNull();
+      expect(mockPrismaService.userBlocks.findFirst).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return null when the target user has blocked the searcher', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
+      mockPrismaService.userBlocks.findFirst.mockResolvedValueOnce({
+        blockedUid: 'searcher-uid',
+        blockerUid: '1',
+      });
+
+      const result = await service.findOne('1', select, 'searcher-uid');
+
+      expect(result).toBeNull();
+      expect(mockPrismaService.userBlocks.findFirst).toHaveBeenCalledTimes(1);
+    });
+
+    it('should skip block check when searcherUid is not provided', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
+
+      await service.findOne('1', select, undefined);
+
+      expect(mockPrismaService.userBlocks.findFirst).not.toHaveBeenCalled();
+    });
   });
 
   describe('findOneByEmail', () => {

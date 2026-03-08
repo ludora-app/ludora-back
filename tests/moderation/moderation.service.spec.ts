@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
 import { ModerationService } from 'src/moderation/moderation.service';
@@ -15,6 +15,7 @@ describe('ModerationService', () => {
     },
     userBlocks: {
       create: jest.fn(),
+      delete: jest.fn(),
       findMany: jest.fn(),
       findUnique: jest.fn(),
     },
@@ -131,6 +132,57 @@ describe('ModerationService', () => {
     });
   });
 
+  describe('unblockUser', () => {
+    const blockerUid = 'blocker-uid-123';
+    const userToUnblockUid = 'blocked-uid-456';
+
+    it('should unblock a user when block exists', async () => {
+      const existingBlock = {
+        blockerUid,
+        blockedUid: userToUnblockUid,
+      };
+      mockPrismaService.userBlocks.findUnique.mockResolvedValue(existingBlock);
+      mockPrismaService.userBlocks.delete.mockResolvedValue(existingBlock as never);
+
+      await service.unblockUser(blockerUid, userToUnblockUid);
+
+      expect(prisma.userBlocks.findUnique).toHaveBeenCalledWith({
+        where: {
+          blockerUid_blockedUid: {
+            blockedUid: userToUnblockUid,
+            blockerUid,
+          },
+        },
+      });
+      expect(prisma.userBlocks.delete).toHaveBeenCalledWith({
+        where: {
+          blockerUid_blockedUid: { blockedUid: userToUnblockUid, blockerUid },
+        },
+      });
+    });
+
+    it('should throw BadRequestException when user was not blocked', async () => {
+      mockPrismaService.userBlocks.findUnique.mockResolvedValue(null);
+
+      await expect(service.unblockUser(blockerUid, userToUnblockUid)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.unblockUser(blockerUid, userToUnblockUid)).rejects.toThrow(
+        "You haven't blocked this user",
+      );
+
+      expect(prisma.userBlocks.findUnique).toHaveBeenCalledWith({
+        where: {
+          blockerUid_blockedUid: {
+            blockedUid: userToUnblockUid,
+            blockerUid,
+          },
+        },
+      });
+      expect(prisma.userBlocks.delete).not.toHaveBeenCalled();
+    });
+  });
+
   describe('findAllBlockedUsers', () => {
     const blockerUid = 'blocker-uid-123';
 
@@ -218,6 +270,7 @@ describe('ModerationService', () => {
       expect(prisma.userReports.findFirst).toHaveBeenCalledWith({
         where: {
           reason: createReportDto.reason,
+          reportedUid: createReportDto.reportedUid,
           reporterUid,
         },
       });
@@ -269,6 +322,7 @@ describe('ModerationService', () => {
       expect(prisma.userReports.findFirst).toHaveBeenCalledWith({
         where: {
           reason: createReportDto.reason,
+          reportedUid: createReportDto.reportedUid,
           reporterUid,
         },
       });
