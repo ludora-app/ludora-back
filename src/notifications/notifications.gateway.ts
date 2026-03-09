@@ -195,8 +195,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         // User is offline → Push only for certain types (notification already persisted above)
         const pushAllowedTypes: NotificationType[] = [
           NotificationType.FRIEND_REQUEST,
+          NotificationType.FRIEND_ACCEPTED,
           NotificationType.SESSION_INVITATION,
           NotificationType.NEW_MESSAGE,
+          NotificationType.MESSAGE_DELETED,
         ];
         if (pushAllowedTypes.includes(type)) {
           await this.notificationsService.sendPushNotification({
@@ -314,7 +316,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       foreignUid: payload.senderId,
       message: `${payload.senderName} t'a envoyé une demande d'ami`,
       metadata: {
-        actionUrl: 'ludora://notifications',
+        actionUrl: 'app://notifications',
         senderAvatar: payload.senderAvatar,
         senderName: payload.senderName,
         senderUid: payload.senderId,
@@ -337,14 +339,14 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   }): Promise<void> {
     await this.sendNotification({
       foreignUid: payload.senderUid,
-      message: `${payload.senderName} accepted your friend request`,
+      message: `${payload.senderName} a accepté ta demande d'ami`,
       metadata: {
-        actionUrl: `app://profile/${payload.senderUid}`,
+        actionUrl: `app://profil/${payload.senderUid}`,
         senderAvatar: payload.senderAvatar,
         senderName: payload.senderName,
         senderUid: payload.senderUid,
       },
-      title: 'Friend Request Accepted',
+      title: "Demande d'ami acceptée",
       type: NotificationType.FRIEND_ACCEPTED,
       userUid: payload.recipientUid,
     });
@@ -358,9 +360,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     payload: Omit<SessionInvitationData, 'actionUrl'>,
     receiverUid: string,
   ): Promise<void> {
+    const sportName = payload.sessionSport ? payload.sessionSport.toLowerCase() : '';
     await this.sendNotification({
       foreignUid: payload.sessionUid,
-      message: `${payload.senderFirstname} ${payload.senderLastname} invited you to join a ${payload.sessionSport} session`,
+      message: `${payload.senderFirstname} ${payload.senderLastname} t'a invité à rejoindre une session de ${sportName}`,
       metadata: {
         actionUrl: `app://session/${payload.sessionUid}`,
         senderAvatar: payload.senderAvatar,
@@ -384,11 +387,11 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   @OnEvent(EventTypes.EMAIL_VERIFIED)
   async handleEmailVerified(payload: { userUid: string }): Promise<void> {
     await this.sendNotification({
-      message: 'Your email has been verified successfully',
+      message: 'Ton e-mail a été vérifié avec succès',
       metadata: {
         actionUrl: 'app://profile',
       },
-      title: 'Email Verified',
+      title: 'E-mail vérifié',
       type: NotificationType.EMAIL_VERIFIED,
       userUid: payload.userUid,
     });
@@ -399,6 +402,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
    */
   @OnEvent(EventTypes.NEW_MESSAGE)
   async handleNewMessage(payload: {
+    content: string;
     conversationUid: string;
     notificationTitle: string;
     senderUid: string;
@@ -408,6 +412,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   }): Promise<void> {
     try {
       const {
+        content,
         conversationUid,
         notificationTitle,
         senderAvatar,
@@ -424,11 +429,18 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
       const isGroupConversation = !!sessionUid;
 
-      // Send to each receiver with hybrid logic
       for (const receiver of receiverUids) {
+        const unreadCount = await this.notificationsService.getUnreadMessagesCount(
+          receiver.userUid,
+          conversationUid,
+        );
+
+        const displayedTitle =
+          unreadCount > 1 ? `${notificationTitle} (${unreadCount})` : notificationTitle;
+
         await this.sendNotification({
           foreignUid: conversationUid,
-          message: 'Tu as reçu un nouveau message',
+          message: content,
           metadata: {
             actionUrl: `app://chat-room/${conversationUid}`,
             conversationUid,
@@ -436,7 +448,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
             senderName,
             senderUid,
           },
-          title: isGroupConversation ? 'Nouveau message dans une conversation' : notificationTitle,
+          title: isGroupConversation ? 'Nouveau message dans une conversation' : displayedTitle,
           type: NotificationType.NEW_MESSAGE,
           userUid: receiver.userUid,
         });
@@ -465,7 +477,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     playerAvatar?: string;
     creatorUid: string;
   }): Promise<void> {
-    const content = `${payload.playerFirstname} ${payload.playerLastname} joined your session`;
+    const content = `${payload.playerFirstname} ${payload.playerLastname} a rejoint ta session`;
     await this.sendNotification({
       foreignUid: payload.sessionUid,
       message: content,
@@ -476,9 +488,52 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         senderLastname: payload.playerLastname,
         senderUid: payload.playerUid,
       },
-      title: 'New Session Player',
+      title: 'Nouveau joueur',
       type: NotificationType.SESSION_PLAYER_ADDED,
       userUid: payload.creatorUid,
     });
+  }
+  /**
+   * MESSAGE_DELETED: Update or "clear" notification when a message is deleted
+   */
+  @OnEvent(EventTypes.MESSAGE_DELETED)
+  async handleMessageDeleted(payload: {
+    conversationUid: string;
+    messageUid: string;
+    senderName?: string;
+    sessionUid?: string;
+    userUid: string; // The deleter
+  }): Promise<void> {
+    try {
+      const { conversationUid, senderName, sessionUid, userUid } = payload;
+
+      const receiverUids = await this.notificationsService.getReceiverUids(
+        conversationUid,
+        userUid,
+      );
+
+      const isGroupConversation = !!sessionUid;
+      const notificationTitle = `${senderName} t'a envoyé un message`;
+      const displayedTitle = isGroupConversation
+        ? 'Nouveau message dans une conversation'
+        : notificationTitle;
+
+      for (const receiver of receiverUids) {
+        await this.sendNotification({
+          foreignUid: conversationUid,
+          message: 'Ce message a été supprimé',
+          metadata: {
+            conversationUid,
+            isDeleted: true,
+            messageUid: payload.messageUid,
+          },
+          title: displayedTitle,
+          type: NotificationType.MESSAGE_DELETED,
+          userUid: receiver.userUid,
+        });
+      }
+    } catch (error) {
+      this.logger.error(`Error handling message deletion notification: ${error.message}`);
+    }
   }
 }
