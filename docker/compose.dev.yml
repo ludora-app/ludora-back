@@ -1,10 +1,10 @@
 # Development environment configuration (production replica with dev Vault)
-# Usage: docker compose -f docker/compose.dev.yml up --build
+# Usage: docker compose --project-directory . -f docker/compose.dev.yml up --build
 
 services:
   ludora-api:
     build:
-      context: ..
+      context: .
       dockerfile: docker/nest-api/Dockerfile.prod
       args:
         ENV_NAME: dev
