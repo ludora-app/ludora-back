@@ -1,10 +1,10 @@
 # Local environment configuration
-# Usage: docker compose -f docker/compose.local.yml up --build
+# Usage: docker compose --project-directory . -f docker/compose.local.yml up --build
 
 services:
   ludora-api:
     build:
-      context: ..
+      context: .
       dockerfile: docker/nest-api/Dockerfile.local
     container_name: ludora-api
     restart: 'no' # Don't restart in local for easier debugging
@@ -13,10 +13,10 @@ services:
       - '51212:51212' # Prisma Studio port
       - '9229:9229' # Node.js debugging port
     volumes:
-      - ../src:/usr/src/app/src
-      - ../prisma:/usr/src/app/prisma
-      - ../tests:/usr/src/app/tests
-      - ../generated:/usr/src/app/generated
+      - ./src:/usr/src/app/src
+      - ./prisma:/usr/src/app/prisma
+      - ./tests:/usr/src/app/tests
+      - ./generated:/usr/src/app/generated
       - /usr/src/app/node_modules
     environment:
       - "NODE_ENV=debug"
@@ -42,7 +42,7 @@ services:
 
   ludora-db:
     build:
-      context: ..
+      context: .
       dockerfile: docker/postgres/Dockerfile
     restart: 'no'
     ports:
@@ -55,7 +55,7 @@ services:
       - VAULT_SECRET_ID
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ../scripts/vault/envconsul-docker-local.hcl:/etc/envconsul/config.hcl:ro
+      - ./scripts/vault/envconsul-docker-local.hcl:/etc/envconsul/config.hcl:ro
     networks:
       - ludora-network
 
@@ -64,7 +64,7 @@ services:
     container_name: ludora-k6-local
     restart: 'no'
     volumes:
-      - ../load-tests:/scripts
+      - ./load-tests:/scripts
     networks:
       - ludora-network
     profiles:
