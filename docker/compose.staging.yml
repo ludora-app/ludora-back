@@ -1,14 +1,14 @@
 # Development environment configuration (production replica with dev Vault)
-# Usage: docker compose -f docker/compose.dev.yml up --build
+# Usage: docker compose -f docker/compose.staging.yml up --build
 
 services:
   ludora-api:
     build:
       context: ..
-      dockerfile: docker/nest-api/Dockerfile.prod
+      dockerfile: docker/nest-api/Dockerfile.staging
       args:
-        ENV_NAME: dev
-    container_name: ludora-api-dev
+        ENV_NAME: staging
+    container_name: ludora-api-staging
     restart: unless-stopped
     ports:
       - '2424:2424'
