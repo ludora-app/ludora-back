@@ -134,7 +134,7 @@ pnpm test:cov
 
 When running via Docker Compose (`pnpm docker:dev`), the following services are available:
 
-- **Grafana**: `https://grafana.gana-f4ll.fr` (via Traefik) or check `compose.dev.yml` port mappings.
+- **Grafana**: `https://grafana.gana-f4ll.fr` (via Traefik) or check `docker/compose.dev.yml` port mappings.
 - **Prometheus**: `https://prometheus.gana-f4ll.fr`
 
 ## Project Structure
@@ -273,7 +273,7 @@ pnpm test:cov
 
 When running via Docker Compose (`pnpm docker:dev`), the following services are available:
 
-- **Grafana**: `https://grafana.gana-f4ll.fr` (via Traefik) or check `compose.dev.yml` port mappings.
+- **Grafana**: `https://grafana.gana-f4ll.fr` (via Traefik) or check `docker/compose.dev.yml` port mappings.
 - **Prometheus**: `https://prometheus.gana-f4ll.fr`
 
 ## Project Structure

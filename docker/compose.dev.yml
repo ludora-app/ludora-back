@@ -1,23 +1,20 @@
-# Production environment configuration
-# Usage: docker compose -f compose.prod.yml up -d
+# Development environment configuration (production replica with dev Vault)
+# Usage: docker compose -f docker/compose.dev.yml up --build
 
 services:
   ludora-api:
     build:
-      context: .
+      context: ..
       dockerfile: docker/nest-api/Dockerfile.prod
-    container_name: ludora-api
+      args:
+        ENV_NAME: dev
+    container_name: ludora-api-dev
     restart: unless-stopped
     ports:
       - '2424:2424'
     environment:
       - NODE_ENV=production
       - LOG_LEVEL=info
-      - DATABASE_SSL=true
-      # Vault AppRole configuration
-      - VAULT_ADDR=${VAULT_ADDR:-https://vault.ludora.fr}
-      - VAULT_ROLE_ID
-      - VAULT_SECRET_ID
     networks:
       - ludora-network
       - traefik
@@ -41,9 +38,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp
-    command: ['sh', 'scripts/start-prod.sh']
-    labels:
-      - 'prod.environment=production'
+    command: ['sh', 'scripts/start-dev.sh']
 
 networks:
   ludora-network:

@@ -178,7 +178,7 @@ Client Errors (4xx): 2 erreurs
 
 ```bash
 # 1. Redémarrer l'application pour appliquer les changements
-docker compose -f compose.dev.yml restart ludora-api
+docker compose -f docker/compose.dev.yml restart ludora-api
 
 # 2. Smoke test (10 VUs, 60s)
 TEST_TYPE=smoke k6 run load-tests/auth/auth-load-test.js
