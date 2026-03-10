@@ -30,8 +30,8 @@ RUN pnpm prisma generate
 # Build the application
 RUN pnpm build
 
-# Remove dev dependencies
-RUN pnpm prune --prod
+# Remove dev dependencies without running lifecycle scripts like husky
+RUN pnpm prune --prod --ignore-scripts
 
 # ============================================
 # Production stage
