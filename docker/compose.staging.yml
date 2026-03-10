@@ -13,13 +13,12 @@ services:
     ports:
       - '2424:2424'
     environment:
-      - NODE_ENV=production
-      - LOG_LEVEL=info
-      - DATABASE_SSL=true
-      # Vault AppRole configuration
-      - VAULT_ADDR=${VAULT_ADDR:-https://vault.ludora.fr}
-      - VAULT_ROLE_ID
-      - VAULT_SECRET_ID
+      NODE_ENV: production
+      LOG_LEVEL: info
+      DATABASE_SSL: "true"
+      VAULT_ADDR: ${VAULT_ADDR:-https://vault.ludora.fr}
+      VAULT_ROLE_ID: ${VAULT_ROLE_ID}
+      VAULT_SECRET_ID: ${VAULT_SECRET_ID}
     networks:
       - ludora-network
       - traefik
