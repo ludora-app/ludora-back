@@ -310,7 +310,15 @@ jobs:
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
+        run: |
+          npx semantic-release > release.log 2>&1
+          EXIT=$?
+          if [ $EXIT -ne 0 ] && grep -qi "tag.*already exists\|fatal: tag " release.log; then
+            echo "Tag already exists (likely from a previous run), skipping without failing."
+            exit 0
+          fi
+          cat release.log
+          exit $EXIT
   # ============================================
   # JOB 5: Deploy (Development or Production)
   # ============================================
