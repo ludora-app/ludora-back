@@ -19,6 +19,7 @@ services:
       - ./generated:/usr/src/app/generated
       - /usr/src/app/node_modules
     environment:
+      - "TZ=${TZ:-Europe/Paris}"
       - "NODE_ENV=debug"
       # Vault AppRole configuration
       - "VAULT_ADDR=${VAULT_ADDR:-https://vault.ludora.fr}"
@@ -48,6 +49,7 @@ services:
     ports:
       - '5432:5432'
     environment:
+      - TZ=${TZ:-Europe/Paris}
       - POSTGRES_LOG_STATEMENT=all
       # Vault AppRole configuration
       - VAULT_ADDR=${VAULT_ADDR:-https://vault.ludora.fr}
@@ -63,6 +65,8 @@ services:
     image: grafana/k6:latest
     container_name: ludora-k6-local
     restart: 'no'
+    environment:
+      - TZ=${TZ:-Europe/Paris}
     volumes:
       - ./load-tests:/scripts
     networks:
