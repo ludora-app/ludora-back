@@ -57,9 +57,29 @@ const mockUserSportPreferencesService = {
   findAllByUserUid: jest.fn().mockResolvedValue({ items: [] }),
 };
 
+/** Mock shape used in tests so we can access delegates without relying on generated client types in CI */
+type MockPrismaLike = {
+  $transaction: jest.Mock;
+  $queryRaw: jest.Mock;
+  $queryRawUnsafe: jest.Mock;
+  $executeRawUnsafe: jest.Mock;
+  sessions: {
+    findFirst: jest.Mock;
+    create: jest.Mock;
+    findMany: jest.Mock;
+    findUnique: jest.Mock;
+    update: jest.Mock;
+    count: jest.Mock;
+  };
+  sessionTeams: { findUnique: jest.Mock };
+  fields: { findUnique: jest.Mock };
+  sessionPlayers: { findMany: jest.Mock };
+  userBlocks: { findFirst: jest.Mock };
+};
+
 describe('SessionsService', () => {
   let service: SessionsService;
-  let prismaService: PrismaService;
+  let prismaService: PrismaService & MockPrismaLike;
   let sessionTeamsService: SessionTeamsService;
   let sessionPlayersService: SessionPlayersService;
   let _conversationsService: ConversationsService;
@@ -173,7 +193,7 @@ describe('SessionsService', () => {
     }).compile();
 
     service = module.get<SessionsService>(SessionsService);
-    prismaService = module.get<PrismaService>(PrismaService);
+    prismaService = module.get(PrismaService) as PrismaService & MockPrismaLike;
     sessionTeamsService = module.get<SessionTeamsService>(SessionTeamsService);
     sessionPlayersService = module.get<SessionPlayersService>(SessionPlayersService);
     _conversationsService = module.get<ConversationsService>(ConversationsService);

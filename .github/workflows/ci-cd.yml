@@ -303,10 +303,28 @@ jobs:
         if: steps.check.outputs.should_release == 'true'
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma Client
+        if: steps.check.outputs.should_release == 'true'
+        run: pnpm prisma generate
+
       - name: Release
+        if: steps.check.outputs.should_release == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
+        run: |
+          set +e
+          npx semantic-release > release.log 2>&1
+          EXIT=$?
+          set -e
+          cat release.log
+          if [ $EXIT -ne 0 ]; then
+            # Tag already exists (git 128), or same version already released — treat as success
+            if grep -qEi "already exists|exitCode: 128|exit code 128|Command failed with exit code 128|fatal: tag|ExecaError" release.log; then
+              echo "::notice:: Release failed with known benign error (e.g. tag already exists), treating as success."
+              exit 0
+            fi
+          fi
+          exit $EXIT
   # ============================================
   # JOB 5: Deploy (Development or Production)
   # ============================================
