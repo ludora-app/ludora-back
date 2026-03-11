@@ -682,6 +682,8 @@ describe('MessagesService', () => {
         uid: messageUid,
         senderUid: userUid,
         globalStatus: MessageStatus.SENT,
+        conversation: { sessionUid: 'session-123' },
+        sender: { firstname: 'John', lastname: 'Doe' },
       };
 
       mockPrisma.messages.findUnique.mockResolvedValue(mockMessage);
@@ -693,6 +695,14 @@ describe('MessagesService', () => {
       await service.delete(messageUid, userUid);
 
       expect(mockPrisma.messages.findUnique).toHaveBeenCalledWith({
+        include: {
+          conversation: {
+            select: { sessionUid: true },
+          },
+          sender: {
+            select: { firstname: true, lastname: true },
+          },
+        },
         where: { uid: messageUid },
       });
       expect(mockPrisma.messages.update).toHaveBeenCalledWith({
@@ -711,12 +721,22 @@ describe('MessagesService', () => {
         uid: messageUid,
         senderUid: userUid,
         globalStatus: MessageStatus.SENT,
+        conversation: { sessionUid: 'session-456' },
+        sender: { firstname: 'Jane', lastname: 'Smith' },
       });
       mockPrisma.messages.update.mockResolvedValue({});
 
       await service.delete(messageUid, userUid);
 
       expect(mockPrisma.messages.findUnique).toHaveBeenCalledWith({
+        include: {
+          conversation: {
+            select: { sessionUid: true },
+          },
+          sender: {
+            select: { firstname: true, lastname: true },
+          },
+        },
         where: { uid: 'msg-456' },
       });
       expect(mockPrisma.messages.update).toHaveBeenCalledWith({
@@ -733,6 +753,8 @@ describe('MessagesService', () => {
         uid: messageUid,
         senderUid: userUid,
         globalStatus: MessageStatus.SENT,
+        conversation: { sessionUid: 'session-789' },
+        sender: { firstname: 'John', lastname: 'Doe' },
       });
       mockPrisma.messages.update.mockResolvedValue({});
 

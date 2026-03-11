@@ -372,6 +372,14 @@ export class MessagesService {
 
   async delete(messageUid: string, userUid: string): Promise<void> {
     const message = await this.prisma.messages.findUnique({
+      include: {
+        conversation: {
+          select: { sessionUid: true },
+        },
+        sender: {
+          select: { firstname: true, lastname: true },
+        },
+      },
       where: { uid: messageUid },
     });
     if (!message) {
@@ -393,9 +401,14 @@ export class MessagesService {
       where: { uid: messageUid },
     });
 
+    const senderName =
+      `${message.sender?.firstname ?? ''} ${message.sender?.lastname ?? ''}`.trim();
+
     this.eventEmitter.emit(EventTypes.MESSAGE_DELETED, {
       conversationUid: message.conversationUid,
       messageUid,
+      senderName,
+      sessionUid: message.conversation.sessionUid,
       userUid,
     });
   }

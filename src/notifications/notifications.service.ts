@@ -44,6 +44,24 @@ export class NotificationsService {
   }
 
   /**
+   * Count unread messages for a specific user in a conversation
+   */
+  async getUnreadMessagesCount(userUid: string, conversationUid: string): Promise<number> {
+    return await this.prisma.messageReceipts.count({
+      where: {
+        message: {
+          conversationUid,
+          senderUid: { not: userUid }, // On ne compte pas ses propres messages
+        },
+        status: {
+          not: 'READ',
+        },
+        userUid,
+      },
+    });
+  }
+
+  /**
    * Create a notification in the database
    */
   async create(data: CreateNotificationDto) {
@@ -176,11 +194,16 @@ export class NotificationsService {
     android: any;
     apns: any;
   } {
+    const groupId =
+      notification.metadata?.conversationUid ||
+      notification.metadata?.sessionUid ||
+      notification.foreignUid;
+
     return {
       data: {
         actionUrl: notification.metadata?.actionUrl || '',
         foreignUid: notification.foreignUid || '',
-        notificationUid: notification.notificationUid,
+        notificationUid: notification.notificationUid || '',
         type: notification.type,
         // Aplatir les metadata en strings pour FCM
         ...this.flattenMetadata(notification.metadata),
@@ -195,6 +218,8 @@ export class NotificationsService {
           channelId: this.getAndroidChannelId(notification.type),
           sound: 'default',
           ...(notification.metadata?.imageUrl && { imageUrl: notification.metadata.imageUrl }),
+          // Retour au système de tag pour que les messages d'une même discussion s'écrasent
+          ...(groupId && { tag: groupId }),
         },
         priority: 'high' as const,
       },
@@ -204,6 +229,8 @@ export class NotificationsService {
           aps: {
             badge: 1, // Sera mis à jour dynamiquement
             sound: 'default',
+            // Thread-id permet le groupement natif sur iOS
+            ...(groupId && { 'thread-id': groupId }),
             ...(notification.metadata?.imageUrl && {
               'media-url': notification.metadata.imageUrl,
               'mutable-content': 1,
