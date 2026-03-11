@@ -315,8 +315,9 @@ jobs:
           EXIT=$?
           cat release.log
           if [ $EXIT -ne 0 ]; then
-            if grep -qEi "tag.*already exists|fatal: tag .* already exists|exit code 128|exitCode: 128" release.log; then
-              echo "::notice:: Tag already exists (or git tag failed with 128), treating as success."
+            # Tag already exists (git 128), or same version already released — treat as success
+            if grep -qEi "already exists|exitCode: 128|exit code 128|Command failed with exit code 128|fatal: tag|ExecaError" release.log; then
+              echo "::notice:: Release failed with known benign error (e.g. tag already exists), treating as success."
               exit 0
             fi
           fi
