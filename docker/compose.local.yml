@@ -1,5 +1,5 @@
 # Local environment configuration
-# Usage: docker compose -f compose.local.yml up --build
+# Usage: docker compose --project-directory . -f docker/compose.local.yml up --build
 
 services:
   ludora-api:

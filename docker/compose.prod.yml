@@ -1,0 +1,52 @@
+# Production environment configuration
+# Usage: docker compose --project-directory . -f docker/compose.prod.yml up -d
+
+services:
+  ludora-api:
+    build:
+      context: .
+      dockerfile: docker/nest-api/Dockerfile.prod
+    container_name: ludora-api
+    restart: unless-stopped
+    ports:
+      - '2424:2424'
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - DATABASE_SSL=true
+      # Vault AppRole configuration
+      - VAULT_ADDR=${VAULT_ADDR:-https://vault.ludora.fr}
+      - VAULT_ROLE_ID
+      - VAULT_SECRET_ID
+    networks:
+      - ludora-network
+      - traefik
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:2424/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Production security
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    command: ['sh', 'scripts/start-prod.sh']
+    labels:
+      - 'prod.environment=production'
+
+networks:
+  ludora-network:
+    driver: bridge
+  traefik:
+    external: true

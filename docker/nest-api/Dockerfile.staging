@@ -30,8 +30,8 @@ RUN pnpm prisma generate
 # Build the application
 RUN pnpm build
 
-# Remove dev dependencies
-RUN pnpm prune --prod
+# Remove dev dependencies without running lifecycle scripts like husky
+RUN pnpm prune --prod --ignore-scripts
 
 # ============================================
 # Production stage
@@ -66,10 +66,10 @@ COPY --from=builder --chown=nodejs:nodejs /usr/src/app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /usr/src/app/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /usr/src/app/package.json ./
 COPY --from=builder --chown=nodejs:nodejs /usr/src/app/prisma ./prisma
-COPY --from=builder --chown=nodejs:nodejs /usr/src/app/config ./config
+COPY --from=builder --chown=nodejs:nodejs /usr/src/app/prisma.config.ts ./prisma.config.ts
 
 # Copy envconsul config, vault-auth and start script
-COPY --chown=nodejs:nodejs scripts/vault/envconsul-docker-dev.hcl /etc/envconsul/config.hcl
+COPY --chown=nodejs:nodejs scripts/vault/envconsul-docker-staging.hcl /etc/envconsul/config.hcl
 COPY --chown=nodejs:nodejs scripts/vault/vault-auth.sh /usr/local/bin/vault-auth.sh
 COPY --chown=nodejs:nodejs scripts/start-prod.sh ./scripts/start-prod.sh
 RUN chmod +x /usr/local/bin/vault-auth.sh

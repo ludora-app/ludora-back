@@ -33,5 +33,5 @@ RUN chmod +x /usr/local/bin/vault-auth.sh
 
 EXPOSE 2424
 
-# Le script start-dev.sh gère l'auth AppRole puis lance envconsul
+# Le script start-prod.sh gère l'auth AppRole puis lance envconsul
 CMD ["sh", "scripts/start-local.sh"]

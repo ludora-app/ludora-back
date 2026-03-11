@@ -1,5 +1,5 @@
 # Development environment configuration (production replica with dev Vault)
-# Usage: docker compose -f compose.dev.yml up --build
+# Usage: docker compose --project-directory . -f docker/compose.dev.yml up --build
 
 services:
   ludora-api:
@@ -38,7 +38,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp
-    command: ['sh', 'scripts/start-dev.sh']
+    command: ['sh', 'scripts/start-prod.sh']
 
 networks:
   ludora-network:
