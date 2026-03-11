@@ -313,11 +313,13 @@ jobs:
         run: |
           npx semantic-release > release.log 2>&1
           EXIT=$?
-          if [ $EXIT -ne 0 ] && grep -qi "tag.*already exists\|fatal: tag " release.log; then
-            echo "Tag already exists (likely from a previous run), skipping without failing."
-            exit 0
-          fi
           cat release.log
+          if [ $EXIT -ne 0 ]; then
+            if grep -qEi "tag.*already exists|fatal: tag .* already exists|exit code 128|exitCode: 128" release.log; then
+              echo "::notice:: Tag already exists (or git tag failed with 128), treating as success."
+              exit 0
+            fi
+          fi
           exit $EXIT
   # ============================================
   # JOB 5: Deploy (Development or Production)
