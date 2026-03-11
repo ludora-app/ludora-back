@@ -303,6 +303,10 @@ jobs:
         if: steps.check.outputs.should_release == 'true'
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma Client
+        if: steps.check.outputs.should_release == 'true'
+        run: pnpm prisma generate
+
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
