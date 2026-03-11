@@ -1,10 +1,12 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { AppService } from './app.service';
 import { AuthB2CGuard } from './auth/guards/auth-b2c.guard';
 import { Public } from './shared/decorators/public.decorator';
+import { SWAGGER_TAG_APP } from './swagger.config';
 
+@ApiTags(SWAGGER_TAG_APP)
 @Controller()
 @UseGuards(AuthB2CGuard)
 @ApiBearerAuth('JWT-auth')

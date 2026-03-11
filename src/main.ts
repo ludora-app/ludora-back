@@ -2,9 +2,9 @@ import contentParser from '@fastify/multipart';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-
+import { SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { buildSwaggerDocument, SWAGGER_OPTIONS } from './swagger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
@@ -20,29 +20,8 @@ async function bootstrap() {
   );
 
   // if (process.env.NODE_ENV !== 'production') {
-  const config = new DocumentBuilder()
-    .setTitle('Ludora API')
-    .setDescription('API for the Ludora app')
-    .setVersion('0.0.1')
-    .addBearerAuth(
-      {
-        bearerFormat: 'JWT',
-        description: 'Enter JWT token',
-        scheme: 'bearer',
-        type: 'http',
-      },
-      'JWT-auth',
-    )
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-
-  SwaggerModule.setup('swagger', app, document, {
-    swaggerOptions: {
-      operationsSorter: 'method',
-      tagsSorter: 'alpha',
-    },
-  });
+  const document = SwaggerModule.createDocument(app, buildSwaggerDocument());
+  SwaggerModule.setup('swagger', app, document, SWAGGER_OPTIONS);
   // }
 
   // In Docker, Fastify must listen on 0.0.0.0 to be reachable from outside the container.

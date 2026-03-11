@@ -23,6 +23,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -47,6 +48,7 @@ import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dt
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { SuccessTypeDto } from 'src/shared/dto/responses/success-type';
 import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
+import { SWAGGER_TAG_AUTH_B2C } from 'src/swagger.config';
 import { ForgottenPasswordDto } from 'src/users/dto/input/forgotten-password.dto';
 import { Protected } from '../../shared/decorators/protected.decorator';
 import { Public } from '../../shared/decorators/public.decorator';
@@ -58,6 +60,7 @@ import { AuthB2CGuard } from '../guards/auth-b2c.guard';
 import { VerifyEmailGuard } from '../guards/verify-email.guard';
 import { AuthB2CService } from '../services/auth-b2c.service';
 
+@ApiTags(SWAGGER_TAG_AUTH_B2C)
 @Controller('auth-b2c')
 @UseGuards(AuthB2CGuard)
 export class AuthB2CController {

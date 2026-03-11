@@ -25,6 +25,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
@@ -41,6 +42,7 @@ import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-resp
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
+import { SWAGGER_TAG_FIELDS } from 'src/swagger.config';
 import { CreateFieldSlotDto } from './dto/input/create-field-slot.dto';
 import { CreatePrivateFieldDto } from './dto/input/create-private-field.dto';
 import { CreatePublicFieldDto } from './dto/input/create-public-field.dto';
@@ -67,6 +69,7 @@ import { FieldSlotsService } from './services/field-slots.service';
 import { FieldsService } from './services/fields.service';
 
 // ? Guards at endpoint level for the whole controller because some routes will be accessible by both B2C and B2B users.
+@ApiTags(SWAGGER_TAG_FIELDS)
 @Controller('fields')
 export class FieldsController {
   constructor(

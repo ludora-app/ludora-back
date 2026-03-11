@@ -18,6 +18,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
@@ -28,6 +29,7 @@ import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-respons
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
+import { SWAGGER_TAG_SESSION_PLAYERS } from 'src/swagger.config';
 import { UserSimpleDisplayData } from 'src/users/dto';
 import { JoinSessionDto } from '../dto/input/create-session-player.dto';
 import {
@@ -39,6 +41,7 @@ import { SessionsPipe } from '../pipes/sessions.pipe';
 import { SessionPlayersService } from '../services/session-players.service';
 import { SessionsService } from '../services/sessions.service';
 
+@ApiTags(SWAGGER_TAG_SESSION_PLAYERS)
 @Controller('session-players')
 @UseGuards(AuthB2CGuard)
 export class SessionPlayersController {

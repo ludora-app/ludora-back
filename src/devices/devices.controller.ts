@@ -14,6 +14,7 @@ import {
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOperation,
+  ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
@@ -22,12 +23,13 @@ import { Protected } from 'src/shared/decorators/protected.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-
+import { SWAGGER_TAG_DEVICES } from 'src/swagger.config';
 import { DevicesService } from './devices.service';
 import { RegisterDeviceDto } from './dto/input/register-device.dto';
 import { UnregisterDeviceDto } from './dto/input/unregister-device.dto';
 import { DeviceResponseData, DeviceResponseDto } from './dto/output/device-response.dto';
 
+@ApiTags(SWAGGER_TAG_DEVICES)
 @UseGuards(AuthB2CGuard)
 @Controller('devices')
 export class DevicesController {

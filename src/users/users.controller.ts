@@ -21,6 +21,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
@@ -36,6 +37,7 @@ import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-resp
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
+import { SWAGGER_TAG_USERS } from 'src/swagger.config';
 import { USERSELECT } from '../shared/constants/select-user';
 import {
   FindAllUsersResponseDataDto,
@@ -53,6 +55,7 @@ import { PasswordResetRequestDto } from './dto/input/password-reset-request.dto'
 import { RawUserFindMe, RawUserFindOne, UserMapper } from './mappers/user.mapper';
 import { UsersService } from './users.service';
 
+@ApiTags(SWAGGER_TAG_USERS)
 @Controller('users')
 @UseGuards(AuthB2CGuard)
 @ApiBearerAuth('JWT-auth')
