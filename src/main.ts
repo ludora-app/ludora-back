@@ -19,10 +19,10 @@ async function bootstrap() {
     }),
   );
 
-  // if (process.env.NODE_ENV !== 'production') {
-  const document = SwaggerModule.createDocument(app, buildSwaggerDocument());
-  SwaggerModule.setup('swagger', app, document, SWAGGER_OPTIONS);
-  // }
+  if (process.env.NODE_ENV !== 'production') {
+    const document = SwaggerModule.createDocument(app, buildSwaggerDocument());
+    SwaggerModule.setup('swagger', app, document, SWAGGER_OPTIONS);
+  }
 
   // In Docker, Fastify must listen on 0.0.0.0 to be reachable from outside the container.
   const port = Number(process.env.PORT ?? 2424);
