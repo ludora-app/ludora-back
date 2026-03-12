@@ -106,7 +106,7 @@ const logLevel = process.env.LOG_LEVEL ?? (isDevelopment ? 'debug' : 'info');
             ignore: 'hostname,req,res,responseTime',
             levelFirst: false,
             messageFormat: '{pid}  - {time} {level} [{context}] {msg}',
-            translateTime: 'dd/mm/yyyy, h:MM:ss TT',
+            translateTime: 'SYS:dd/mm/yyyy, h:MM:ss TT',
           },
           target: 'pino-pretty',
         },
