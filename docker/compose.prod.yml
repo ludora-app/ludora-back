@@ -49,5 +49,3 @@ services:
 networks:
   ludora-network:
     driver: bridge
-  traefik:
-    external: true
