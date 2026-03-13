@@ -1,6 +1,3 @@
-# Production environment configuration
-# Usage: docker compose --project-directory . -f docker/compose.prod.yml up -d
-
 services:
   ludora-api:
     build:
@@ -21,7 +18,7 @@ services:
       - VAULT_SECRET_ID
     networks:
       - ludora-network
-      - traefik
+      - coolify
     deploy:
       resources:
         limits:
@@ -49,3 +46,5 @@ services:
 networks:
   ludora-network:
     driver: bridge
+  coolify:
+    external: true
