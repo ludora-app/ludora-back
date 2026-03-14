@@ -23,12 +23,10 @@ export class HourPreferencesService {
       for (const hourPreference of validHourPreferences) {
         let date: Date | undefined;
 
-        //? Check if the date is a valid date string, puts the date at 00:00:00
         if (hourPreference.date) {
           const parsed = new Date(hourPreference.date);
           if (!Number.isNaN(parsed.getTime())) {
             date = parsed;
-            date.setHours(0, 0, 0, 0);
           }
         }
         await tx.userHourPreferences.create({
