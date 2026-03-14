@@ -24,9 +24,14 @@ export class HourPreferencesService {
         let date: Date | undefined;
 
         if (hourPreference.date) {
+          //? Check if the date is a valid date string,
           const parsed = new Date(hourPreference.date);
           if (!Number.isNaN(parsed.getTime())) {
             date = parsed;
+            //? puts the date at 00:00:00 if the preference is recurrent
+            if (hourPreference.type === UserHourPreferenceType.RECURRENT) {
+              date.setHours(0, 0, 0, 0);
+            }
           }
         }
         await tx.userHourPreferences.create({
