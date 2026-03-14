@@ -403,6 +403,7 @@ describe('MessagesService', () => {
 
       const result = await service.getMessages(conversationUid, userUid, undefined, limit);
 
+      // Sans cursor : pas de filtre OR, juste conversationUid dans where
       expect(mockPrisma.messages.findMany).toHaveBeenCalledWith({
         include: {
           messageReceipts: {
@@ -420,9 +421,7 @@ describe('MessagesService', () => {
             },
           },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
+        orderBy: [{ createdAt: 'desc' }, { uid: 'desc' }],
         take: limit + 1,
         where: {
           conversationUid,
@@ -435,17 +434,18 @@ describe('MessagesService', () => {
     it('should handle cursor pagination', async () => {
       const conversationUid = 'conv-123';
       const userUid = 'user-1';
-      const cursor = 'msg-cursor-123';
+      // Le cursor est maintenant au format composite "createdAt_iso::uid"
+      const cursorDate = new Date('2026-03-13T22:40:15.910Z');
+      const cursorUid = 'msg-cursor-123';
+      const cursor = `${cursorDate.toISOString()}::${cursorUid}`;
       const limit = 10;
 
       mockPrisma.messages.findMany.mockResolvedValue([]);
 
       await service.getMessages(conversationUid, userUid, cursor, limit);
 
+      // Avec cursor : filtre WHERE keyset pour éviter les ambiguïtés sur createdAt
       expect(mockPrisma.messages.findMany).toHaveBeenCalledWith({
-        cursor: {
-          uid: cursor,
-        },
         include: {
           messageReceipts: {
             select: {
@@ -462,15 +462,47 @@ describe('MessagesService', () => {
             },
           },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        skip: 1,
+        orderBy: [{ createdAt: 'desc' }, { uid: 'desc' }],
         take: limit + 1,
         where: {
           conversationUid,
+          OR: [
+            { createdAt: { lt: cursorDate } },
+            { createdAt: cursorDate, uid: { lt: cursorUid } },
+          ],
         },
       });
+    });
+
+    it('should generate a composite nextCursor when there are more pages', async () => {
+      const conversationUid = 'conv-123';
+      const userUid = 'user-1';
+      const limit = 2;
+      const oldestDate = new Date('2026-03-13T22:40:00.000Z');
+
+      // On retourne limit+1 messages pour déclencher hasMore
+      const mockMessages = Array.from({ length: limit + 1 }, (_, i) => ({
+        content: `Message ${i + 1}`,
+        conversationUid,
+        createdAt: i === limit ? oldestDate : new Date('2026-03-13T22:40:10.000Z'),
+        globalStatus: MessageStatus.SENT,
+        messageReceipts: [],
+        sender: { firstname: 'John', imageUrl: null, lastname: 'Doe', uid: 'user-1' },
+        senderUid: 'user-1',
+        type: MessageType.TEXT,
+        uid: `msg-${i + 1}`,
+        updatedAt: new Date(),
+      }));
+
+      mockPrisma.messages.findMany.mockResolvedValue(mockMessages);
+
+      const result = await service.getMessages(conversationUid, userUid, undefined, limit);
+
+      // nextCursor doit être au format composite "createdAt_iso::uid" du dernier message de la page
+      const expectedOldestInPage = mockMessages[limit - 1]; // dernier de la tranche [0..limit-1]
+      const expectedCursor = `${expectedOldestInPage.createdAt.toISOString()}::${expectedOldestInPage.uid}`;
+      expect(result.nextCursor).toBe(expectedCursor);
+      expect(result.items).toHaveLength(limit);
     });
   });
 
