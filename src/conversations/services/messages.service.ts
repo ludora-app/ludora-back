@@ -194,7 +194,7 @@ export class MessagesService {
    * Get messages from a conversation with pagination
    * @param conversationUid - The conversation uid
    * @param userUid - The user uid requesting the messages
-   * @param cursor - Optional cursor for pagination
+   * @param cursor - Optional cursor for pagination (format: "createdAt_iso::uid")
    * @param limit - Number of messages to fetch (default: 50)
    * @returns Array of messages
    */
@@ -204,6 +204,18 @@ export class MessagesService {
     cursor?: string,
     limit = 50,
   ): Promise<PaginatedDataDto<MessageCollectionItemDto>> {
+    // Parse composite cursor "createdAt_iso::uid" to handle ties in timestamps
+    let cursorCreatedAt: Date | undefined;
+    let cursorUid: string | undefined;
+
+    if (cursor) {
+      const separatorIndex = cursor.indexOf('::');
+      if (separatorIndex !== -1) {
+        cursorCreatedAt = new Date(cursor.substring(0, separatorIndex));
+        cursorUid = cursor.substring(separatorIndex + 2);
+      }
+    }
+
     const messages = await this.prisma.messages.findMany({
       include: {
         messageReceipts: {
@@ -221,19 +233,20 @@ export class MessagesService {
           },
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: [{ createdAt: 'desc' }, { uid: 'desc' }],
       take: limit + 1,
       where: {
         conversationUid,
+        // Keyset pagination: fetch records strictly older than the cursor
+        // Uses OR to handle ties on createdAt: same timestamp → tiebreak on uid
+        ...(cursorCreatedAt &&
+          cursorUid && {
+            OR: [
+              { createdAt: { lt: cursorCreatedAt } },
+              { createdAt: cursorCreatedAt, uid: { lt: cursorUid } },
+            ],
+          }),
       },
-      ...(cursor && {
-        cursor: {
-          uid: cursor,
-        },
-        skip: 1,
-      }),
     });
 
     const hasMore = messages.length > limit;
@@ -241,7 +254,11 @@ export class MessagesService {
 
     // paginatedMessages[paginatedMessages.length - 1] est le plus ancien de la page
     // c'est lui qu'on donne comme curseur pour la prochaine page (encore plus dans le passé)
-    const nextCursor = hasMore ? paginatedMessages[paginatedMessages.length - 1].uid : null;
+    // Format composite "createdAt_iso::uid" pour gérer les ex-æquo sur createdAt
+    const oldestMessage = paginatedMessages[paginatedMessages.length - 1];
+    const nextCursor = hasMore
+      ? `${oldestMessage.createdAt.toISOString()}::${oldestMessage.uid}`
+      : null;
 
     this.eventEmitter.emit(EventTypes.MARK_MESSAGES_AS_READ, {
       conversationUid,
