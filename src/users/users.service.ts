@@ -43,6 +43,14 @@ export class UsersService {
 
   private readonly GOOGLE_TESTER_ACCOUNT_EMAIL =
     this.configService.get<string>('GOOGLE_TESTER_ACCOUNT_EMAIL') ?? '';
+  private readonly APPLE_TESTER_ACCOUNT_EMAIL =
+    this.configService.get<string>('APPLE_TESTER_ACCOUNT_EMAIL') ?? '';
+
+  private readonly TESTER_ACCOUNT_EMAILS = [
+    this.GOOGLE_TESTER_ACCOUNT_EMAIL,
+    this.APPLE_TESTER_ACCOUNT_EMAIL,
+  ];
+
   async create(
     createUserDto: CreateUserDto,
     createImageDto?: CreateImageDto,
@@ -254,7 +262,7 @@ export class UsersService {
         FROM auth."Users" u
         WHERE
           u.uid != ${userUid}
-          AND u.email != ${this.GOOGLE_TESTER_ACCOUNT_EMAIL}
+          AND u.email NOT IN (${Prisma.join(this.TESTER_ACCOUNT_EMAILS)})
           AND u.is_anonymized = false
           ${sportWhereSql}
           ${levelWhereSql}
