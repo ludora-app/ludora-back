@@ -14,8 +14,14 @@ import {
 export class GeolocalisationService {
   constructor(private readonly configService: ConfigService) {}
 
-  private readonly GOOGLE_MAPS_API_KEY =
-    this.configService.getOrThrow<string>('GOOGLE_MAPS_API_KEY');
+  /**
+   * the GOOGLE_MAPS_API_KEY is retrieved like this to avoid potential issues with the generation of
+   * the swagger.json file in the CI/CD pipeline
+   * the generate-swagger.ts script does not support "NestFactory.create(AppModule)" "
+   */
+  private get GOOGLE_MAPS_API_KEY(): string {
+    return this.configService.getOrThrow<string>('GOOGLE_MAPS_API_KEY');
+  }
   private readonly client = new Client({});
 
   /**
