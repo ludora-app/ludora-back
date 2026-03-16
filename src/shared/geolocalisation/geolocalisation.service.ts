@@ -1,6 +1,6 @@
 import { AddressType, Client } from '@googlemaps/google-maps-services-js';
 import { BadRequestException, Injectable } from '@nestjs/common';
-
+import { ConfigService } from '@nestjs/config';
 import { AddressComponentsTypes } from './dto/input/address-components-types';
 import {
   AddressResult,
@@ -12,6 +12,10 @@ import {
 
 @Injectable()
 export class GeolocalisationService {
+  constructor(private readonly configService: ConfigService) {}
+
+  private readonly GOOGLE_MAPS_API_KEY =
+    this.configService.getOrThrow<string>('GOOGLE_MAPS_API_KEY');
   private readonly client = new Client({});
 
   /**
@@ -24,17 +28,11 @@ export class GeolocalisationService {
       throw new BadRequestException('Address cannot be empty');
     }
 
-    if (!process.env.GOOGLE_MAPS_API_KEY) {
-      throw new BadRequestException(
-        'Google Maps API key is not configured. Please set GOOGLE_MAPS_API_KEY in your environment variables.',
-      );
-    }
-
     try {
       const response = await this.client.geocode({
         params: {
           address: address.trim(),
-          key: process.env.GOOGLE_MAPS_API_KEY,
+          key: this.GOOGLE_MAPS_API_KEY,
         },
       });
 
@@ -66,16 +64,10 @@ export class GeolocalisationService {
       throw new BadRequestException('Invalid GPS coordinates');
     }
 
-    if (!process.env.GOOGLE_MAPS_API_KEY) {
-      throw new BadRequestException(
-        'Google Maps API key is not configured. Please set GOOGLE_MAPS_API_KEY in your environment variables.',
-      );
-    }
-
     try {
       const response = await this.client.reverseGeocode({
         params: {
-          key: process.env.GOOGLE_MAPS_API_KEY,
+          key: this.GOOGLE_MAPS_API_KEY,
           latlng: { lat, lng },
         },
       });
@@ -112,16 +104,10 @@ export class GeolocalisationService {
       throw new BadRequestException('Invalid GPS coordinates');
     }
 
-    if (!process.env.GOOGLE_MAPS_API_KEY) {
-      throw new BadRequestException(
-        'Google Maps API key is not configured. Please set GOOGLE_MAPS_API_KEY in your environment variables.',
-      );
-    }
-
     try {
       const response = await this.client.reverseGeocode({
         params: {
-          key: process.env.GOOGLE_MAPS_API_KEY,
+          key: this.GOOGLE_MAPS_API_KEY,
           latlng: { lat, lng },
           result_type: [
             AddressType.street_address,
