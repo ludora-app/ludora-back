@@ -70,8 +70,8 @@ export class PaymentController {
     @Req() request: Request,
     @Body() stripeAccountData: CreateStripeAccountDto,
   ): Promise<void> {
-    const userId = request['user'].uid;
-    return this.paymentService.createStripeConnectAccount(userId, stripeAccountData);
+    const userUid = request['user'].uid;
+    return this.paymentService.createStripeConnectAccount(userUid, stripeAccountData);
   }
 
   @Post('payment-intent')
@@ -140,8 +140,8 @@ export class PaymentController {
     @Body() bankDetails: BankDetailsDto,
     @Req() request: Request,
   ): Promise<void> {
-    const userId = request['user'].uid;
-    await this.paymentService.addBankAccount(userId, bankDetails);
+    const userUid = request['user'].uid;
+    await this.paymentService.addBankAccount(userUid, bankDetails);
   }
 
   @Get('stripe-connect-account')
@@ -222,8 +222,8 @@ export class PaymentController {
     @Req() request: Request,
     @Param('bankAccountId') bankAccountId: string,
   ): Promise<ResponseTypeDto<Stripe.ExternalAccount>> {
-    const userId = request['user'].uid;
-    const bankAccount = await this.paymentService.getBankAccount(userId, bankAccountId);
+    const userUid = request['user'].uid;
+    const bankAccount = await this.paymentService.getBankAccount(userUid, bankAccountId);
     return {
       data: bankAccount,
       message: 'Bank account retrieved successfully',
@@ -253,11 +253,11 @@ export class PaymentController {
     @Req() request: Request,
     @Param('bankAccountId') bankAccountId: string,
   ) {
-    const userId = request['user'].uid;
-    return this.paymentService.updateDefaultBankAccount(userId, bankAccountId, bankDetails);
+    const userUid = request['user'].uid;
+    return this.paymentService.updateDefaultBankAccount(userUid, bankAccountId, bankDetails);
   }
 
-  @Delete('bank-accounts/:bankAccountId')
+  @Delete('bank-accounts')
   @Protected()
   @UseGuards(AuthB2CGuard)
   @ApiOperation({
@@ -275,12 +275,9 @@ export class PaymentController {
     type: UnauthorizedResponseDto,
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteBankAccount(
-    @Param('bankAccountId') bankAccountId: string,
-    @Req() request: Request,
-  ): Promise<void> {
-    const userId = request['user'].uid;
-    return this.paymentService.deleteBankAccount(userId, bankAccountId);
+  async deleteBankAccount(@Req() request: Request): Promise<void> {
+    const userUid = request['user'].uid;
+    return this.paymentService.deleteBankAccount(userUid);
   }
 
   // ===== TESTING ENDPOINTS (DEVELOPMENT ONLY) =====

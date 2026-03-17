@@ -499,11 +499,11 @@ describe('PaymentService', () => {
         mockUsersService.findOne.mockResolvedValue(mockUser);
         mockStripe.accounts.deleteExternalAccount.mockResolvedValue({ deleted: true });
 
-        await service.deleteBankAccount(userId, bankAccountId);
+        await service.deleteBankAccount(userId);
 
         expect(mockStripe.accounts.deleteExternalAccount).toHaveBeenCalledWith(
           'account-1',
-          bankAccountId,
+          'account-1',
         );
       });
     });

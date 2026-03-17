@@ -252,14 +252,12 @@ describe('PaymentController', () => {
     });
 
     describe('deleteBankAccount', () => {
-      const bankAccountId = 'ba_1';
-
       it('should delete bank account', async () => {
         mockStripeService.deleteBankAccount.mockResolvedValue(undefined);
 
-        await controller.deleteBankAccount(bankAccountId, mockRequest as any);
+        await controller.deleteBankAccount(mockRequest as any);
 
-        expect(mockStripeService.deleteBankAccount).toHaveBeenCalledWith('user-1', bankAccountId);
+        expect(mockStripeService.deleteBankAccount).toHaveBeenCalledWith('user-1');
       });
     });
   });
