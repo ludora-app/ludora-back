@@ -1,5 +1,4 @@
 import { BadRequestException, Controller, Post, RawBodyRequest, Req } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { FastifyRequest } from 'fastify';
 import { WebhooksService } from './webhooks.service';
 

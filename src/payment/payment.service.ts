@@ -29,14 +29,14 @@ export class PaymentService {
   private async getPartnerStripeAccountId(partnerUid: string): Promise<string> {
     const partner = await this._prismaService.partners.findUnique({
       where: { uid: partnerUid },
-      include: { partnerSettings: true },
+      include: { partnerBillingConfigs: true },
     });
 
     if (!partner) {
       throw new NotFoundException('Partner not found');
     }
 
-    const stripeAccountId = partner.partnerSettings?.stripeAccountId;
+    const stripeAccountId = partner.partnerBillingConfigs?.stripeAccountId;
     if (!stripeAccountId) {
       throw new NotFoundException('Stripe account not found');
     }
@@ -48,14 +48,14 @@ export class PaymentService {
     try {
       const partner = await this._prismaService.partners.findUnique({
         where: { uid: partnerUid },
-        include: { partnerSettings: true },
+        include: { partnerBillingConfigs: true },
       });
 
       if (!partner) {
         throw new NotFoundException('Partner not found');
       }
 
-      if (partner.partnerSettings?.stripeAccountId) {
+      if (partner.partnerBillingConfigs?.stripeAccountId) {
         throw new BadRequestException('Stripe account already exists');
       }
 
@@ -75,7 +75,7 @@ export class PaymentService {
         email: partner.email,
       });
 
-      await this._prismaService.partnerSettings.upsert({
+      await this._prismaService.partnerBillingConfig.upsert({
         where: { partnerUid: partner.uid },
         update: { stripeAccountId: stripeAccount.id },
         create: { partnerUid: partner.uid, stripeAccountId: stripeAccount.id },
@@ -87,6 +87,28 @@ export class PaymentService {
         `Error creating Stripe account for partner ${partnerUid}: ${error.message}`,
       );
       throw new BadRequestException(error.message);
+    }
+  }
+
+  async generateStripeAccountLink(partnerUid: string): Promise<{ url: string }> {
+    try {
+      const stripeAccountId = await this.getPartnerStripeAccountId(partnerUid);
+
+      // The refresh_url and return_url should point to the frontend (e.g. partner dashboard)
+      // They can be configured in env, falling back to a dummy one if not set
+      const baseUrl = this.configService.get<string>('FRONTEND_URL') || 'https://ludora.fr';
+
+      const accountLink = await this.stripe.accountLinks.create({
+        account: stripeAccountId,
+        refresh_url: `${baseUrl}/partner/onboarding/refresh`,
+        return_url: `${baseUrl}/partner/dashboard?onboarding=success`,
+        type: 'account_onboarding',
+      });
+
+      return { url: accountLink.url };
+    } catch (error) {
+      this.logger.error(`Error generating Stripe account link: ${error.message}`);
+      throw new BadRequestException('Could not generate onboarding link.');
     }
   }
 
@@ -103,7 +125,7 @@ export class PaymentService {
       const deletedAccount = await this.stripe.accounts.del(stripeAccountId);
 
       if (deletedAccount) {
-        await this._prismaService.partnerSettings.update({
+        await this._prismaService.partnerBillingConfig.update({
           where: { partnerUid },
           data: { stripeAccountId: null },
         });
@@ -140,6 +162,10 @@ export class PaymentService {
       throw new BadRequestException('Session field does not have an associated partner');
     }
 
+    const partnerBillingConfig = await this._prismaService.partnerBillingConfig.findUnique({
+      where: { partnerUid },
+    });
+
     const connectedAccountId = await this.getPartnerStripeAccountId(partnerUid);
 
     try {
@@ -163,6 +189,8 @@ export class PaymentService {
           platform: 'mobile',
           sessionUid,
           userUid,
+          partnerUid,
+          commissionRateSnapshot: String(partnerBillingConfig?.commissionRate || 0.15),
         },
       });
 

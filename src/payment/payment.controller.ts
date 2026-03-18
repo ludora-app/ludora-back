@@ -71,6 +71,53 @@ export class PaymentController {
     return this.paymentService.createStripeConnectAccount(partnerUid);
   }
 
+  @Post('stripe-connect-account/link')
+  @Protected()
+  @UseGuards(AuthB2BGuard)
+  @ApiOperation({
+    summary: 'Generate a Stripe connect account onboarding link.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error generating Stripe connect account link',
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
+  })
+  @ApiOkResponse({
+    description: 'Stripe connect account link generated successfully',
+  })
+  @HttpCode(HttpStatus.OK)
+  async generateStripeAccountLink(@Req() request: Request): Promise<{ url: string }> {
+    const partnerUid = request['user'].organisationUid;
+    return this.paymentService.generateStripeAccountLink(partnerUid);
+  }
+
+  @Get('stripe-connect-account/refresh-link')
+  @Protected()
+  @UseGuards(AuthB2BGuard)
+  @ApiOperation({
+    summary: 'Refresh a Stripe connect account onboarding link.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error refreshing Stripe connect account link',
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
+  })
+  @ApiOkResponse({
+    description: 'Stripe connect account link refreshed successfully',
+  })
+  @HttpCode(HttpStatus.OK)
+  async refreshStripeAccountLink(@Req() request: Request): Promise<{ url: string }> {
+    const partnerUid = request['user'].organisationUid;
+    // We use the same service method since type='account_onboarding' works for both
+    return this.paymentService.generateStripeAccountLink(partnerUid);
+  }
+
   @Post('payment-intent')
   @Protected()
   @UseGuards(AuthB2CGuard)

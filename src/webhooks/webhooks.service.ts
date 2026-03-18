@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { StripeEventStatus } from 'generated/prisma/enums';
 import { Stripe } from 'stripe';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -37,8 +38,8 @@ export class WebhooksService {
     // Record the event as PENDING
     await this.prisma.stripeEvents.upsert({
       where: { id: event.id },
-      update: { type: event.type, status: 'PENDING' },
-      create: { id: event.id, type: event.type, status: 'PENDING' },
+      update: { type: event.type, status: StripeEventStatus.PROCESSING },
+      create: { id: event.id, type: event.type, status: StripeEventStatus.PROCESSING },
     });
 
     try {
@@ -54,6 +55,9 @@ export class WebhooksService {
           break;
         case 'charge.dispute.created':
           await this.handleChargeDisputeCreated(event.data.object as Stripe.Dispute);
+          break;
+        case 'account.updated':
+          await this.handleAccountUpdated(event.data.object as Stripe.Account);
           break;
         default:
           this.logger.debug(`Unhandled event type ${event.type}`);
@@ -79,18 +83,36 @@ export class WebhooksService {
   private async handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
     this.logger.log(`Payment Intent succeeded: ${paymentIntent.id}`);
 
+    const sessionUid = paymentIntent.metadata?.sessionUid;
+    const userUid = paymentIntent.metadata?.userUid;
+    const partnerUid = paymentIntent.metadata?.partnerUid;
+    const commissionRateSnapshot = paymentIntent.metadata?.commissionRateSnapshot
+      ? Number(paymentIntent.metadata.commissionRateSnapshot)
+      : 0.15;
+    const idempotencyKey = paymentIntent.id;
+
+    if (!sessionUid || !userUid || !partnerUid) {
+      this.logger.warn(
+        `Missing metadata for Payment Intent ${paymentIntent.id}. Cannot create Payment record.`,
+      );
+      return;
+    }
+
     // Update or Create Payments record in database
     await this.prisma.payments.upsert({
-      where: { stripePaymentId: paymentIntent.id },
+      where: { stripePaymentIntentId: paymentIntent.id },
       update: { status: 'SUCCESS' },
       create: {
-        stripePaymentId: paymentIntent.id,
+        stripePaymentIntentId: paymentIntent.id,
         amount: paymentIntent.amount,
         currency: paymentIntent.currency,
         status: 'SUCCESS',
-        sessionUid: paymentIntent.metadata?.sessionUid || 'unknown',
-        userUid: paymentIntent.metadata?.userUid || 'unknown',
-        applicationFee: 0,
+        sessionUid,
+        userUid,
+        partnerUid,
+        commissionRateSnapshot,
+        idempotencyKey,
+        amountPlatform: 0,
       },
     });
 
@@ -101,7 +123,7 @@ export class WebhooksService {
     this.logger.log(`Payment Intent failed: ${paymentIntent.id}`);
 
     await this.prisma.payments.update({
-      where: { stripePaymentId: paymentIntent.id },
+      where: { stripePaymentIntentId: paymentIntent.id },
       data: { status: 'FAILED' },
     });
 
@@ -118,25 +140,31 @@ export class WebhooksService {
           : charge.payment_intent.id;
 
       const payment = await this.prisma.payments.findUnique({
-        where: { stripePaymentId: paymentIntentId },
+        where: { stripePaymentIntentId: paymentIntentId },
       });
 
       if (payment) {
         await this.prisma.payments.update({
-          where: { stripePaymentId: paymentIntentId },
+          where: { stripePaymentIntentId: paymentIntentId },
           data: { status: 'REFUNDED' }, // or PARTIALLY_REFUNDED depending on amount
         });
 
         if (charge.refunds?.data.length) {
           for (const stripeRefund of charge.refunds.data) {
+            const refundStatus = (stripeRefund.status?.toUpperCase() || 'PENDING') as any;
+            let refundReason: any = 'OTHER';
+            if (stripeRefund.reason === 'fraudulent') refundReason = 'FRAUD';
+            else if (stripeRefund.reason === 'requested_by_customer') refundReason = 'CUSTOMER_CANCELLED';
+            else if (!stripeRefund.reason) refundReason = null;
+
             await this.prisma.refunds.upsert({
               where: { stripeRefundId: stripeRefund.id },
-              update: { status: stripeRefund.status },
+              update: { status: refundStatus },
               create: {
                 stripeRefundId: stripeRefund.id,
                 amount: stripeRefund.amount,
-                reason: stripeRefund.reason || null,
-                status: stripeRefund.status,
+                reason: refundReason,
+                status: refundStatus,
                 paymentUid: payment.uid,
               },
             });
@@ -154,9 +182,44 @@ export class WebhooksService {
         : dispute.payment_intent?.id;
     if (paymentIntentId) {
       await this.prisma.payments.update({
-        where: { stripePaymentId: paymentIntentId },
+        where: { stripePaymentIntentId: paymentIntentId },
         data: { status: 'DISPUTED' },
       });
+    }
+  }
+
+  private async handleAccountUpdated(account: Stripe.Account) {
+    this.logger.log(`Account updated: ${account.id}`);
+
+    // Update the PartnerBillingConfig status based on charges_enabled and payouts_enabled
+    // Handle specific reasons to distinguish RESTRICTED and REJECTED status.
+    let status: 'PENDING' | 'ACTIVE' | 'RESTRICTED' | 'REJECTED' = 'PENDING';
+
+    if (account.charges_enabled && account.payouts_enabled) {
+      status = 'ACTIVE';
+    } else if (account.requirements?.disabled_reason) {
+      if (account.requirements.disabled_reason.startsWith('rejected.')) {
+        status = 'REJECTED';
+      } else {
+        // e.g., requirements.past_due, requirements.pending_verification
+        status = 'RESTRICTED';
+      }
+    } else {
+      // If neither enabled nor disabled_reason is set, mostly means onboarding is incomplete
+      // Consider "Past due" as normal (PENDING) while onboarding is not complete
+      status = 'PENDING';
+    }
+
+    try {
+      await this.prisma.partnerBillingConfig.update({
+        where: { stripeAccountId: account.id },
+        data: { stripeAccountStatus: status as any }, // Assert any for typescript until prisma client catches up
+      });
+      this.logger.log(`Stripe account ${account.id} status updated to ${status}`);
+    } catch (err) {
+      this.logger.warn(
+        `Could not update partner settings for account ${account.id}: ${err.message}`,
+      );
     }
   }
 }

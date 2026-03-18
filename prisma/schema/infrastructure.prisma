@@ -40,11 +40,9 @@ model Partners {
   userTokens    UserTokens[]
   refreshTokens RefreshTokens[]
 
-  partnerSettings PartnerSettings?
-
   fields                Fields[]
   partnerSports         PartnerSports[]
-  partnerBillingConfigs PartnerBillingConfig[]
+  partnerBillingConfigs PartnerBillingConfig?
   payments              Payments[]
 
   @@index([city])
@@ -172,21 +170,5 @@ model FieldImages {
 
   @@index([fieldUid])
   @@map("Field_images")
-  @@schema("infrastructure")
-}
-
-model PartnerSettings {
-  uid                        String  @id @default(cuid())
-  partnerUid                 String  @unique @map("partner_uid")
-  commissionRate             Float   @default(10.0) @map("commission_rate")
-  daysBeforeRefundExpiration Int     @default(2) @map("days_before_refund_expiration")
-  stripeAccountId            String? @unique @map("stripe_account_id")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  partner Partners @relation(fields: [partnerUid], references: [uid], onDelete: Cascade)
-
-  @@map("Partner_settings")
   @@schema("infrastructure")
 }

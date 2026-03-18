@@ -104,18 +104,6 @@ CREATE TABLE IF NOT EXISTS "billing"."PartnerBillingConfig" (
     CONSTRAINT "PartnerBillingConfig_pkey" PRIMARY KEY ("partner_uid")
 );
 
--- CreateTable
-CREATE TABLE IF NOT EXISTS "infrastructure"."Partner_settings" (
-    "uid" TEXT NOT NULL,
-    "partner_uid" TEXT NOT NULL,
-    "commission_rate" DOUBLE PRECISION NOT NULL DEFAULT 10.0,
-    "days_before_refund_expiration" INTEGER NOT NULL DEFAULT 2,
-    "stripe_account_id" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Partner_settings_pkey" PRIMARY KEY ("uid")
-);
 
 -- CreateIndex
 CREATE UNIQUE INDEX IF NOT EXISTS "Payments_stripe_payment_intent_id_key" ON "billing"."Payments"("stripe_payment_intent_id");
@@ -160,12 +148,6 @@ CREATE INDEX IF NOT EXISTS "Stripe_events_status_idx" ON "billing"."Stripe_event
 CREATE UNIQUE INDEX IF NOT EXISTS "PartnerBillingConfig_stripe_account_id_key" ON "billing"."PartnerBillingConfig"("stripe_account_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX IF NOT EXISTS "Partner_settings_partner_uid_key" ON "infrastructure"."Partner_settings"("partner_uid");
-
--- CreateIndex
-CREATE UNIQUE INDEX IF NOT EXISTS "Partner_settings_stripe_account_id_key" ON "infrastructure"."Partner_settings"("stripe_account_id");
-
--- CreateIndex
 CREATE UNIQUE INDEX IF NOT EXISTS "Users_stripe_customer_id_key" ON "auth"."Users"("stripe_customer_id");
 
 -- CreateIndex
@@ -192,6 +174,3 @@ DO $$ BEGIN
   ALTER TABLE "billing"."PartnerBillingConfig" ADD CONSTRAINT "PartnerBillingConfig_partner_uid_fkey" FOREIGN KEY ("partner_uid") REFERENCES "infrastructure"."Partners"("uid") ON DELETE RESTRICT ON UPDATE CASCADE;
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
-DO $$ BEGIN
-  ALTER TABLE "infrastructure"."Partner_settings" ADD CONSTRAINT "Partner_settings_partner_uid_fkey" FOREIGN KEY ("partner_uid") REFERENCES "infrastructure"."Partners"("uid") ON DELETE CASCADE ON UPDATE CASCADE;
-EXCEPTION WHEN duplicate_object THEN null; END $$;
