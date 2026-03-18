@@ -440,7 +440,6 @@ export class UsersService {
         createImageDto.file,
       );
       imageUrl = uploadResult.data;
-      console.log('imageUrl', imageUrl);
     }
 
     const updatedUser = await this.prismaService.users.update({
