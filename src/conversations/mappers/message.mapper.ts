@@ -69,10 +69,6 @@ export class MessageMapper {
     const hasEveryoneRead =
       messageReceipts.length - 1 ===
       messageReceipts.filter((r) => r.status === MessageStatus.READ).length;
-    console.log(
-      messageReceipts.length - 1,
-      messageReceipts.filter((r) => r.status === MessageStatus.READ).length,
-    );
     return { hasAnyRead, hasEveryoneRead };
   }
 }
