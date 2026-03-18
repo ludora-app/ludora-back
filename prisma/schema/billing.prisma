@@ -1,0 +1,59 @@
+// billing.prisma
+
+model Payments {
+  uid               String        @id @default(cuid())
+  sessionUid        String        @map("session_uid")
+  userUid           String        @map("user_uid")
+  stripePaymentId   String        @unique @map("stripe_payment_id")
+  amount            Int
+  currency          String        @default("eur")
+  status            PaymentStatus @default(PENDING)
+  applicationFee    Int           @default(0) @map("application_fee")
+  partnerTransferId String?       @map("partner_transfer_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  session Sessions  @relation(fields: [sessionUid], references: [uid])
+  user    Users     @relation(fields: [userUid], references: [uid])
+  refunds Refunds[]
+
+  @@schema("billing")
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  PARTIALLY_REFUNDED
+  REFUNDED
+  DISPUTED
+
+  @@map("Payment_status")
+  @@schema("billing")
+}
+
+model Refunds {
+  uid            String  @id @default(cuid())
+  paymentUid     String  @map("payment_uid")
+  stripeRefundId String  @unique @map("stripe_refund_id")
+  amount         Int
+  reason         String?
+  status         String
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  payment Payments @relation(fields: [paymentUid], references: [uid])
+
+  @@schema("billing")
+}
+
+model StripeEvents {
+  id        String   @id
+  type      String
+  status    String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("Stripe_events")
+  @@schema("billing")
+}

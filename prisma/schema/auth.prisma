@@ -48,7 +48,7 @@ model Users {
   country          String            @default("FR")
   provider         Provider          @default(LUDORA)
   isConnected      Boolean           @default(true) @map("is_connected")
-  stripeAccountId  String?           @unique @map("stripe_account_id")
+  stripeCustomerId String?           @unique @map("stripe_customer_id")
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
   isEmailVerified  Boolean           @default(false) @map("is_email_verified")
@@ -75,6 +75,7 @@ model Users {
   evaluatedRating UserRatings[] @relation(name: "EvaluatedRelation")
 
   sessions                Sessions[]
+  payments                Payments[]
   userGlobalRatings       UserGlobalRatings[]
   emailVerifications      EmailVerification[]
   userTokens              UserTokens[]
