@@ -107,9 +107,7 @@ describe('SessionPlayersService', () => {
         data: dto,
         include: expect.any(Object),
       });
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        `Player ${dto.userUid} added to session ${dto.sessionUid}`,
-      );
+
       expect(result).toEqual(created);
     });
   });

@@ -470,7 +470,7 @@ describe('FriendsService', () => {
           },
         },
       });
-      expect(logger.info).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         'Friend request between user-123 and user-456 canceled',
       );
     });
@@ -576,7 +576,7 @@ describe('FriendsService', () => {
           },
         },
       });
-      expect(logger.info).toHaveBeenCalledWith(
+      expect(logger.debug).toHaveBeenCalledWith(
         'Friend request between user-123 and user-456 removed',
       );
     });

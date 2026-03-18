@@ -76,7 +76,7 @@ export class NotificationsService {
         },
       });
 
-      this.logger.info(`Notification created in DB: ${notification.uid} for user ${data.userUid}`);
+      this.logger.debug(`Notification created in DB: ${notification.uid} for user ${data.userUid}`);
       return notification;
     } catch (error) {
       this.logger.error(`Failed to create notification in DB: ${error.message}`, {
@@ -154,7 +154,7 @@ export class NotificationsService {
 
       await this.firebaseService.sendToToken(dto.fcmToken, payload);
 
-      this.logger.info(
+      this.logger.debug(
         `Simple push notification sent to token: ${dto.fcmToken.substring(0, 10)}...`,
       );
     } catch (error) {

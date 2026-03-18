@@ -67,7 +67,7 @@ export class ConversationsService {
 
     this.logger.debug(`Conversation members created`);
 
-    this.logger.info(
+    this.logger.debug(
       `Conversation created successfully for the session ${createConversationDto.sessionUid}`,
     );
   }
