@@ -121,7 +121,7 @@ describe('ConversationsService', () => {
         undefined,
       );
 
-      expect(mockPinoLogger.info).toHaveBeenCalled();
+      expect(mockPinoLogger.debug).toHaveBeenCalled();
     });
 
     it('should create a session conversation with transaction', async () => {

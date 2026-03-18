@@ -386,7 +386,7 @@ export class FriendsService {
           },
         },
       });
-      this.logger.info(`Friend request between ${connectedUserUid} and ${receiverUid} canceled`);
+      this.logger.debug(`Friend request between ${connectedUserUid} and ${receiverUid} canceled`);
     }
 
     return;
@@ -470,7 +470,7 @@ export class FriendsService {
         },
       },
     });
-    this.logger.info(`Friend request between ${connectedUserUid} and ${receiverUid} removed`);
+    this.logger.debug(`Friend request between ${connectedUserUid} and ${receiverUid} removed`);
     return;
   }
 }

@@ -111,7 +111,7 @@ export class PaymentService {
 
       await this.usersService.addStripeAccountId(userUid, stripeAccount.id);
 
-      this.logger.info(`Stripe account created for user ${userUid}: ${stripeAccount.id}`);
+      this.logger.debug(`Stripe account created for user ${userUid}: ${stripeAccount.id}`);
     } catch (error) {
       this.logger.error(`Error creating Stripe account for user ${userUid}: ${error.message}`);
       throw new BadRequestException(error.message);
@@ -218,7 +218,7 @@ export class PaymentService {
         confirmParams,
       );
 
-      this.logger.info(`PaymentIntent confirmed: ${paymentIntentId}`);
+      this.logger.debug(`PaymentIntent confirmed: ${paymentIntentId}`);
       return paymentIntent;
     } catch (error) {
       this.logger.error(`Error confirming PaymentIntent: ${error.message}`);
@@ -351,7 +351,7 @@ export class PaymentService {
     }
   }
 
-  async deleteBankAccount(userUid: string, bankAccountId: string): Promise<void> {
+  async deleteBankAccount(userUid: string): Promise<void> {
     try {
       const user = await this.usersService.findOne(userUid, USERSELECT.stripeAccountId);
 
@@ -363,7 +363,7 @@ export class PaymentService {
         throw new NotFoundException('Stripe account not found');
       }
 
-      await this.stripe.accounts.deleteExternalAccount(user.stripeAccountId, bankAccountId);
+      await this.stripe.accounts.deleteExternalAccount(user.stripeAccountId, user.stripeAccountId);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -384,7 +384,7 @@ export class PaymentService {
 
       const paymentMethod = await this.stripe.paymentMethods.retrieve(testPaymentMethodId);
 
-      this.logger.info(`Test PaymentMethod retrieved: ${paymentMethod.id}`);
+      this.logger.debug(`Test PaymentMethod retrieved: ${paymentMethod.id}`);
       return paymentMethod;
     } catch (error) {
       this.logger.error(`Error retrieving test PaymentMethod: ${error.message}`);

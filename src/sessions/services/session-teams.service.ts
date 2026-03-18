@@ -44,7 +44,7 @@ export class SessionTeamsService {
       ],
     });
 
-    this.logger.info(`Default teams created for session ${sessionUid}`);
+    this.logger.debug(`Default teams created for session ${sessionUid}`);
 
     return db.sessionTeams.findMany({ where: { sessionUid } });
   }

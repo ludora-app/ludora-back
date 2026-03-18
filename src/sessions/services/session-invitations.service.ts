@@ -412,7 +412,7 @@ export class SessionInvitationsService {
       });
     }
 
-    this.logger.info(
+    this.logger.debug(
       `Session invitation with sessionUid${existingInvitation.sessionUid} updated to ${updateSessionInvitationDto.status}`,
     );
   }

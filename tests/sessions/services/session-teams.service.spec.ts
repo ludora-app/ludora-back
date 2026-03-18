@@ -124,7 +124,7 @@ describe('SessionTeamsService', () => {
         where: { sessionUid },
       });
       expect(result).toEqual(mockCreatedTeams);
-      expect(logger.info).toHaveBeenCalledWith(`Default teams created for session ${sessionUid}`);
+      expect(logger.debug).toHaveBeenCalledWith(`Default teams created for session ${sessionUid}`);
     });
 
     it('should create teams with custom names', async () => {
@@ -198,7 +198,7 @@ describe('SessionTeamsService', () => {
           },
         ],
       });
-      expect(logger.info).not.toHaveBeenCalled();
+      expect(logger.debug).not.toHaveBeenCalled();
     });
 
     it('should create teams with correct structure', async () => {
@@ -678,7 +678,7 @@ describe('SessionTeamsService', () => {
       // Assert
       expect(result.items).toHaveLength(2);
       expect(result.totalCount).toBe(2);
-      expect(logger.info).toHaveBeenCalledWith(`Default teams created for session ${sessionUid}`);
+      expect(logger.debug).toHaveBeenCalledWith(`Default teams created for session ${sessionUid}`);
     });
 
     it('should maintain data consistency across operations', async () => {
