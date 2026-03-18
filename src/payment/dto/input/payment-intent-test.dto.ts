@@ -21,8 +21,16 @@ export class PaymentIntentTestDto {
   @IsNotEmpty()
   @IsString()
   @ApiProperty({
-    description: 'Connected account ID',
-    example: 'acct_1234567890',
+    description: 'UID of the session being booked',
+    example: 'cuid12345',
   })
-  connectedAccountId: string;
+  sessionUid: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({
+    description: 'UID of the user making the payment',
+    example: 'cuid67890',
+  })
+  userUid: string;
 }
