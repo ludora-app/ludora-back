@@ -21,6 +21,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
@@ -32,7 +33,6 @@ import { SWAGGER_TAG_PAYMENT } from 'src/swagger.config';
 import Stripe from 'stripe';
 import { BankDetailsDto, UpdateBankDetailsDto } from './dto/input/bank-details.dto';
 import { ConfirmPaymentIntentDto } from './dto/input/confirm-payment.dto';
-import { CreateStripeAccountDto } from './dto/input/create-stripe-account.dto';
 import { PaymentIntentDto } from './dto/input/payment-intent.dto';
 import { PaymentIntentTestDto } from './dto/input/payment-intent-test.dto';
 import {
@@ -48,9 +48,9 @@ import { PaymentService } from './payment.service';
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
-  @Post('connect')
+  @Post('stripe-connect-account')
   @Protected()
-  @UseGuards(AuthB2CGuard)
+  @UseGuards(AuthB2BGuard)
   @ApiOperation({
     summary: 'Create a Stripe connect account.',
   })
@@ -66,12 +66,56 @@ export class PaymentController {
     description: 'Stripe connect account created successfully',
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async createStripeConnectAccount(
-    @Req() request: Request,
-    @Body() stripeAccountData: CreateStripeAccountDto,
-  ): Promise<void> {
-    const userUid = request['user'].uid;
-    return this.paymentService.createStripeConnectAccount(userUid, stripeAccountData);
+  async createStripeConnectAccount(@Req() request: Request): Promise<void> {
+    const partnerUid = request['user'].organisationUid;
+    return this.paymentService.createStripeConnectAccount(partnerUid);
+  }
+
+  @Post('stripe-connect-account/link')
+  @Protected()
+  @UseGuards(AuthB2BGuard)
+  @ApiOperation({
+    summary: 'Generate a Stripe connect account onboarding link.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error generating Stripe connect account link',
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
+  })
+  @ApiOkResponse({
+    description: 'Stripe connect account link generated successfully',
+  })
+  @HttpCode(HttpStatus.OK)
+  async generateStripeAccountLink(@Req() request: Request): Promise<{ url: string }> {
+    const partnerUid = request['user'].organisationUid;
+    return this.paymentService.generateStripeAccountLink(partnerUid);
+  }
+
+  @Get('stripe-connect-account/refresh-link')
+  @Protected()
+  @UseGuards(AuthB2BGuard)
+  @ApiOperation({
+    summary: 'Refresh a Stripe connect account onboarding link.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Error refreshing Stripe connect account link',
+    type: BadRequestResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
+  })
+  @ApiOkResponse({
+    description: 'Stripe connect account link refreshed successfully',
+  })
+  @HttpCode(HttpStatus.OK)
+  async refreshStripeAccountLink(@Req() request: Request): Promise<{ url: string }> {
+    const partnerUid = request['user'].organisationUid;
+    // We use the same service method since type='account_onboarding' works for both
+    return this.paymentService.generateStripeAccountLink(partnerUid);
   }
 
   @Post('payment-intent')
@@ -146,7 +190,7 @@ export class PaymentController {
 
   @Get('stripe-connect-account')
   @Protected()
-  @UseGuards(AuthB2CGuard)
+  @UseGuards(AuthB2BGuard)
   @ApiOperation({
     summary: 'Récupère le compte Stripe connecté.',
   })
@@ -163,8 +207,8 @@ export class PaymentController {
     type: UnauthorizedResponseDto,
   })
   async getStripeConnectAccount(@Req() request: Request): Promise<ResponseTypeDto<Stripe.Account>> {
-    const userUid = request['user'].uid;
-    const stripeAccount = await this.paymentService.getStripeConnectAccount(userUid);
+    const partnerUid = request['user'].organisationUid;
+    const stripeAccount = await this.paymentService.getStripeConnectAccount(partnerUid);
 
     return {
       data: stripeAccount,
@@ -257,12 +301,13 @@ export class PaymentController {
     return this.paymentService.updateDefaultBankAccount(userUid, bankAccountId, bankDetails);
   }
 
-  @Delete('bank-accounts')
+  @Delete('bank-accounts/:bankAccountId')
   @Protected()
   @UseGuards(AuthB2CGuard)
   @ApiOperation({
     summary: 'Delete a bank account',
   })
+  @ApiParam({ name: 'bankAccountId', type: String })
   @ApiNoContentResponse({
     description: 'Bank account deleted successfully',
   })
@@ -275,9 +320,12 @@ export class PaymentController {
     type: UnauthorizedResponseDto,
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteBankAccount(@Req() request: Request): Promise<void> {
+  async deleteBankAccount(
+    @Req() request: Request,
+    @Param('bankAccountId') bankAccountId: string,
+  ): Promise<void> {
     const userUid = request['user'].uid;
-    return this.paymentService.deleteBankAccount(userUid);
+    return this.paymentService.deleteBankAccount(userUid, bankAccountId);
   }
 
   // ===== TESTING ENDPOINTS (DEVELOPMENT ONLY) =====
