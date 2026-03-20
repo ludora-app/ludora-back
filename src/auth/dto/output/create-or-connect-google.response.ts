@@ -3,7 +3,7 @@ import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 
 import { BasicLoginResponseDto } from './basic-login-response.dto';
 
-export class CreateOrConnectGoogleResponseData extends BasicLoginResponseDto {
+export class ThirdPartyAuthResponseData extends BasicLoginResponseDto {
   @ApiProperty({
     description:
       'True if the user was just created, false if the user already existed and was connected to the Google account',
@@ -14,7 +14,7 @@ export class CreateOrConnectGoogleResponseData extends BasicLoginResponseDto {
   isNewUser: boolean;
 }
 
-export class CreateOrConnectGoogleResponseDto extends ResponseTypeDto<CreateOrConnectGoogleResponseData> {
+export class ThirdPartyAuthResponseDto extends ResponseTypeDto<ThirdPartyAuthResponseData> {
   @ApiProperty({
     example: 'User created or connected successfully',
     readOnly: true,
@@ -23,7 +23,7 @@ export class CreateOrConnectGoogleResponseDto extends ResponseTypeDto<CreateOrCo
   readonly message: string;
 
   @ApiProperty({
-    type: CreateOrConnectGoogleResponseData,
+    type: ThirdPartyAuthResponseData,
   })
-  readonly data: CreateOrConnectGoogleResponseData;
+  readonly data: ThirdPartyAuthResponseData;
 }

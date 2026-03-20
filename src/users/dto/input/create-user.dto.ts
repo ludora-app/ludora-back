@@ -10,8 +10,9 @@ import {
   IsString,
   MinLength,
   Validate,
+  ValidateIf,
 } from 'class-validator';
-import { Sex, UserType } from 'generated/prisma/client';
+import { Provider, Sex, UserType } from 'generated/prisma/client';
 import { IsStrongPassword } from 'src/users/validators/password.validator';
 
 export class CreateUserDto {
@@ -23,6 +24,7 @@ export class CreateUserDto {
   })
   readonly email: string;
 
+  @ValidateIf((o) => o.provider === Provider.LUDORA)
   @Validate(IsStrongPassword)
   @MinLength(8)
   @ApiProperty({
@@ -31,7 +33,7 @@ export class CreateUserDto {
     readOnly: true,
     type: String,
   })
-  readonly password: string;
+  readonly password?: string;
 
   @IsAlpha('fr-FR')
   @IsNotEmpty()
@@ -45,6 +47,7 @@ export class CreateUserDto {
 
   @IsAlpha('fr-FR')
   @IsNotEmpty()
+  @ValidateIf((o) => o.provider === Provider.LUDORA)
   @ApiProperty({
     description: 'The lastname of the user',
     example: 'Doe',
@@ -106,4 +109,23 @@ export class CreateUserDto {
     required: false,
   })
   readonly type?: UserType;
+
+  @IsEnum(Provider)
+  @IsOptional()
+  @ApiProperty({
+    description: 'The provider of the user',
+    enum: Provider,
+    example: Provider.GOOGLE,
+    type: String,
+  })
+  provider?: Provider;
+
+  @IsString()
+  @ValidateIf((o) => o.provider === Provider.APPLE)
+  @ApiProperty({
+    description: 'The apple id, this field is called "user" in the apple response',
+    example: 'user',
+    type: String,
+  })
+  readonly appleId?: string;
 }
