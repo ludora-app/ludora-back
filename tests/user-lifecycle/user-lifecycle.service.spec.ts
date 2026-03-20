@@ -109,7 +109,6 @@ describe('UserLifecycleService', () => {
           lastname: 'Supprimé',
           password: null,
           phone: null,
-          stripeAccountId: null,
         }),
         where: { uid },
       });

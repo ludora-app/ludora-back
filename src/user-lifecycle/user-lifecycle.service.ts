@@ -61,7 +61,6 @@ export class UserLifecycleService {
             lastname: 'Supprimé',
             password: null,
             phone: null,
-            stripeCustomerId: null,
           },
           where: { uid },
         });

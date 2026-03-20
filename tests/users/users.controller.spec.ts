@@ -57,7 +57,6 @@ describe('UsersController', () => {
     isEmailVerified: true,
     lastname: 'Doe',
     phone: '+33612345678',
-    stripeAccountId: 'stripe_123',
     type: 'PLAYER',
     uid: '1',
     userHourPreferences: [],

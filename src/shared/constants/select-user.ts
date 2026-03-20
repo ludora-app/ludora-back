@@ -53,7 +53,6 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     phone: true,
     provider: true,
     sex: true,
-    stripeCustomerId: true,
     type: true,
     uid: true,
     userHourPreferences: {
