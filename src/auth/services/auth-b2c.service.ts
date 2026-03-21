@@ -43,8 +43,13 @@ export class AuthB2CService {
   ) {
     this.logger.setContext(AuthB2CService.name);
   }
-  private readonly NODE_ENV = this.configService.getOrThrow('NODE_ENV');
-  private readonly TOKEN_EXPIRATION_TIME = this.NODE_ENV === 'production' ? '15m' : '1d';
+  private get NODE_ENV(): string {
+    return this.configService.getOrThrow('NODE_ENV');
+  }
+
+  private get TOKEN_EXPIRATION_TIME(): string {
+    return this.NODE_ENV === 'production' ? '15m' : '1d';
+  }
   private readonly MINIMUM_AGE_DATE = new Date(
     new Date().setFullYear(new Date().getFullYear() - 15),
   );

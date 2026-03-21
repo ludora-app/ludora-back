@@ -23,7 +23,8 @@ import { WebSocketAuthService } from './services/websocket-auth.service';
       global: true,
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.getOrThrow('JWT_SECRET'),
+        // use get() with a fallback so that NestFactory.create works without .env (e.g. swagger generation)
+        secret: configService.get('JWT_SECRET', ''),
         signOptions: { expiresIn: '7d' },
       }),
     }),

@@ -11,7 +11,7 @@ import { emailTemplates } from './templates/emails.templates';
  */
 @Injectable()
 export class EmailsService {
-  private readonly transporter: nodemailer.Transporter;
+  private _transporter: nodemailer.Transporter | null = null;
 
   /**
    * Creates an instance of EmailsService
@@ -22,10 +22,18 @@ export class EmailsService {
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(EmailsService.name);
-    this.transporter = this.createTransporter();
   }
 
-  private readonly adminEmail: string = this.configService.getOrThrow<string>('LUDORA_ADMIN_EMAIL');
+  private get adminEmail(): string {
+    return this.configService.getOrThrow<string>('LUDORA_ADMIN_EMAIL');
+  }
+
+  private get transporter(): nodemailer.Transporter {
+    if (!this._transporter) {
+      this._transporter = this.createTransporter();
+    }
+    return this._transporter;
+  }
 
   /**
    * Creates and configures a nodemailer transporter instance

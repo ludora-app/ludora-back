@@ -6,11 +6,20 @@ import { ConfigService } from '@nestjs/config';
 export class EncryptionService {
   private readonly algorithm = 'aes-256-gcm';
   private readonly ivLength = 12; //* standard length for AES-GCM
-  private readonly key: Buffer;
+  private _key: Buffer | null = null;
 
-  constructor(private readonly configService: ConfigService) {
-    const keyHex = this.ENCRYPTION_KEY;
-    this.key = Buffer.from(keyHex, 'hex');
+  constructor(private readonly configService: ConfigService) {}
+
+  /**
+   * the GOOGLE_MAPS_API_KEY is retrieved like this to avoid potential issues with the generation of
+   * the swagger.json file in the CI/CD pipeline
+   * the generate-swagger.ts script does not support "NestFactory.create(AppModule)"
+   */
+  private get key(): Buffer {
+    if (!this._key) {
+      this._key = Buffer.from(this.configService.getOrThrow<string>('ENCRYPTION_KEY'), 'hex');
+    }
+    return this._key;
   }
 
   /**
