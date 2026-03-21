@@ -22,6 +22,15 @@ export class EncryptionService {
     return this._key;
   }
 
+  /**
+   * the ENCRYPTION_KEY is retrieved like this to avoid potential issues with the generation of
+   * the swagger.json file in the CI/CD pipeline
+   * the generate-swagger.ts script does not support "NestFactory.create(AppModule)" "
+   */
+  private get ENCRYPTION_KEY(): string {
+    return this.configService.getOrThrow<string>('ENCRYPTION_KEY');
+  }
+
   encrypt(value: string): string {
     const iv = crypto.randomBytes(this.ivLength);
     const cipher = crypto.createCipheriv(this.algorithm, this.key, iv);
