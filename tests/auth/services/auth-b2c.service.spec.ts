@@ -500,7 +500,6 @@ describe('AuthB2CService', () => {
         firstname: 'John',
         imageUrl: 'https://example.com/photo.jpg',
         lastname: 'Doe',
-        provider: Provider.GOOGLE,
       };
 
       const existingUser = {
@@ -555,7 +554,6 @@ describe('AuthB2CService', () => {
         firstname: 'Jane',
         imageUrl: 'https://example.com/photo.jpg',
         lastname: 'Smith',
-        provider: Provider.GOOGLE,
       };
 
       const newUser = {
@@ -599,7 +597,7 @@ describe('AuthB2CService', () => {
           firstname: createGoogleUserDto.firstname,
           imageUrl: createGoogleUserDto.imageUrl,
           lastname: createGoogleUserDto.lastname,
-          provider: createGoogleUserDto.provider,
+          provider: Provider.GOOGLE,
         },
       });
       expect(mockPrismaService.userTokens.create).toHaveBeenCalled();
@@ -612,7 +610,6 @@ describe('AuthB2CService', () => {
         firstname: 'Error',
         imageUrl: 'https://example.com/photo.jpg',
         lastname: 'User',
-        provider: Provider.GOOGLE,
       };
 
       mockUsersService.findOneByEmail.mockRejectedValue(new Error('Database error'));

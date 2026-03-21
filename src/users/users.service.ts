@@ -84,6 +84,10 @@ export class UsersService {
       imageUrl = await this.storageService.createDefaultProfilePicture();
     }
 
+    //? If the provider is not LUDORA, the email is verified
+    const isEmailVerified =
+      createUserDto.provider !== undefined && createUserDto.provider !== Provider.LUDORA;
+
     const newUser = await prisma.users.create({
       data: {
         bio: createUserDto.bio,
@@ -96,7 +100,11 @@ export class UsersService {
         phone: createUserDto.phone,
         sex: createUserDto.sex,
         ...(createUserDto.type && { type: createUserDto.type }),
+        isEmailVerified,
+        provider: createUserDto.provider,
+        appleId: createUserDto.appleId,
       },
+      select: { email: true, firstname: true, lastname: true, uid: true },
     });
 
     return newUser;

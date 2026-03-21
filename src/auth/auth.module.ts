@@ -10,6 +10,7 @@ import { UsersModule } from 'src/users/users.module';
 import { AuthB2BController } from './controllers/auth-b2b.controller';
 import { AuthB2CController } from './controllers/auth-b2c.controller';
 import { AuthB2CGuard } from './guards/auth-b2c.guard';
+import { AppleAuthService } from './services/apple-auth.service';
 import { AuthB2BService } from './services/auth-b2b.service';
 import { AuthB2CService } from './services/auth-b2c.service';
 import { WebSocketAuthService } from './services/websocket-auth.service';
@@ -40,6 +41,7 @@ import { WebSocketAuthService } from './services/websocket-auth.service';
     GeolocalisationService,
     PartnersService,
     AuthB2BService,
+    AppleAuthService,
   ],
 })
 export class AuthModule {}
