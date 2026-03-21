@@ -9,8 +9,17 @@ export class EncryptionService {
   private readonly key: Buffer;
 
   constructor(private readonly configService: ConfigService) {
-    const keyHex = this.configService.getOrThrow<string>('ENCRYPTION_KEY');
+    const keyHex = this.ENCRYPTION_KEY;
     this.key = Buffer.from(keyHex, 'hex');
+  }
+
+  /**
+   * the ENCRYPTION_KEY is retrieved like this to avoid potential issues with the generation of
+   * the swagger.json file in the CI/CD pipeline
+   * the generate-swagger.ts script does not support "NestFactory.create(AppModule)" "
+   */
+  private get ENCRYPTION_KEY(): string {
+    return this.configService.getOrThrow<string>('ENCRYPTION_KEY');
   }
 
   encrypt(value: string): string {
