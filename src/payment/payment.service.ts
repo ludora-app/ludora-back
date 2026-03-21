@@ -12,17 +12,23 @@ import { BankAccountListResponseDataDto } from './dto/output/bankAccount-list-re
 
 @Injectable()
 export class PaymentService {
-  private readonly stripe: Stripe;
+  private _stripe: Stripe | null = null;
+
+  private get stripe(): Stripe {
+    if (!this._stripe) {
+      this._stripe = new Stripe(this.configService.getOrThrow('STRIPE_SECRET_KEY'), {
+        apiVersion: '2025-08-27.basil',
+        typescript: true,
+      });
+    }
+    return this._stripe;
+  }
 
   constructor(
     readonly _prismaService: PrismaService,
     private readonly configService: ConfigService,
     private readonly logger: PinoLogger,
   ) {
-    this.stripe = new Stripe(this.configService.getOrThrow('STRIPE_SECRET_KEY'), {
-      apiVersion: '2025-08-27.basil',
-      typescript: true,
-    });
     this.logger.setContext(PaymentService.name);
   }
 

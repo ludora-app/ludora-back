@@ -6,21 +6,26 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class WebhooksService {
-  private readonly stripe: Stripe;
+  private _stripe: Stripe | null = null;
   private readonly logger = new Logger(WebhooksService.name);
+
+  private get stripe(): Stripe {
+    if (!this._stripe) {
+      this._stripe = new Stripe(this.configService.getOrThrow<string>('STRIPE_SECRET_KEY'), {
+        apiVersion: '2025-08-27.basil' as any,
+        typescript: true,
+      });
+    }
+    return this._stripe;
+  }
 
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
-  ) {
-    this.stripe = new Stripe(this.configService.getOrThrow<string>('STRIPE_SECRET_KEY'), {
-      apiVersion: '2025-08-27.basil' as any,
-      typescript: true,
-    });
-  }
+  ) {}
 
   async verifyStripeSignature(rawBody: Buffer, signature: string): Promise<Stripe.Event> {
-    const webhookSecret = this.configService.getOrThrow<string>('STRIPE_WEBHOOK_SECRET');
+    const webhookSecret = this.configService.getOrThrow<string>('STRIPE_WEBHOOK_SECRET'); // runtime only — safe
     return this.stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
   }
 
@@ -154,7 +159,8 @@ export class WebhooksService {
             const refundStatus = (stripeRefund.status?.toUpperCase() || 'PENDING') as any;
             let refundReason: any = 'OTHER';
             if (stripeRefund.reason === 'fraudulent') refundReason = 'FRAUD';
-            else if (stripeRefund.reason === 'requested_by_customer') refundReason = 'CUSTOMER_CANCELLED';
+            else if (stripeRefund.reason === 'requested_by_customer')
+              refundReason = 'CUSTOMER_CANCELLED';
             else if (!stripeRefund.reason) refundReason = null;
 
             await this.prisma.refunds.upsert({
