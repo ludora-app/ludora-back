@@ -1,6 +1,6 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Provider, Sex, UserType } from 'generated/prisma/client';
+import { Sex, UserType } from 'generated/prisma/client';
 import { AuthB2CController } from 'src/auth/controllers/auth-b2c.controller';
 import { CreateGoogleUserDto } from 'src/auth/dto/input/create-google-user.dto';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
@@ -306,7 +306,6 @@ describe('AuthB2CController', () => {
         firstname: 'John',
         imageUrl: 'https://example.com/photo.jpg',
         lastname: 'Doe',
-        provider: Provider.GOOGLE,
       };
 
       const mockServiceResponse = {
@@ -326,10 +325,7 @@ describe('AuthB2CController', () => {
         },
         message: 'User already exists, successfully connected to Google account',
       });
-      expect(mockAuthB2CService.createOrConnectGoogleUser).toHaveBeenCalledWith({
-        ...createGoogleUserDto,
-        provider: Provider.GOOGLE,
-      });
+      expect(mockAuthB2CService.createOrConnectGoogleUser).toHaveBeenCalledWith(createGoogleUserDto);
     });
 
     it('should create a new Google user successfully', async () => {
@@ -338,7 +334,6 @@ describe('AuthB2CController', () => {
         firstname: 'Jane',
         imageUrl: 'https://example.com/photo.jpg',
         lastname: 'Smith',
-        provider: Provider.GOOGLE,
       };
 
       const mockServiceResponse = {
@@ -358,10 +353,7 @@ describe('AuthB2CController', () => {
         },
         message: 'New user created and connected to Google account',
       });
-      expect(mockAuthB2CService.createOrConnectGoogleUser).toHaveBeenCalledWith({
-        ...createGoogleUserDto,
-        provider: Provider.GOOGLE,
-      });
+      expect(mockAuthB2CService.createOrConnectGoogleUser).toHaveBeenCalledWith(createGoogleUserDto);
     });
 
     it('should handle errors from service when creating or connecting Google user', async () => {
@@ -370,7 +362,6 @@ describe('AuthB2CController', () => {
         firstname: 'Error',
         imageUrl: 'https://example.com/photo.jpg',
         lastname: 'User',
-        provider: Provider.GOOGLE,
       };
 
       mockAuthB2CService.createOrConnectGoogleUser.mockRejectedValue(

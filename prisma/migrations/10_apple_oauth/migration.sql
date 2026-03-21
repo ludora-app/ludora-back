@@ -14,6 +14,7 @@ END $$;
 
 ALTER TABLE "auth"."Users" ALTER COLUMN "email" DROP NOT NULL;
 ALTER TABLE "auth"."Users" ADD COLUMN IF NOT EXISTS "apple_id" VARCHAR(255);
+ALTER TABLE "auth"."Users" ADD COLUMN IF NOT EXISTS "apple_refresh_token" VARCHAR(255);
 
 CREATE UNIQUE INDEX IF NOT EXISTS "Users_apple_id_key" ON "auth"."Users"("apple_id");
 

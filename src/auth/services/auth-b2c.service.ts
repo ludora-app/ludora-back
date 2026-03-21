@@ -56,7 +56,7 @@ export class AuthB2CService {
     const { type } = registerDto;
 
     const result = await this.prismaService.$transaction(async (tx) => {
-      let newUser: Pick<Users, 'uid' | 'email'> | null;
+      let newUser: Pick<Users, 'uid' | 'email' | 'firstname' | 'lastname'> | null;
 
       if (!DateUtils.isBefore(registerDto.birthdate, this.MINIMUM_AGE_DATE)) {
         this.logger.error(

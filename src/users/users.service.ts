@@ -104,7 +104,7 @@ export class UsersService {
         provider: createUserDto.provider,
         appleId: createUserDto.appleId,
       },
-      select: { uid: true, email: true },
+      select: { email: true, firstname: true, lastname: true, uid: true },
     });
 
     return newUser;
