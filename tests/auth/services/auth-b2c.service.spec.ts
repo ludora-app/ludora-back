@@ -8,6 +8,7 @@ import { Provider, Sex, UserType } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { RefreshTokenDto } from 'src/auth/dto';
 import { CreateGoogleUserDto } from 'src/auth/dto/input/create-google-user.dto';
+import { AppleAuthService } from 'src/auth/services/apple-auth.service';
 import { AuthB2CService } from 'src/auth/services/auth-b2c.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
@@ -108,6 +109,11 @@ describe('AuthB2CService', () => {
     emitAsync: jest.fn(),
   };
 
+  const mockAppleAuthService = {
+    processAuthCredential: jest.fn(),
+    revokeToken: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -139,6 +145,10 @@ describe('AuthB2CService', () => {
         {
           provide: EventEmitter2,
           useValue: mockEventEmitter,
+        },
+        {
+          provide: AppleAuthService,
+          useValue: mockAppleAuthService,
         },
       ],
     }).compile();

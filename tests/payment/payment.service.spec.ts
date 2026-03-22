@@ -77,7 +77,7 @@ describe('PaymentService', () => {
     service = module.get<PaymentService>(PaymentService);
     _prismaService = module.get<PrismaService>(PrismaService);
     _configService = module.get<ConfigService>(ConfigService);
-    (service as any).stripe = mockStripe;
+    (service as any)._stripe = mockStripe;
   });
 
   afterEach(() => {
