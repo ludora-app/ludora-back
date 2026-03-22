@@ -230,6 +230,7 @@ export class AuthB2CService {
       identityToken,
       authorizationCode,
       email,
+      realUserStatus,
     });
 
     try {

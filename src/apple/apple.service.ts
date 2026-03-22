@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException, UnauthorizedException } from 
 import { ConfigService } from '@nestjs/config';
 import appleSignin, { AppleIdTokenType } from 'apple-signin-auth';
 import { PinoLogger } from 'nestjs-pino';
+import { RealUserStatus } from 'src/auth/dto/input/create-apple-user.dto';
 import { EncryptionService } from 'src/shared/encryption/encryption.service';
 import { AppleAuthResult } from '../auth/dto/output/apple-auth-result';
 
@@ -91,11 +92,28 @@ export class AppleService {
     }
   }
 
+  private handleUserStatus(status: RealUserStatus, email: string): void {
+    switch (status) {
+      case RealUserStatus.LIKELY_REAL:
+        break;
+      case RealUserStatus.UNKNOWN:
+        this.logger.warn(`Apple sign in with UNKNOWN user status`, { email });
+        break;
+      case RealUserStatus.UNSUPPORTED:
+        this.logger.warn(`Apple sign in with UNSUPPORTED user status`, { email });
+        break;
+    }
+  }
+
   async processAuthCredential(dto: {
     identityToken: string;
     authorizationCode?: string;
     email?: string;
+    realUserStatus?: RealUserStatus;
   }): Promise<AppleAuthResult> {
+    if (dto.realUserStatus !== undefined) {
+      this.handleUserStatus(dto.realUserStatus, dto.email);
+    }
     const payload = await this.verifyIdentityToken(dto.identityToken);
 
     let encryptedRefreshToken: string | null = null;

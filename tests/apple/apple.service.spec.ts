@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import appleSignin from 'apple-signin-auth';
 import { PinoLogger } from 'nestjs-pino';
 import { AppleService } from 'src/apple/apple.service';
+import { RealUserStatus } from 'src/auth/dto/input/create-apple-user.dto';
 import { EncryptionService } from 'src/shared/encryption/encryption.service';
 
 // ---------------------------------------------------------------------------
@@ -331,6 +332,7 @@ describe('AppleService', () => {
           identityToken: 'valid-token',
           authorizationCode: 'one-time-auth-code',
           email: 'user@example.com',
+          realUserStatus: RealUserStatus.LIKELY_REAL,
         });
 
         expect(result).toEqual({
