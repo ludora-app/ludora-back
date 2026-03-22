@@ -6,8 +6,6 @@ import { PartnersModule } from 'src/partners/partners.module';
 import { PartnersService } from 'src/partners/partners.service';
 import { EncryptionService } from 'src/shared/encryption/encryption.service';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
-import { SharedModule } from 'src/shared/shared.module';
-import { UsersModule } from 'src/users/users.module';
 import { AuthB2BController } from './controllers/auth-b2b.controller';
 import { AuthB2CController } from './controllers/auth-b2c.controller';
 import { AuthB2CGuard } from './guards/auth-b2c.guard';
@@ -29,8 +27,6 @@ import { WebSocketAuthService } from './services/websocket-auth.service';
         signOptions: { expiresIn: '7d' },
       }),
     }),
-    UsersModule,
-    SharedModule,
     PartnersModule,
   ],
   providers: [

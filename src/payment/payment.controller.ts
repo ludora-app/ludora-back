@@ -14,6 +14,7 @@ import {
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
+  ApiExcludeEndpoint,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
@@ -331,6 +332,7 @@ export class PaymentController {
   // ===== TESTING ENDPOINTS (DEVELOPMENT ONLY) =====
 
   @UseGuards(DevOnlyGuard)
+  @ApiExcludeEndpoint()
   @Post('payment-intent/test')
   @UseGuards(DevOnlyGuard)
   @Protected()
@@ -360,10 +362,10 @@ export class PaymentController {
     };
   }
 
-  @Post('payment-method/test')
   @UseGuards(DevOnlyGuard)
-  @Protected()
   @Post('payment-method/test')
+  @ApiExcludeEndpoint()
+  @Protected()
   @ApiOperation({
     summary: 'Create a test payment method (for development only)',
   })

@@ -1,10 +1,11 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { SWAGGER_TAG_GEOLOCALISATION } from 'src/swagger.config';
 import { Public } from '../decorators/public.decorator';
 import { DevOnlyGuard } from '../guards/dev-only.guard';
 import { GeolocalisationService } from './geolocalisation.service';
 
+@ApiExcludeController()
 @ApiTags(SWAGGER_TAG_GEOLOCALISATION)
 @Controller('geolocalisation')
 @UseGuards(DevOnlyGuard)

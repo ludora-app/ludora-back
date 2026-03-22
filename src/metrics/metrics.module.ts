@@ -12,9 +12,7 @@ import { FieldsModule } from 'src/fields/fields.module';
 import { SessionInvitationsService } from 'src/sessions/services/session-invitations.service';
 import { SessionsService } from 'src/sessions/services/sessions.service';
 import { SessionsModule } from 'src/sessions/sessions.module';
-import { SharedModule } from 'src/shared/shared.module';
 import { UserPreferencesModule } from 'src/user-preferences/user-preferences.module';
-import { UsersModule } from 'src/users/users.module';
 import { UsersService } from 'src/users/users.service';
 import { HttpMetricsInterceptor } from './http-metrics.interceptor';
 import { MetricsController } from './metrics.controller';
@@ -33,8 +31,6 @@ import { MetricsService } from './metrics.service';
       path: '/metrics',
     }),
     ScheduleModule.forRoot(),
-    UsersModule,
-    SharedModule,
     SessionsModule,
     UserPreferencesModule,
     ConversationsModule,

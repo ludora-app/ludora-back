@@ -13,6 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiExcludeEndpoint,
   ApiExtraModels,
   ApiNoContentResponse,
   ApiOkResponse,
@@ -121,6 +122,7 @@ export class NotificationsController {
   }
 
   @Post('send-push')
+  @ApiExcludeEndpoint()
   @UseGuards(DevOnlyGuard)
   @Protected()
   @ApiOperation({ summary: '[DEV ONLY] Send a push notification to a specific FCM token' })
