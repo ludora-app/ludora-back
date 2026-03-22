@@ -11,6 +11,7 @@ import * as argon2 from 'argon2';
 import { Provider, Users } from 'generated/prisma/browser';
 import { UserType } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
+import { AppleService } from 'src/apple/apple.service';
 import {
   CreateImageDto,
   LoginDto,
@@ -29,7 +30,6 @@ import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
 import { UsersService } from 'src/users/users.service';
 import { CreateAppleUserDto } from '../dto/input/create-apple-user.dto';
 import { CreateGoogleUserDto } from '../dto/input/create-google-user.dto';
-import { AppleAuthService } from './apple-auth.service';
 
 @Injectable()
 export class AuthB2CService {
@@ -41,7 +41,7 @@ export class AuthB2CService {
     private readonly configService: ConfigService,
     private readonly logger: PinoLogger,
     private readonly eventEmitter: EventEmitter2,
-    private readonly appleService: AppleAuthService,
+    private readonly appleService: AppleService,
   ) {
     this.logger.setContext(AuthB2CService.name);
   }

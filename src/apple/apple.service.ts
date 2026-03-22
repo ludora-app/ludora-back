@@ -3,16 +3,16 @@ import { ConfigService } from '@nestjs/config';
 import appleSignin, { AppleIdTokenType } from 'apple-signin-auth';
 import { PinoLogger } from 'nestjs-pino';
 import { EncryptionService } from 'src/shared/encryption/encryption.service';
-import { AppleAuthResult } from '../dto/output/apple-auth-result';
+import { AppleAuthResult } from '../auth/dto/output/apple-auth-result';
 
 @Injectable()
-export class AppleAuthService {
+export class AppleService {
   constructor(
     private readonly configService: ConfigService,
     private readonly encryptionService: EncryptionService,
     private readonly logger: PinoLogger,
   ) {
-    this.logger.setContext(AppleAuthService.name);
+    this.logger.setContext(AppleService.name);
   }
 
   private get clientId(): string {

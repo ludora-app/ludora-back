@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import appleSignin from 'apple-signin-auth';
 import { PinoLogger } from 'nestjs-pino';
-import { AppleAuthService } from 'src/auth/services/apple-auth.service';
+import { AppleService } from 'src/apple/apple.service';
 import { EncryptionService } from 'src/shared/encryption/encryption.service';
 
 // ---------------------------------------------------------------------------
@@ -54,8 +54,8 @@ const makeAppleTokens = (overrides: Record<string, any> = {}): any => ({
 const MOCK_CLIENT_SECRET = 'mock-client-secret-jwt';
 
 // ---------------------------------------------------------------------------
-describe('AppleAuthService', () => {
-  let service: AppleAuthService;
+describe('AppleService', () => {
+  let service: AppleService;
 
   // ---------------------------------------------------------------------------
   // Mocks
@@ -95,14 +95,14 @@ describe('AppleAuthService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AppleAuthService,
+        AppleService,
         { provide: ConfigService, useValue: mockConfigService },
         { provide: EncryptionService, useValue: mockEncryptionService },
         { provide: PinoLogger, useValue: mockPinoLogger },
       ],
     }).compile();
 
-    service = module.get<AppleAuthService>(AppleAuthService);
+    service = module.get<AppleService>(AppleService);
   });
 
   afterEach(() => {
@@ -128,7 +128,9 @@ describe('AppleAuthService', () => {
       it('should return the appleUserId from the payload sub claim', async () => {
         mockAppleSignin.verifyIdToken.mockResolvedValue(makeApplePayload());
 
-        const result = await service.processAuthCredential({ identityToken: 'valid-identity-token' });
+        const result = await service.processAuthCredential({
+          identityToken: 'valid-identity-token',
+        });
 
         expect(result.appleUserId).toBe('apple-user-id-001');
       });
@@ -144,15 +146,17 @@ describe('AppleAuthService', () => {
       it('should throw UnauthorizedException with the expected message', async () => {
         mockAppleSignin.verifyIdToken.mockRejectedValue(new Error('Bad signature'));
 
-        await expect(
-          service.processAuthCredential({ identityToken: 'bad-token' }),
-        ).rejects.toThrow('Invalid Apple identity token');
+        await expect(service.processAuthCredential({ identityToken: 'bad-token' })).rejects.toThrow(
+          'Invalid Apple identity token',
+        );
       });
     });
 
     describe('email resolution', () => {
       it('should prefer dto.email over the payload email when both are present', async () => {
-        mockAppleSignin.verifyIdToken.mockResolvedValue(makeApplePayload({ email: 'payload@apple.com' }));
+        mockAppleSignin.verifyIdToken.mockResolvedValue(
+          makeApplePayload({ email: 'payload@apple.com' }),
+        );
 
         const result = await service.processAuthCredential({
           identityToken: 'valid-token',
@@ -163,7 +167,9 @@ describe('AppleAuthService', () => {
       });
 
       it('should fall back to payload.email when dto.email is absent', async () => {
-        mockAppleSignin.verifyIdToken.mockResolvedValue(makeApplePayload({ email: 'payload@apple.com' }));
+        mockAppleSignin.verifyIdToken.mockResolvedValue(
+          makeApplePayload({ email: 'payload@apple.com' }),
+        );
 
         const result = await service.processAuthCredential({ identityToken: 'valid-token' });
 
@@ -181,7 +187,9 @@ describe('AppleAuthService', () => {
 
     describe('isPrivateEmail flag', () => {
       it('should set isPrivateEmail=true when payload returns string "true"', async () => {
-        mockAppleSignin.verifyIdToken.mockResolvedValue(makeApplePayload({ is_private_email: 'true' }));
+        mockAppleSignin.verifyIdToken.mockResolvedValue(
+          makeApplePayload({ is_private_email: 'true' }),
+        );
 
         const result = await service.processAuthCredential({ identityToken: 'valid-token' });
 
@@ -189,7 +197,9 @@ describe('AppleAuthService', () => {
       });
 
       it('should set isPrivateEmail=true when payload returns boolean true', async () => {
-        mockAppleSignin.verifyIdToken.mockResolvedValue(makeApplePayload({ is_private_email: true }));
+        mockAppleSignin.verifyIdToken.mockResolvedValue(
+          makeApplePayload({ is_private_email: true }),
+        );
 
         const result = await service.processAuthCredential({ identityToken: 'valid-token' });
 
@@ -197,7 +207,9 @@ describe('AppleAuthService', () => {
       });
 
       it('should set isPrivateEmail=false when payload returns string "false"', async () => {
-        mockAppleSignin.verifyIdToken.mockResolvedValue(makeApplePayload({ is_private_email: 'false' }));
+        mockAppleSignin.verifyIdToken.mockResolvedValue(
+          makeApplePayload({ is_private_email: 'false' }),
+        );
 
         const result = await service.processAuthCredential({ identityToken: 'valid-token' });
 
@@ -205,7 +217,9 @@ describe('AppleAuthService', () => {
       });
 
       it('should set isPrivateEmail=false when payload returns boolean false', async () => {
-        mockAppleSignin.verifyIdToken.mockResolvedValue(makeApplePayload({ is_private_email: false }));
+        mockAppleSignin.verifyIdToken.mockResolvedValue(
+          makeApplePayload({ is_private_email: false }),
+        );
 
         const result = await service.processAuthCredential({ identityToken: 'valid-token' });
 
@@ -338,7 +352,9 @@ describe('AppleAuthService', () => {
 
       await service.revokeToken('encrypted:apple-raw-refresh-token');
 
-      expect(mockEncryptionService.decrypt).toHaveBeenCalledWith('encrypted:apple-raw-refresh-token');
+      expect(mockEncryptionService.decrypt).toHaveBeenCalledWith(
+        'encrypted:apple-raw-refresh-token',
+      );
     });
 
     it('should call revokeAuthorizationToken with the decrypted token and correct options', async () => {
@@ -381,9 +397,7 @@ describe('AppleAuthService', () => {
         InternalServerErrorException,
       );
 
-      expect(mockPinoLogger.error).toHaveBeenCalledWith(
-        '[revokeAuthorizationToken]: Timeout',
-      );
+      expect(mockPinoLogger.error).toHaveBeenCalledWith('[revokeAuthorizationToken]: Timeout');
     });
 
     it('should generate a fresh clientSecret on each revokeToken call', async () => {

@@ -1,7 +1,9 @@
 import * as crypto from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { Provider } from 'generated/prisma/enums';
 import { PinoLogger } from 'nestjs-pino';
+import { AppleService } from 'src/apple/apple.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -11,6 +13,7 @@ export class UserLifecycleService {
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
     private readonly storageService: StorageService,
+    private readonly appleService: AppleService,
   ) {
     this.logger.setContext(UserLifecycleService.name);
   }
@@ -29,7 +32,7 @@ export class UserLifecycleService {
     try {
       await this.prisma.$transaction(async (tx) => {
         const user = await tx.users.findUnique({
-          select: { deletedAt: true, imageUrl: true },
+          select: { deletedAt: true, imageUrl: true, provider: true, appleRefreshToken: true },
           where: { uid },
         });
 
@@ -46,6 +49,10 @@ export class UserLifecycleService {
         // await tx.devices.deleteMany({ where: { userUid: uid } });
         // await tx.userTokens.deleteMany({ where: { userUid: uid } });
         // await tx.notifications.deleteMany({ where: { userUid: uid } });
+
+        if (user.provider === Provider.APPLE && user.appleRefreshToken) {
+          await this.appleService.revokeToken(user.appleRefreshToken);
+        }
 
         const randomHash = crypto.randomBytes(8).toString('hex');
         await tx.users.update({

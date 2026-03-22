@@ -24,6 +24,7 @@ import { SharedModule } from './shared/shared.module';
 import { UserLifecycleModule } from './user-lifecycle/user-lifecycle.module';
 import { UsersModule } from './users/users.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { AppleModule } from './apple/apple.module';
 
 const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV === 'development';
 // Explicit LOG_LEVEL allows overriding (e.g. in Coolify) when NODE_ENV-based logic is wrong
@@ -131,6 +132,7 @@ const logLevel = process.env.LOG_LEVEL ?? (isDevelopment ? 'debug' : 'info');
     UserLifecycleModule,
     ModerationModule,
     WebhooksModule,
+    AppleModule,
   ],
   providers: [
     AppService,

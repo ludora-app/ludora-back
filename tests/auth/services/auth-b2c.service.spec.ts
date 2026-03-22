@@ -6,9 +6,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as argon2 from 'argon2';
 import { Provider, Sex, UserType } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
+import { AppleService } from 'src/apple/apple.service';
 import { RefreshTokenDto } from 'src/auth/dto';
 import { CreateGoogleUserDto } from 'src/auth/dto/input/create-google-user.dto';
-import { AppleAuthService } from 'src/auth/services/apple-auth.service';
 import { AuthB2CService } from 'src/auth/services/auth-b2c.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
@@ -147,7 +147,7 @@ describe('AuthB2CService', () => {
           useValue: mockEventEmitter,
         },
         {
-          provide: AppleAuthService,
+          provide: AppleService,
           useValue: mockAppleAuthService,
         },
       ],
