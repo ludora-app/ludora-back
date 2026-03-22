@@ -29,6 +29,7 @@ import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
 import { UsersService } from 'src/users/users.service';
 import { CreateAppleUserDto } from '../dto/input/create-apple-user.dto';
 import { CreateGoogleUserDto } from '../dto/input/create-google-user.dto';
+import { AppleAuthService } from './apple-auth.service';
 
 @Injectable()
 export class AuthB2CService {
@@ -40,6 +41,7 @@ export class AuthB2CService {
     private readonly configService: ConfigService,
     private readonly logger: PinoLogger,
     private readonly eventEmitter: EventEmitter2,
+    private readonly appleService: AppleAuthService,
   ) {
     this.logger.setContext(AuthB2CService.name);
   }
@@ -47,7 +49,7 @@ export class AuthB2CService {
     return this.configService.getOrThrow('NODE_ENV');
   }
 
-  private get TOKEN_EXPIRATION_TIME(): string {
+  private get TOKEN_EXPIRATION_TIME() {
     return this.NODE_ENV === 'production' ? '15m' : '1d';
   }
   private readonly MINIMUM_AGE_DATE = new Date(
@@ -224,13 +226,14 @@ export class AuthB2CService {
     let isNewUser = true;
     const provider = Provider.APPLE;
 
-    // TODO: await verifyAppleIdentityToken(identityToken);
+    const appleResult = await this.appleService.processAuthCredential({
+      identityToken,
+      authorizationCode,
+      email,
+    });
+
     try {
-      const existingUser = await this.prismaService.users.findUnique({
-        where: {
-          appleId: user,
-        },
-      });
+      const existingUser = await this.userService.findOneByAppleId(appleResult.appleUserId);
 
       // if the user exists, connect the Apple account to the user
       if (existingUser) {
@@ -266,11 +269,12 @@ export class AuthB2CService {
       }
 
       const userDto: CreateUserDto = {
-        email,
+        email: appleResult.email,
         firstname: fullName.givenName,
         lastname: fullName.familyName ?? null,
         provider,
         appleId: user,
+        appleRefreshToken: appleResult.encryptedRefreshToken,
       };
 
       const newUser = await this.userService.create(userDto);

@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { PartnersModule } from 'src/partners/partners.module';
 import { PartnersService } from 'src/partners/partners.service';
+import { EncryptionService } from 'src/shared/encryption/encryption.service';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import { SharedModule } from 'src/shared/shared.module';
 import { UsersModule } from 'src/users/users.module';
@@ -43,6 +44,7 @@ import { WebSocketAuthService } from './services/websocket-auth.service';
     PartnersService,
     AuthB2BService,
     AppleAuthService,
+    EncryptionService,
   ],
 })
 export class AuthModule {}

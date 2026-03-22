@@ -128,4 +128,14 @@ export class CreateUserDto {
     type: String,
   })
   readonly appleId?: string;
+
+  @IsString()
+  @ValidateIf((o) => o.provider === Provider.APPLE)
+  @ApiProperty({
+    description:
+      'The encrypted apple refresh token, this field is called "refresh_token" in the apple response',
+    example: 'refresh_token',
+    type: String,
+  })
+  readonly appleRefreshToken?: string;
 }

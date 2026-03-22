@@ -39,7 +39,7 @@ export class AuthB2BService {
     return this.configService.getOrThrow('NODE_ENV');
   }
 
-  private get TOKEN_EXPIRATION_TIME(): string {
+  private get TOKEN_EXPIRATION_TIME() {
     return this.NODE_ENV === 'production' ? '15m' : '1d';
   }
 
