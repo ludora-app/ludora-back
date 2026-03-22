@@ -51,6 +51,12 @@ export class AppleAuthenticationFullName {
   readonly nickname?: string | null;
 }
 
+export enum RealUserStatus {
+  UNSUPPORTED = 0,
+  UNKNOWN = 1,
+  LIKELY_REAL = 2,
+}
+
 export class CreateAppleUserDto {
   @IsEmail()
   @IsOptional()
@@ -90,10 +96,10 @@ export class CreateAppleUserDto {
   @IsOptional()
   @ApiProperty({
     description: 'The real user status of the user',
-    example: 'user',
-    type: String,
+    example: RealUserStatus.LIKELY_REAL,
+    enum: RealUserStatus,
   })
-  readonly realUserStatus?: string | null;
+  readonly realUserStatus?: RealUserStatus | null;
 
   @IsString()
   @IsOptional()

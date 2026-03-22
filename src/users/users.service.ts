@@ -103,6 +103,7 @@ export class UsersService {
         isEmailVerified,
         provider: createUserDto.provider,
         appleId: createUserDto.appleId,
+        appleRefreshToken: createUserDto.appleRefreshToken,
       },
       select: { email: true, firstname: true, lastname: true, uid: true },
     });
@@ -395,6 +396,17 @@ export class UsersService {
     const user = await this.prismaService.users.findUnique({
       select: select ?? USERSELECT.checkIfUserExistsByEmail,
       where: { email },
+    });
+
+    if (!user) return null;
+
+    return user;
+  }
+
+  async findOneByAppleId(appleId: string) {
+    const user = await this.prismaService.users.findUnique({
+      select: USERSELECT.findOneByAppleId,
+      where: { appleId },
     });
 
     if (!user) return null;

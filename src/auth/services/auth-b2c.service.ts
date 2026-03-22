@@ -11,6 +11,7 @@ import * as argon2 from 'argon2';
 import { Provider, Users } from 'generated/prisma/browser';
 import { UserType } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
+import { AppleService } from 'src/apple/apple.service';
 import {
   CreateImageDto,
   LoginDto,
@@ -40,6 +41,7 @@ export class AuthB2CService {
     private readonly configService: ConfigService,
     private readonly logger: PinoLogger,
     private readonly eventEmitter: EventEmitter2,
+    private readonly appleService: AppleService,
   ) {
     this.logger.setContext(AuthB2CService.name);
   }
@@ -47,7 +49,7 @@ export class AuthB2CService {
     return this.configService.getOrThrow('NODE_ENV');
   }
 
-  private get TOKEN_EXPIRATION_TIME(): string {
+  private get TOKEN_EXPIRATION_TIME() {
     return this.NODE_ENV === 'production' ? '15m' : '1d';
   }
   private readonly MINIMUM_AGE_DATE = new Date(
@@ -224,13 +226,15 @@ export class AuthB2CService {
     let isNewUser = true;
     const provider = Provider.APPLE;
 
-    // TODO: await verifyAppleIdentityToken(identityToken);
+    const appleResult = await this.appleService.processAuthCredential({
+      identityToken,
+      authorizationCode,
+      email,
+      realUserStatus,
+    });
+
     try {
-      const existingUser = await this.prismaService.users.findUnique({
-        where: {
-          appleId: user,
-        },
-      });
+      const existingUser = await this.userService.findOneByAppleId(appleResult.appleUserId);
 
       // if the user exists, connect the Apple account to the user
       if (existingUser) {
@@ -266,11 +270,12 @@ export class AuthB2CService {
       }
 
       const userDto: CreateUserDto = {
-        email,
+        email: appleResult.email,
         firstname: fullName.givenName,
         lastname: fullName.familyName ?? null,
         provider,
         appleId: user,
+        appleRefreshToken: appleResult.encryptedRefreshToken,
       };
 
       const newUser = await this.userService.create(userDto);

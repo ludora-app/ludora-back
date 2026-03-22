@@ -120,4 +120,9 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     type: true,
     uid: true,
   },
+  findOneByAppleId: {
+    appleId: true,
+    uid: true,
+    email: true,
+  },
 };

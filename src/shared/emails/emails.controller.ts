@@ -1,9 +1,10 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { SWAGGER_TAG_EMAILS } from 'src/swagger.config';
 import { Public } from '../decorators/public.decorator';
 import { EmailsService } from './emails.service';
 
+@ApiExcludeController()
 @ApiTags(SWAGGER_TAG_EMAILS)
 @Controller('emails')
 export class EmailsController {

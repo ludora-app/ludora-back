@@ -4,10 +4,8 @@ import { ConversationMembersService } from 'src/conversations/services/conversat
 import { ConversationsService } from 'src/conversations/services/conversations.service';
 import { FieldsModule } from 'src/fields/fields.module';
 import { FieldSlotsService } from 'src/fields/services/field-slots.service';
-import { SharedModule } from 'src/shared/shared.module';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { UserPreferencesModule } from 'src/user-preferences/user-preferences.module';
-import { UsersModule } from 'src/users/users.module';
 import { SessionInvitationsController } from './controllers/session-invitations.controller';
 import { SessionPlayersController } from './controllers/session-players.controller';
 import { SessionTeamsController } from './controllers/session-teams.controller';
@@ -25,7 +23,7 @@ import { SessionsService } from './services/sessions.service';
     SessionTeamsController,
   ],
   exports: [SessionsService, SessionPlayersService, SessionTeamsService, SessionInvitationsService],
-  imports: [ConversationsModule, UsersModule, SharedModule, UserPreferencesModule, FieldsModule],
+  imports: [ConversationsModule, UserPreferencesModule, FieldsModule],
   providers: [
     SessionsService,
     SessionPlayersService,

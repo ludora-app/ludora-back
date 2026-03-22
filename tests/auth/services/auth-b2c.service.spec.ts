@@ -6,6 +6,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as argon2 from 'argon2';
 import { Provider, Sex, UserType } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
+import { AppleService } from 'src/apple/apple.service';
 import { RefreshTokenDto } from 'src/auth/dto';
 import { CreateGoogleUserDto } from 'src/auth/dto/input/create-google-user.dto';
 import { AuthB2CService } from 'src/auth/services/auth-b2c.service';
@@ -108,6 +109,11 @@ describe('AuthB2CService', () => {
     emitAsync: jest.fn(),
   };
 
+  const mockAppleAuthService = {
+    processAuthCredential: jest.fn(),
+    revokeToken: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -139,6 +145,10 @@ describe('AuthB2CService', () => {
         {
           provide: EventEmitter2,
           useValue: mockEventEmitter,
+        },
+        {
+          provide: AppleService,
+          useValue: mockAppleAuthService,
         },
       ],
     }).compile();
