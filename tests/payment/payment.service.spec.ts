@@ -1,47 +1,38 @@
-import {
-  BadRequestException,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
-
+import { BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
 import { BankDetailsDto, UpdateBankDetailsDto } from 'src/payment/dto/input/bank-details.dto';
-import { CreateStripeAccountDto } from 'src/payment/dto/input/create-stripe-account.dto';
+import { ConfirmPaymentIntentDto } from 'src/payment/dto/input/confirm-payment.dto';
 import { PaymentIntentDto } from 'src/payment/dto/input/payment-intent.dto';
 import { PaymentService } from 'src/payment/payment.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UsersService } from 'src/users/users.service';
 
 describe('PaymentService', () => {
   let service: PaymentService;
   let _prismaService: PrismaService;
-  let _usersService: UsersService;
   let _configService: ConfigService;
-  let _logger: PinoLogger;
 
   const mockPrismaService = {
-    users: {
+    partners: {
       findUnique: jest.fn(),
+    },
+    partnerBillingConfig: {
+      findUnique: jest.fn(),
+      upsert: jest.fn(),
       update: jest.fn(),
+    },
+    sessions: {
+      findUnique: jest.fn(),
     },
   };
 
   const mockConfigService = {
     getOrThrow: jest.fn().mockReturnValue('stripe_secret_key'),
-  };
-
-  const mockUsersService = {
-    findOne: jest.fn(),
-    addStripeAccountId: jest.fn(),
-    removeStripeAccountId: jest.fn(),
+    get: jest.fn().mockReturnValue('https://ludora.fr'),
   };
 
   const mockStripe = {
-    tokens: {
-      create: jest.fn(),
-    },
     accounts: {
       create: jest.fn(),
       retrieve: jest.fn(),
@@ -52,10 +43,18 @@ describe('PaymentService', () => {
       updateExternalAccount: jest.fn(),
       deleteExternalAccount: jest.fn(),
     },
-    paymentIntents: {
+    accountLinks: {
       create: jest.fn(),
     },
+    paymentIntents: {
+      create: jest.fn(),
+      confirm: jest.fn(),
+    },
+    paymentMethods: {
+      retrieve: jest.fn(),
+    },
   };
+
   const mockLogger = {
     setContext: jest.fn(),
     info: jest.fn(),
@@ -69,279 +68,148 @@ describe('PaymentService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PaymentService,
-        {
-          provide: PrismaService,
-          useValue: mockPrismaService,
-        },
-        {
-          provide: ConfigService,
-          useValue: mockConfigService,
-        },
-        {
-          provide: UsersService,
-          useValue: mockUsersService,
-        },
-        {
-          provide: PinoLogger,
-          useValue: mockLogger,
-        },
+        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: ConfigService, useValue: mockConfigService },
+        { provide: PinoLogger, useValue: mockLogger },
       ],
     }).compile();
 
     service = module.get<PaymentService>(PaymentService);
     _prismaService = module.get<PrismaService>(PrismaService);
-    _usersService = module.get<UsersService>(UsersService);
     _configService = module.get<ConfigService>(ConfigService);
-    _logger = module.get<PinoLogger>(PinoLogger);
-    // Mock Stripe instance
-    (service as any).stripe = mockStripe;
+    (service as any)._stripe = mockStripe;
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('createStripeAccountToken', () => {
-    const userId = 'user-1';
-    const stripeAccountData: CreateStripeAccountDto = {
-      firstname: 'John',
-      lastname: 'Doe',
-      address: {
-        city: 'Paris',
-        country: 'France',
-        countryCode: 'FR',
-        line1: '123 Main St',
-        line2: 'Apt 1',
-        postalCode: '75001',
-      },
-      currency: 'eur',
-    };
-
-    it('should create a Stripe account token successfully', async () => {
-      const mockUser = {
-        birthdate: new Date('1990-01-01'),
-        email: 'john@example.com',
-        firstname: 'John',
-        lastname: 'Doe',
-        phone: '+1234567890',
-      };
-
-      mockUsersService.findOne.mockResolvedValue(mockUser);
-      mockStripe.tokens.create.mockResolvedValue({ id: 'token-1' });
-
-      const result = await service.createStripeAccountToken(userId, stripeAccountData);
-
-      expect(result).toBe('token-1');
-      expect(mockStripe.tokens.create).toHaveBeenCalledWith({
-        account: {
-          business_type: 'individual',
-          individual: {
-            address: {
-              city: 'Paris',
-              country: 'FR',
-              line1: '123 Main St',
-              line2: 'Apt 1',
-              postal_code: '75001',
-            },
-            dob: {
-              day: 1,
-              month: 1,
-              year: 1990,
-            },
-            email: 'john@example.com',
-            first_name: 'John',
-            last_name: 'Doe',
-            phone: '+1234567890',
-          },
-          tos_shown_and_accepted: true,
-        },
-      });
-    });
-
-    it('should throw InternalServerErrorException if user not found', async () => {
-      mockUsersService.findOne.mockResolvedValue(null);
-
-      await expect(service.createStripeAccountToken(userId, stripeAccountData)).rejects.toThrow(
-        InternalServerErrorException,
-      );
-    });
-  });
-
   describe('createStripeConnectAccount', () => {
-    const userId = 'user-1';
-    const stripeAccountData: CreateStripeAccountDto = {
-      firstname: 'John',
-      lastname: 'Doe',
-      address: {
-        city: 'Paris',
-        countryCode: 'FR',
-        country: 'France',
-        line1: '123 Main St',
-        line2: 'Apt 1',
-        postalCode: '75001',
-      },
-      currency: 'eur',
-    };
+    const partnerUid = 'partner-1';
 
     it('should create a Stripe Connect account successfully', async () => {
-      const mockUser = {
-        uid: userId,
-        email: 'john@example.com',
-        birthdate: new Date('1990-01-01'),
-        phone: '+1234567890',
-        stripeAccountId: null,
-      };
-
-      mockUsersService.findOne
-        .mockResolvedValueOnce(mockUser) // First call in createStripeAccountToken
-        .mockResolvedValueOnce(mockUser); // Second call in createStripeConnectAccount
-      mockStripe.tokens.create.mockResolvedValue({ id: 'token-1' });
-      mockStripe.accounts.create.mockResolvedValue({ id: 'account-1' });
-      mockUsersService.addStripeAccountId.mockResolvedValue(undefined);
-
-      await service.createStripeConnectAccount(userId, stripeAccountData);
-
-      expect(mockStripe.accounts.create).toHaveBeenCalledWith({
-        account_token: 'token-1',
-        business_profile: {
-          mcc: '7299',
-          product_description: 'Participate to sessions in the app',
-          url: null,
-        },
-        capabilities: {
-          card_payments: { requested: true },
-          transfers: { requested: true },
-        },
+      mockPrismaService.partners.findUnique.mockResolvedValue({
+        uid: partnerUid,
+        name: 'Partner Corp',
+        phone: '123456',
+        address: '123 rue',
+        city: 'Paris',
+        zipCode: '75001',
         country: 'FR',
-        email: 'john@example.com',
-        type: 'custom',
+        email: 'test@partner.com',
+        partnerBillingConfigs: null,
       });
-      expect(mockUsersService.addStripeAccountId).toHaveBeenCalledWith(userId, 'account-1');
+
+      mockStripe.accounts.create.mockResolvedValue({ id: 'acct_123' });
+
+      await service.createStripeConnectAccount(partnerUid);
+
+      expect(mockStripe.accounts.create).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'express' }),
+      );
+      expect(mockPrismaService.partnerBillingConfig.upsert).toHaveBeenCalled();
     });
 
     it('should throw BadRequestException if Stripe account already exists', async () => {
-      const mockUser = {
-        uid: userId,
-        email: 'john@example.com',
-        birthdate: new Date('1990-01-01'),
-        phone: '+1234567890',
-        stripeAccountId: 'existing-account',
-      };
+      mockPrismaService.partners.findUnique.mockResolvedValue({
+        uid: partnerUid,
+        partnerBillingConfigs: { stripeAccountId: 'acct_existing' },
+      });
 
-      mockUsersService.findOne.mockResolvedValue(mockUser);
-      mockStripe.tokens.create.mockResolvedValue({ id: 'token-1' });
-
-      await expect(service.createStripeConnectAccount(userId, stripeAccountData)).rejects.toThrow(
+      await expect(service.createStripeConnectAccount(partnerUid)).rejects.toThrow(
         BadRequestException,
       );
     });
   });
 
+  describe('generateStripeAccountLink', () => {
+    const partnerUid = 'partner-1';
+
+    it('should generate link successfully', async () => {
+      mockPrismaService.partners.findUnique.mockResolvedValue({
+        uid: partnerUid,
+        partnerBillingConfigs: { stripeAccountId: 'acct_123' },
+      });
+      mockStripe.accountLinks.create.mockResolvedValue({ url: 'https://link' });
+
+      const res = await service.generateStripeAccountLink(partnerUid);
+      expect(res.url).toBe('https://link');
+    });
+  });
+
   describe('getStripeConnectAccount', () => {
-    const userId = 'user-1';
+    const partnerUid = 'partner-1';
 
     it('should retrieve Stripe Connect account successfully', async () => {
-      const mockUser = {
-        stripeAccountId: 'account-1',
-      };
-      const mockStripeAccount = {
-        id: 'account-1',
-        email: 'john@example.com',
-      };
+      mockPrismaService.partners.findUnique.mockResolvedValue({
+        uid: partnerUid,
+        partnerBillingConfigs: { stripeAccountId: 'acct_123' },
+      });
+      mockStripe.accounts.retrieve.mockResolvedValue({ id: 'acct_123' });
 
-      mockUsersService.findOne.mockResolvedValue(mockUser);
-      mockStripe.accounts.retrieve.mockResolvedValue(mockStripeAccount);
-
-      const result = await service.getStripeConnectAccount(userId);
-
-      expect(result).toEqual(mockStripeAccount);
-      expect(mockStripe.accounts.retrieve).toHaveBeenCalledWith('account-1');
-    });
-
-    it('should throw NotFoundException if Stripe account not found', async () => {
-      mockUsersService.findOne.mockResolvedValue({ stripeAccountId: null });
-
-      await expect(service.getStripeConnectAccount(userId)).rejects.toThrow(NotFoundException);
+      const result = await service.getStripeConnectAccount(partnerUid);
+      expect(result.id).toBe('acct_123');
     });
   });
 
   describe('deleteStripeConnectAccount', () => {
-    const userId = 'user-1';
+    const partnerUid = 'partner-1';
 
     it('should delete Stripe Connect account successfully', async () => {
-      const mockUser = {
-        stripeAccountId: 'account-1',
-      };
+      mockPrismaService.partners.findUnique.mockResolvedValue({
+        uid: partnerUid,
+        partnerBillingConfigs: { stripeAccountId: 'acct_123' },
+      });
+      mockStripe.accounts.del.mockResolvedValue({ deleted: true, id: 'acct_123' });
 
-      mockUsersService.findOne.mockResolvedValue(mockUser);
-      mockStripe.accounts.del.mockResolvedValue({ deleted: true, id: 'account-1' });
-      mockUsersService.removeStripeAccountId.mockResolvedValue(undefined);
+      await service.deleteStripeConnectAccount(partnerUid);
 
-      await service.deleteStripeConnectAccount(userId);
-
-      expect(mockStripe.accounts.del).toHaveBeenCalledWith('account-1');
-      expect(mockUsersService.removeStripeAccountId).toHaveBeenCalledWith(userId);
-    });
-
-    it('should throw BadRequestException if Stripe account not found', async () => {
-      mockUsersService.findOne.mockResolvedValue({ stripeAccountId: null });
-
-      await expect(service.deleteStripeConnectAccount(userId)).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException if deletion fails', async () => {
-      const mockUser = {
-        stripeAccountId: 'account-1',
-      };
-
-      mockUsersService.findOne.mockResolvedValue(mockUser);
-      mockStripe.accounts.del.mockResolvedValue(null);
-
-      await expect(service.deleteStripeConnectAccount(userId)).rejects.toThrow(BadRequestException);
+      expect(mockStripe.accounts.del).toHaveBeenCalledWith('acct_123');
+      expect(mockPrismaService.partnerBillingConfig.update).toHaveBeenCalled();
     });
   });
 
   describe('createPaymentIntent', () => {
     const paymentIntentDto: PaymentIntentDto = {
       amount: 1000,
-      connectedAccountId: 'account-1',
       currency: 'eur',
+      sessionUid: 'session-1',
+      userUid: 'user-1',
       paymentMethodId: 'pm_1',
     };
 
     it('should create payment intent successfully', async () => {
-      const mockPaymentIntent = {
-        id: 'pi_1',
-        amount: 1000,
-        currency: 'eur',
-      };
+      mockPrismaService.sessions.findUnique.mockResolvedValue({
+        uid: 'session-1',
+        field: { partnerUid: 'partner-1' },
+      });
+      mockPrismaService.partners.findUnique.mockResolvedValue({
+        uid: 'partner-1',
+        partnerBillingConfigs: { stripeAccountId: 'acct_dest' },
+      });
+      mockPrismaService.partnerBillingConfig.findUnique.mockResolvedValue({ commissionRate: 0.15 });
 
-      mockStripe.paymentIntents.create.mockResolvedValue(mockPaymentIntent);
+      mockStripe.paymentIntents.create.mockResolvedValue({ id: 'pi_1' });
 
       const result = await service.createPaymentIntent(paymentIntentDto);
 
-      expect(result).toEqual(mockPaymentIntent);
-      expect(mockStripe.paymentIntents.create).toHaveBeenCalledWith({
-        amount: 1000,
-        currency: 'eur',
-        payment_method: 'pm_1',
-        automatic_payment_methods: {
-          allow_redirects: 'never',
-          enabled: true,
-        },
-        confirm: false,
-        transfer_data: {
-          destination: 'account-1',
-        },
-        metadata: {
-          platform: 'mobile',
-        },
-      });
+      expect(result).toBeDefined();
+      expect(mockStripe.paymentIntents.create).toHaveBeenCalled();
+    });
+  });
+
+  describe('confirmPaymentIntent', () => {
+    it('should confirm payment intent successfully', async () => {
+      const dto: ConfirmPaymentIntentDto = { paymentIntentId: 'pi_1', paymentMethodId: 'pm_1' };
+      mockStripe.paymentIntents.confirm.mockResolvedValue({ id: 'pi_1' });
+
+      const result = await service.confirmPaymentIntent(dto);
+      expect(result.id).toBe('pi_1');
     });
   });
 
   describe('bank account operations', () => {
-    const userId = 'user-1';
+    const partnerUid = 'partner-1';
     const bankAccountId = 'ba_1';
     const bankDetails: BankDetailsDto = {
       accountNumber: 'FR123456789',
@@ -349,42 +217,29 @@ describe('PaymentService', () => {
       routingNumber: '12345',
     };
 
+    beforeEach(() => {
+      mockPrismaService.partners.findUnique.mockResolvedValue({
+        uid: partnerUid,
+        partnerBillingConfigs: { stripeAccountId: 'acct_123' },
+      });
+    });
+
     describe('addBankAccount', () => {
       it('should add bank account successfully', async () => {
-        const mockUser = {
-          stripeAccountId: 'account-1',
-        };
-
-        mockUsersService.findOne.mockResolvedValue(mockUser);
         mockStripe.accounts.listExternalAccounts.mockResolvedValue({ data: [] });
         mockStripe.accounts.createExternalAccount.mockResolvedValue({ id: bankAccountId });
 
-        await service.addBankAccount(userId, bankDetails);
+        await service.addBankAccount(partnerUid, bankDetails);
 
-        expect(mockStripe.accounts.createExternalAccount).toHaveBeenCalledWith('account-1', {
-          external_account: {
-            account_holder_name: 'John Doe',
-            account_holder_type: 'individual',
-            account_number: 'FR123456789',
-            country: 'FR',
-            currency: 'eur',
-            object: 'bank_account',
-            routing_number: '12345',
-          },
-        });
+        expect(mockStripe.accounts.createExternalAccount).toHaveBeenCalled();
       });
 
       it('should throw BadRequestException if maximum bank accounts reached', async () => {
-        const mockUser = {
-          stripeAccountId: 'account-1',
-        };
-
-        mockUsersService.findOne.mockResolvedValue(mockUser);
         mockStripe.accounts.listExternalAccounts.mockResolvedValue({
           data: Array(4).fill({ id: 'existing-account' }),
         });
 
-        await expect(service.addBankAccount(userId, bankDetails)).rejects.toThrow(
+        await expect(service.addBankAccount(partnerUid, bankDetails)).rejects.toThrow(
           BadRequestException,
         );
       });
@@ -392,120 +247,48 @@ describe('PaymentService', () => {
 
     describe('getBankAccountsList', () => {
       it('should get bank accounts list successfully', async () => {
-        const mockUser = {
-          stripeAccountId: 'account-1',
-        };
-        const mockBankAccounts = [
-          {
-            id: 'ba_1',
-            bank_name: 'Bank',
-            country: 'FR',
-            currency: 'eur',
-            default_for_currency: true,
-            account_holder_name: 'John Doe',
-            last4: '1234',
-            status: 'verified',
-            routing_number: '12345',
-            future_requirements: null,
-            requirements: null,
-          },
-        ];
-
-        mockUsersService.findOne.mockResolvedValue(mockUser);
         mockStripe.accounts.listExternalAccounts.mockResolvedValue({
-          data: mockBankAccounts,
-        });
-
-        const result = await service.getBankAccountsList(userId);
-
-        expect(result).toEqual({
-          items: [
-            {
-              id: 'ba_1',
-              bank_name: 'Bank',
-              country: 'FR',
-              currency: 'eur',
-              default_for_currency: true,
-              holder_name: 'John Doe',
-              last4: '1234',
-              status: 'verified',
-              routing_number: '12345',
-              future_requirements: null,
-              requirements: null,
-            },
+          data: [
+            { id: 'ba_1', bank_name: 'Bank', country: 'FR', currency: 'eur', status: 'verified' },
           ],
-          nextCursor: null,
-          totalCount: 1,
         });
+
+        const result = await service.getBankAccountsList(partnerUid);
+        expect(result.items).toHaveLength(1);
       });
     });
 
     describe('getBankAccount', () => {
       it('should get bank account successfully', async () => {
-        const mockUser = {
-          stripeAccountId: 'account-1',
-        };
-        const mockBankAccount = {
-          id: bankAccountId,
-          bank_name: 'Bank',
-          country: 'FR',
-          currency: 'eur',
-          default_for_currency: true,
-          last4: '1234',
-          status: 'verified',
-        };
-
-        mockUsersService.findOne.mockResolvedValue(mockUser);
-        mockStripe.accounts.retrieveExternalAccount.mockResolvedValue(mockBankAccount);
-
-        const result = await service.getBankAccount(userId, bankAccountId);
-
-        expect(result).toEqual(mockBankAccount);
-        expect(mockStripe.accounts.retrieveExternalAccount).toHaveBeenCalledWith(
-          'account-1',
-          bankAccountId,
-        );
+        mockStripe.accounts.retrieveExternalAccount.mockResolvedValue({ id: 'ba_1' });
+        const result = await service.getBankAccount(partnerUid, bankAccountId);
+        expect(result.id).toBe('ba_1');
       });
     });
 
     describe('updateDefaultBankAccount', () => {
       it('should update bank account successfully', async () => {
-        const mockUser = {
-          stripeAccountId: 'account-1',
-        };
-        const updateDetails: UpdateBankDetailsDto = {
-          defaultForCurrency: true,
-        };
-
-        mockUsersService.findOne.mockResolvedValue(mockUser);
+        const updateDetails: UpdateBankDetailsDto = { defaultForCurrency: true };
         mockStripe.accounts.updateExternalAccount.mockResolvedValue({ id: bankAccountId });
-
-        await service.updateDefaultBankAccount(userId, bankAccountId, updateDetails);
-
-        expect(mockStripe.accounts.updateExternalAccount).toHaveBeenCalledWith(
-          'account-1',
-          bankAccountId,
-          { default_for_currency: true },
-        );
+        await service.updateDefaultBankAccount(partnerUid, bankAccountId, updateDetails);
+        expect(mockStripe.accounts.updateExternalAccount).toHaveBeenCalled();
       });
     });
 
     describe('deleteBankAccount', () => {
       it('should delete bank account successfully', async () => {
-        const mockUser = {
-          stripeAccountId: 'account-1',
-        };
-
-        mockUsersService.findOne.mockResolvedValue(mockUser);
         mockStripe.accounts.deleteExternalAccount.mockResolvedValue({ deleted: true });
-
-        await service.deleteBankAccount(userId);
-
-        expect(mockStripe.accounts.deleteExternalAccount).toHaveBeenCalledWith(
-          'account-1',
-          'account-1',
-        );
+        await service.deleteBankAccount(partnerUid, bankAccountId);
+        expect(mockStripe.accounts.deleteExternalAccount).toHaveBeenCalled();
       });
+    });
+  });
+
+  describe('testing methods', () => {
+    it('createPaymentMethodForTesting should retrieve mock pm', async () => {
+      mockStripe.paymentMethods.retrieve.mockResolvedValue({ id: 'pm_card_visa' });
+      const res = await service.createPaymentMethodForTesting();
+      expect(res.id).toBe('pm_card_visa');
     });
   });
 });

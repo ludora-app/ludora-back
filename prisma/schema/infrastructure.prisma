@@ -40,8 +40,10 @@ model Partners {
   userTokens    UserTokens[]
   refreshTokens RefreshTokens[]
 
-  fields        Fields[]
-  partnerSports PartnerSports[]
+  fields                Fields[]
+  partnerSports         PartnerSports[]
+  partnerBillingConfigs PartnerBillingConfig?
+  payments              Payments[]
 
   @@index([city])
   @@index([zipCode])

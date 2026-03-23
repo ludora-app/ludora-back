@@ -16,7 +16,14 @@ export class StorageService {
   });
 
   constructor(private readonly configService: ConfigService) {}
-  private readonly publicUrl = this.configService.getOrThrow('CLOUDFLARE_R2_PUBLIC_URL');
+
+  private get publicUrl(): string {
+    return this.configService.getOrThrow('CLOUDFLARE_R2_PUBLIC_URL');
+  }
+
+  private get bucket(): string {
+    return this.configService.getOrThrow('CLOUDFLARE_R2_BUCKET');
+  }
 
   /**
    * @description send/update a file to the S3 bucket
@@ -34,7 +41,7 @@ export class StorageService {
       await this.s3.send(
         new PutObjectCommand({
           Body: file,
-          Bucket: this.configService.getOrThrow('CLOUDFLARE_R2_BUCKET'),
+          Bucket: this.bucket,
           Key: key,
         }),
       );
@@ -63,7 +70,7 @@ export class StorageService {
       const key = `${folder}/${filename}`;
 
       const command = new GetObjectCommand({
-        Bucket: this.configService.getOrThrow('CLOUDFLARE_R2_BUCKET'),
+        Bucket: this.bucket,
         Key: key,
       });
 
@@ -85,7 +92,7 @@ export class StorageService {
     try {
       await this.s3.send(
         new DeleteObjectCommand({
-          Bucket: this.configService.getOrThrow('CLOUDFLARE_R2_BUCKET'),
+          Bucket: this.bucket,
           Key: filename,
         }),
       );

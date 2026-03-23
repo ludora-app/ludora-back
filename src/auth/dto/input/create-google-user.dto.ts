@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
-import { Provider } from 'generated/prisma/enums';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
 
 export class CreateGoogleUserDto {
   @IsEmail()
@@ -38,14 +37,4 @@ export class CreateGoogleUserDto {
     type: String,
   })
   readonly imageUrl?: string;
-
-  @IsEnum(Provider)
-  @IsOptional()
-  @ApiProperty({
-    description: 'The provider of the user',
-    enum: Provider,
-    example: Provider.GOOGLE,
-    type: String,
-  })
-  provider?: Provider;
 }

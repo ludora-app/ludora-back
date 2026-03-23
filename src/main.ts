@@ -7,7 +7,12 @@ import { AppModule } from './app.module';
 import { buildSwaggerDocument, SWAGGER_OPTIONS } from './swagger.config';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  /**
+   * { rawBody: true } is used for the stripe webhooks
+   */
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), {
+    rawBody: true,
+  });
   // Limit to 10 Mo per file to support HEIC (iPhone) and other photos
   await app.register(contentParser, { limits: { fileSize: 10 * 1024 * 1024 } });
 

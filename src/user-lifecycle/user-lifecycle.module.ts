@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
-import { SharedModule } from 'src/shared/shared.module';
+import { AppleModule } from 'src/apple/apple.module';
+import { AppleService } from 'src/apple/apple.service';
+import { EncryptionService } from 'src/shared/encryption/encryption.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { UserLifecycleService } from './user-lifecycle.service';
 
 @Module({
-  imports: [SharedModule],
-  providers: [UserLifecycleService, StorageService],
+  imports: [AppleModule],
+  providers: [UserLifecycleService, StorageService, AppleService, EncryptionService],
 })
 export class UserLifecycleModule {}

@@ -28,7 +28,6 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Users } from 'generated/prisma/browser';
-import { Provider } from 'generated/prisma/enums';
 import {
   CreateImageDto,
   LoginDto,
@@ -53,8 +52,9 @@ import { ForgottenPasswordDto } from 'src/users/dto/input/forgotten-password.dto
 import { Protected } from '../../shared/decorators/protected.decorator';
 import { Public } from '../../shared/decorators/public.decorator';
 import { ResetPassword } from '../decorators/reset-password.decorator';
+import { CreateAppleUserDto } from '../dto/input/create-apple-user.dto';
 import { CreateGoogleUserDto } from '../dto/input/create-google-user.dto';
-import { CreateOrConnectGoogleResponseDto } from '../dto/output/create-or-connect-google.response';
+import { ThirdPartyAuthResponseDto } from '../dto/output/create-or-connect-google.response';
 import { GenerateAccessTokenFromCodeDto } from '../dto/output/generate-access-token-from-code.dto';
 import { AuthB2CGuard } from '../guards/auth-b2c.guard';
 import { VerifyEmailGuard } from '../guards/verify-email.guard';
@@ -104,7 +104,7 @@ export class AuthB2CController {
   })
   @ApiCreatedResponse({
     description: 'User created or connected successfully',
-    type: CreateOrConnectGoogleResponseDto,
+    type: ThirdPartyAuthResponseDto,
   })
   @ApiBadRequestResponse({
     description: 'Error during Google user creation or connection',
@@ -113,10 +113,36 @@ export class AuthB2CController {
   @ApiBody({ type: CreateGoogleUserDto })
   async createOrConnectGoogleUser(
     @Body() createGoogleUserDto: CreateGoogleUserDto,
-  ): Promise<CreateOrConnectGoogleResponseDto> {
-    const provider = Provider.GOOGLE;
-    createGoogleUserDto.provider = provider;
+  ): Promise<ThirdPartyAuthResponseDto> {
     const data = await this.authService.createOrConnectGoogleUser(createGoogleUserDto);
+    return {
+      data: {
+        accessToken: data.accessToken,
+        isNewUser: data.isNewUser,
+        refreshToken: data.refreshToken,
+      },
+      message: data.message,
+    };
+  }
+
+  @Public()
+  @Post('/apple-login')
+  @ApiOperation({
+    summary: 'Creates or connects a user with a Google account',
+  })
+  @ApiCreatedResponse({
+    description: 'User created or connected successfully',
+    type: ThirdPartyAuthResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Error during Google user creation or connection',
+    type: BadRequestResponseDto,
+  })
+  @ApiBody({ type: CreateAppleUserDto })
+  async createOrConnectAppleUser(
+    @Body() createAppleUserDto: CreateAppleUserDto,
+  ): Promise<ThirdPartyAuthResponseDto> {
+    const data = await this.authService.createOrConnectAppleUser(createAppleUserDto);
     return {
       data: {
         accessToken: data.accessToken,

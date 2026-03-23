@@ -1,157 +1,140 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { USERSELECT } from 'src/shared/constants/select-user';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
-import { UsersService } from 'src/users/users.service';
 import Stripe from 'stripe';
 import { BankDetailsDto, UpdateBankDetailsDto } from './dto/input/bank-details.dto';
 import { ConfirmPaymentIntentDto } from './dto/input/confirm-payment.dto';
-import { CreateStripeAccountDto } from './dto/input/create-stripe-account.dto';
 import { PaymentIntentDto } from './dto/input/payment-intent.dto';
 import { PaymentIntentTestDto } from './dto/input/payment-intent-test.dto';
 import { BankAccountListResponseDataDto } from './dto/output/bankAccount-list-response.dto';
 
 @Injectable()
 export class PaymentService {
-  private readonly stripe: Stripe;
+  private _stripe: Stripe | null = null;
+
+  private get stripe(): Stripe {
+    if (!this._stripe) {
+      this._stripe = new Stripe(this.configService.getOrThrow('STRIPE_SECRET_KEY'), {
+        apiVersion: '2025-08-27.basil',
+        typescript: true,
+      });
+    }
+    return this._stripe;
+  }
 
   constructor(
     readonly _prismaService: PrismaService,
     private readonly configService: ConfigService,
-    private readonly usersService: UsersService,
     private readonly logger: PinoLogger,
   ) {
-    this.stripe = new Stripe(this.configService.getOrThrow('STRIPE_SECRET_KEY'), {
-      apiVersion: '2025-08-27.basil',
-      typescript: true,
-    });
     this.logger.setContext(PaymentService.name);
   }
 
-  async createStripeAccountToken(userUid: string, stripeAccountData: CreateStripeAccountDto) {
-    try {
-      const user = await this.usersService.findOne(userUid, USERSELECT.createStripeAccountToken);
+  private async getPartnerStripeAccountId(partnerUid: string): Promise<string> {
+    const partner = await this._prismaService.partners.findUnique({
+      where: { uid: partnerUid },
+      include: { partnerBillingConfigs: true },
+    });
 
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      const accountToken = await this.stripe.tokens.create({
-        account: {
-          business_type: 'individual',
-          individual: {
-            address: {
-              city: stripeAccountData.address.city, // city : Paris
-              country: stripeAccountData.address.countryCode, // pays : FR
-              line1: stripeAccountData.address.line1, // address : 123 Main St
-              line2: stripeAccountData.address.line2, // address complement : Apt 1
-              postal_code: stripeAccountData.address.postalCode, // postal code : 94000
-            },
-            dob: {
-              day: new Date(user.birthdate).getUTCDate(),
-              month: new Date(user.birthdate).getUTCMonth() + 1,
-              year: new Date(user.birthdate).getUTCFullYear(),
-            },
-            email: user.email,
-            first_name: stripeAccountData.firstname,
-            last_name: stripeAccountData.lastname,
-            phone: user.phone,
-          },
-          tos_shown_and_accepted: true, // Confirms that the user accepts the Stripe terms of service
-        },
-      });
-      return accountToken.id;
-    } catch (error) {
-      throw new InternalServerErrorException(error.message);
+    if (!partner) {
+      throw new NotFoundException('Partner not found');
     }
+
+    const stripeAccountId = partner.partnerBillingConfigs?.stripeAccountId;
+    if (!stripeAccountId) {
+      throw new NotFoundException('Stripe account not found');
+    }
+
+    return stripeAccountId;
   }
 
-  async createStripeConnectAccount(
-    userUid: string,
-    stripeAccountData: CreateStripeAccountDto,
-  ): Promise<void> {
+  async createStripeConnectAccount(partnerUid: string): Promise<void> {
     try {
-      const existingUser = await this.usersService.findOne(
-        userUid,
-        USERSELECT.createStripeConnectAccount,
-      );
+      const partner = await this._prismaService.partners.findUnique({
+        where: { uid: partnerUid },
+        include: { partnerBillingConfigs: true },
+      });
 
-      if (!existingUser) {
-        throw new NotFoundException('User not found');
+      if (!partner) {
+        throw new NotFoundException('Partner not found');
       }
 
-      if (existingUser.stripeAccountId) {
+      if (partner.partnerBillingConfigs?.stripeAccountId) {
         throw new BadRequestException('Stripe account already exists');
       }
 
-      const stripeAccountToken = await this.createStripeAccountToken(userUid, stripeAccountData);
-
       const stripeAccount = await this.stripe.accounts.create({
-        account_token: stripeAccountToken,
-        business_profile: {
-          mcc: '7299',
-          product_description: 'Participate to sessions in the app',
-          url: null,
+        type: 'express',
+        business_type: 'company',
+        company: {
+          name: partner.name,
+          phone: partner.phone,
+          address: {
+            line1: partner.address,
+            city: partner.city,
+            postal_code: partner.zipCode,
+            country: partner.country,
+          },
         },
-        capabilities: {
-          card_payments: { requested: true },
-          transfers: { requested: true },
-        },
-        country: stripeAccountData.address.countryCode, // country : FR
-        email: existingUser.email,
-        type: 'custom',
+        email: partner.email,
       });
 
-      await this.usersService.addStripeAccountId(userUid, stripeAccount.id);
+      await this._prismaService.partnerBillingConfig.upsert({
+        where: { partnerUid: partner.uid },
+        update: { stripeAccountId: stripeAccount.id },
+        create: { partnerUid: partner.uid, stripeAccountId: stripeAccount.id },
+      });
 
-      this.logger.debug(`Stripe account created for user ${userUid}: ${stripeAccount.id}`);
+      this.logger.info(`Stripe account created for partner ${partnerUid}: ${stripeAccount.id}`);
     } catch (error) {
-      this.logger.error(`Error creating Stripe account for user ${userUid}: ${error.message}`);
+      this.logger.error(
+        `Error creating Stripe account for partner ${partnerUid}: ${error.message}`,
+      );
       throw new BadRequestException(error.message);
     }
   }
 
-  async getStripeConnectAccount(userUid: string): Promise<Stripe.Account> {
-    const user = await this.usersService.findOne(userUid, USERSELECT.stripeAccountId);
+  async generateStripeAccountLink(partnerUid: string): Promise<{ url: string }> {
+    try {
+      const stripeAccountId = await this.getPartnerStripeAccountId(partnerUid);
 
-    if (!user) {
-      throw new NotFoundException('User not found');
+      // The refresh_url and return_url should point to the frontend (e.g. partner dashboard)
+      // They can be configured in env, falling back to a dummy one if not set
+      const baseUrl = this.configService.get<string>('FRONTEND_URL') || 'https://ludora.fr';
+
+      const accountLink = await this.stripe.accountLinks.create({
+        account: stripeAccountId,
+        refresh_url: `${baseUrl}/partner/onboarding/refresh`,
+        return_url: `${baseUrl}/partner/dashboard?onboarding=success`,
+        type: 'account_onboarding',
+      });
+
+      return { url: accountLink.url };
+    } catch (error) {
+      this.logger.error(`Error generating Stripe account link: ${error.message}`);
+      throw new BadRequestException('Could not generate onboarding link.');
     }
+  }
 
-    if (!user.stripeAccountId) {
-      throw new NotFoundException('Stripe account not found');
-    }
-
-    const stripeAccountId = user.stripeAccountId;
+  async getStripeConnectAccount(partnerUid: string): Promise<Stripe.Account> {
+    const stripeAccountId = await this.getPartnerStripeAccountId(partnerUid);
     const stripeAccount = await this.stripe.accounts.retrieve(stripeAccountId);
     return stripeAccount;
   }
 
-  async deleteStripeConnectAccount(userUid: string): Promise<void> {
+  async deleteStripeConnectAccount(partnerUid: string): Promise<void> {
     try {
-      const user = await this.usersService.findOne(userUid, USERSELECT.stripeAccountId);
-
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      if (!user.stripeAccountId) {
-        throw new NotFoundException('Stripe account not found');
-      }
-
-      const stripeAccountId = user.stripeAccountId;
+      const stripeAccountId = await this.getPartnerStripeAccountId(partnerUid);
 
       const deletedAccount = await this.stripe.accounts.del(stripeAccountId);
 
       if (deletedAccount) {
-        await this.usersService.removeStripeAccountId(userUid);
+        await this._prismaService.partnerBillingConfig.update({
+          where: { partnerUid },
+          data: { stripeAccountId: null },
+        });
       } else {
         throw new BadRequestException('Error deleting account');
       }
@@ -168,8 +151,29 @@ export class PaymentService {
    * @returns The `createPaymentIntent` function returns a Promise that resolves to a Stripe
    * PaymentIntent object.
    */
-  async createPaymentIntent(paymentIntent: PaymentIntentDto): Promise<Stripe.PaymentIntent> {
-    const { amount, connectedAccountId, currency, paymentMethodId } = paymentIntent;
+  async createPaymentIntent(paymentIntentDto: PaymentIntentDto): Promise<Stripe.PaymentIntent> {
+    const { amount, currency, paymentMethodId, sessionUid, userUid } = paymentIntentDto;
+
+    const session = await this._prismaService.sessions.findUnique({
+      where: { uid: sessionUid },
+      include: { field: true },
+    });
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    const partnerUid = session.field.partnerUid;
+    if (!partnerUid) {
+      throw new BadRequestException('Session field does not have an associated partner');
+    }
+
+    const partnerBillingConfig = await this._prismaService.partnerBillingConfig.findUnique({
+      where: { partnerUid },
+    });
+
+    const connectedAccountId = await this.getPartnerStripeAccountId(partnerUid);
+
     try {
       const paymentIntent = await this.stripe.paymentIntents.create({
         amount,
@@ -189,6 +193,10 @@ export class PaymentService {
         // Useful metadata for tracking
         metadata: {
           platform: 'mobile',
+          sessionUid,
+          userUid,
+          partnerUid,
+          commissionRateSnapshot: String(partnerBillingConfig?.commissionRate || 0.15),
         },
       });
 
@@ -226,19 +234,9 @@ export class PaymentService {
     }
   }
 
-  async addBankAccount(userUid: string, bankDetails: BankDetailsDto): Promise<void> {
+  async addBankAccount(partnerUid: string, bankDetails: BankDetailsDto): Promise<void> {
     try {
-      const user = await this.usersService.findOne(userUid, USERSELECT.stripeAccountId);
-
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      if (!user.stripeAccountId) {
-        throw new NotFoundException('Stripe account not found');
-      }
-
-      const stripeAccountId = user.stripeAccountId;
+      const stripeAccountId = await this.getPartnerStripeAccountId(partnerUid);
 
       const userBankAccount = await this.stripe.accounts.listExternalAccounts(stripeAccountId, {
         object: 'bank_account',
@@ -249,7 +247,7 @@ export class PaymentService {
       await this.stripe.accounts.createExternalAccount(stripeAccountId, {
         external_account: {
           account_holder_name: bankDetails.holderName,
-          account_holder_type: 'individual',
+          account_holder_type: 'company',
           account_number: bankDetails.accountNumber,
           country: 'FR',
           currency: 'eur',
@@ -263,20 +261,10 @@ export class PaymentService {
   }
 
   async getBankAccountsList(
-    userUid: string,
+    partnerUid: string,
   ): Promise<PaginatedDataDto<BankAccountListResponseDataDto>> {
     try {
-      const user = await this.usersService.findOne(userUid, USERSELECT.stripeAccountId);
-
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      if (!user.stripeAccountId) {
-        throw new NotFoundException('Stripe account not found');
-      }
-
-      const stripeAccountId = user.stripeAccountId;
+      const stripeAccountId = await this.getPartnerStripeAccountId(partnerUid);
 
       const bankAccounts = await this.stripe.accounts.listExternalAccounts(stripeAccountId, {
         object: 'bank_account',
@@ -305,20 +293,12 @@ export class PaymentService {
     }
   }
 
-  async getBankAccount(userUid: string, bankAccountId: string): Promise<Stripe.ExternalAccount> {
+  async getBankAccount(partnerUid: string, bankAccountId: string): Promise<Stripe.ExternalAccount> {
     try {
-      const user = await this.usersService.findOne(userUid, USERSELECT.stripeAccountId);
-
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      if (!user.stripeAccountId) {
-        throw new NotFoundException('Stripe account not found');
-      }
+      const stripeAccountId = await this.getPartnerStripeAccountId(partnerUid);
 
       const bankAccount = await this.stripe.accounts.retrieveExternalAccount(
-        user.stripeAccountId,
+        stripeAccountId,
         bankAccountId,
       );
       return bankAccount;
@@ -328,22 +308,14 @@ export class PaymentService {
   }
 
   async updateDefaultBankAccount(
-    userUid: string,
+    partnerUid: string,
     bankAccountId: string,
     bankDetails: UpdateBankDetailsDto,
   ): Promise<void> {
     try {
-      const user = await this.usersService.findOne(userUid, USERSELECT.stripeAccountId);
+      const stripeAccountId = await this.getPartnerStripeAccountId(partnerUid);
 
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      if (!user.stripeAccountId) {
-        throw new NotFoundException('Stripe account not found');
-      }
-
-      await this.stripe.accounts.updateExternalAccount(user.stripeAccountId, bankAccountId, {
+      await this.stripe.accounts.updateExternalAccount(stripeAccountId, bankAccountId, {
         default_for_currency: bankDetails.defaultForCurrency,
       });
     } catch (error) {
@@ -351,19 +323,11 @@ export class PaymentService {
     }
   }
 
-  async deleteBankAccount(userUid: string): Promise<void> {
+  async deleteBankAccount(partnerUid: string, bankAccountId: string): Promise<void> {
     try {
-      const user = await this.usersService.findOne(userUid, USERSELECT.stripeAccountId);
+      const stripeAccountId = await this.getPartnerStripeAccountId(partnerUid);
 
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      if (!user.stripeAccountId) {
-        throw new NotFoundException('Stripe account not found');
-      }
-
-      await this.stripe.accounts.deleteExternalAccount(user.stripeAccountId, user.stripeAccountId);
+      await this.stripe.accounts.deleteExternalAccount(stripeAccountId, bankAccountId);
     } catch (error) {
       throw new BadRequestException(error.message);
     }

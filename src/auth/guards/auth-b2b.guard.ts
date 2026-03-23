@@ -3,10 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { FastifyRequest } from 'fastify';
-import { PartnersService } from 'src/partners/partners.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { IS_PUBLIC_KEY } from 'src/shared/decorators/public.decorator';
-import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class AuthB2BGuard implements CanActivate {
@@ -15,8 +13,6 @@ export class AuthB2BGuard implements CanActivate {
     private readonly reflector: Reflector,
     readonly _configService: ConfigService,
     private readonly jwtService: JwtService,
-    readonly _userService: UsersService,
-    readonly _partnerService: PartnersService,
   ) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
