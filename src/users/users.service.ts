@@ -59,8 +59,11 @@ export class UsersService {
     const prisma = tx ?? this.prismaService;
 
     const { email, firstname, lastname } = createUserDto;
-    const formattedFirst = firstname.charAt(0).toUpperCase() + firstname.slice(1);
-    const formattedLast = lastname.toUpperCase();
+    const formattedFirst =
+      firstname && firstname.length > 0
+        ? firstname.charAt(0).toUpperCase() + firstname.slice(1)
+        : 'User';
+    const formattedLast = lastname && lastname.length > 0 ? lastname.toUpperCase() : '';
     const formattedEmail = email.toLowerCase();
     const formattedBirthdate = createUserDto.birthdate ? new Date(createUserDto.birthdate) : null;
 

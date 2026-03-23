@@ -28,6 +28,7 @@ import { DateUtils } from 'src/shared/utils/date.utils';
 import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
 import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
 import { UsersService } from 'src/users/users.service';
+import { UserNameUtils } from 'src/users/utils/user-name.utils';
 import { CreateAppleUserDto } from '../dto/input/create-apple-user.dto';
 import { CreateGoogleUserDto } from '../dto/input/create-google-user.dto';
 
@@ -221,7 +222,7 @@ export class AuthB2CService {
   async createOrConnectAppleUser(
     createAppleUserDto: CreateAppleUserDto,
   ): Promise<{ accessToken: string; isNewUser: boolean; message: string; refreshToken: string }> {
-    const { email, fullName, identityToken, authorizationCode, realUserStatus, state, user } =
+    const { email, fullName, identityToken, authorizationCode, realUserStatus, user } =
       createAppleUserDto;
     let isNewUser = true;
     const provider = Provider.APPLE;
@@ -271,8 +272,8 @@ export class AuthB2CService {
 
       const userDto: CreateUserDto = {
         email: appleResult.email,
-        firstname: fullName.givenName,
-        lastname: fullName.familyName ?? null,
+        firstname: fullName?.givenName ?? UserNameUtils.getRandomAdjective(),
+        lastname: fullName?.familyName ?? UserNameUtils.getRandomLudoraName(),
         provider,
         appleId: user,
         appleRefreshToken: appleResult.encryptedRefreshToken,
