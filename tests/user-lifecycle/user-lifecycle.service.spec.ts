@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
+import { AppleService } from 'src/apple/apple.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { UserLifecycleService } from 'src/user-lifecycle/user-lifecycle.service';
@@ -29,6 +30,10 @@ describe('UserLifecycleService', () => {
     deleteFile: jest.fn().mockResolvedValue(undefined),
   };
 
+  const mockAppleService = {
+    revokeToken: jest.fn().mockResolvedValue(undefined),
+  };
+
   const mockLogger = {
     error: jest.fn(),
     info: jest.fn(),
@@ -43,6 +48,7 @@ describe('UserLifecycleService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: PinoLogger, useValue: mockLogger },
         { provide: StorageService, useValue: mockStorageService },
+        { provide: AppleService, useValue: mockAppleService },
       ],
     }).compile();
 
@@ -109,7 +115,6 @@ describe('UserLifecycleService', () => {
           lastname: 'Supprimé',
           password: null,
           phone: null,
-          stripeAccountId: null,
         }),
         where: { uid },
       });

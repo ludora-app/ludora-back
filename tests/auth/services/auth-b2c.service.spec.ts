@@ -6,6 +6,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as argon2 from 'argon2';
 import { Provider, Sex, UserType } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
+import { AppleService } from 'src/apple/apple.service';
 import { RefreshTokenDto } from 'src/auth/dto';
 import { CreateGoogleUserDto } from 'src/auth/dto/input/create-google-user.dto';
 import { AuthB2CService } from 'src/auth/services/auth-b2c.service';
@@ -108,6 +109,11 @@ describe('AuthB2CService', () => {
     emitAsync: jest.fn(),
   };
 
+  const mockAppleAuthService = {
+    processAuthCredential: jest.fn(),
+    revokeToken: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -139,6 +145,10 @@ describe('AuthB2CService', () => {
         {
           provide: EventEmitter2,
           useValue: mockEventEmitter,
+        },
+        {
+          provide: AppleService,
+          useValue: mockAppleAuthService,
         },
       ],
     }).compile();
@@ -500,7 +510,6 @@ describe('AuthB2CService', () => {
         firstname: 'John',
         imageUrl: 'https://example.com/photo.jpg',
         lastname: 'Doe',
-        provider: Provider.GOOGLE,
       };
 
       const existingUser = {
@@ -555,7 +564,6 @@ describe('AuthB2CService', () => {
         firstname: 'Jane',
         imageUrl: 'https://example.com/photo.jpg',
         lastname: 'Smith',
-        provider: Provider.GOOGLE,
       };
 
       const newUser = {
@@ -599,7 +607,7 @@ describe('AuthB2CService', () => {
           firstname: createGoogleUserDto.firstname,
           imageUrl: createGoogleUserDto.imageUrl,
           lastname: createGoogleUserDto.lastname,
-          provider: createGoogleUserDto.provider,
+          provider: Provider.GOOGLE,
         },
       });
       expect(mockPrismaService.userTokens.create).toHaveBeenCalled();
@@ -612,7 +620,6 @@ describe('AuthB2CService', () => {
         firstname: 'Error',
         imageUrl: 'https://example.com/photo.jpg',
         lastname: 'User',
-        provider: Provider.GOOGLE,
       };
 
       mockUsersService.findOneByEmail.mockRejectedValue(new Error('Database error'));

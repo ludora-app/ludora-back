@@ -35,8 +35,13 @@ export class AuthB2BService {
     this.logger.setContext(AuthB2BService.name);
   }
 
-  private readonly NODE_ENV = this.configService.getOrThrow('NODE_ENV');
-  private readonly TOKEN_EXPIRATION_TIME = this.NODE_ENV === 'production' ? '15m' : '1d';
+  private get NODE_ENV(): string {
+    return this.configService.getOrThrow('NODE_ENV');
+  }
+
+  private get TOKEN_EXPIRATION_TIME() {
+    return this.NODE_ENV === 'production' ? '15m' : '1d';
+  }
 
   async register(dto: RegisterB2BDto, createImageDto?: CreateImageDto) {
     const {

@@ -8,9 +8,10 @@ import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
-import { Users } from 'generated/prisma/browser';
+import { Provider, Users } from 'generated/prisma/browser';
 import { UserType } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
+import { AppleService } from 'src/apple/apple.service';
 import {
   CreateImageDto,
   LoginDto,
@@ -27,7 +28,8 @@ import { DateUtils } from 'src/shared/utils/date.utils';
 import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
 import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
 import { UsersService } from 'src/users/users.service';
-
+import { UserNameUtils } from 'src/users/utils/user-name.utils';
+import { CreateAppleUserDto } from '../dto/input/create-apple-user.dto';
 import { CreateGoogleUserDto } from '../dto/input/create-google-user.dto';
 
 @Injectable()
@@ -40,11 +42,17 @@ export class AuthB2CService {
     private readonly configService: ConfigService,
     private readonly logger: PinoLogger,
     private readonly eventEmitter: EventEmitter2,
+    private readonly appleService: AppleService,
   ) {
     this.logger.setContext(AuthB2CService.name);
   }
-  private readonly NODE_ENV = this.configService.getOrThrow('NODE_ENV');
-  private readonly TOKEN_EXPIRATION_TIME = this.NODE_ENV === 'production' ? '15m' : '1d';
+  private get NODE_ENV(): string {
+    return this.configService.getOrThrow('NODE_ENV');
+  }
+
+  private get TOKEN_EXPIRATION_TIME() {
+    return this.NODE_ENV === 'production' ? '15m' : '1d';
+  }
   private readonly MINIMUM_AGE_DATE = new Date(
     new Date().setFullYear(new Date().getFullYear() - 15),
   );
@@ -56,7 +64,7 @@ export class AuthB2CService {
     const { type } = registerDto;
 
     const result = await this.prismaService.$transaction(async (tx) => {
-      let newUser: Users | null;
+      let newUser: Pick<Users, 'uid' | 'email' | 'firstname' | 'lastname'> | null;
 
       if (!DateUtils.isBefore(registerDto.birthdate, this.MINIMUM_AGE_DATE)) {
         this.logger.error(
@@ -127,9 +135,9 @@ export class AuthB2CService {
   async createOrConnectGoogleUser(
     createGoogleUserDto: CreateGoogleUserDto,
   ): Promise<{ accessToken: string; isNewUser: boolean; refreshToken: string; message: string }> {
-    const { email, firstname, imageUrl, lastname, provider } = createGoogleUserDto;
+    const { email, firstname, imageUrl, lastname } = createGoogleUserDto;
     let isNewUser = true;
-
+    const provider = Provider.GOOGLE;
     try {
       const existingUser = await this.userService.findOneByEmail(email, USERSELECT.findOneByEmail);
 
@@ -208,6 +216,102 @@ export class AuthB2CService {
       return { accessToken, isNewUser, message, refreshToken };
     } catch (error) {
       throw new BadRequestException(`Error creating or connecting Google user: ${error.message}`);
+    }
+  }
+
+  async createOrConnectAppleUser(
+    createAppleUserDto: CreateAppleUserDto,
+  ): Promise<{ accessToken: string; isNewUser: boolean; message: string; refreshToken: string }> {
+    const { email, fullName, identityToken, authorizationCode, realUserStatus, user } =
+      createAppleUserDto;
+    let isNewUser = true;
+    const provider = Provider.APPLE;
+
+    const appleResult = await this.appleService.processAuthCredential({
+      identityToken,
+      authorizationCode,
+      email,
+      realUserStatus,
+    });
+
+    try {
+      const existingUser = await this.userService.findOneByAppleId(appleResult.appleUserId);
+
+      // if the user exists, connect the Apple account to the user
+      if (existingUser) {
+        isNewUser = false;
+        const payload = { uid: existingUser.uid };
+        const accessToken = this.jwt.sign(
+          { ...payload, type: TokenType.ACCESS },
+          { expiresIn: this.TOKEN_EXPIRATION_TIME },
+        );
+        const refreshToken = this.jwt.sign(
+          { ...payload, type: TokenType.REFRESH },
+          { expiresIn: '7d' },
+        );
+
+        await this.prismaService.userTokens.create({
+          data: {
+            token: accessToken,
+            userUid: existingUser.uid,
+          },
+        });
+
+        await this.prismaService.refreshTokens.create({
+          data: {
+            expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
+            token: refreshToken,
+            userUid: existingUser.uid,
+          },
+        });
+        this.logger.debug(`User ${existingUser.uid} connected to Apple account`);
+        const message = 'User already exists, successfully connected to Apple account';
+
+        return { accessToken, isNewUser, message, refreshToken };
+      }
+
+      const userDto: CreateUserDto = {
+        email: appleResult.email,
+        firstname: fullName?.givenName ?? UserNameUtils.getRandomAdjective(),
+        lastname: fullName?.familyName ?? UserNameUtils.getRandomLudoraName(),
+        provider,
+        appleId: user,
+        appleRefreshToken: appleResult.encryptedRefreshToken,
+      };
+
+      const newUser = await this.userService.create(userDto);
+
+      const payload = { uid: newUser.uid };
+      const accessToken = this.jwt.sign(
+        { ...payload, type: TokenType.ACCESS },
+        { expiresIn: this.TOKEN_EXPIRATION_TIME },
+      );
+      const refreshToken = this.jwt.sign(
+        { ...payload, type: TokenType.REFRESH },
+        { expiresIn: '7d' },
+      );
+
+      await this.prismaService.userTokens.create({
+        data: {
+          token: accessToken,
+          userUid: newUser.uid,
+        },
+      });
+
+      await this.prismaService.refreshTokens.create({
+        data: {
+          expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
+          token: refreshToken,
+          userUid: newUser.uid,
+        },
+      });
+
+      this.logger.debug(`User ${newUser.uid} created and connected to Apple account`);
+      const message = 'New user created and connected to Apple account';
+
+      return { accessToken, isNewUser, message, refreshToken };
+    } catch (error) {
+      throw new BadRequestException(`Error creating or connecting Apple user: ${error.message}`);
     }
   }
 

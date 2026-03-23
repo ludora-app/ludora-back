@@ -55,11 +55,11 @@ model Sessions {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  creator       Users?      @relation(fields: [creatorUid], references: [uid], onDelete: SetNull)
-  field         Fields      @relation(fields: [fieldUid], references: [uid])
-  slot          FieldSlots? @relation(fields: [slotUid], references: [uid])
-  sportRelation Sports      @relation(fields: [sport], references: [name])
-
+  creator            Users?               @relation(fields: [creatorUid], references: [uid], onDelete: SetNull)
+  field              Fields               @relation(fields: [fieldUid], references: [uid])
+  slot               FieldSlots?          @relation(fields: [slotUid], references: [uid])
+  sportRelation      Sports               @relation(fields: [sport], references: [name])
+  payments           Payments[]
   sessionInvitations SessionInvitations[]
   sessionImages      SessionImages[]
   sessionTeams       SessionTeams[]

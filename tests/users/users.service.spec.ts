@@ -150,6 +150,28 @@ describe('UsersService', () => {
 
       await expect(service.create(createUserDto)).rejects.toThrow(ConflictException);
     });
+
+    it('should handle null or empty firstname and lastname', async () => {
+      const dtoWithNullNames = {
+        ...createUserDto,
+        firstname: null,
+        lastname: null,
+      };
+
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
+      mockPrismaService.users.create.mockImplementationOnce((args: any) =>
+        Promise.resolve({
+          ...args.data,
+          uid: '1',
+        }),
+      );
+
+      const result = await service.create(dtoWithNullNames as any);
+
+      expect(result).toBeDefined();
+      expect(result.firstname).toBe('User');
+      expect(result.lastname).toBe('');
+    });
   });
 
   describe('findAll', () => {

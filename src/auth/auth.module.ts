@@ -2,11 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
+import { AppleModule } from 'src/apple/apple.module';
+import { AppleService } from 'src/apple/apple.service';
 import { PartnersModule } from 'src/partners/partners.module';
 import { PartnersService } from 'src/partners/partners.service';
+import { EncryptionService } from 'src/shared/encryption/encryption.service';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
-import { SharedModule } from 'src/shared/shared.module';
-import { UsersModule } from 'src/users/users.module';
 import { AuthB2BController } from './controllers/auth-b2b.controller';
 import { AuthB2CController } from './controllers/auth-b2c.controller';
 import { AuthB2CGuard } from './guards/auth-b2c.guard';
@@ -22,13 +23,13 @@ import { WebSocketAuthService } from './services/websocket-auth.service';
       global: true,
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.getOrThrow('JWT_SECRET'),
+        // use get() with a fallback so that NestFactory.create works without .env (e.g. swagger generation)
+        secret: configService.get('JWT_SECRET', ''),
         signOptions: { expiresIn: '7d' },
       }),
     }),
-    UsersModule,
-    SharedModule,
     PartnersModule,
+    AppleModule,
   ],
   providers: [
     AuthB2CService,
@@ -40,6 +41,8 @@ import { WebSocketAuthService } from './services/websocket-auth.service';
     GeolocalisationService,
     PartnersService,
     AuthB2BService,
+    EncryptionService,
+    AppleService,
   ],
 })
 export class AuthModule {}

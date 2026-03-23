@@ -31,15 +31,6 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     phone: true,
   },
 
-  createStripeConnectAccount: {
-    birthdate: true,
-    email: true,
-    firstname: true,
-    lastname: true,
-    stripeAccountId: true,
-    uid: true,
-  },
-
   findMe: {
     _count: {
       select: {
@@ -62,7 +53,6 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     phone: true,
     provider: true,
     sex: true,
-    stripeAccountId: true,
     type: true,
     uid: true,
     userHourPreferences: {
@@ -130,7 +120,9 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     type: true,
     uid: true,
   },
-  stripeAccountId: {
-    stripeAccountId: true,
+  findOneByAppleId: {
+    appleId: true,
+    uid: true,
+    email: true,
   },
 };

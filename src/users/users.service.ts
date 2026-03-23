@@ -59,8 +59,11 @@ export class UsersService {
     const prisma = tx ?? this.prismaService;
 
     const { email, firstname, lastname } = createUserDto;
-    const formattedFirst = firstname.charAt(0).toUpperCase() + firstname.slice(1);
-    const formattedLast = lastname.toUpperCase();
+    const formattedFirst =
+      firstname && firstname.length > 0
+        ? firstname.charAt(0).toUpperCase() + firstname.slice(1)
+        : 'User';
+    const formattedLast = lastname && lastname.length > 0 ? lastname.toUpperCase() : '';
     const formattedEmail = email.toLowerCase();
     const formattedBirthdate = createUserDto.birthdate ? new Date(createUserDto.birthdate) : null;
 
@@ -84,6 +87,10 @@ export class UsersService {
       imageUrl = await this.storageService.createDefaultProfilePicture();
     }
 
+    //? If the provider is not LUDORA, the email is verified
+    const isEmailVerified =
+      createUserDto.provider !== undefined && createUserDto.provider !== Provider.LUDORA;
+
     const newUser = await prisma.users.create({
       data: {
         bio: createUserDto.bio,
@@ -96,7 +103,12 @@ export class UsersService {
         phone: createUserDto.phone,
         sex: createUserDto.sex,
         ...(createUserDto.type && { type: createUserDto.type }),
+        isEmailVerified,
+        provider: createUserDto.provider,
+        appleId: createUserDto.appleId,
+        appleRefreshToken: createUserDto.appleRefreshToken,
       },
+      select: { email: true, firstname: true, lastname: true, uid: true },
     });
 
     return newUser;
@@ -394,34 +406,15 @@ export class UsersService {
     return user;
   }
 
-  async findOneByStripeAccountId(stripeAccountId: string): Promise<{ stripeAccountId: string }> {
-    return await this.prismaService.users.findUnique({
-      select: { stripeAccountId: true },
-      where: { stripeAccountId },
+  async findOneByAppleId(appleId: string) {
+    const user = await this.prismaService.users.findUnique({
+      select: USERSELECT.findOneByAppleId,
+      where: { appleId },
     });
-  }
 
-  /**
-   * The function `addStripeAccountId` updates a user's Stripe account ID.
-   * @param {string} uid - The `uid` parameter in the `addStripeAccountId` function is a string that
-   * represents the unique identifier of a user. It is used to identify the user whose Stripe account ID
-   * is being updated in the database.
-   * @param {string} stripeAccountId - The `stripeAccountId` parameter is a string that represents the
-   * unique identifier for a user's Stripe account. This identifier is used to associate the user with
-   * their Stripe account for processing payments and managing transactions.
-   */
-  async addStripeAccountId(uid: string, stripeAccountId: string): Promise<void> {
-    await this.prismaService.users.update({
-      data: { stripeAccountId },
-      where: { uid },
-    });
-  }
+    if (!user) return null;
 
-  async removeStripeAccountId(uid: string): Promise<void> {
-    await this.prismaService.users.update({
-      data: { stripeAccountId: null },
-      where: { uid },
-    });
+    return user;
   }
 
   async update(
