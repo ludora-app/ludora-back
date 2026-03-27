@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { Provider } from 'generated/prisma/browser';
 import { Prisma, Users } from 'generated/prisma/client';
-import { InvitationStatus } from 'generated/prisma/enums';
+import { InvitationStatus, UserType } from 'generated/prisma/enums';
 import { PinoLogger } from 'nestjs-pino';
 import { CreateImageDto } from 'src/auth/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -276,6 +276,7 @@ export class UsersService {
           u.uid != ${userUid}
           AND u.email NOT IN (${Prisma.join(this.TESTER_ACCOUNT_EMAILS)})
           AND u.is_anonymized = false
+          AND u.type = ${UserType.USER}
           ${sportWhereSql}
           ${levelWhereSql}
           ${searchWhereSql}
