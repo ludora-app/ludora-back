@@ -113,6 +113,7 @@
     "prepare": "husky",
     "seed": "ts-node prisma/seeds/local-seed.ts",
     "seed:admin": "ts-node prisma/seeds/admin-seed.ts",
+    "seed:admin:prod": "node dist/prisma/seeds/admin-seed.js",
     "start": "nest start",
     "start:debug": "nest start --debug --watch",
     "start:dev": "sh scripts/start-dev.sh",
