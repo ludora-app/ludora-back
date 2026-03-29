@@ -84,9 +84,11 @@ export class EmailsService {
     }
   }
 
-  async sendNewFieldAdministrationRequestEmail(fieldUid: string) {
+  async sendNewFieldAdministrationRequestEmail(fieldUid: string, creatorEmail?: string) {
     await this.sendEmail({
       data: {
+        creatorEmail: creatorEmail || 'Non renseigné',
+        fieldUid,
         link: `${this.configService.getOrThrow<string>('BASE_URL')}/fields/admin/${fieldUid}`,
       },
       recipients: [this.adminEmail],

@@ -75,6 +75,7 @@ export class AuthB2CGuard implements CanActivate {
 
       const fullPayload = {
         ...payload,
+        email: user.email,
         userType: user.type,
       };
 
