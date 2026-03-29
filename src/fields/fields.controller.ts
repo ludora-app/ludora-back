@@ -108,6 +108,7 @@ export class FieldsController {
     @Req() request: FastifyRequest,
   ) {
     const userUid = request['user'].uid;
+    const userEmail = request['user'].email;
     const imagesDto = (Array.isArray(images) ? images : []).map((image, index) => ({
       file: image.buffer,
       name: image.originalname,
@@ -120,6 +121,7 @@ export class FieldsController {
         images: imagesDto,
       },
       userUid,
+      userEmail,
     );
 
     return {

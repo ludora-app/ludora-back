@@ -34,7 +34,11 @@ export class FieldsService {
     this.logger.setContext(FieldsService.name);
   }
 
-  async create(createPublicFieldDto: CreatePublicFieldDto, creatorUid?: string): Promise<void> {
+  async create(
+    createPublicFieldDto: CreatePublicFieldDto,
+    creatorUid?: string,
+    creatorEmail?: string,
+  ): Promise<void> {
     const { address, images = [], lat, lng, name, shortAddress, sports } = createPublicFieldDto;
     let finalLat = lat;
     let finalLng = lng;
@@ -102,12 +106,7 @@ export class FieldsService {
       return { fieldImages, newField };
     });
 
-    this.emailsService.sendNewFieldAdministrationRequestEmail(newField.uid);
-    // .catch((err) =>
-    //   this.logger.warn(
-    //     `New field created but admin notification email failed: ${err instanceof Error ? err.message : String(err)}`,
-    //   ),
-    // );
+    this.emailsService.sendNewFieldAdministrationRequestEmail(newField.uid, creatorEmail);
   }
 
   async createPrivateField(createPrivateFieldDto: CreatePrivateFieldDto): Promise<void> {
