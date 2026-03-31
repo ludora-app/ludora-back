@@ -689,4 +689,14 @@ export class UsersService {
       throw new BadRequestException('User does not have a deletion request');
     }
   }
+
+  async adminDeleteUser(uid: string): Promise<void> {
+    const user = await this.findOne(uid, USERSELECT.checkIfUserExists);
+
+    if (!user) throw new NotFoundException('User not found');
+
+    await this.prismaService.users.delete({ where: { uid } });
+
+    this.logger.warn(`[ADMIN ACTION] - User ${user.email} (${uid}) has been deleted by an admin`);
+  }
 }

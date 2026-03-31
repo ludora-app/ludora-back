@@ -38,7 +38,7 @@ import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-r
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
 import { SWAGGER_TAG_USERS } from 'src/swagger.config';
-import { USERSELECT } from '../shared/constants/select-user';
+import { USERSELECT } from '../../shared/constants/select-user';
 import {
   FindAllUsersResponseDataDto,
   FindAllUsersResponseDto,
@@ -50,10 +50,10 @@ import {
   UpdateUserDto,
   UpdateUserEmailDto,
   UserFilterDto,
-} from './dto';
-import { PasswordResetRequestDto } from './dto/input/password-reset-request.dto';
-import { RawUserFindMe, RawUserFindOne, UserMapper } from './mappers/user.mapper';
-import { UsersService } from './users.service';
+} from '../dto';
+import { PasswordResetRequestDto } from '../dto/input/password-reset-request.dto';
+import { RawUserFindMe, RawUserFindOne, UserMapper } from '../mappers/user.mapper';
+import { UsersService } from '../users.service';
 
 @ApiTags(SWAGGER_TAG_USERS)
 @Controller('users')

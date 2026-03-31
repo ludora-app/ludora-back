@@ -10,6 +10,7 @@ import { EncryptionService } from 'src/shared/encryption/encryption.service';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import { AuthB2BController } from './controllers/auth-b2b.controller';
 import { AuthB2CController } from './controllers/auth-b2c.controller';
+import { AdminGuard } from './guards/admin.guard';
 import { AuthB2CGuard } from './guards/auth-b2c.guard';
 import { AuthB2BService } from './services/auth-b2b.service';
 import { AuthB2CService } from './services/auth-b2c.service';
@@ -43,6 +44,7 @@ import { WebSocketAuthService } from './services/websocket-auth.service';
     AuthB2BService,
     EncryptionService,
     AppleService,
+    AdminGuard,
   ],
 })
 export class AuthModule {}
