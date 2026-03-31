@@ -1,39 +1,38 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { FastifyRequest } from 'fastify';
+import { UserType } from 'generated/prisma/enums';
+import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { TokenType } from 'src/shared/constants/constants';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { UsersService } from 'src/users/users.service';
-import { RESET_PASSWORD_KEY } from '../../auth/decorators/reset-password.decorator';
-import { IS_PUBLIC_KEY } from '../../shared/decorators/public.decorator';
 
 @Injectable()
-export class AuthB2CGuard implements CanActivate {
+export class AdminGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly reflector: Reflector,
-    readonly _configService: ConfigService,
+    readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
-  ) {}
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(AdminGuard.name);
+  }
+
+  private get ADMIN_1_EMAIL() {
+    return this.configService.getOrThrow<string>('ADMIN_1_EMAIL');
+  }
+
+  private get ADMIN_2_EMAIL() {
+    return this.configService.getOrThrow<string>('ADMIN_2_EMAIL');
+  }
+
+  private get ADMIN_EMAILS() {
+    return [this.ADMIN_1_EMAIL, this.ADMIN_2_EMAIL];
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-
-    const isResetPassword = this.reflector.getAllAndOverride<boolean>(RESET_PASSWORD_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-    if (isPublic) {
-      return true;
-    }
-
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
 
@@ -44,14 +43,10 @@ export class AuthB2CGuard implements CanActivate {
     try {
       // Verify and decode the JWT
       const payload = await this.jwtService.verifyAsync(token);
-      const { type, uid: userUid } = payload;
+      const { uid: userUid } = payload;
 
       if (!userUid) {
         throw new UnauthorizedException('Token invalid: user missing');
-      }
-
-      if (type === TokenType.RESET && !isResetPassword) {
-        throw new UnauthorizedException('Invalid token type');
       }
 
       // Verify that the token still exists in the database
@@ -73,6 +68,14 @@ export class AuthB2CGuard implements CanActivate {
         throw new UnauthorizedException('User not found');
       }
 
+      if (user.type !== UserType.ADMIN) {
+        throw new UnauthorizedException('User is not an admin');
+      }
+
+      if (!this.ADMIN_EMAILS.includes(user.email)) {
+        throw new UnauthorizedException('User is not an admin');
+      }
+
       const fullPayload = {
         ...payload,
         email: user.email,
@@ -83,10 +86,7 @@ export class AuthB2CGuard implements CanActivate {
       return true;
     } catch (error) {
       // error log
-      console.error('Auth B2C Guard Error:', {
-        message: error.message,
-        timestamp: new Date().toISOString(),
-      });
+      this.logger.error(error.message);
 
       // if it's already a UnauthorizedException, we throw it
       if (error instanceof UnauthorizedException) {

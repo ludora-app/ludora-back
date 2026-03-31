@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { Provider } from 'generated/prisma/browser';
 import { Prisma, Users } from 'generated/prisma/client';
-import { InvitationStatus } from 'generated/prisma/enums';
+import { InvitationStatus, UserType } from 'generated/prisma/enums';
 import { PinoLogger } from 'nestjs-pino';
 import { CreateImageDto } from 'src/auth/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -276,6 +276,7 @@ export class UsersService {
           u.uid != ${userUid}
           AND u.email NOT IN (${Prisma.join(this.TESTER_ACCOUNT_EMAILS)})
           AND u.is_anonymized = false
+          AND u.type = ${UserType.USER}
           ${sportWhereSql}
           ${levelWhereSql}
           ${searchWhereSql}
@@ -687,5 +688,15 @@ export class UsersService {
     if (result.count === 0) {
       throw new BadRequestException('User does not have a deletion request');
     }
+  }
+
+  async adminDeleteUser(uid: string): Promise<void> {
+    const user = await this.findOne(uid, USERSELECT.checkIfUserExists);
+
+    if (!user) throw new NotFoundException('User not found');
+
+    await this.prismaService.users.delete({ where: { uid } });
+
+    this.logger.warn(`[ADMIN ACTION] - User ${user.email} (${uid}) has been deleted by an admin`);
   }
 }

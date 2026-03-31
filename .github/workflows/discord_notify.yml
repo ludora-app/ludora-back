@@ -6,6 +6,14 @@ on:
       - main
       - dev
       - staging
+  pull_request:
+    branches:
+      - main
+      - dev
+      - staging
+    paths-ignore:
+      - 'CHANGELOG.md'
+      - 'CHANGELOG/**'
 
 jobs:
   notify:
@@ -17,10 +25,26 @@ jobs:
           WEBHOOK_PROD: ${{ secrets.DISCORD_WEBHOOK_PROD }}
           WEBHOOK_DEV: ${{ secrets.DISCORD_WEBHOOK_DEV }}
         run: |
-          BRANCH="${{ github.ref_name }}"
+          # Sur un pull_request, on cible la branche de destination
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BRANCH="${{ github.base_ref }}"
+            RAW_MSG="${{ github.event.pull_request.title }}"
+            EVENT_LABEL="🔀 Pull Request"
+          else
+            BRANCH="${{ github.ref_name }}"
+            RAW_MSG="${{ github.event.head_commit.message }}"
+            EVENT_LABEL="🚀 Push"
+          fi
           AUTHOR="${{ github.actor }}"
           REPO="${{ github.repository }}"
-          MSG=$(echo "${{ github.event.head_commit.message }}" | head -n 1 | tr -d '"' | tr -d "'")
+          MSG=$(echo "$RAW_MSG" | head -n 1 | tr -d '"' | tr -d "'")
+
+          # --- EXCLUSION DES COMMITS CHANGELOG ---
+          if echo "$MSG" | grep -qiE "^(chore|docs|release)(\(.+\))?!?:.*changelog|^update changelog|^bump changelog"; then
+            echo "⏭️ Commit changelog ignoré : $MSG"
+            exit 0
+          fi
+          # ----------------------------------------
 
           # --- LOGIQUE DE SÉLECTION DU CANAL ---
           if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "staging" ]; then
@@ -43,7 +67,7 @@ jobs:
           curl -X POST -H "Content-Type: application/json" \
           -d "{
             \"embeds\": [{
-              \"title\": \"🚀 Nouveau Push sur $BRANCH\",
+              \"title\": \"$EVENT_LABEL sur $BRANCH\",
               \"description\": \"💡 **Message :**\n> $MSG\n\n $JIRA_LINK\",
               \"color\": $COLOR,
               \"fields\": [

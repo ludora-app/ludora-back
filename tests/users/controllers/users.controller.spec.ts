@@ -3,10 +3,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
+import { UsersController } from 'src/users/controllers/users.controller';
 import { UpdatePasswordDto, UpdateUserDto, UserFilterDto } from 'src/users/dto';
 import { PasswordResetRequestDto } from 'src/users/dto/input/password-reset-request.dto';
 import { UpdateUserEmailDto } from 'src/users/dto/input/update-user.dto';
-import { UsersController } from 'src/users/users.controller';
 import { UsersService } from 'src/users/users.service';
 
 describe('UsersController', () => {
