@@ -106,13 +106,7 @@ jobs:
   swagger:
     name: SWAGGER
     runs-on: ubuntu-latest
-    if: >-
-      github.event_name == 'pull_request' ||
-      (github.event_name == 'push' && (
-        github.ref == 'refs/heads/dev' ||
-        github.ref == 'refs/heads/main' ||
-        github.ref == 'refs/heads/staging'
-      ))
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
     container:
       image: node:22.13.1-slim
 
