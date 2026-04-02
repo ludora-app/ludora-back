@@ -71,7 +71,7 @@ COPY --from=builder --chown=nodejs:nodejs /usr/src/app/prisma.config.ts ./prisma
 # Copy envconsul config, vault-auth and start script
 COPY --chown=nodejs:nodejs scripts/vault/envconsul-docker-staging.hcl /etc/envconsul/config.hcl
 COPY --chown=nodejs:nodejs scripts/vault/vault-auth.sh /usr/local/bin/vault-auth.sh
-COPY --chown=nodejs:nodejs scripts/start-prod.sh ./scripts/start-prod.sh
+COPY --chown=nodejs:nodejs scripts/start-dev.sh ./scripts/start-dev.sh
 RUN chmod +x /usr/local/bin/vault-auth.sh
 
 # Create writable directories for the app
@@ -86,5 +86,5 @@ EXPOSE 2424
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Le script start-prod.sh gère l'auth AppRole puis lance envconsul
-CMD ["sh", "scripts/start-prod.sh"]
+# Le script start-dev.sh gère l'auth AppRole puis lance envconsul
+CMD ["sh", "scripts/start-dev.sh"]

@@ -75,7 +75,6 @@ COPY --from=builder --chown=nodejs:nodejs /usr/src/app/prisma.config.ts ./prisma
 COPY --chown=nodejs:nodejs scripts/vault/envconsul-docker-${ENV_NAME}.hcl /etc/envconsul/config.hcl
 COPY --chown=nodejs:nodejs scripts/vault/vault-auth.sh /usr/local/bin/vault-auth.sh
 COPY --chown=nodejs:nodejs scripts/start-prod.sh ./scripts/start-prod.sh
-COPY --chown=nodejs:nodejs scripts/start-prod.sh ./scripts/start-prod.sh
 RUN chmod +x /usr/local/bin/vault-auth.sh
 
 # Create writable directories for the app

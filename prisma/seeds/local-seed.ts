@@ -1,4 +1,6 @@
+import { PrismaPg } from '@prisma/adapter-pg';
 import * as argon2 from 'argon2';
+import { Pool } from 'pg';
 import {
   ConversationType,
   FieldType,
@@ -15,9 +17,6 @@ import {
   UserType,
   VerificationStatus,
 } from '../../generated/prisma/client';
-import 'dotenv/config';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
 
 const connectionString = `${process.env.DATABASE_URL}`;
 
@@ -2630,4 +2629,5 @@ seed()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });

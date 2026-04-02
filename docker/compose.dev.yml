@@ -2,7 +2,7 @@ services:
   ludora-api:
     build:
       context: .
-      dockerfile: docker/nest-api/Dockerfile.prod
+      dockerfile: docker/nest-api/Dockerfile.dev
       args:
         ENV_NAME: dev
     container_name: ludora-api-dev
@@ -36,7 +36,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp
-    command: ['sh', 'scripts/start-prod.sh']
+    command: ['sh', 'scripts/start-dev.sh']
 
 networks:
   ludora-network:
