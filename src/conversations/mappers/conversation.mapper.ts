@@ -1,5 +1,6 @@
 import { ConversationType, MessageStatus, MessageType } from 'generated/prisma/enums';
 import { Sport } from 'src/shared/constants/constants';
+import { DEFAULT_USER_DATA } from 'src/users/constants/users.constants';
 import { ConversationCollectionResponseData } from '../dto/output/conversation-collection-response.dto';
 import { FindOneConversationResponseData } from '../dto/output/find-one-conversation-response.dto';
 import { MessageMapper } from './message.mapper';
@@ -76,7 +77,7 @@ export interface RawMessage {
     firstname: string;
     lastname: string;
     imageUrl: string;
-  };
+  } | null;
 }
 
 export class ConversationMapper {
@@ -100,18 +101,23 @@ export class ConversationMapper {
       imageUrl: signedImageUrl,
       lastMessage: firstMessage ? MessageMapper.toLastMessageDto(firstMessage, userUid) : null,
       name:
-        conversation.type === ConversationType.PRIVATE && otherUser
-          ? `${otherUser.firstname} ${otherUser.lastname}`
+        conversation.type === ConversationType.PRIVATE
+          ? `${otherUser?.firstname ?? DEFAULT_USER_DATA.FIRSTNAME} ${otherUser?.lastname ?? DEFAULT_USER_DATA.LASTNAME}`
           : conversation.name,
       receiver:
-        conversation.type === ConversationType.PRIVATE && otherUser
+        conversation.type === ConversationType.PRIVATE
           ? {
-              firstname: otherUser.firstname,
-              lastname: otherUser.lastname,
-              userUid: otherUser.uid,
+              firstname: otherUser?.firstname ?? DEFAULT_USER_DATA.FIRSTNAME,
+              lastname: otherUser?.lastname ?? DEFAULT_USER_DATA.LASTNAME,
+              userUid: otherUser?.uid ?? '',
             }
           : null,
-      sender: firstMessage?.sender || null,
+      sender: firstMessage?.sender ?? {
+        uid: '',
+        firstname: DEFAULT_USER_DATA.FIRSTNAME,
+        lastname: DEFAULT_USER_DATA.LASTNAME,
+        imageUrl: '',
+      },
       sessionData: {
         sessionUid: conversation.sessionUid || null,
         sport: (conversation.session?.sport as Sport) ?? null,
@@ -142,24 +148,31 @@ export class ConversationMapper {
       signedImageUrl = firstSessionImage.url;
     }
 
+    const firstMessage = conversation.messages?.[0];
+
     return {
       imageUrl: signedImageUrl,
       messages: conversation.messages.map((message) =>
         MessageMapper.toLastMessageDto(message, userUid),
       ),
       name:
-        conversation.type === ConversationType.PRIVATE && otherUser
-          ? `${otherUser.firstname} ${otherUser.lastname}`
+        conversation.type === ConversationType.PRIVATE
+          ? `${otherUser?.firstname ?? DEFAULT_USER_DATA.FIRSTNAME} ${otherUser?.lastname ?? DEFAULT_USER_DATA.LASTNAME}`
           : conversation.name,
       receiver:
-        conversation.type === ConversationType.PRIVATE && otherUser
+        conversation.type === ConversationType.PRIVATE
           ? {
-              firstname: otherUser.firstname,
-              lastname: otherUser.lastname,
-              userUid: otherUser.uid,
+              firstname: otherUser?.firstname ?? DEFAULT_USER_DATA.FIRSTNAME,
+              lastname: otherUser?.lastname ?? DEFAULT_USER_DATA.LASTNAME,
+              userUid: otherUser?.uid ?? '',
             }
           : null,
-      sender: otherUser || null,
+      sender: firstMessage?.sender ?? {
+        uid: '',
+        firstname: DEFAULT_USER_DATA.FIRSTNAME,
+        lastname: DEFAULT_USER_DATA.LASTNAME,
+        imageUrl: '',
+      },
       sessionData: {
         sessionUid: conversation.sessionUid || null,
         sport: (conversation.session?.sport as Sport) ?? null,

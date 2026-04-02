@@ -5,6 +5,7 @@ import { Provider } from 'generated/prisma/enums';
 import { PinoLogger } from 'nestjs-pino';
 import { AppleService } from 'src/apple/apple.service';
 import { StorageService } from 'src/shared/storage/storage.service';
+import { DEFAULT_USER_DATA } from 'src/users/constants/users.constants';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -60,12 +61,12 @@ export class UserLifecycleService {
             bio: null,
             birthdate: null,
             email: `anon_${randomHash}@ludora.app`,
-            firstname: 'Utilisateur',
+            firstname: DEFAULT_USER_DATA.FIRSTNAME,
             imageUrl: null,
             isAnonymized: true,
             isConnected: false,
             isEmailVerified: false,
-            lastname: 'Supprimé',
+            lastname: DEFAULT_USER_DATA.LASTNAME,
             password: null,
             phone: null,
           },
