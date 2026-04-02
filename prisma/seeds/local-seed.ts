@@ -34,7 +34,7 @@ async function seed() {
     { name: 'BASKETBALL' },
     { name: 'TENNIS' },
     { name: 'VOLLEYBALL' },
-    { name: 'PADDEL' },
+    { name: 'PADEL' },
     { name: 'BADMINTON' },
     { name: 'PING-PONG' },
   ];
@@ -1132,7 +1132,7 @@ async function seed() {
         return [GameModes.FIVE_V_FIVE, GameModes.ELEVEN_V_ELEVEN];
       case 'TENNIS':
         return [GameModes.ONE_V_ONE, GameModes.TWO_V_TWO];
-      case 'PADDEL':
+      case 'PADEL':
         return [GameModes.ONE_V_ONE, GameModes.TWO_V_TWO];
       default:
         return [GameModes.THREE_V_THREE, GameModes.FIVE_V_FIVE];
