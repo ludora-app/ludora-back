@@ -1,7 +1,7 @@
 import { ApiProperty, PickType } from '@nestjs/swagger';
 import { IsIn } from 'class-validator';
 import { Sport } from 'src/shared/constants/constants';
-import { CreateBaseRatingDto } from '../input/create-rating.dto';
+import { CreateBaseRatingDto } from '../input/base-rating.dto';
 
 export class BasketRatingDto extends PickType(CreateBaseRatingDto, [
   'sessionUid',
@@ -85,3 +85,12 @@ export class BadmintonRatingDto extends PickType(CreateBaseRatingDto, [
   @IsIn([Sport.BADMINTON])
   readonly sport: Sport.BADMINTON;
 }
+
+export type RatingResponseData =
+  | BasketRatingDto
+  | FootRatingDto
+  | PadelRatingDto
+  | TennisRatingDto
+  | VolleyRatingDto
+  | PingPongRatingDto
+  | BadmintonRatingDto;
