@@ -7,6 +7,7 @@ export class AppleAuthenticationFullName {
     description: 'The family name of the user',
     example: 'Doe',
     type: String,
+    nullable: true,
   })
   readonly familyName?: string | null;
 
@@ -15,6 +16,7 @@ export class AppleAuthenticationFullName {
     description: 'The given name of the user',
     example: 'John',
     type: String,
+    nullable: true,
   })
   readonly givenName?: string | null;
 
@@ -23,6 +25,7 @@ export class AppleAuthenticationFullName {
     description: 'The middle name of the user',
     example: 'Doe',
     type: String,
+    nullable: true,
   })
   readonly middleName?: string | null;
 
@@ -31,6 +34,7 @@ export class AppleAuthenticationFullName {
     description: 'The name prefix of the user',
     example: 'Doe',
     type: String,
+    nullable: true,
   })
   readonly namePrefix?: string | null;
 
@@ -39,6 +43,7 @@ export class AppleAuthenticationFullName {
     description: 'The name suffix of the user',
     example: 'Doe',
     type: String,
+    nullable: true,
   })
   readonly nameSuffix?: string | null;
 
@@ -47,6 +52,7 @@ export class AppleAuthenticationFullName {
     description: 'The nickname of the user',
     example: 'Doe',
     type: String,
+    nullable: true,
   })
   readonly nickname?: string | null;
 }
@@ -64,6 +70,7 @@ export class CreateAppleUserDto {
     description: 'The email of the user',
     example: 'test@gmail.com',
     type: String,
+    nullable: true,
   })
   readonly email?: string | null;
 
@@ -72,6 +79,7 @@ export class CreateAppleUserDto {
     description: 'The full name of the user',
     example: 'John Doe',
     type: AppleAuthenticationFullName,
+    nullable: true,
   })
   readonly fullName?: AppleAuthenticationFullName | null;
 
@@ -80,7 +88,8 @@ export class CreateAppleUserDto {
   @ApiPropertyOptional({
     description: 'The identity token of the user',
     example: 'token',
-    type: String,
+    type: String || null,
+    nullable: true,
   })
   readonly identityToken?: string | null;
 
@@ -90,6 +99,7 @@ export class CreateAppleUserDto {
     description: 'The authorization code of the user',
     example: 'code',
     type: String,
+    nullable: true,
   })
   readonly authorizationCode?: string | null;
 
@@ -98,6 +108,7 @@ export class CreateAppleUserDto {
     description: 'The real user status of the user',
     example: RealUserStatus.LIKELY_REAL,
     enum: RealUserStatus,
+    nullable: true,
   })
   readonly realUserStatus?: RealUserStatus | null;
 
@@ -107,6 +118,7 @@ export class CreateAppleUserDto {
     description: 'The state of the user',
     example: 'state',
     type: String,
+    nullable: true,
   })
   readonly state?: string | null;
 
