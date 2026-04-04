@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
 
 export class CreateGoogleUserDto {
@@ -22,7 +22,7 @@ export class CreateGoogleUserDto {
 
   @IsString()
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The lastname of the user',
     example: 'Doe',
     type: String,
@@ -31,7 +31,7 @@ export class CreateGoogleUserDto {
 
   @IsUrl()
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The image url of the user',
     example: 'https://www.example.com/image.jpg',
     type: String,
