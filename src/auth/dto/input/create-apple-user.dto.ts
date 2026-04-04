@@ -1,9 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsOptional, IsString } from 'class-validator';
 
 export class AppleAuthenticationFullName {
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The family name of the user',
     example: 'Doe',
     type: String,
@@ -11,7 +11,7 @@ export class AppleAuthenticationFullName {
   readonly familyName?: string | null;
 
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The given name of the user',
     example: 'John',
     type: String,
@@ -19,7 +19,7 @@ export class AppleAuthenticationFullName {
   readonly givenName?: string | null;
 
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The middle name of the user',
     example: 'Doe',
     type: String,
@@ -27,7 +27,7 @@ export class AppleAuthenticationFullName {
   readonly middleName?: string | null;
 
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The name prefix of the user',
     example: 'Doe',
     type: String,
@@ -35,7 +35,7 @@ export class AppleAuthenticationFullName {
   readonly namePrefix?: string | null;
 
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The name suffix of the user',
     example: 'Doe',
     type: String,
@@ -43,7 +43,7 @@ export class AppleAuthenticationFullName {
   readonly nameSuffix?: string | null;
 
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The nickname of the user',
     example: 'Doe',
     type: String,
@@ -60,7 +60,7 @@ export enum RealUserStatus {
 export class CreateAppleUserDto {
   @IsEmail()
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The email of the user',
     example: 'test@gmail.com',
     type: String,
@@ -68,7 +68,7 @@ export class CreateAppleUserDto {
   readonly email?: string | null;
 
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The full name of the user',
     example: 'John Doe',
     type: AppleAuthenticationFullName,
@@ -77,7 +77,7 @@ export class CreateAppleUserDto {
 
   @IsString()
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The identity token of the user',
     example: 'token',
     type: String,
@@ -86,7 +86,7 @@ export class CreateAppleUserDto {
 
   @IsString()
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The authorization code of the user',
     example: 'code',
     type: String,
@@ -94,7 +94,7 @@ export class CreateAppleUserDto {
   readonly authorizationCode?: string | null;
 
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The real user status of the user',
     example: RealUserStatus.LIKELY_REAL,
     enum: RealUserStatus,
@@ -103,7 +103,7 @@ export class CreateAppleUserDto {
 
   @IsString()
   @IsOptional()
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The state of the user',
     example: 'state',
     type: String,
