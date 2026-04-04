@@ -31,6 +31,12 @@ describe('SessionPlayersService', () => {
     conversationMembers: {
       delete: jest.fn(),
     },
+    friends: {
+      findFirst: jest.fn(),
+    },
+    userBlocks: {
+      findFirst: jest.fn(),
+    },
   };
 
   const mockLogger = {
@@ -365,6 +371,104 @@ describe('SessionPlayersService', () => {
       ).rejects.toThrow(BadRequestException);
 
       expect(mockPrismaService.sessionPlayers.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('joinSession', () => {
+    const sessionUid = 'session-uid-123';
+    const userUid = 'user-uid-789';
+    const teamUid = 'team-uid-456';
+    const conversationUid = 'conv-uid-123';
+
+    const mockSession = {
+      creatorUid: 'creator-uid-1',
+      maxPlayersPerTeam: 10,
+      uid: sessionUid,
+      visibility: 'PUBLIC',
+    } as any;
+
+    const mockDto = {
+      sessionUid,
+      teamUid,
+      userUid,
+    };
+
+    it('should successfully join a session', async () => {
+      const mockNewPlayer = {
+        session: { conversation: { uid: conversationUid } },
+        sessionUid,
+        user: { firstname: 'John', imageUrl: 'avatar', lastname: 'Doe', uid: userUid },
+      };
+
+      jest.spyOn(service, 'verifyPlayerEligibilityBeforeJoin').mockResolvedValue(undefined);
+      (mockPrismaService.sessionPlayers.create as jest.Mock).mockResolvedValue(mockNewPlayer);
+
+      const result = await service.joinSession(mockDto as any, mockSession);
+
+      expect(service.verifyPlayerEligibilityBeforeJoin).toHaveBeenCalledWith(
+        userUid,
+        teamUid,
+        mockSession,
+      );
+      expect(prismaService.sessionPlayers.create).toHaveBeenCalled();
+      expect(result).toEqual({
+        conversationUid,
+        sessionUid,
+      });
+    });
+  });
+
+  describe('verifyPlayerEligibilityBeforeJoin', () => {
+    const sessionUid = 'session-uid-123';
+    const userUid = 'user-uid-789';
+    const teamUid = 'team-uid-456';
+    const creatorUid = 'creator-uid-1';
+
+    const mockSession = {
+      creatorUid,
+      maxPlayersPerTeam: 2,
+      uid: sessionUid,
+      visibility: 'PUBLIC',
+    } as any;
+
+    it('should throw ForbiddenException if session is private and user is not a friend', async () => {
+      const privateSession = { ...mockSession, visibility: 'PRIVATE' };
+      (mockPrismaService.friends.findFirst as jest.Mock) = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.verifyPlayerEligibilityBeforeJoin(userUid, teamUid, privateSession),
+      ).rejects.toThrow('You are not a friend of the session creator');
+    });
+
+    it('should throw NotFoundException if team does not exist', async () => {
+      (mockPrismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.verifyPlayerEligibilityBeforeJoin(userUid, teamUid, mockSession),
+      ).rejects.toThrow(`Team ${teamUid} not found`);
+    });
+
+    it('should throw BadRequestException if team is full', async () => {
+      (mockPrismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue({
+        _count: { sessionPlayers: 2 },
+        sessionUid,
+      });
+
+      await expect(
+        service.verifyPlayerEligibilityBeforeJoin(userUid, teamUid, mockSession),
+      ).rejects.toThrow(`Team ${teamUid} is full`);
+    });
+
+    it('should throw BadRequestException if player is already in session', async () => {
+      (mockPrismaService.sessionTeams.findUnique as jest.Mock).mockResolvedValue({
+        _count: { sessionPlayers: 1 },
+        sessionUid,
+      });
+      (mockPrismaService.sessionPlayers.findFirst as jest.Mock).mockResolvedValue({ uid: 'p1' });
+
+      await expect(
+        service.verifyPlayerEligibilityBeforeJoin(userUid, teamUid, mockSession),
+      ).rejects.toThrow(`Player ${userUid} already in session ${sessionUid}`);
     });
   });
 });

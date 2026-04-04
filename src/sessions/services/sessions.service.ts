@@ -1,16 +1,5 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import {
-  FieldSlots,
-  FieldType,
-  GameModes,
-  InvitationStatus,
-  SessionVisibility,
-} from 'generated/prisma/browser';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { FieldSlots, FieldType, GameModes, SessionVisibility } from 'generated/prisma/browser';
 import { ConversationType, Prisma, Sessions } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { ConversationsService } from 'src/conversations/services/conversations.service';
@@ -28,7 +17,6 @@ import { HourPreferencesService } from 'src/user-preferences/services/hour-prefe
 import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 import { SESSION_SUGGESTION_CONFIG } from '../constants/session.constants';
 import { CreateSessionDto } from '../dto/input/create-session.dto';
-import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
 import { MySessionFilterDto, SessionOwnnership } from '../dto/input/my-session-filter.dto';
 import { FindAllSessionsDto } from '../dto/input/session-filter.dto';
 import { UpdateSessionDto } from '../dto/input/update-session.dto';
@@ -36,9 +24,7 @@ import {
   FindOneSessionResponseData,
   FindOneSessionWithDistanceResponseData,
 } from '../dto/output/find-one-session-response.dto';
-import { JoinSessionResponseData } from '../dto/output/join-session-response.dto';
 import { SessionCollectionItemDto } from '../dto/output/session-collection-response.dto';
-import { SessionTeamResponseData } from '../dto/output/session-team-response';
 import { RawSessionFindOneItem, SessionMapper } from '../mappers/session.mapper';
 import { SessionTeamsService } from './session-teams.service';
 
@@ -1028,146 +1014,5 @@ export class SessionsService {
         },
       },
     });
-  }
-
-  // ============================================================================
-  //                                 SESSION TEAMS
-  // ============================================================================
-
-  async findTeamsBySessionUid(
-    sessionUid: string,
-    userUid: string,
-  ): Promise<PaginatedDataDto<SessionTeamResponseData>> {
-    const existingSession = await this.findOne(sessionUid);
-
-    if (!existingSession) {
-      this.logger.error(`Session ${sessionUid} not found`);
-      throw new NotFoundException(`Session ${sessionUid} not found`);
-    }
-
-    return await this.teamsService.findTeamsBySessionUid(sessionUid, userUid);
-  }
-
-  // ============================================================================
-  //                                 SESSION PLAYERS
-  // ============================================================================
-
-  /**
-   * This method is used to add a player to a session when a user joins a session.
-   * @param createSessionPlayerDto
-   */
-  async joinSession(
-    createSessionPlayerDto: CreateSessionPlayerDto,
-  ): Promise<JoinSessionResponseData> {
-    const existingSession = await this.prisma.sessions.findUnique({
-      include: { conversation: { select: { uid: true } } },
-      where: { uid: createSessionPlayerDto.sessionUid },
-    });
-
-    if (!existingSession) {
-      this.logger.error(`Session ${createSessionPlayerDto.sessionUid} not found`);
-      throw new NotFoundException(`Session ${createSessionPlayerDto.sessionUid} not found`);
-    }
-
-    //? If the session is private, we need to check if the user is a friend of the session creator
-    if (existingSession.visibility === SessionVisibility.PRIVATE) {
-      const existingFriendship = await this.prisma.friends.findFirst({
-        where: {
-          AND: [
-            {
-              OR: [
-                {
-                  userUid1: createSessionPlayerDto.userUid,
-                  userUid2: existingSession.creatorUid,
-                },
-                {
-                  userUid1: existingSession.creatorUid,
-                  userUid2: createSessionPlayerDto.userUid,
-                },
-              ],
-            },
-            {
-              status: InvitationStatus.ACCEPTED,
-            },
-          ],
-        },
-      });
-      if (!existingFriendship)
-        throw new ForbiddenException('You are not a friend of the session creator');
-    }
-    const existingTeam = await this.prisma.sessionTeams.findUnique({
-      select: {
-        _count: { select: { sessionPlayers: true } },
-        sessionUid: true,
-      },
-      where: { uid: createSessionPlayerDto.teamUid },
-    });
-
-    if (!existingTeam) {
-      this.logger.error(`Team ${createSessionPlayerDto.teamUid} not found`);
-      throw new NotFoundException(`Team ${createSessionPlayerDto.teamUid} not found`);
-    }
-
-    if (existingSession.uid !== existingTeam.sessionUid) {
-      this.logger.error(
-        `Session ${createSessionPlayerDto.sessionUid} and team ${createSessionPlayerDto.teamUid} do not match`,
-      );
-      throw new BadRequestException(
-        `Session ${createSessionPlayerDto.sessionUid} and team ${createSessionPlayerDto.teamUid} do not match`,
-      );
-    }
-
-    if (existingTeam._count.sessionPlayers >= existingSession.maxPlayersPerTeam) {
-      this.logger.error(`Team ${createSessionPlayerDto.teamUid} is full`);
-      throw new BadRequestException(`Team ${createSessionPlayerDto.teamUid} is full`);
-    }
-
-    const existingPlayer = await this.playersService.findOne(
-      createSessionPlayerDto.sessionUid,
-      createSessionPlayerDto.userUid,
-    );
-
-    if (existingPlayer) {
-      this.logger.error(
-        `Player ${createSessionPlayerDto.userUid} already in session ${createSessionPlayerDto.sessionUid}`,
-      );
-      throw new BadRequestException(
-        `Player ${createSessionPlayerDto.userUid} already in session ${createSessionPlayerDto.sessionUid}`,
-      );
-    }
-
-    const existingPlayerUids = (
-      await this.prisma.sessionPlayers.findMany({
-        select: { userUid: true },
-        where: { sessionUid: createSessionPlayerDto.sessionUid },
-      })
-    ).map((p) => p.userUid);
-
-    if (existingPlayerUids.length > 0) {
-      const block = await this.prisma.userBlocks.findFirst({
-        where: {
-          OR: [
-            { blockedUid: { in: existingPlayerUids }, blockerUid: createSessionPlayerDto.userUid },
-            { blockedUid: createSessionPlayerDto.userUid, blockerUid: { in: existingPlayerUids } },
-          ],
-        },
-      });
-      if (block) {
-        this.logger.warn(
-          `Block relationship detected, user ${createSessionPlayerDto.userUid} cannot join session ${createSessionPlayerDto.sessionUid}`,
-        );
-        throw new ForbiddenException('Action not allowed due to blocked user relationship');
-      }
-    }
-
-    await this.playersService.addPlayerToSession(
-      createSessionPlayerDto,
-      existingSession.creatorUid,
-    );
-
-    return {
-      conversationUid: existingSession.conversation?.uid ?? '',
-      sessionUid: existingSession.uid,
-    };
   }
 }

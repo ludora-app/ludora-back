@@ -2,7 +2,9 @@ import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FastifyRequest } from 'fastify';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { SessionTeamsController } from 'src/sessions/controllers/session-teams.controller';
+import { SessionsPipe } from 'src/sessions/pipes/sessions.pipe';
 import { SessionTeamsService } from 'src/sessions/services/session-teams.service';
 import { SessionsService } from 'src/sessions/services/sessions.service';
 
@@ -24,6 +26,8 @@ describe('SessionTeamsController', () => {
     canActivate: jest.fn(() => true),
   };
 
+  const mockPrismaService = {};
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SessionTeamsController],
@@ -36,6 +40,11 @@ describe('SessionTeamsController', () => {
           provide: SessionsService,
           useValue: mockSessionsService,
         },
+        {
+          provide: PrismaService,
+          useValue: mockPrismaService,
+        },
+        SessionsPipe,
       ],
     })
       .overrideGuard(AuthB2CGuard)
@@ -54,8 +63,10 @@ describe('SessionTeamsController', () => {
       jest.clearAllMocks();
     });
 
+    const mockSession = { uid: 'session-1' } as any;
+
     it('returns teams when session exists and teams found', async () => {
-      mockSessionsService.findTeamsBySessionUid.mockResolvedValue({
+      mockSessionTeamsService.findTeamsBySessionUid.mockResolvedValue({
         items: [
           {
             uid: 'team-1',
@@ -68,9 +79,9 @@ describe('SessionTeamsController', () => {
       });
 
       const mockRequest = { user: { uid: 'test-user-uid' } } as unknown as FastifyRequest;
-      const result = await controller.findTeamsBySessionUid('session-1', mockRequest);
+      const result = await controller.findTeamsBySessionUid(mockSession, mockRequest);
 
-      expect(mockSessionsService.findTeamsBySessionUid).toHaveBeenCalledWith(
+      expect(mockSessionTeamsService.findTeamsBySessionUid).toHaveBeenCalledWith(
         'session-1',
         'test-user-uid',
       );
@@ -79,17 +90,17 @@ describe('SessionTeamsController', () => {
     });
 
     it('throws NotFound if no teams found', async () => {
-      mockSessionsService.findTeamsBySessionUid.mockResolvedValue({
+      mockSessionTeamsService.findTeamsBySessionUid.mockResolvedValue({
         items: [],
         nextCursor: null,
         totalCount: 0,
       });
 
       const mockRequest = { user: { uid: 'test-user-uid' } } as unknown as FastifyRequest;
-      await expect(controller.findTeamsBySessionUid('missing', mockRequest)).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
-      expect(mockSessionsService.findTeamsBySessionUid).toHaveBeenCalledWith(
+      await expect(
+        controller.findTeamsBySessionUid({ uid: 'missing' } as any, mockRequest),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(mockSessionTeamsService.findTeamsBySessionUid).toHaveBeenCalledWith(
         'missing',
         'test-user-uid',
       );

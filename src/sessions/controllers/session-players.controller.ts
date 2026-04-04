@@ -39,16 +39,12 @@ import {
 import { PlayerSuggestionResponseDto } from '../dto/output/player-suggestion-response.dto';
 import { SessionsPipe } from '../pipes/sessions.pipe';
 import { SessionPlayersService } from '../services/session-players.service';
-import { SessionsService } from '../services/sessions.service';
 
 @ApiTags(SWAGGER_TAG_SESSION_PLAYERS)
 @Controller('session-players')
 @UseGuards(AuthB2CGuard)
 export class SessionPlayersController {
-  constructor(
-    private readonly sessionsService: SessionsService,
-    private readonly playersService: SessionPlayersService,
-  ) {}
+  constructor(private readonly playersService: SessionPlayersService) {}
 
   @Post('join')
   @Protected()
@@ -58,12 +54,13 @@ export class SessionPlayersController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   async joinSession(
     @Req() request: FastifyRequest,
+    @Body('sessionUid', SessionsPipe) session: Sessions,
     @Body() joinSessionDto: JoinSessionDto,
   ): Promise<ResponseTypeDto<JoinSessionResponseData>> {
     const userUid = request['user'].uid;
-    const newPlayer = await this.sessionsService.joinSession({ ...joinSessionDto, userUid });
+    const data = await this.playersService.joinSession({ ...joinSessionDto, userUid }, session);
     return {
-      data: newPlayer,
+      data,
       message: 'Player joined session successfully',
     };
   }
