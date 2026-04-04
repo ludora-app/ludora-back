@@ -10,17 +10,16 @@ import { SessionsService } from 'src/sessions/services/sessions.service';
 
 describe('SessionPlayersController', () => {
   let controller: SessionPlayersController;
-  let sessionsService: SessionsService;
+  let _sessionsService: SessionsService;
   let playersService: SessionPlayersService;
 
-  const mockSessionsService = {
-    joinSession: jest.fn(),
-  };
+  const mockSessionsService = {};
 
   const mockPlayersService = {
     suggestPlayerFromPreviousSessions: jest.fn(),
     leaveSession: jest.fn(),
     switchPlayerToAnotherTeam: jest.fn(),
+    joinSession: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -55,7 +54,6 @@ describe('SessionPlayersController', () => {
       .compile();
 
     controller = module.get<SessionPlayersController>(SessionPlayersController);
-    sessionsService = module.get<SessionsService>(SessionsService);
     playersService = module.get<SessionPlayersService>(SessionPlayersService);
 
     // Clear all mocks before each test
@@ -78,6 +76,10 @@ describe('SessionPlayersController', () => {
       },
     } as any;
 
+    const mockSession = {
+      uid: 'session-uid-123',
+    } as any;
+
     const mockNewPlayer = {
       uid: 'player-uid-101',
       sessionUid: 'session-uid-123',
@@ -88,14 +90,17 @@ describe('SessionPlayersController', () => {
     };
 
     it('should successfully join a session and return the new player', async () => {
-      mockSessionsService.joinSession.mockResolvedValue(mockNewPlayer);
+      mockPlayersService.joinSession.mockResolvedValue(mockNewPlayer);
 
-      const result = await controller.joinSession(mockRequest, mockJoinSessionDto);
+      const result = await controller.joinSession(mockRequest, mockSession, mockJoinSessionDto);
 
-      expect(sessionsService.joinSession).toHaveBeenCalledWith({
-        ...mockJoinSessionDto,
-        userUid: mockRequest.user.uid,
-      });
+      expect(playersService.joinSession).toHaveBeenCalledWith(
+        {
+          ...mockJoinSessionDto,
+          userUid: mockRequest.user.uid,
+        },
+        mockSession,
+      );
       expect(result).toEqual({
         data: mockNewPlayer,
         message: 'Player joined session successfully',
@@ -103,79 +108,94 @@ describe('SessionPlayersController', () => {
     });
 
     it('should pass the correct userUid from the request to the service', async () => {
-      mockSessionsService.joinSession.mockResolvedValue(mockNewPlayer);
+      mockPlayersService.joinSession.mockResolvedValue(mockNewPlayer);
 
-      await controller.joinSession(mockRequest, mockJoinSessionDto);
+      await controller.joinSession(mockRequest, mockSession, mockJoinSessionDto);
 
-      expect(sessionsService.joinSession).toHaveBeenCalledWith({
-        sessionUid: mockJoinSessionDto.sessionUid,
-        teamUid: mockJoinSessionDto.teamUid,
-        userUid: 'user-uid-789',
-      });
+      expect(playersService.joinSession).toHaveBeenCalledWith(
+        {
+          sessionUid: mockJoinSessionDto.sessionUid,
+          teamUid: mockJoinSessionDto.teamUid,
+          userUid: 'user-uid-789',
+        },
+        mockSession,
+      );
     });
 
     it('should throw NotFoundException when session does not exist', async () => {
-      mockSessionsService.joinSession.mockRejectedValue(
+      mockPlayersService.joinSession.mockRejectedValue(
         new NotFoundException(`Session ${mockJoinSessionDto.sessionUid} not found`),
       );
 
-      await expect(controller.joinSession(mockRequest, mockJoinSessionDto)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        controller.joinSession(mockRequest, mockSession, mockJoinSessionDto),
+      ).rejects.toThrow(NotFoundException);
 
-      expect(sessionsService.joinSession).toHaveBeenCalledWith({
-        ...mockJoinSessionDto,
-        userUid: mockRequest.user.uid,
-      });
+      expect(playersService.joinSession).toHaveBeenCalledWith(
+        {
+          ...mockJoinSessionDto,
+          userUid: mockRequest.user.uid,
+        },
+        mockSession,
+      );
     });
 
     it('should throw NotFoundException when team does not exist', async () => {
-      mockSessionsService.joinSession.mockRejectedValue(
+      mockPlayersService.joinSession.mockRejectedValue(
         new NotFoundException(`Team ${mockJoinSessionDto.teamUid} not found`),
       );
 
-      await expect(controller.joinSession(mockRequest, mockJoinSessionDto)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        controller.joinSession(mockRequest, mockSession, mockJoinSessionDto),
+      ).rejects.toThrow(NotFoundException);
 
-      expect(sessionsService.joinSession).toHaveBeenCalledWith({
-        ...mockJoinSessionDto,
-        userUid: mockRequest.user.uid,
-      });
+      expect(playersService.joinSession).toHaveBeenCalledWith(
+        {
+          ...mockJoinSessionDto,
+          userUid: mockRequest.user.uid,
+        },
+        mockSession,
+      );
     });
 
     it('should throw BadRequestException when session and team do not match', async () => {
-      mockSessionsService.joinSession.mockRejectedValue(
+      mockPlayersService.joinSession.mockRejectedValue(
         new BadRequestException(
           `Session ${mockJoinSessionDto.sessionUid} and team ${mockJoinSessionDto.teamUid} do not match`,
         ),
       );
 
-      await expect(controller.joinSession(mockRequest, mockJoinSessionDto)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.joinSession(mockRequest, mockSession, mockJoinSessionDto),
+      ).rejects.toThrow(BadRequestException);
 
-      expect(sessionsService.joinSession).toHaveBeenCalledWith({
-        ...mockJoinSessionDto,
-        userUid: mockRequest.user.uid,
-      });
+      expect(playersService.joinSession).toHaveBeenCalledWith(
+        {
+          ...mockJoinSessionDto,
+          userUid: mockRequest.user.uid,
+        },
+        mockSession,
+      );
     });
 
     it('should throw BadRequestException when player already exists in session', async () => {
-      mockSessionsService.joinSession.mockRejectedValue(
+      mockPlayersService.joinSession.mockRejectedValue(
         new BadRequestException(
           `Player ${mockRequest.user.uid} already in session ${mockJoinSessionDto.sessionUid}`,
         ),
       );
 
-      await expect(controller.joinSession(mockRequest, mockJoinSessionDto)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.joinSession(mockRequest, mockSession, mockJoinSessionDto),
+      ).rejects.toThrow(BadRequestException);
 
-      expect(sessionsService.joinSession).toHaveBeenCalledWith({
-        ...mockJoinSessionDto,
-        userUid: mockRequest.user.uid,
-      });
+      expect(playersService.joinSession).toHaveBeenCalledWith(
+        {
+          ...mockJoinSessionDto,
+          userUid: mockRequest.user.uid,
+        },
+        mockSession,
+      );
     });
   });
 

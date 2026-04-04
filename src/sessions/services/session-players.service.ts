@@ -1,6 +1,17 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Prisma, SessionPlayers, Sessions } from 'generated/prisma/client';
+import {
+  InvitationStatus,
+  Prisma,
+  SessionPlayers,
+  Sessions,
+  SessionVisibility,
+} from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { EventTypes } from 'src/notifications/constants/event.types';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -8,6 +19,7 @@ import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-t
 import { UserSimpleDisplayData } from 'src/users/dto';
 import { ConversationMembersService } from './../../conversations/services/conversation-members.service';
 import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
+import { JoinSessionResponseData } from '../dto/output/join-session-response.dto';
 
 @Injectable()
 export class SessionPlayersService {
@@ -76,6 +88,73 @@ export class SessionPlayersService {
       });
     }
     return newPlayer;
+  }
+
+  /**
+   * This method is used to add a player to a session when the user clicks on the join button.
+   * @param createSessionPlayerDto
+   * @param session
+   * @returns
+   */
+  async joinSession(
+    createSessionPlayerDto: CreateSessionPlayerDto,
+    session: Sessions,
+  ): Promise<JoinSessionResponseData> {
+    await this.verifyPlayerEligibilityBeforeJoin(
+      createSessionPlayerDto.userUid,
+      createSessionPlayerDto.teamUid,
+      session,
+    );
+
+    const newPlayer = await this.prisma.sessionPlayers.create({
+      data: {
+        sessionUid: createSessionPlayerDto.sessionUid,
+        teamUid: createSessionPlayerDto.teamUid,
+        userUid: createSessionPlayerDto.userUid,
+      },
+      include: {
+        session: {
+          select: {
+            conversation: {
+              select: {
+                uid: true,
+              },
+            },
+          },
+        },
+        user: {
+          select: {
+            firstname: true,
+            imageUrl: true,
+            lastname: true,
+            uid: true,
+          },
+        },
+      },
+    });
+    this.logger.info(
+      `Player ${createSessionPlayerDto.userUid} added to session ${createSessionPlayerDto.sessionUid}`,
+    );
+
+    if (session.creatorUid !== createSessionPlayerDto.userUid) {
+      await this.conversationMembersService.create(
+        newPlayer.session.conversation.uid,
+        createSessionPlayerDto.userUid,
+      );
+
+      this.eventEmitter.emit(EventTypes.SESSION_PLAYER_ADDED, {
+        creatorUid: session.creatorUid,
+        playerAvatar: newPlayer.user.imageUrl,
+        playerFirstname: newPlayer.user.firstname,
+        playerLastname: newPlayer.user.lastname,
+        playerUid: createSessionPlayerDto.userUid,
+        sessionUid: createSessionPlayerDto.sessionUid,
+      });
+    }
+    return {
+      conversationUid: newPlayer.session.conversation.uid,
+      sessionUid: newPlayer.sessionUid,
+    };
   }
 
   /**
@@ -231,5 +310,93 @@ export class SessionPlayersService {
     });
 
     this.logger.debug(`Player ${userUid} switched to team ${teamUid} in session ${session.uid}`);
+  }
+
+  /**
+   * Verifies if a player is eligible to join a session.
+   * @param playerUid The UID of the player to verify.
+   * @param teamUid The UID of the team the player wants to join.
+   * @param session The session to verify the player's eligibility for.
+   */
+  async verifyPlayerEligibilityBeforeJoin(playerUid: string, teamUid: string, session: Sessions) {
+    //? If the session is private, we need to check if the user is a friend of the session creator
+    if (session.visibility === SessionVisibility.PRIVATE) {
+      const existingFriendship = await this.prisma.friends.findFirst({
+        where: {
+          AND: [
+            {
+              OR: [
+                {
+                  userUid1: playerUid,
+                  userUid2: session.creatorUid,
+                },
+                {
+                  userUid1: session.creatorUid,
+                  userUid2: playerUid,
+                },
+              ],
+            },
+            {
+              status: InvitationStatus.ACCEPTED,
+            },
+          ],
+        },
+      });
+      if (!existingFriendship)
+        throw new ForbiddenException('You are not a friend of the session creator');
+    }
+
+    //? Check if the team exists and if it is full
+    const existingTeam = await this.prisma.sessionTeams.findUnique({
+      select: {
+        _count: { select: { sessionPlayers: true } },
+        sessionUid: true,
+      },
+      where: { uid: teamUid, sessionUid: session.uid },
+    });
+
+    if (!existingTeam) {
+      this.logger.error(`Team ${teamUid} not found`);
+      throw new NotFoundException(`Team ${teamUid} not found`);
+    }
+
+    if (existingTeam._count.sessionPlayers >= session.maxPlayersPerTeam) {
+      this.logger.error(`Team ${teamUid} is full`);
+      throw new BadRequestException(`Team ${teamUid} is full`);
+    }
+
+    //? Checks if the user isn't already a player in the session
+    const existingPlayer = await this.prisma.sessionPlayers.findFirst({
+      where: { userUid: playerUid, sessionUid: session.uid },
+    });
+
+    if (existingPlayer) {
+      this.logger.error(`Player ${playerUid} already in session ${session.uid}`);
+      throw new BadRequestException(`Player ${playerUid} already in session ${session.uid}`);
+    }
+
+    const existingPlayerUids = (
+      await this.prisma.sessionPlayers.findMany({
+        select: { userUid: true },
+        where: { sessionUid: session.uid },
+      })
+    ).map((p) => p.userUid);
+
+    if (existingPlayerUids.length > 0) {
+      const block = await this.prisma.userBlocks.findFirst({
+        where: {
+          OR: [
+            { blockedUid: { in: existingPlayerUids }, blockerUid: playerUid },
+            { blockedUid: playerUid, blockerUid: { in: existingPlayerUids } },
+          ],
+        },
+      });
+      if (block) {
+        this.logger.warn(
+          `Block relationship detected, user ${playerUid} cannot join session ${session.uid}`,
+        );
+        throw new ForbiddenException('Action not allowed due to blocked user relationship');
+      }
+    }
   }
 }
