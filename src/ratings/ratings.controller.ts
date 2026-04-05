@@ -1,5 +1,5 @@
 import { Body, Controller, Param, Post, Req } from '@nestjs/common';
-import { ApiBody, ApiExtraModels, getSchemaPath } from '@nestjs/swagger';
+import { ApiBody, ApiExtraModels, ApiParam, getSchemaPath } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
 import { Sessions } from 'generated/prisma/browser';
 import { SessionsPipe } from 'src/sessions/pipes/sessions.pipe';
@@ -30,6 +30,7 @@ export class RatingsController {
   constructor(private readonly ratingsService: RatingsService) {}
 
   @Post(':sessionUid')
+  @ApiParam({ name: 'sessionUid', type: 'string' })
   @ApiBody({
     schema: {
       oneOf: [
