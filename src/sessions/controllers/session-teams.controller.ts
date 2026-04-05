@@ -4,6 +4,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -38,6 +39,7 @@ export class SessionTeamsController {
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @ApiParam({ name: 'sessionUid', type: 'string' })
   async findTeamsBySessionUid(
     @Param('sessionUid', SessionsPipe) session: Sessions,
     @Req() request: FastifyRequest,
