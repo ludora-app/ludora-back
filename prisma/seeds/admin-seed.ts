@@ -25,6 +25,7 @@ const admins = [
 ];
 
 async function main() {
+  console.log('Seeding admin users...');
   for (const admin of admins) {
     if (!admin.password) throw new Error(`ADMIN_PASSWORD non défini pour ${admin.email}`);
 
@@ -41,6 +42,7 @@ async function main() {
       },
     });
   }
+  console.log('Admin users created successfully');
 }
 
 main()
