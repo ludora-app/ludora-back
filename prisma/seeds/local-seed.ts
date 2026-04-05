@@ -2157,12 +2157,16 @@ async function seed() {
     // Créer un Set pour éviter les doublons
     const participantUids = new Set<string>();
 
-    // Ajouter le créateur de la session
-    participantUids.add(session.creatorUid);
+    // Ajouter le créateur de la session s'il existe
+    if (session.creatorUid) {
+      participantUids.add(session.creatorUid);
+    }
 
     // Ajouter tous les joueurs
     sessionPlayers.forEach((player) => {
-      participantUids.add(player.userUid);
+      if (player.userUid) {
+        participantUids.add(player.userUid);
+      }
     });
 
     // Créer la conversation de session
@@ -2178,16 +2182,23 @@ async function seed() {
       where: { sessionUid: session.uid },
     });
 
+    // Déterminer l'administrateur de la conversation
+    // Si le créateur a été supprimé (creatorUid vide ou null), on prend le premier participant
+    const adminUid =
+      session.creatorUid && participantUids.has(session.creatorUid)
+        ? session.creatorUid
+        : Array.from(participantUids)[0];
+
     // Ajouter tous les participants comme membres de la conversation
     for (const userUid of participantUids) {
       await prisma.conversationMembers.upsert({
         create: {
           conversationUid: sessionConversation.uid,
-          isAdmin: userUid === session.creatorUid, // Le créateur est admin
+          isAdmin: userUid === adminUid, // Le créateur est admin, ou par défaut le 1er joueur
           userUid: userUid,
         },
         update: {
-          isAdmin: userUid === session.creatorUid,
+          isAdmin: userUid === adminUid,
         },
         where: {
           conversationUid_userUid: {
