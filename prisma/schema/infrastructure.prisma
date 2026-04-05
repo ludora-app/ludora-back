@@ -152,6 +152,7 @@ model Sports {
   userGameModePreferences UserGameModePreferences[]
   sessions                Sessions[]
   fieldSports             FieldSports[]
+  userRatings             UserRatings[]
 
   @@schema("infrastructure")
 }

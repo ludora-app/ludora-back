@@ -1,23 +1,23 @@
-// ratings.prisma
-
 model UserRatings {
   id String @id @default(cuid())
 
   evaluatorUid String? @map("evaluator_uid")
   evaluatedUid String? @map("evaluated_uid")
+  sessionUid   String? @map("session_uid")
+  sport        String
 
   note1     Int      @map("note_1")
   note2     Int      @map("note_2")
   note3     Int      @map("note_3")
-  note4     Int      @map("note_4")
-  note5     Int      @map("note_5")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  evaluator Users? @relation(fields: [evaluatorUid], references: [uid], name: "EvaluatorRelation", onDelete: SetNull)
-  evaluated Users? @relation(fields: [evaluatedUid], references: [uid], name: "EvaluatedRelation", onDelete: Cascade)
+  evaluator     Users?    @relation(fields: [evaluatorUid], references: [uid], name: "EvaluatorRelation", onDelete: SetNull)
+  evaluated     Users?    @relation(fields: [evaluatedUid], references: [uid], name: "EvaluatedRelation", onDelete: Cascade)
+  session       Sessions? @relation(fields: [sessionUid], references: [uid], onDelete: SetNull)
+  sportRelation Sports    @relation(fields: [sport], references: [name])
 
-  @@unique([evaluatorUid, evaluatedUid])
+  @@unique([evaluatorUid, evaluatedUid, sessionUid])
   @@index([evaluatedUid])
   @@map("User_ratings")
   @@schema("ratings")
@@ -25,15 +25,15 @@ model UserRatings {
 
 model UserGlobalRatings {
   userUid   String   @map("user_uid")
-  sportName String   @map("sport_name")
+  sport     String
   rating    Float
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user  Users  @relation(fields: [userUid], references: [uid], onDelete: Cascade)
-  sport Sports @relation(fields: [sportName], references: [name])
+  user          Users  @relation(fields: [userUid], references: [uid], onDelete: Cascade)
+  sportRelation Sports @relation(fields: [sport], references: [name], onDelete: NoAction)
 
-  @@unique([userUid, sportName])
+  @@unique([userUid, sport])
   @@map("User_global_ratings")
   @@schema("ratings")
 }

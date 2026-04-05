@@ -5,13 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import {
-  InvitationStatus,
-  Prisma,
-  SessionPlayers,
-  Sessions,
-  SessionVisibility,
-} from 'generated/prisma/client';
+import { Prisma, RatingStatus, Sessions } from 'generated/prisma/browser';
+import { InvitationStatus, SessionPlayers, SessionVisibility } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { EventTypes } from 'src/notifications/constants/event.types';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -171,6 +166,27 @@ export class SessionPlayersService {
     return this.prisma.sessionPlayers.findMany({
       where: { sessionUid: sessionUid },
     });
+  }
+
+  /**
+   * Checks if the users are all players of a certain session
+   * @returns The `checkIfUsersArePlayers` function is returning a Promise that resolves to a boolean
+   * value. This value is true if all the user UIDs in the `userUids` array are found in the
+   * `sessionPlayers` table for the given `sessionUid`, and false otherwise.
+   */
+  async checkIfUsersArePlayers(sessionUid: string, userUids: string[]): Promise<boolean> {
+    const players = await this.prisma.sessionPlayers.findMany({
+      where: {
+        sessionUid: sessionUid,
+        userUid: {
+          in: userUids,
+        },
+      },
+      select: {
+        userUid: true,
+      },
+    });
+    return players.length === userUids.length;
   }
 
   async findOne(sessionUid: string, userUid: string): Promise<SessionPlayers> {
@@ -398,5 +414,59 @@ export class SessionPlayersService {
         throw new ForbiddenException('Action not allowed due to blocked user relationship');
       }
     }
+  }
+  /**
+   * Updates the rating status of a player in a session
+   * @param playerUid
+   * @param sessionUid
+   * @param status
+   * @returns
+   */
+  async updateRatingStatus(
+    playerUid,
+    sessionUid,
+    status: RatingStatus,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    const _prisma = tx ?? this.prisma;
+
+    const player = await _prisma.sessionPlayers.findUnique({
+      where: {
+        sessionUid_userUid: {
+          sessionUid: sessionUid,
+          userUid: playerUid,
+        },
+      },
+    });
+
+    if (!player) {
+      throw new BadRequestException('Player not found');
+    }
+
+    if (player.ratingStatus === status) {
+      return;
+    }
+
+    if (
+      (player.ratingStatus === RatingStatus.VALIDATED && status === RatingStatus.PENDING) ||
+      (player.ratingStatus === RatingStatus.VALIDATED && status === RatingStatus.REFUSED) ||
+      (player.ratingStatus === RatingStatus.REFUSED && status === RatingStatus.PENDING)
+    ) {
+      this.logger.error(
+        `Cannot update ratingStatus from ${player.ratingStatus} to ${status} for user ${playerUid} in session ${sessionUid}`,
+      );
+      throw new BadRequestException('You cannot unvalidate a rating');
+    }
+    await _prisma.sessionPlayers.update({
+      where: {
+        sessionUid_userUid: {
+          sessionUid: sessionUid,
+          userUid: playerUid,
+        },
+      },
+      data: {
+        ratingStatus: status,
+      },
+    });
   }
 }

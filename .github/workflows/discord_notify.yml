@@ -28,10 +28,12 @@ jobs:
           # Sur un pull_request, on cible la branche de destination
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BRANCH="${{ github.base_ref }}"
+            SOURCE_BRANCH="${{ github.head_ref }}"
             RAW_MSG="${{ github.event.pull_request.title }}"
             EVENT_LABEL="🔀 Pull Request"
           else
             BRANCH="${{ github.ref_name }}"
+            SOURCE_BRANCH=""
             RAW_MSG="${{ github.event.head_commit.message }}"
             EVENT_LABEL="🚀 Push"
           fi
@@ -56,7 +58,7 @@ jobs:
           fi
           # -------------------------------------
 
-          TICKET=$(echo "$BRANCH $MSG" | grep -oE "SCRUM-[0-9]+" | head -1 || echo "")
+          TICKET=$(echo "$BRANCH $SOURCE_BRANCH $MSG" | grep -oE "SCRUM-[0-9]+" | head -1 || echo "")
           if [ -n "$TICKET" ]; then
             JIRA_LINK="🔗 **Jira :** [$TICKET](https://hichemamir398-1740388314640.atlassian.net/browse/$TICKET)"
           else
