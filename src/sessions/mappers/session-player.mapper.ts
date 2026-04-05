@@ -1,3 +1,4 @@
+import { DEFAULT_USER_DATA } from 'src/users/constants/users.constants';
 import { FlattenedSessionPlayer } from '../dto/output/session-team-response';
 
 /**
@@ -11,16 +12,17 @@ export type RawPlayer = {
     lastname: string;
     imageUrl: string | null;
     userSports?: { level: number }[];
-  };
+    userSportPreferences?: { level: number }[];
+  } | null;
   sportLevel?: number | null;
 };
 
 export class SessionPlayerMapper {
   static toDto(player: RawPlayer): FlattenedSessionPlayer {
     return {
-      firstname: player.user.firstname,
-      imageUrl: player.user.imageUrl,
-      lastname: player.user.lastname,
+      firstname: player.user?.firstname ?? DEFAULT_USER_DATA.FIRSTNAME,
+      imageUrl: player.user?.imageUrl ?? '',
+      lastname: player.user?.lastname ?? DEFAULT_USER_DATA.LASTNAME,
       sportLevel: player.sportLevel,
       teamUid: player.teamUid,
       userUid: player.userUid,

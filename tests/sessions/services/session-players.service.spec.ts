@@ -470,6 +470,9 @@ describe('SessionPlayersService', () => {
       await expect(
         service.verifyPlayerEligibilityBeforeJoin(userUid, teamUid, mockSession),
       ).rejects.toThrow(`Player ${userUid} already in session ${sessionUid}`);
+    });
+  });
+
   describe('checkIfUsersArePlayers', () => {
     const sessionUid = 'session-123';
     const userUids = ['user-1', 'user-2'];
