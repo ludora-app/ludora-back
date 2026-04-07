@@ -129,5 +129,5 @@
     "test:watch": "jest --watch",
     "ts-check": "tsc --noEmit"
   },
-  "version": "1.0.0-alpha.1"
+  "version": "1.0.0"
 }
