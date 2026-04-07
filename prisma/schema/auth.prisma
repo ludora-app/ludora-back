@@ -57,8 +57,8 @@ model Users {
   onBoardingStatus  OnBoardingStatus? @default(INCOMPLETE) @map("on_boarding_status")
   isAnonymized      Boolean           @default(false) @map("is_anonymized")
   deletedAt         DateTime?         @map("deleted_at")
-  appleId           String?           @unique @map("apple_id")
-  appleRefreshToken String?           @map("apple_refresh_token")
+  appleId           String?           @unique @map("apple_id") @db.VarChar(255)
+  appleRefreshToken String?           @map("apple_refresh_token") @db.VarChar(255)
 
   messages            Messages[]
   // Event               Events[]

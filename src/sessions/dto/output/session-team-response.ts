@@ -46,15 +46,6 @@ export class FlattenedSessionPlayer {
   readonly imageUrl: string | null;
 
   @ApiProperty({
-    description: 'User bio',
-    example: 'Passionate football player',
-    nullable: true,
-    readOnly: true,
-    required: false,
-  })
-  readonly bio?: string | null;
-
-  @ApiProperty({
     description: 'User sport level for this session sport (1-3)',
     enum: SessionSportLevel,
     example: SessionSportLevel.BEGINNER,

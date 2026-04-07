@@ -112,6 +112,7 @@
     "migrate:reset": "pnpm exec prisma migrate reset",
     "prepare": "husky",
     "seed": "ts-node prisma/seeds/local-seed.ts",
+    "seed:dev": "node dist/prisma/seeds/local-seed.js",
     "seed:admin": "ts-node prisma/seeds/admin-seed.ts",
     "seed:admin:prod": "node dist/prisma/seeds/admin-seed.js",
     "start": "nest start",
@@ -128,5 +129,5 @@
     "test:watch": "jest --watch",
     "ts-check": "tsc --noEmit"
   },
-  "version": "1.0.0"
+  "version": "1.0.0-alpha.1"
 }

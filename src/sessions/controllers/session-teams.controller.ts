@@ -4,10 +4,12 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
+import { Sessions } from 'generated/prisma/browser';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
@@ -21,17 +23,14 @@ import {
   SessionTeamResponseData,
   SessionTeamResponseDto,
 } from '../dto/output/session-team-response';
+import { SessionsPipe } from '../pipes/sessions.pipe';
 import { SessionTeamsService } from '../services/session-teams.service';
-import { SessionsService } from '../services/sessions.service';
 
 @ApiTags(SWAGGER_TAG_SESSION_TEAMS)
 @Controller('session-teams')
 @UseGuards(AuthB2CGuard)
 export class SessionTeamsController {
-  constructor(
-    private readonly sessionsService: SessionsService,
-    private readonly teamsService: SessionTeamsService,
-  ) {}
+  constructor(private readonly teamsService: SessionTeamsService) {}
 
   @Get('list-by-session/:sessionUid')
   @Protected()
@@ -40,12 +39,13 @@ export class SessionTeamsController {
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @ApiParam({ name: 'sessionUid', type: 'string' })
   async findTeamsBySessionUid(
-    @Param('sessionUid') sessionUid: string,
+    @Param('sessionUid', SessionsPipe) session: Sessions,
     @Req() request: FastifyRequest,
   ): Promise<PaginationResponseTypeDto<SessionTeamResponseData>> {
     const userUid = request['user'].uid;
-    const teams = await this.sessionsService.findTeamsBySessionUid(sessionUid, userUid);
+    const teams = await this.teamsService.findTeamsBySessionUid(session.uid, userUid);
 
     if (teams.items.length === 0) {
       throw new NotFoundException('No teams found for session');
@@ -53,7 +53,7 @@ export class SessionTeamsController {
 
     return {
       data: teams,
-      message: `Teams fetched successfully for session ${sessionUid}`,
+      message: `Teams fetched successfully for session ${session.uid}`,
     };
   }
 

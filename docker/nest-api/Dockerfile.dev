@@ -31,12 +31,15 @@ RUN pnpm prisma generate
 RUN pnpm build
 
 # Remove dev dependencies
-RUN pnpm prune --prod
+RUN pnpm prune --prod --ignore-scripts
 
 # ============================================
 # Production stage
 # ============================================
 FROM node:22.13.1-slim AS production
+
+# Build argument for environment (dev or prod)
+ARG ENV_NAME=dev
 
 WORKDIR /usr/src/app
 
@@ -66,13 +69,13 @@ COPY --from=builder --chown=nodejs:nodejs /usr/src/app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /usr/src/app/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /usr/src/app/package.json ./
 COPY --from=builder --chown=nodejs:nodejs /usr/src/app/prisma ./prisma
-COPY --from=builder --chown=nodejs:nodejs /usr/src/app/config ./config
+COPY --from=builder --chown=nodejs:nodejs /usr/src/app/prisma.config.ts ./prisma.config.ts
 
-# Copy envconsul config, vault-auth and start script
-COPY --chown=nodejs:nodejs scripts/vault/envconsul-docker-dev.hcl /etc/envconsul/config.hcl
+# Copy envconsul config, vault-auth and start script (using ENV_NAME build arg)
+COPY --chown=nodejs:nodejs scripts/vault/envconsul-docker-${ENV_NAME}.hcl /etc/envconsul/config.hcl
 COPY --chown=nodejs:nodejs scripts/vault/vault-auth.sh /usr/local/bin/vault-auth.sh
-COPY --chown=nodejs:nodejs scripts/start-prod.sh ./scripts/start-prod.sh
-RUN chmod +x /usr/local/bin/vault-auth.sh
+COPY --chown=nodejs:nodejs scripts/start-dev.sh ./scripts/start-dev.sh
+RUN chmod +x /usr/local/bin/vault-auth.sh && chmod +x ./scripts/start-dev.sh
 
 # Create writable directories for the app
 RUN mkdir -p /usr/src/app/logs && chown -R nodejs:nodejs /usr/src/app/logs
@@ -86,5 +89,4 @@ EXPOSE 2424
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Le script start-prod.sh gère l'auth AppRole puis lance envconsul
-CMD ["sh", "scripts/start-prod.sh"]
+

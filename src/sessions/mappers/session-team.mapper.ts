@@ -8,7 +8,7 @@ export type SessionTeamWithPlayers = {
   sessionPlayers: RawPlayer[];
   uid: string;
   isJoined?: boolean;
-  totalPlayersInTeam?: number; // Real count before slicing
+  totalPlayersInTeam?: number;
 };
 
 export type SessionTeamWithPlayersAndNumberOfPlayers = SessionTeamWithPlayers & {

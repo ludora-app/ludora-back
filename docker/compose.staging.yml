@@ -39,7 +39,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp
-    command: ['sh', 'scripts/start-prod.sh']
+    command: ['sh', 'scripts/start-dev.sh']
 
 networks:
   ludora-network:

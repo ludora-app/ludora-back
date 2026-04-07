@@ -6,6 +6,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AppleModule } from './apple/apple.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
 import { ConversationsModule } from './conversations/conversations.module';
@@ -19,12 +20,12 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { PartnersModule } from './partners/partners.module';
 import { PaymentModule } from './payment/payment.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { RatingsModule } from './ratings/ratings.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { SharedModule } from './shared/shared.module';
 import { UserLifecycleModule } from './user-lifecycle/user-lifecycle.module';
 import { UsersModule } from './users/users.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
-import { AppleModule } from './apple/apple.module';
 
 const isDevelopment = process.env.NODE_ENV === 'debug' || process.env.NODE_ENV === 'development';
 // Explicit LOG_LEVEL allows overriding (e.g. in Coolify) when NODE_ENV-based logic is wrong
@@ -133,6 +134,7 @@ const logLevel = process.env.LOG_LEVEL ?? (isDevelopment ? 'debug' : 'info');
     ModerationModule,
     WebhooksModule,
     AppleModule,
+    RatingsModule,
   ],
   providers: [
     AppService,

@@ -1,4 +1,6 @@
+import { PrismaPg } from '@prisma/adapter-pg';
 import * as argon2 from 'argon2';
+import { Pool } from 'pg';
 import {
   ConversationType,
   FieldType,
@@ -15,9 +17,6 @@ import {
   UserType,
   VerificationStatus,
 } from '../../generated/prisma/client';
-import 'dotenv/config';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
 
 const connectionString = `${process.env.DATABASE_URL}`;
 
@@ -35,7 +34,7 @@ async function seed() {
     { name: 'BASKETBALL' },
     { name: 'TENNIS' },
     { name: 'VOLLEYBALL' },
-    { name: 'PADDEL' },
+    { name: 'PADEL' },
     { name: 'BADMINTON' },
     { name: 'PING-PONG' },
   ];
@@ -1133,7 +1132,7 @@ async function seed() {
         return [GameModes.FIVE_V_FIVE, GameModes.ELEVEN_V_ELEVEN];
       case 'TENNIS':
         return [GameModes.ONE_V_ONE, GameModes.TWO_V_TWO];
-      case 'PADDEL':
+      case 'PADEL':
         return [GameModes.ONE_V_ONE, GameModes.TWO_V_TWO];
       default:
         return [GameModes.THREE_V_THREE, GameModes.FIVE_V_FIVE];
@@ -2158,12 +2157,16 @@ async function seed() {
     // Créer un Set pour éviter les doublons
     const participantUids = new Set<string>();
 
-    // Ajouter le créateur de la session
-    participantUids.add(session.creatorUid);
+    // Ajouter le créateur de la session s'il existe
+    if (session.creatorUid) {
+      participantUids.add(session.creatorUid);
+    }
 
     // Ajouter tous les joueurs
     sessionPlayers.forEach((player) => {
-      participantUids.add(player.userUid);
+      if (player.userUid) {
+        participantUids.add(player.userUid);
+      }
     });
 
     // Créer la conversation de session
@@ -2179,16 +2182,23 @@ async function seed() {
       where: { sessionUid: session.uid },
     });
 
+    // Déterminer l'administrateur de la conversation
+    // Si le créateur a été supprimé (creatorUid vide ou null), on prend le premier participant
+    const adminUid =
+      session.creatorUid && participantUids.has(session.creatorUid)
+        ? session.creatorUid
+        : Array.from(participantUids)[0];
+
     // Ajouter tous les participants comme membres de la conversation
     for (const userUid of participantUids) {
       await prisma.conversationMembers.upsert({
         create: {
           conversationUid: sessionConversation.uid,
-          isAdmin: userUid === session.creatorUid, // Le créateur est admin
+          isAdmin: userUid === adminUid, // Le créateur est admin, ou par défaut le 1er joueur
           userUid: userUid,
         },
         update: {
-          isAdmin: userUid === session.creatorUid,
+          isAdmin: userUid === adminUid,
         },
         where: {
           conversationUid_userUid: {
@@ -2630,4 +2640,5 @@ seed()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });

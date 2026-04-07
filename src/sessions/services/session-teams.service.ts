@@ -68,7 +68,6 @@ export class SessionTeamsService {
             teamUid: true,
             user: {
               select: {
-                bio: true,
                 firstname: true,
                 imageUrl: true,
                 lastname: true,
@@ -101,11 +100,16 @@ export class SessionTeamsService {
           sessionPlayers: await Promise.all(
             sessionPlayers.map(async (player) => ({
               ...player,
-              sportLevel: player.user.userSports?.[0]?.level ?? null,
-              user: {
-                ...player.user,
-                imageUrl: player.user.imageUrl ?? null,
-              },
+              sportLevel:
+                player.user?.userSportPreferences?.[0]?.level ??
+                player.user?.userSports?.[0]?.level ??
+                null,
+              user: player.user
+                ? {
+                    ...player.user,
+                    imageUrl: player.user.imageUrl ?? null,
+                  }
+                : null,
             })),
           ),
         };

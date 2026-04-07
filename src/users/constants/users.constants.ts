@@ -10,3 +10,8 @@ export const USER_SUGGESTION_CONFIG = {
     WORD_SIMILARITY_THRESHOLD: 0.4,
   },
 };
+
+export const DEFAULT_USER_DATA = {
+  FIRSTNAME: 'Utilisateur',
+  LASTNAME: 'Supprimé',
+};

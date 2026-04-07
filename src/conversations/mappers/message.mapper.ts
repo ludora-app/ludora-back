@@ -1,4 +1,5 @@
 import { MessageStatus, MessageType } from 'generated/prisma/enums';
+import { DEFAULT_USER_DATA } from 'src/users/constants/users.constants';
 import { MessageDto } from '../dto/output/basic-conversation-response.dto';
 import { MessageCollectionItemDto } from '../dto/output/message-collection-response.dto';
 import { RawMessage } from './conversation.mapper';
@@ -14,12 +15,12 @@ export interface RawMessageCollectionItem {
     status: MessageStatus;
     userUid: string;
   }[];
-  sender: {
+  sender?: {
     uid: string;
     firstname: string;
     lastname: string;
     imageUrl: string;
-  };
+  } | null;
 }
 
 export class MessageMapper {
@@ -28,7 +29,7 @@ export class MessageMapper {
       content: message.content,
       createdAt: message.createdAt,
       globalStatus: message.globalStatus,
-      isSender: message.sender.uid === connectedUserUid,
+      isSender: message.sender?.uid === connectedUserUid,
       type: message.type,
       uid: message.uid,
     };
@@ -44,13 +45,20 @@ export class MessageMapper {
       globalStatus: message.globalStatus,
       hasAnyRead: MessageMapper.calculateGlobalStatus(message.messageReceipts).hasAnyRead,
       hasEveryoneRead: MessageMapper.calculateGlobalStatus(message.messageReceipts).hasEveryoneRead,
-      isSender: message.sender.uid === connectedUserUid,
-      sender: {
-        firstname: message.sender.firstname,
-        imageUrl: message.sender.imageUrl,
-        lastname: message.sender.lastname,
-        uid: message.sender.uid,
-      },
+      isSender: message.sender?.uid === connectedUserUid,
+      sender: message.sender
+        ? {
+            firstname: message.sender?.firstname,
+            imageUrl: message.sender?.imageUrl,
+            lastname: message.sender?.lastname,
+            uid: message.sender?.uid,
+          }
+        : {
+            firstname: DEFAULT_USER_DATA.FIRSTNAME,
+            imageUrl: '',
+            lastname: DEFAULT_USER_DATA.LASTNAME,
+            uid: '',
+          },
       type: message.type,
       uid: message.uid,
     };
