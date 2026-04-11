@@ -1,6 +1,5 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-
+import { ApiBearerAuth, ApiExcludeEndpoint, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AppService } from './app.service';
 import { AuthB2CGuard } from './auth/guards/auth-b2c.guard';
 import { Public } from './shared/decorators/public.decorator';
@@ -14,11 +13,13 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
+  @ApiExcludeEndpoint()
   getHello(): string {
     return this.appService.getHello();
   }
 
   @Public()
+  @ApiExcludeEndpoint()
   @ApiOperation({ summary: 'Get the health of the application' })
   @Get('health')
   getHealth(): { status: string; timestamp: string } {
