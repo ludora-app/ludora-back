@@ -26,6 +26,7 @@ export enum TokenType {
   ACCESS = 'access',
   REFRESH = 'refresh',
   RESET = 'reset',
+  VERIFY_EMAIL = 'verify_email',
 }
 
 /**

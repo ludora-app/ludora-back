@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { JwtService } from '@nestjs/jwt';
 import { FastifyRequest } from 'fastify';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { TokenType } from 'src/shared/constants/constants';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { UsersService } from 'src/users/users.service';
 
@@ -19,7 +20,7 @@ export class VerifyEmailGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const token = this.extractTokenFromQuery(request); // or extractTokenFromHeader
+    const token = this.extractTokenFromQuery(request);
 
     if (!token) {
       throw new UnauthorizedException('Token missing');
@@ -27,10 +28,14 @@ export class VerifyEmailGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync(token);
-      const { code, email } = payload;
+      const { code, email, type } = payload;
 
       if (!email || !code) {
         throw new UnauthorizedException('Token invalid: email or code missing');
+      }
+
+      if (type !== TokenType.VERIFY_EMAIL) {
+        throw new UnauthorizedException('Invalid token type');
       }
 
       const user = await this.usersService.findOneByEmail(email, USERSELECT.findOneByEmail);

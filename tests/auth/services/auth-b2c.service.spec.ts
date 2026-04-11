@@ -304,34 +304,33 @@ describe('AuthB2CService', () => {
 
   describe('resendVerificationCode', () => {
     it('should resend verification code', async () => {
-      mockPrismaService.users.findUnique.mockResolvedValue({
+      jest.spyOn(service, 'sendVerificationEmail').mockResolvedValue();
+
+      const result = await service.resendVerificationCode({
         uid: '1',
         email: 'test@test.com',
         isEmailVerified: false,
       });
 
-      jest.spyOn(service, 'sendVerificationEmail').mockResolvedValue();
-
-      const result = await service.resendVerificationCode('1');
-
       expect(result).toBeUndefined();
+      expect(mockPrismaService.emailVerification.deleteMany).toHaveBeenCalledWith({
+        where: { userUid: '1' },
+      });
       expect(service.sendVerificationEmail).toHaveBeenCalledWith('1', 'test@test.com');
     });
 
-    it('should throw NotFoundException when user not found', async () => {
-      mockPrismaService.users.findUnique.mockResolvedValue(null);
+    it('should return and not send email when already verified', async () => {
+      jest.spyOn(service, 'sendVerificationEmail').mockResolvedValue();
 
-      await expect(service.resendVerificationCode('1')).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw BadRequestException when email is already verified', async () => {
-      mockPrismaService.users.findUnique.mockResolvedValue({
+      const result = await service.resendVerificationCode({
         uid: '1',
         email: 'test@test.com',
         isEmailVerified: true,
       });
 
-      await expect(service.resendVerificationCode('1')).rejects.toThrow(BadRequestException);
+      expect(result).toBeUndefined();
+      expect(service.sendVerificationEmail).not.toHaveBeenCalled();
+      expect(mockPinoLogger.warn).toHaveBeenCalledWith('User 1 email is already verified');
     });
   });
 

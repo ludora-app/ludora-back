@@ -77,6 +77,7 @@ export class AuthB2CGuard implements CanActivate {
         ...payload,
         email: user.email,
         userType: user.type,
+        isEmailVerified: user.isEmailVerified,
       };
 
       request['user'] = fullPayload;

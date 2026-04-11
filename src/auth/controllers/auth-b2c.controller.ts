@@ -27,6 +27,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { FastifyRequest } from 'fastify';
 import { Users } from 'generated/prisma/browser';
 import {
   CreateImageDto,
@@ -229,7 +230,7 @@ export class AuthB2CController {
   @Protected()
   @Post('resend-verification-code')
   @ApiOperation({
-    summary: 'Resend the verification code',
+    summary: 'Resend the verification code for email validation',
   })
   @ApiBadRequestResponse({
     description: 'Error during verification code resend',
@@ -244,8 +245,9 @@ export class AuthB2CController {
     type: SuccessTypeDto,
   })
   @HttpCode(HttpStatus.OK)
-  async resendVerificationCode(@Request() req): Promise<SuccessTypeDto> {
-    await this.authService.resendVerificationCode(req.user.uid);
+  async resendVerificationCode(@Request() req: FastifyRequest): Promise<SuccessTypeDto> {
+    const user = req['user'] as Pick<Users, 'uid' | 'isEmailVerified' | 'email'>;
+    await this.authService.resendVerificationCode(user);
 
     return {
       message: 'Verification code resent successfully',
@@ -380,7 +382,7 @@ export class AuthB2CController {
   // ** GOOGLE AUTHENTICATION *
   // **************************/
 
-  @Public() // ? décorateur @Public() pour ignorer le middleware d'authentification
+  @Public()
   @Get('google/callback')
   async googleCallback(@Req() req, @Res() res): Promise<any> {
     try {

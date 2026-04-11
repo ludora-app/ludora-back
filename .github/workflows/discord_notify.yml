@@ -58,8 +58,9 @@ jobs:
           fi
           # -------------------------------------
 
-          TICKET=$(echo "$BRANCH $SOURCE_BRANCH $MSG" | grep -oE "SCRUM-[0-9]+" | head -1 || echo "")
-          if [ -n "$TICKET" ]; then
+          TICKET_RAW=$(echo "$BRANCH $SOURCE_BRANCH $MSG" | grep -ioE "SCRUM[- ][0-9]+" | head -1 || echo "")
+          if [ -n "$TICKET_RAW" ]; then
+            TICKET=$(echo "$TICKET_RAW" | tr 'a-z' 'A-Z' | tr ' ' '-')
             JIRA_LINK="🔗 **Jira :** [$TICKET](https://hichemamir398-1740388314640.atlassian.net/browse/$TICKET)"
           else
             JIRA_LINK="🔗 **Jira :** Aucun ticket détecté"

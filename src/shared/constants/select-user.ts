@@ -18,6 +18,7 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     email: true,
     type: true,
     uid: true,
+    isEmailVerified: true,
   },
 
   checkIfUserExistsByEmail: {
