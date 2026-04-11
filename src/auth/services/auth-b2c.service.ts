@@ -432,7 +432,7 @@ export class AuthB2CService {
    */
   async sendVerificationEmail(userUid: string, email: string) {
     const verificationCode = VerificationCodeUtil.generateVerificationCode();
-    const expiresAt = new Date(Date.now() + DateUtils.FIFTEEN_MINUTES);
+    const expiresAt = new Date(Date.now() + DateUtils.TWENTY_FOUR_HOURS);
 
     // Use a transaction to ensure atomicity
     await this.prismaService.$transaction(async (tx) => {
@@ -451,9 +451,8 @@ export class AuthB2CService {
       });
     });
 
-    //! set this property in vault
     const baseUrl = this.configService.get('BASE_URL') ?? 'http://localhost:2424';
-    const payload = { code: verificationCode, email };
+    const payload = { code: verificationCode, email, type: TokenType.VERIFY_EMAIL };
     const token = this.jwt.sign(payload, { expiresIn: '24h' });
     const link = `${baseUrl}/auth-b2c/verify-email-link?token=${token}`;
 
@@ -493,25 +492,20 @@ export class AuthB2CService {
     });
   }
 
-  async resendVerificationCode(userUid: string): Promise<void> {
-    const user = await this.prismaService.users.findUnique({
-      where: { uid: userUid },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
+  async resendVerificationCode(
+    user: Pick<Users, 'uid' | 'isEmailVerified' | 'email'>,
+  ): Promise<void> {
     if (user.isEmailVerified) {
-      throw new BadRequestException('Email already verified');
+      this.logger.warn(`User ${user.uid} email is already verified`);
+      return;
     }
 
     await this.prismaService.emailVerification.deleteMany({
-      where: { userUid: userUid },
+      where: { userUid: user.uid },
     });
 
     // Send a new code
-    await this.sendVerificationEmail(userUid, user.email);
+    await this.sendVerificationEmail(user.uid, user.email);
   }
 
   /**

@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { VerifyEmailGuard } from 'src/auth/guards/verify-email.guard';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { TokenType } from 'src/shared/constants/constants';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { UsersService } from 'src/users/users.service';
 
@@ -92,7 +93,10 @@ describe('VerifyEmailGuard', () => {
     it('should throw UnauthorizedException when payload is missing email', async () => {
       const { context } = createMockExecutionContext({ token: 'valid-jwt' });
 
-      mockJwtService.verifyAsync.mockResolvedValue({ code: '123456' });
+      mockJwtService.verifyAsync.mockResolvedValue({
+        code: '123456',
+        type: TokenType.VERIFY_EMAIL,
+      });
 
       await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
       expect(mockUsersService.findOneByEmail).not.toHaveBeenCalled();
@@ -101,7 +105,10 @@ describe('VerifyEmailGuard', () => {
     it('should throw UnauthorizedException when payload is missing code', async () => {
       const { context } = createMockExecutionContext({ token: 'valid-jwt' });
 
-      mockJwtService.verifyAsync.mockResolvedValue({ email: 'user@example.com' });
+      mockJwtService.verifyAsync.mockResolvedValue({
+        email: 'user@example.com',
+        type: TokenType.VERIFY_EMAIL,
+      });
 
       await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
       expect(mockUsersService.findOneByEmail).not.toHaveBeenCalled();
@@ -113,6 +120,7 @@ describe('VerifyEmailGuard', () => {
       mockJwtService.verifyAsync.mockResolvedValue({
         email: 'unknown@example.com',
         code: '123456',
+        type: TokenType.VERIFY_EMAIL,
       });
       mockUsersService.findOneByEmail.mockResolvedValue(null);
 
@@ -129,6 +137,7 @@ describe('VerifyEmailGuard', () => {
       mockJwtService.verifyAsync.mockResolvedValue({
         email: 'user@example.com',
         code: '123456',
+        type: TokenType.VERIFY_EMAIL,
       });
       mockUsersService.findOneByEmail.mockResolvedValue({
         uid: 'user-123',
@@ -164,6 +173,7 @@ describe('VerifyEmailGuard', () => {
       mockJwtService.verifyAsync.mockResolvedValue({
         email: 'user@example.com',
         code: '123456',
+        type: TokenType.VERIFY_EMAIL,
       });
       mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
       mockPrismaService.emailVerification.findFirst.mockResolvedValue(mockVerification);

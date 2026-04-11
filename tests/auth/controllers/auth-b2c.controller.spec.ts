@@ -193,8 +193,9 @@ describe('AuthB2CController', () => {
 
   describe('resendVerificationCode', () => {
     it('should resend verification code', async () => {
+      const mockUser = { uid: '1', email: 'test@test.com', isEmailVerified: false };
       const mockRequest = {
-        user: { uid: '1' },
+        user: mockUser,
       };
 
       mockAuthB2CService.resendVerificationCode.mockResolvedValue(undefined);
@@ -204,7 +205,7 @@ describe('AuthB2CController', () => {
       expect(result).toEqual({
         message: 'Verification code resent successfully',
       });
-      expect(mockAuthB2CService.resendVerificationCode).toHaveBeenCalledWith('1');
+      expect(mockAuthB2CService.resendVerificationCode).toHaveBeenCalledWith(mockUser);
     });
   });
 
@@ -325,7 +326,9 @@ describe('AuthB2CController', () => {
         },
         message: 'User already exists, successfully connected to Google account',
       });
-      expect(mockAuthB2CService.createOrConnectGoogleUser).toHaveBeenCalledWith(createGoogleUserDto);
+      expect(mockAuthB2CService.createOrConnectGoogleUser).toHaveBeenCalledWith(
+        createGoogleUserDto,
+      );
     });
 
     it('should create a new Google user successfully', async () => {
@@ -353,7 +356,9 @@ describe('AuthB2CController', () => {
         },
         message: 'New user created and connected to Google account',
       });
-      expect(mockAuthB2CService.createOrConnectGoogleUser).toHaveBeenCalledWith(createGoogleUserDto);
+      expect(mockAuthB2CService.createOrConnectGoogleUser).toHaveBeenCalledWith(
+        createGoogleUserDto,
+      );
     });
 
     it('should handle errors from service when creating or connecting Google user', async () => {

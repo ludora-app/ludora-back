@@ -220,16 +220,24 @@ describe('AuthB2CGuard', () => {
         userUid: 'user123',
       });
 
-      mockUsersService.findOne.mockResolvedValue({
+      const mockUser = {
         uid: 'user123',
+        email: 'test@example.com',
+        type: 'USER',
         isEmailVerified: true,
         isConnected: true,
-      });
+      };
+      mockUsersService.findOne.mockResolvedValue(mockUser);
 
       const result = await guard.canActivate(context);
 
       expect(result).toBe(true);
-      expect(mockRequest['user']).toEqual(mockPayload);
+      expect(mockRequest['user']).toEqual({
+        ...mockPayload,
+        email: mockUser.email,
+        userType: mockUser.type,
+        isEmailVerified: mockUser.isEmailVerified,
+      });
       expect(mockJwtService.verifyAsync).toHaveBeenCalledWith('valid_token');
       expect(mockPrismaService.userTokens.findFirst).toHaveBeenCalledWith({
         where: {
