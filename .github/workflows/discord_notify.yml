@@ -24,6 +24,7 @@ jobs:
         env:
           WEBHOOK_PROD: ${{ secrets.DISCORD_WEBHOOK_PROD }}
           WEBHOOK_DEV: ${{ secrets.DISCORD_WEBHOOK_DEV }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Sur un pull_request, on cible la branche de destination
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -58,7 +59,17 @@ jobs:
           fi
           # -------------------------------------
 
-          TICKET_RAW=$(echo "$BRANCH $SOURCE_BRANCH $MSG" | grep -ioE "SCRUM[- ][0-9]+" | head -1 || echo "")
+          PR_TITLE=""
+          PR_BRANCH=""
+          if [ "${{ github.event_name }}" = "push" ]; then
+            PR_DATA=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/repos/${{ github.repository }}/commits/${{ github.sha }}/pulls)
+            PR_TITLE=$(echo "$PR_DATA" | jq -r '.[0].title // empty')
+            PR_BRANCH=$(echo "$PR_DATA" | jq -r '.[0].head.ref // empty')
+          fi
+
+          TICKET_RAW=$(echo "$BRANCH $SOURCE_BRANCH $RAW_MSG $PR_TITLE $PR_BRANCH" | grep -ioE "SCRUM[- ][0-9]+" | head -1 || echo "")
           if [ -n "$TICKET_RAW" ]; then
             TICKET=$(echo "$TICKET_RAW" | tr 'a-z' 'A-Z' | tr ' ' '-')
             JIRA_LINK="🔗 **Jira :** [$TICKET](https://hichemamir398-1740388314640.atlassian.net/browse/$TICKET)"

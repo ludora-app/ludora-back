@@ -61,7 +61,8 @@ export class AppleService {
         ignoreExpiration: false,
       });
       return payload;
-    } catch (_error) {
+    } catch (error) {
+      this.logger.error(`[verifyIdentityToken]: ${error.message}`);
       throw new UnauthorizedException('Invalid Apple identity token');
     }
   }
