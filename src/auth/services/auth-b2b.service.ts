@@ -172,4 +172,50 @@ export class AuthB2BService {
     });
     return { accessToken, refreshToken };
   }
+
+  async adminLogin(loginDto: LoginDto): Promise<{ accessToken: string; refreshToken: string }> {
+    const { email, password } = loginDto;
+    const formattedEmail = email.toLowerCase();
+
+    const user = await this.userService.findOneByEmail(formattedEmail, USERSELECT.login);
+    if (!user) {
+      this.logger.error(`User not found with email ${email}`);
+      throw new NotFoundException('User not found');
+    }
+    if (user.type !== UserType.ADMIN) {
+      this.logger.error(`User is not an admin, email:${email}, uid:${user.uid}`);
+      throw new NotFoundException('User not found');
+    }
+
+    const isPasswordValid = await argon2.verify(user.password, password);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Invalid credentials');
+    }
+
+    const payload = {
+      uid: user.uid,
+      type: user.type,
+    };
+    const accessToken = this.jwt.sign(payload, { expiresIn: this.TOKEN_EXPIRATION_TIME });
+    const refreshToken = this.jwt.sign(payload, { expiresIn: '7d' });
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.userTokens.create({
+        data: {
+          token: accessToken,
+          userUid: user.uid,
+        },
+      });
+    });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.refreshTokens.create({
+        data: {
+          expiresAt: new Date(Date.now() + DateUtils.SEVEN_DAYS),
+          token: refreshToken,
+          userUid: user.uid,
+        },
+      });
+    });
+    return { accessToken, refreshToken };
+  }
 }

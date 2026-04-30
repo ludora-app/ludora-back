@@ -314,4 +314,130 @@ describe('AuthB2BService', () => {
       );
     });
   });
+
+  describe('adminLogin', () => {
+    const loginDto = {
+      email: 'admin@test.com',
+      password: 'Password123!',
+    };
+
+    const mockAdminUser = {
+      uid: 'admin-123',
+      email: 'admin@test.com',
+      password: '$argon2id$v=19$m=65536,t=3,p=4$hashedpassword',
+      type: UserType.ADMIN,
+      firstname: 'Admin',
+      lastname: 'User',
+    };
+
+    it('should login successfully and return tokens', async () => {
+      mockUsersService.findOneByEmail.mockResolvedValue(mockAdminUser);
+      jest.spyOn(argon2, 'verify').mockResolvedValue(true);
+      mockJwtService.sign
+        .mockReturnValueOnce('mock_access_token')
+        .mockReturnValueOnce('mock_refresh_token');
+
+      const result = await service.adminLogin(loginDto);
+
+      expect(result).toEqual({
+        accessToken: 'mock_access_token',
+        refreshToken: 'mock_refresh_token',
+      });
+      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+        'admin@test.com',
+        expect.any(Object),
+      );
+      expect(argon2.verify).toHaveBeenCalledWith(mockAdminUser.password, loginDto.password);
+      expect(mockJwtService.sign).toHaveBeenCalledTimes(2);
+      expect(mockJwtService.sign).toHaveBeenNthCalledWith(
+        1,
+        {
+          uid: mockAdminUser.uid,
+          type: mockAdminUser.type,
+        },
+        { expiresIn: '1d' },
+      );
+      expect(mockJwtService.sign).toHaveBeenNthCalledWith(
+        2,
+        {
+          uid: mockAdminUser.uid,
+          type: mockAdminUser.type,
+        },
+        { expiresIn: '7d' },
+      );
+    });
+
+    it('should format email to lowercase', async () => {
+      const loginDtoUpperCase = {
+        email: 'ADMIN@TEST.COM',
+        password: 'Password123!',
+      };
+
+      mockUsersService.findOneByEmail.mockResolvedValue(mockAdminUser);
+      jest.spyOn(argon2, 'verify').mockResolvedValue(true);
+      mockJwtService.sign
+        .mockReturnValueOnce('mock_access_token')
+        .mockReturnValueOnce('mock_refresh_token');
+
+      await service.adminLogin(loginDtoUpperCase);
+
+      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+        'admin@test.com',
+        expect.any(Object),
+      );
+    });
+
+    it('should throw NotFoundException when user is not found', async () => {
+      mockUsersService.findOneByEmail.mockResolvedValue(null);
+
+      await expect(service.adminLogin(loginDto)).rejects.toThrow(
+        new NotFoundException('User not found'),
+      );
+    });
+
+    it('should throw NotFoundException when user is not an ADMIN', async () => {
+      const nonAdminUser = {
+        ...mockAdminUser,
+        type: UserType.USER,
+      };
+
+      mockUsersService.findOneByEmail.mockResolvedValue(nonAdminUser);
+
+      await expect(service.adminLogin(loginDto)).rejects.toThrow(
+        new NotFoundException('User not found'),
+      );
+    });
+
+    it('should throw BadRequestException when password is invalid', async () => {
+      mockUsersService.findOneByEmail.mockResolvedValue(mockAdminUser);
+      jest.spyOn(argon2, 'verify').mockResolvedValue(false);
+
+      await expect(service.adminLogin(loginDto)).rejects.toThrow(
+        new BadRequestException('Invalid credentials'),
+      );
+    });
+
+    it('should log error when user is not found', async () => {
+      mockUsersService.findOneByEmail.mockResolvedValue(null);
+
+      await expect(service.adminLogin(loginDto)).rejects.toThrow(NotFoundException);
+      expect(mockPinoLogger.error).toHaveBeenCalledWith(
+        `User not found with email ${loginDto.email}`,
+      );
+    });
+
+    it('should log error when user is not an admin', async () => {
+      const nonAdminUser = {
+        ...mockAdminUser,
+        type: UserType.USER,
+      };
+
+      mockUsersService.findOneByEmail.mockResolvedValue(nonAdminUser);
+
+      await expect(service.adminLogin(loginDto)).rejects.toThrow(NotFoundException);
+      expect(mockPinoLogger.error).toHaveBeenCalledWith(
+        `User is not an admin, email:${loginDto.email}, uid:${nonAdminUser.uid}`,
+      );
+    });
+  });
 });

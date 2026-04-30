@@ -106,4 +106,29 @@ export class AuthB2BController {
       message: 'PARTNER user logged in successfully',
     };
   }
+
+  @Post('login-admin')
+  @Public()
+  @ApiOperation({ summary: 'Login a admin user account' })
+  @ApiBadRequestResponse({
+    description: 'Error during login',
+    type: BadRequestResponseDto,
+  })
+  @ApiOkResponse({
+    description: 'Admin user logged in successfully',
+    type: LoginResponseDto,
+  })
+  @ApiBody({ type: LoginDto })
+  @HttpCode(HttpStatus.OK)
+  @ApiNotFoundResponse({
+    description: 'User or partner not found',
+    type: NotFoundResponseDto,
+  })
+  async loginAdmin(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
+    const tokens = await this.authService.adminLogin(loginDto);
+    return {
+      data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
+      message: 'ADMIN user logged in successfully',
+    };
+  }
 }
