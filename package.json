@@ -74,6 +74,15 @@
   },
   "name": "ludora-backend",
   "pnpm": {
+    "onlyBuiltDependencies": [
+      "@firebase/util",
+      "@nestjs/core",
+      "@prisma/engines",
+      "@scarf/scarf",
+      "argon2",
+      "prisma",
+      "protobufjs"
+    ],
     "overrides": {
       "fastify": ">=5.8.4",
       "brace-expansion": ">=5.0.5",
@@ -136,5 +145,6 @@
     "test:watch": "jest --watch",
     "ts-check": "tsc --noEmit"
   },
+  "packageManager": "pnpm@10.4.1",
   "version": "1.0.0-alpha.1"
 }

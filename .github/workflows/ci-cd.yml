@@ -41,7 +41,7 @@ jobs:
   #       with:
   #         node-version: 22.13.1
   #         cache: pnpm
-  #     - run: pnpm install --frozen-lockfile
+  #     - run: pnpm install --no-frozen-lockfile
   #     - run: pnpm format
   #     - run: pnpm lint
 
@@ -83,7 +83,7 @@ jobs:
   #       with:
   #         node-version: 22.13.1
   #         cache: pnpm
-  #     - run: pnpm install --frozen-lockfile
+  #     - run: pnpm install --no-frozen-lockfile
   #     - run: pnpm prisma generate
   #     - run: pnpm prisma migrate deploy
   #     - run: pnpm test:cov
@@ -135,7 +135,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 10.4.1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -180,7 +180,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 10.4.1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -284,7 +284,7 @@ jobs:
         if: steps.check.outputs.should_release == 'true'
         uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 10.4.1
 
       - name: Setup Node.js
         if: steps.check.outputs.should_release == 'true'
