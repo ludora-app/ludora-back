@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -29,7 +28,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
-import { UserType } from 'generated/prisma/enums';
+import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
@@ -240,7 +239,7 @@ export class FieldsController {
   }
 
   @Get('admin/:uid')
-  @UseGuards(AuthB2CGuard)
+  @UseGuards(AdminGuard)
   @Protected()
   @ApiOkResponse({ type: FindOneFieldResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
@@ -253,13 +252,7 @@ export class FieldsController {
   })
   async findOneForAdmin(
     @Param('uid') uid: string,
-    @Req() request: FastifyRequest,
   ): Promise<ResponseTypeDto<FindOneFieldResponseData>> {
-    const userType = request['user'].userType;
-
-    if (userType !== UserType.ADMIN) {
-      throw new ForbiddenException('You are not authorized to access this resource');
-    }
     const field = await this.fieldsService.findOneForAdmin(uid);
 
     if (!field) {
@@ -273,6 +266,7 @@ export class FieldsController {
   }
 
   @Get('list-public/collection')
+  @Protected()
   @ApiOkResponse({ type: PaginatedPublicFieldResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
@@ -287,6 +281,25 @@ export class FieldsController {
       message: 'Public fields fetched successfully',
     };
   }
+
+  @Get('admin/list-pending/collection')
+  @UseGuards(AdminGuard)
+  @Protected()
+  @ApiOkResponse({ type: PaginatedPublicFieldResponse })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all pending fields' })
+  async findAllPendingFields(
+    @Query() filters: PublicFieldFilterDto,
+  ): Promise<PaginationResponseTypeDto<PublicFieldResponseData>> {
+    const data = await this.fieldsService.findAllPendingFields(filters);
+    return {
+      data,
+      message: 'Pending fields fetched successfully',
+    };
+  }
+
   @Patch('update-public/:uid')
   @UseGuards(AuthB2CGuard)
   @Protected()

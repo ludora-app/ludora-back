@@ -808,4 +808,53 @@ export class FieldsService {
 
     return { items, nextCursor, totalCount };
   }
+
+  async findAllPendingFields(filters: PublicFieldFilterDto) {
+    const { cursor, limit = 10, search, sports } = filters;
+
+    const query: {
+      take: number;
+      skip?: number;
+      cursor?: {
+        uid: string;
+      };
+      where: Prisma.FieldsWhereInput;
+    } = {
+      take: limit + 1,
+      where: { status: VerificationStatus.PENDING },
+    };
+
+    if (cursor) {
+      query.cursor = { uid: cursor };
+      query.skip = 1;
+    }
+    if (search) {
+      query.where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { address: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    if (sports?.length) {
+      query.where.fieldSports = { some: { sport: { in: sports } } };
+    }
+
+    const fields = await this.prisma.fields.findMany({
+      ...query,
+      include: {
+        fieldImages: { orderBy: { order: 'asc' }, select: { order: true, url: true }, take: 1 },
+        fieldSports: { select: { sport: true } },
+      },
+    });
+
+    const actualLimit = limit || 10;
+    let nextCursor: string | null = null;
+    if (fields.length > actualLimit) {
+      const nextItem = fields.pop();
+      nextCursor = nextItem?.uid;
+    }
+
+    const items = fields.map((field) => FieldMapper.toPublicFieldDto(field));
+
+    return { items, nextCursor, totalCount: fields.length };
+  }
 }

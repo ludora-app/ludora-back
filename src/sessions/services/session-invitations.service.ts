@@ -422,11 +422,16 @@ export class SessionInvitationsService {
   }
 
   async getTotalPendingInvitations(): Promise<number> {
-    return await this.prisma.sessionInvitations.count({
+    const result = await this.prisma.sessionInvitations.count({
       where: {
         status: InvitationStatus.PENDING,
       },
     });
+    this.logger.debug(
+      `Cron job "totalPendingInvitationsCounter" executed: ${result} total pending invitations`,
+    );
+
+    return result;
   }
 
   /**

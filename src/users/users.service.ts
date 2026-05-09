@@ -583,20 +583,6 @@ export class UsersService {
     });
   }
 
-  /**
-   * This async function returns the count of active users who are connected.
-   * @returns The `getActiveUsersCount` function returns a Promise that resolves to a number, which
-   * represents the count of users where the `isConnected` property is true in the database.
-   * @description This method is used in the metrics service to get the count of active users.
-   */
-  async getActiveUsersCount(): Promise<number> {
-    return await this.prismaService.users.count({
-      where: {
-        isConnected: true,
-      },
-    });
-  }
-
   /**   * @param user - The user
    * @description This method is used to send a verification code for password reset to the user
    */
