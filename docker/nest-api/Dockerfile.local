@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y \
     apt --no-install-recommends install -y build-essential && \
     rm -rf /var/lib/apt/lists/*  
 
-RUN npm i -g pnpm && npm uninstall -g npm
+RUN npm i -g pnpm@10.4.1 && npm uninstall -g npm
 
 COPY package.json pnpm-lock.yaml ./
 
