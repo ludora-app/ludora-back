@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/*
 
 # Install pnpm
-RUN npm i -g pnpm && npm uninstall -g npm
+RUN npm i -g pnpm@10.4.1 && npm uninstall -g npm
 
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
@@ -56,7 +56,7 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/*
 
 # Install pnpm
-RUN npm i -g pnpm && npm uninstall -g npm
+RUN npm i -g pnpm@10.4.1 && npm uninstall -g npm
 
 # Create non-root user
 RUN groupadd -r nodejs && useradd -r -g nodejs nodejs
