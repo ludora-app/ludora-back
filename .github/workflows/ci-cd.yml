@@ -41,7 +41,7 @@ jobs:
   #       with:
   #         node-version: 22.13.1
   #         cache: pnpm
-  #     - run: pnpm install --frozen-lockfile
+  #     - run: pnpm install --no-frozen-lockfile
   #     - run: pnpm format
   #     - run: pnpm lint
 
@@ -83,7 +83,7 @@ jobs:
   #       with:
   #         node-version: 22.13.1
   #         cache: pnpm
-  #     - run: pnpm install --frozen-lockfile
+  #     - run: pnpm install --no-frozen-lockfile
   #     - run: pnpm prisma generate
   #     - run: pnpm prisma migrate deploy
   #     - run: pnpm test:cov
@@ -106,7 +106,7 @@ jobs:
   swagger:
     name: SWAGGER
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
+    if: github.event_name == 'push'
     container:
       image: node:22.13.1-slim
 
@@ -135,7 +135,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 10.4.1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -155,7 +155,7 @@ jobs:
       - name: Upload swagger.json artifact
         uses: actions/upload-artifact@v4
         with:
-          name: swagger-${{ github.event.pull_request.head.sha || github.sha }}
+          name: swagger-${{ github.base_ref || github.ref_name }}
           path: swagger.json
           retention-days: 7
 
@@ -180,7 +180,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 10.4.1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -220,8 +220,8 @@ jobs:
     name: SEMANTIC RELEASE
     runs-on: ubuntu-latest
     needs: build
-    # On ne release que sur push (pas sur PR)
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
+    # On ne release que sur push vers main (la résolution d'une PR = un push)
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main')
     permissions:
       contents: write # Important pour pousser les tags/changelog
       issues: write
@@ -284,7 +284,7 @@ jobs:
         if: steps.check.outputs.should_release == 'true'
         uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 10.4.1
 
       - name: Setup Node.js
         if: steps.check.outputs.should_release == 'true'
