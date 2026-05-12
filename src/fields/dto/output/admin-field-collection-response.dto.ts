@@ -6,6 +6,12 @@ import { PublicFieldResponseData } from './field-response.dto';
 export class AdminFieldCollectionResponseData extends PublicFieldResponseData {
   @ApiProperty({ enum: VerificationStatus, example: VerificationStatus.PENDING })
   status: VerificationStatus;
+
+  @ApiProperty({
+    description: 'first image of the field',
+    example: 'https://example.com/image.jpg',
+  })
+  readonly image: string;
 }
 
 export const PaginatedAdminFieldResponse = toPaginationResponseType(

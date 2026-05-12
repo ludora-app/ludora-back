@@ -36,6 +36,7 @@ interface FieldInput {
 
 interface AdminFieldInput extends FieldInput {
   status: VerificationStatus;
+  fieldImages: { order: number; url: string }[];
 }
 
 interface RawFindOneField {
@@ -207,7 +208,7 @@ export class FieldMapper {
       sports: field.fieldSports?.map((fieldSport) => fieldSport.sport as Sport),
       uid: field.uid,
       status: field.status,
-      // image: field.fieldImages?.sort((a, b) => a.order - b.order)[0]?.url,
+      image: field.fieldImages?.sort((a, b) => a.order - b.order)[0]?.url ?? null,
     };
   }
 }
