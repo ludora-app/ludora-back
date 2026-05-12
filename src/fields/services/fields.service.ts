@@ -10,6 +10,7 @@ import { EmailsService } from 'src/shared/emails/emails.service';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { FIELD_SUGGESTION_CONFIG } from '../constants/fields.constants';
+import { AdminFieldFiltersDto } from '../dto/input/admin-field-filters.dto';
 import { CreatePrivateFieldDto } from '../dto/input/create-private-field.dto';
 import { CreatePublicFieldDto } from '../dto/input/create-public-field.dto';
 import { FieldFilterDto } from '../dto/input/field-filter.dto';
@@ -17,6 +18,8 @@ import { MyFieldsB2CFilterDto } from '../dto/input/my-fields-b2c-filter.dto';
 import { MyFieldsFilterDto } from '../dto/input/my-fields-filter.dto';
 import { PublicFieldFilterDto } from '../dto/input/public-field-filter.dto';
 import { UpdateFieldDto } from '../dto/input/update-field.dto';
+import { AdminFieldCollectionResponseData } from '../dto/output/admin-field-collection-response.dto';
+import { AdminFindOneFieldResponseData } from '../dto/output/admin-find-one-field-response.dto';
 import { FieldResponseDto, PublicFieldResponseData } from '../dto/output/field-response.dto';
 import { FindOneFieldResponseData } from '../dto/output/find-one-field-response.dto';
 import { MyFieldsResponseData } from './../dto/output/my-fields-response.dto';
@@ -211,7 +214,7 @@ export class FieldsService {
    * @param uid
    * @returns
    */
-  async findOneForAdmin(uid: string): Promise<FindOneFieldResponseData | null> {
+  async findOneForAdmin(uid: string): Promise<AdminFindOneFieldResponseData | null> {
     const field = await this.prisma.fields.findUnique({
       include: {
         fieldImages: {
@@ -233,13 +236,22 @@ export class FieldsService {
             uid: true,
           },
         },
+        creator: {
+          select: {
+            firstname: true,
+            uid: true,
+            lastname: true,
+            isEmailVerified: true,
+            imageUrl: true,
+          },
+        },
       },
       where: { uid },
     });
 
     if (!field) return null;
-
-    return FieldMapper.toFindOneDto(field);
+    console.log(field);
+    return FieldMapper.toFindOneForAdminDto(field);
   }
 
   /**
@@ -809,8 +821,10 @@ export class FieldsService {
     return { items, nextCursor, totalCount };
   }
 
-  async findAllPendingFields(filters: PublicFieldFilterDto) {
-    const { cursor, limit = 10, search, sports } = filters;
+  async findAllFieldsAdmin(
+    filters: AdminFieldFiltersDto,
+  ): Promise<PaginatedDataDto<AdminFieldCollectionResponseData>> {
+    const { cursor, limit = 10, search, sports, status } = filters;
 
     const query: {
       take: number;
@@ -821,7 +835,7 @@ export class FieldsService {
       where: Prisma.FieldsWhereInput;
     } = {
       take: limit + 1,
-      where: { status: VerificationStatus.PENDING },
+      where: {},
     };
 
     if (cursor) {
@@ -838,6 +852,10 @@ export class FieldsService {
       query.where.fieldSports = { some: { sport: { in: sports } } };
     }
 
+    if (status) {
+      query.where.status = status;
+    }
+
     const fields = await this.prisma.fields.findMany({
       ...query,
       include: {
@@ -852,8 +870,9 @@ export class FieldsService {
       const nextItem = fields.pop();
       nextCursor = nextItem?.uid;
     }
+    console.log(fields);
 
-    const items = fields.map((field) => FieldMapper.toPublicFieldDto(field));
+    const items = fields.map((field) => FieldMapper.toAdminFieldDto(field));
 
     return { items, nextCursor, totalCount: fields.length };
   }

@@ -2,6 +2,8 @@ import { FieldType, VerificationStatus } from 'generated/prisma/client';
 import { Sport } from 'src/shared/constants/constants';
 
 import { GAME_MODE_PLAYERS_COUNT } from '../constants/fields.constants';
+import { AdminFieldCollectionResponseData } from '../dto/output/admin-field-collection-response.dto';
+import { AdminFindOneFieldResponseData } from '../dto/output/admin-find-one-field-response.dto';
 import { FieldResponseDto, PublicFieldResponseData } from '../dto/output/field-response.dto';
 import { FindOneFieldResponseData } from '../dto/output/find-one-field-response.dto';
 
@@ -32,6 +34,10 @@ interface FieldInput {
   }>;
 }
 
+interface AdminFieldInput extends FieldInput {
+  status: VerificationStatus;
+}
+
 interface RawFindOneField {
   uid: string;
   name: string;
@@ -55,6 +61,16 @@ interface RawFindOneField {
     uid: string;
     url: string;
   }[];
+}
+
+interface RawFindOneFieldForAdmin extends RawFindOneField {
+  creator: {
+    uid: string;
+    firstname: string;
+    lastname: string;
+    isEmailVerified: boolean;
+    imageUrl: string;
+  };
 }
 
 export class FieldMapper {
@@ -136,6 +152,41 @@ export class FieldMapper {
     };
   }
 
+  static toFindOneForAdminDto(field: RawFindOneFieldForAdmin): AdminFindOneFieldResponseData {
+    return {
+      address: field.address,
+      fieldImages: field.fieldImages.map((image) => ({
+        order: image.order,
+        uid: image.uid,
+        url: image.url,
+      })),
+      latitude: field.latitude,
+      longitude: field.longitude,
+      name: field.name ?? undefined,
+      partner: field.partner
+        ? {
+            rank: field.partner.rank,
+            uid: field.partner.uid,
+          }
+        : undefined,
+      creator: field.creator
+        ? {
+            uid: field.creator.uid,
+            firstname: field.creator?.firstname ?? null,
+            lastname: field.creator?.lastname ?? null,
+            isEmailVerified: field.creator?.isEmailVerified ?? null,
+            imageUrl: field.creator?.imageUrl ?? null,
+          }
+        : null,
+      partnerUid: field.partnerUid,
+      shortAddress: field.shortAddress,
+      sports: field.fieldSports.map((fieldSport) => fieldSport.sport as Sport),
+      status: field.status,
+      type: field.type,
+      uid: field.uid,
+    };
+  }
+
   static toPublicFieldDto(field: FieldInput): PublicFieldResponseData {
     return {
       latitude: field.latitude,
@@ -144,6 +195,19 @@ export class FieldMapper {
       shortAddress: field.shortAddress,
       sports: field.fieldSports?.map((fieldSport) => fieldSport.sport as Sport),
       uid: field.uid,
+    };
+  }
+
+  static toAdminFieldDto(field: AdminFieldInput): AdminFieldCollectionResponseData {
+    return {
+      latitude: field.latitude,
+      longitude: field.longitude,
+      name: field.name,
+      shortAddress: field.shortAddress,
+      sports: field.fieldSports?.map((fieldSport) => fieldSport.sport as Sport),
+      uid: field.uid,
+      status: field.status,
+      // image: field.fieldImages?.sort((a, b) => a.order - b.order)[0]?.url,
     };
   }
 }

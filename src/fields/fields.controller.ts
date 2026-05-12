@@ -42,6 +42,7 @@ import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-r
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
 import { SWAGGER_TAG_FIELDS } from 'src/swagger.config';
+import { AdminFieldFiltersDto } from './dto/input/admin-field-filters.dto';
 import { CreateFieldSlotDto } from './dto/input/create-field-slot.dto';
 import { CreatePrivateFieldDto } from './dto/input/create-private-field.dto';
 import { CreatePublicFieldDto } from './dto/input/create-public-field.dto';
@@ -50,6 +51,11 @@ import { FieldFilterDto } from './dto/input/field-filter.dto';
 import { MyFieldsB2CFilterDto } from './dto/input/my-fields-b2c-filter.dto';
 import { PublicFieldFilterDto } from './dto/input/public-field-filter.dto';
 import { UpdateFieldDto } from './dto/input/update-field.dto';
+import {
+  AdminFieldCollectionResponseData,
+  PaginatedAdminFieldResponse,
+} from './dto/output/admin-field-collection-response.dto';
+import { AdminFindOneFieldResponseDto } from './dto/output/admin-find-one-field-response.dto';
 import {
   FieldResponseDto,
   PaginatedFieldResponse,
@@ -241,7 +247,7 @@ export class FieldsController {
   @Get('admin/:uid')
   @UseGuards(AdminGuard)
   @Protected()
-  @ApiOkResponse({ type: FindOneFieldResponseDto })
+  @ApiOkResponse({ type: AdminFindOneFieldResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiForbiddenResponse({ type: ForbiddenResponseDto })
@@ -250,9 +256,7 @@ export class FieldsController {
   @ApiOperation({
     summary: 'Get a field by uid without verification status filter, used for admin purposes',
   })
-  async findOneForAdmin(
-    @Param('uid') uid: string,
-  ): Promise<ResponseTypeDto<FindOneFieldResponseData>> {
+  async findOneForAdmin(@Param('uid') uid: string): Promise<AdminFindOneFieldResponseDto> {
     const field = await this.fieldsService.findOneForAdmin(uid);
 
     if (!field) {
@@ -282,21 +286,21 @@ export class FieldsController {
     };
   }
 
-  @Get('admin/list-pending/collection')
+  @Get('admin/list/collection')
   @UseGuards(AdminGuard)
   @Protected()
-  @ApiOkResponse({ type: PaginatedPublicFieldResponse })
+  @ApiOkResponse({ type: PaginatedAdminFieldResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all pending fields' })
-  async findAllPendingFields(
-    @Query() filters: PublicFieldFilterDto,
-  ): Promise<PaginationResponseTypeDto<PublicFieldResponseData>> {
-    const data = await this.fieldsService.findAllPendingFields(filters);
+  async findAllFieldsAdmin(
+    @Query() filters: AdminFieldFiltersDto,
+  ): Promise<PaginationResponseTypeDto<AdminFieldCollectionResponseData>> {
+    const data = await this.fieldsService.findAllFieldsAdmin(filters);
     return {
       data,
-      message: 'Pending fields fetched successfully',
+      message: 'Fields fetched successfully',
     };
   }
 
