@@ -10,16 +10,12 @@ import { EmailsService } from 'src/shared/emails/emails.service';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { FIELD_SUGGESTION_CONFIG } from '../constants/fields.constants';
-import { AdminFieldFiltersDto } from '../dto/input/admin-field-filters.dto';
 import { CreatePrivateFieldDto } from '../dto/input/create-private-field.dto';
 import { CreatePublicFieldDto } from '../dto/input/create-public-field.dto';
 import { FieldFilterDto } from '../dto/input/field-filter.dto';
 import { MyFieldsB2CFilterDto } from '../dto/input/my-fields-b2c-filter.dto';
 import { MyFieldsFilterDto } from '../dto/input/my-fields-filter.dto';
 import { PublicFieldFilterDto } from '../dto/input/public-field-filter.dto';
-import { UpdateFieldDto } from '../dto/input/update-field.dto';
-import { AdminFieldCollectionResponseData } from '../dto/output/admin-field-collection-response.dto';
-import { AdminFindOneFieldResponseData } from '../dto/output/admin-find-one-field-response.dto';
 import { FieldResponseDto, PublicFieldResponseData } from '../dto/output/field-response.dto';
 import { FindOneFieldResponseData } from '../dto/output/find-one-field-response.dto';
 import { MyFieldsResponseData } from './../dto/output/my-fields-response.dto';
@@ -210,51 +206,6 @@ export class FieldsService {
   }
 
   /**
-   * @description Get a field by uid without verification status filter
-   * @param uid
-   * @returns
-   */
-  async findOneForAdmin(uid: string): Promise<AdminFindOneFieldResponseData | null> {
-    const field = await this.prisma.fields.findUnique({
-      include: {
-        fieldImages: {
-          select: {
-            order: true,
-            status: true,
-            uid: true,
-            url: true,
-          },
-        },
-        fieldSports: {
-          select: {
-            sport: true,
-          },
-        },
-        partner: {
-          select: {
-            rank: true,
-            uid: true,
-          },
-        },
-        creator: {
-          select: {
-            firstname: true,
-            uid: true,
-            lastname: true,
-            isEmailVerified: true,
-            imageUrl: true,
-          },
-        },
-      },
-      where: { uid },
-    });
-
-    if (!field) return null;
-    console.log(field);
-    return FieldMapper.toFindOneForAdminDto(field);
-  }
-
-  /**
    * The function `verifyFieldLocation` checks if a field location already exists for a specific sport.
    * If it does, it throws a ConflictException.
    * If a field exists with the same location but different sport, nothing happens.
@@ -288,159 +239,6 @@ export class FieldsService {
     }
     this.logger.debug(`Field location ${address} does not exist for sports ${sports.join(', ')}`);
   }
-
-  // TODO : verify this method
-  async updatePublicField(
-    uid: string,
-    updateFieldDto: UpdateFieldDto,
-    files: { buffer: Buffer; originalname: string }[],
-  ): Promise<void> {
-    const { address, lat, lng, name, shortAddress } = updateFieldDto;
-
-    const images = Array.isArray(files)
-      ? files.map((file, index) => ({
-          file: file.buffer,
-          name: file.originalname,
-          order: index,
-        }))
-      : [];
-
-    const existingField = await this.prisma.fields.findUnique({
-      include: { fieldImages: true, fieldSports: true },
-      where: { uid },
-    });
-
-    if (!existingField) {
-      this.logger.error(`Field with uid ${uid} not found`);
-      throw new Error(`Field with uid ${uid} not found`);
-    }
-
-    let coordinates: { lat: number; lng: number } | undefined;
-    const finalLat = lat ?? (address ? undefined : existingField.latitude);
-    const finalLng = lng ?? (address ? undefined : existingField.longitude);
-
-    if (address) {
-      coordinates = await this.geolocalisationService.getLatitudeAndLongitude(address);
-      const sports = existingField.fieldSports.map((fieldSport) => fieldSport.sport as Sport);
-      await this.verifyFieldLocation(coordinates.lat, coordinates.lng, address, sports);
-    }
-
-    await this.prisma.$transaction(async (tx) => {
-      await tx.fields.update({
-        data: {
-          ...(address && { address }),
-          ...(shortAddress && { shortAddress }),
-          ...(coordinates && { latitude: coordinates.lat, longitude: coordinates.lng }),
-          ...(finalLat && { latitude: finalLat }),
-          ...(finalLng && { longitude: finalLng }),
-          ...(name && { name }),
-        },
-        where: { uid },
-      });
-
-      if (images && images.length > 0) {
-        await tx.fieldImages.deleteMany({
-          where: { fieldUid: uid },
-        });
-
-        await Promise.all(
-          images.map(async (image, index) => {
-            const uploadResult = await this.storageService.upload(
-              StorageFolderName.FIELDS,
-              image.name,
-              image.file,
-            );
-
-            await tx.fieldImages.create({
-              data: {
-                fieldUid: uid,
-                order: index,
-                url: uploadResult.data,
-              },
-            });
-          }),
-        );
-      }
-    });
-
-    this.logger.debug(`Field ${uid} updated successfully`);
-  }
-
-  // TODO : verify this method
-  // async updatePrivateField(
-  //   uid: string,
-  //   partnerUid: string,
-  //   updatePrivateFieldDto: UpdateFieldDto,
-  // ): Promise<void> {
-  //   const { address, images, lat, lng, name, shortAddress } = updatePrivateFieldDto;
-
-  //   const existingField = await this.prisma.fields.findUnique({
-  //     include: { fieldImages: true, fieldSports: true },
-  //     where: { uid },
-  //   });
-
-  //   if (!existingField) {
-  //     this.logger.error(`Field with uid ${uid} not found`);
-  //     throw new Error(`Field with uid ${uid} not found`);
-  //   }
-
-  //   if (existingField.partnerUid !== partnerUid) {
-  //     this.logger.error(
-  //       `Field with uid ${uid} is not associated with partner with uid ${partnerUid}`,
-  //     );
-  //     throw new Error(
-  //       `Field with uid ${uid} is not associated with partner with uid ${partnerUid}`,
-  //     );
-  //   }
-
-  //   let coordinates;
-  //   const finalLat = lat ?? (address ? undefined : existingField.latitude);
-  //   const finalLng = lng ?? (address ? undefined : existingField.longitude);
-
-  //   if (address) {
-  //     coordinates = await this.geolocalisationService.getLatitudeAndLongitude(address);
-  //     const sports = existingField.fieldSports.map((fieldSport) => fieldSport.sport as Sport);
-  //     await this.verifyFieldLocation(coordinates.lat, coordinates.lng, address, sports);
-  //   }
-
-  //   await this.prisma.$transaction(async (tx) => {
-  //     await tx.fields.update({
-  //       data: {
-  //         ...(address && { address }),
-  //         ...(shortAddress && { shortAddress }),
-  //         ...(coordinates && { latitude: coordinates.lat, longitude: coordinates.lng }),
-  //         ...(finalLat && { latitude: finalLat }),
-  //         ...(finalLng && { longitude: finalLng }),
-  //         ...(name && { name }),
-  //       },
-  //       where: { uid },
-  //     });
-
-  //     if (images && images.length > 0) {
-  //       await tx.fieldImages.deleteMany({
-  //         where: { fieldUid: uid },
-  //       });
-
-  //       await Promise.all(
-  //         images.map(async (image, index) => {
-  //           const uploadResult = await this.storageService.upload(
-  //             StorageFolderName.FIELDS,
-  //             image.name,
-  //             image.file,
-  //           );
-
-  //           await tx.fieldImages.create({
-  //             data: {
-  //               fieldUid: uid,
-  //               order: index,
-  //               url: uploadResult.data,
-  //             },
-  //           });
-  //         }),
-  //       );
-  //     }
-  //   });
-  // }
 
   async findAll(filter: FieldFilterDto): Promise<PaginatedDataDto<FieldResponseDto>> {
     const {
@@ -819,61 +617,5 @@ export class FieldsService {
     }));
 
     return { items, nextCursor, totalCount };
-  }
-
-  async findAllFieldsAdmin(
-    filters: AdminFieldFiltersDto,
-  ): Promise<PaginatedDataDto<AdminFieldCollectionResponseData>> {
-    const { cursor, limit = 10, search, sports, status } = filters;
-
-    const query: {
-      take: number;
-      skip?: number;
-      cursor?: {
-        uid: string;
-      };
-      where: Prisma.FieldsWhereInput;
-    } = {
-      take: limit + 1,
-      where: {},
-    };
-
-    if (cursor) {
-      query.cursor = { uid: cursor };
-      query.skip = 1;
-    }
-    if (search) {
-      query.where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { address: { contains: search, mode: 'insensitive' } },
-      ];
-    }
-    if (sports?.length) {
-      query.where.fieldSports = { some: { sport: { in: sports } } };
-    }
-
-    if (status) {
-      query.where.status = status;
-    }
-
-    const fields = await this.prisma.fields.findMany({
-      ...query,
-      include: {
-        fieldImages: { orderBy: { order: 'asc' }, select: { order: true, url: true }, take: 1 },
-        fieldSports: { select: { sport: true } },
-      },
-    });
-
-    const actualLimit = limit || 10;
-    let nextCursor: string | null = null;
-    if (fields.length > actualLimit) {
-      const nextItem = fields.pop();
-      nextCursor = nextItem?.uid;
-    }
-    console.log(fields);
-
-    const items = fields.map((field) => FieldMapper.toAdminFieldDto(field));
-
-    return { items, nextCursor, totalCount: fields.length };
   }
 }

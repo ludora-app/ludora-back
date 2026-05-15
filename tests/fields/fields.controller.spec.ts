@@ -1,14 +1,13 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { FieldsController } from 'src/fields/controllers/fields.controller';
 import { FieldSlotsService } from 'src/fields/services/field-slots.service';
 import { FieldsService } from 'src/fields/services/fields.service';
-import { AdminGuard } from '../../src/auth/guards/admin.guard';
 import { AuthB2BGuard } from '../../src/auth/guards/auth-b2b.guard';
 import { AuthB2CGuard } from '../../src/auth/guards/auth-b2c.guard';
 import { CreatePublicFieldDto } from '../../src/fields/dto/input/create-public-field.dto';
 import { FieldFilterDto } from '../../src/fields/dto/input/field-filter.dto';
 import { PublicFieldFilterDto } from '../../src/fields/dto/input/public-field-filter.dto';
-import { FieldsController } from '../../src/fields/fields.controller';
 import { Sport } from '../../src/shared/constants/constants';
 
 describe('FieldsController', () => {
@@ -19,9 +18,7 @@ describe('FieldsController', () => {
     create: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
-    findOneForAdmin: jest.fn(),
     findAllPublicFields: jest.fn(),
-    findAllFieldsAdmin: jest.fn(),
   };
 
   const mockFieldSlotsService = {
@@ -33,10 +30,6 @@ describe('FieldsController', () => {
   };
 
   const mockAuthB2BGuard = {
-    canActivate: jest.fn(() => true),
-  };
-
-  const mockAdminGuard = {
     canActivate: jest.fn(() => true),
   };
 
@@ -58,8 +51,7 @@ describe('FieldsController', () => {
       .useValue(mockAuthB2CGuard)
       .overrideGuard(AuthB2BGuard)
       .useValue(mockAuthB2BGuard)
-      .overrideGuard(AdminGuard)
-      .useValue(mockAdminGuard)
+
       .compile();
 
     controller = module.get<FieldsController>(FieldsController);
@@ -550,77 +542,6 @@ describe('FieldsController', () => {
       expect(result.data.items).toHaveLength(2);
       expect(result.data.nextCursor).toBe('field-3');
       expect(result.data.nextCursor).not.toBeNull();
-    });
-  });
-
-  describe('findOneForAdmin', () => {
-    it('should return a single field by uid for admin', async () => {
-      const uid = 'field-uid-1';
-      const mockField = {
-        uid,
-        name: 'Test Field',
-        address: '123 Main St',
-        sport: Sport.FOOTBALL,
-        latitude: 48.8566,
-        longitude: 2.3522,
-        partnerUid: null,
-        entryFee: null,
-        gameMode: null,
-        isVerified: true,
-        fieldImages: [{ uid: 'img-1', url: 'https://storage/image1.jpg', order: 0 }],
-      };
-
-      mockFieldsService.findOneForAdmin.mockResolvedValue(mockField);
-
-      const result = await controller.findOneForAdmin(uid);
-
-      expect(result).toEqual({
-        data: mockField,
-        message: 'Field fetched successfully',
-      });
-      expect(mockFieldsService.findOneForAdmin).toHaveBeenCalledWith(uid);
-    });
-
-    it('should throw NotFoundException if field does not exist for admin', async () => {
-      const uid = 'non-existent-uid';
-
-      mockFieldsService.findOneForAdmin.mockResolvedValue(null);
-
-      await expect(controller.findOneForAdmin(uid)).rejects.toThrow(NotFoundException);
-      expect(mockFieldsService.findOneForAdmin).toHaveBeenCalledWith(uid);
-    });
-  });
-
-  describe('findAllFieldsAdmin', () => {
-    it('should return all fields for admin', async () => {
-      const filters = {
-        limit: 10,
-      };
-
-      const mockResponse = {
-        items: [
-          {
-            uid: 'field-1',
-            name: 'Field 1',
-            latitude: 48.8566,
-            longitude: 2.3522,
-            shortAddress: '123 Main St',
-            sports: [Sport.FOOTBALL],
-          },
-        ],
-        nextCursor: null,
-        totalCount: 1,
-      };
-
-      mockFieldsService.findAllFieldsAdmin.mockResolvedValue(mockResponse);
-
-      const result = await controller.findAllFieldsAdmin(filters as any);
-
-      expect(result).toEqual({
-        data: mockResponse,
-        message: 'Fields fetched successfully',
-      });
-      expect(mockFieldsService.findAllFieldsAdmin).toHaveBeenCalledWith(filters);
     });
   });
 });
