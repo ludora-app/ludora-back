@@ -12,6 +12,7 @@ describe('FieldsAdminController', () => {
   const mockFieldsAdminService = {
     findAllFieldsAdmin: jest.fn(),
     findOneForAdmin: jest.fn(),
+    update: jest.fn(),
   };
 
   const mockAdminGuard = {
@@ -110,6 +111,68 @@ describe('FieldsAdminController', () => {
         message: 'Fields fetched successfully',
       });
       expect(mockFieldsAdminService.findAllFieldsAdmin).toHaveBeenCalledWith(filters);
+    });
+    describe('update', () => {
+      it('should update a field by uid for admin', async () => {
+        const uid = 'field-uid-1';
+        const updateDto = {
+          name: 'Updated Field',
+        };
+        const images = [
+          {
+            buffer: Buffer.from('test'),
+            originalname: 'test.jpg',
+            status: 'APPROVED' as any,
+          },
+        ];
+
+        const expectedImagesDto = [
+          {
+            file: images[0].buffer,
+            name: images[0].originalname,
+            order: 0,
+            status: images[0].status,
+          },
+        ];
+
+        const mockField = {
+          uid,
+          name: 'Updated Field',
+          address: '123 Main St',
+          latitude: 48.8566,
+          longitude: 2.3522,
+          shortAddress: '123 Main St',
+          fieldImages: [{ uid: 'img-1', url: 'https://storage/image1.jpg', order: 0 }],
+        };
+
+        mockFieldsAdminService.update.mockResolvedValue(mockField);
+
+        const result = await controller.update(uid, updateDto as any, images);
+
+        expect(result).toEqual({
+          data: mockField,
+          message: 'Field updated successfully',
+        });
+        expect(mockFieldsAdminService.update).toHaveBeenCalledWith(uid, {
+          ...updateDto,
+          images: expectedImagesDto,
+        });
+      });
+
+      it('should throw NotFoundException if service throws it', async () => {
+        const uid = 'non-existent-uid';
+        const updateDto = { name: 'Updated Field' };
+
+        mockFieldsAdminService.update.mockRejectedValue(new NotFoundException());
+
+        await expect(controller.update(uid, updateDto as any, [])).rejects.toThrow(
+          NotFoundException,
+        );
+        expect(mockFieldsAdminService.update).toHaveBeenCalledWith(uid, {
+          ...updateDto,
+          images: [],
+        });
+      });
     });
   });
 });

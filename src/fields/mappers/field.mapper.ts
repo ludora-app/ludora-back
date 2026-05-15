@@ -61,6 +61,7 @@ interface RawFindOneField {
     order: number;
     uid: string;
     url: string;
+    status?: VerificationStatus;
   }[];
 }
 
@@ -160,6 +161,7 @@ export class FieldMapper {
         order: image.order,
         uid: image.uid,
         url: image.url,
+        status: image.status,
       })),
       latitude: field.latitude,
       longitude: field.longitude,

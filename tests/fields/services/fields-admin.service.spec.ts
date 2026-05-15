@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Sport } from 'src/shared/constants/constants';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
@@ -21,8 +22,24 @@ describe('FieldsAdminService', () => {
     },
     fieldImages: {
       create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    fieldSports: {
+      createMany: jest.fn(),
+      deleteMany: jest.fn(),
     },
     $transaction: jest.fn(),
+  };
+
+  const mockGeolocalisationService = {
+    getGeocodeFromAddress: jest.fn(),
+    getDetailsFromAddress: jest.fn(),
+  };
+
+  const mockStorageService = {
+    upload: jest.fn(),
+    deleteFile: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -35,14 +52,20 @@ describe('FieldsAdminService', () => {
         },
         {
           provide: GeolocalisationService,
-          useValue: {
-            getGeocodeFromAddress: jest.fn(),
-          },
+          useValue: mockGeolocalisationService,
         },
         {
           provide: StorageService,
+          useValue: mockStorageService,
+        },
+        {
+          provide: PinoLogger,
           useValue: {
-            uploadFile: jest.fn(),
+            info: jest.fn(),
+            error: jest.fn(),
+            warn: jest.fn(),
+            debug: jest.fn(),
+            setContext: jest.fn(),
           },
         },
       ],
@@ -144,6 +167,128 @@ describe('FieldsAdminService', () => {
           }),
         }),
       );
+    });
+  });
+
+  describe('update', () => {
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should update a field successfully', async () => {
+      const uid = 'field-uid-1';
+      const dto = {
+        name: 'Updated Name',
+        sports: [Sport.FOOTBALL, Sport.BASKETBALL],
+        address: 'New Address',
+        status: 'APPROVED' as any,
+        images: [
+          {
+            uid: 'img-1',
+            url: 'https://example.com/fields/img-1.jpg',
+            order: 0,
+            status: 'APPROVED' as any,
+          }, // to keep
+          { name: 'new-img.jpg', order: 1, file: Buffer.from('test'), status: 'APPROVED' as any }, // to add
+        ],
+      };
+
+      const existingField = {
+        uid,
+        name: 'Old Name',
+        address: 'Old Address',
+        fieldSports: [{ sport: Sport.FOOTBALL }],
+        fieldImages: [
+          {
+            uid: 'img-1',
+            url: 'https://example.com/fields/img-1.jpg',
+            order: 0,
+            status: 'PENDING',
+          },
+          {
+            uid: 'img-2',
+            url: 'https://example.com/fields/img-2.jpg',
+            order: 1,
+            status: 'PENDING',
+          }, // to delete
+        ],
+      };
+
+      const geoDetails = {
+        city: 'Paris',
+        country: 'France',
+        department: '75',
+        latitude: 48.8566,
+        longitude: 2.3522,
+        zipCode: '75001',
+      };
+
+      mockPrismaService.fields.findUnique.mockResolvedValue(existingField);
+      mockGeolocalisationService.getDetailsFromAddress.mockResolvedValue(geoDetails);
+      mockStorageService.upload.mockResolvedValue({
+        data: 'https://example.com/fields/new-img.jpg',
+      });
+
+      mockPrismaService.fields.update.mockResolvedValue({
+        ...existingField,
+        ...geoDetails,
+        name: dto.name,
+      });
+
+      const result = await service.update(uid, dto as any);
+
+      expect(mockPrismaService.fields.findUnique).toHaveBeenCalledWith({
+        where: { uid },
+        include: expect.any(Object),
+      });
+
+      // sports
+      expect(mockPrismaService.fieldSports.createMany).toHaveBeenCalledWith({
+        data: [{ fieldUid: uid, sport: Sport.BASKETBALL }],
+      });
+
+      // geo
+      expect(mockGeolocalisationService.getDetailsFromAddress).toHaveBeenCalledWith(dto.address);
+
+      // images to delete
+      expect(mockStorageService.deleteFile).toHaveBeenCalledWith('fields/img-2.jpg');
+      expect(mockPrismaService.fieldImages.delete).toHaveBeenCalledWith({
+        where: { uid: 'img-2' },
+      });
+
+      // images to update
+      expect(mockPrismaService.fieldImages.update).toHaveBeenCalledWith({
+        where: { uid: 'img-1' },
+        data: { order: 0, status: 'APPROVED' },
+      });
+
+      // images to add
+      expect(mockStorageService.upload).toHaveBeenCalledWith(
+        'fields',
+        'new-img.jpg',
+        expect.any(Buffer),
+      );
+      expect(mockPrismaService.fieldImages.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          url: 'https://example.com/fields/new-img.jpg',
+          fieldUid: uid,
+        }),
+      });
+
+      // field update
+      expect(mockPrismaService.fields.update).toHaveBeenCalledWith({
+        where: { uid },
+        data: expect.objectContaining({ name: 'Updated Name', address: 'New Address' }),
+        include: expect.any(Object),
+      });
+
+      expect(result).toBeDefined();
+    });
+
+    it('should throw NotFoundException if field does not exist', async () => {
+      mockPrismaService.fields.findUnique.mockResolvedValue(null);
+
+      await expect(service.update('invalid-uid', {} as any)).rejects.toThrow('Field not found');
     });
   });
 });
