@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiConsumes,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
@@ -33,7 +34,7 @@ import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-r
 import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
 import { SWAGGER_TAG_FIELDS_ADMIN } from 'src/swagger.config';
 import { AdminFieldFiltersDto } from '../dto/input/admin-field-filters.dto';
-import { UpdateFieldAdminDto } from '../dto/input/update-field-admin.dto';
+import { UpdateFieldAdminDto, UpdateFieldAdminFormDto } from '../dto/input/update-field-admin.dto';
 import {
   AdminFieldCollectionResponseData,
   PaginatedAdminFieldResponse,
@@ -90,6 +91,7 @@ export class FieldsAdminController {
   @Put(':uid')
   @UseInterceptors(new FastifyFilesInterceptor('images'))
   @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: UpdateFieldAdminFormDto })
   @ApiOperation({
     summary: 'Update a field by uid, used for admin purposes',
   })
@@ -102,18 +104,58 @@ export class FieldsAdminController {
   async update(
     @Param('uid') uid: string,
     @Body() dto: UpdateFieldAdminDto,
-    @UploadedFilesCustom() images: {
+    @UploadedFilesCustom() uploadedFiles: {
       buffer: Buffer;
       originalname: string;
-      status: VerificationStatus;
     }[],
   ): Promise<AdminFindOneFieldResponseDto> {
-    const imagesDto = (Array.isArray(images) ? images : []).map((image, index) => ({
-      file: image.buffer,
-      name: image.originalname,
-      order: index,
-      status: image.status,
-    }));
+    // Parse metadata — the Fastify interceptor may auto-parse JSON arrays,
+    // so imagesMetadata can arrive as a string OR as an already-parsed array.
+    let metadataList: {
+      uid?: string;
+      name?: string;
+      order?: number;
+      status?: VerificationStatus;
+    }[] = [];
+    if (dto.imagesMetadata) {
+      if (Array.isArray(dto.imagesMetadata)) {
+        metadataList = dto.imagesMetadata;
+      } else {
+        try {
+          metadataList = JSON.parse(dto.imagesMetadata);
+        } catch {
+          metadataList = [];
+        }
+      }
+    }
+
+    const files = Array.isArray(uploadedFiles) ? uploadedFiles : [];
+
+    // Build the final imagesDto by merging metadata with uploaded file buffers
+    // New images have no uid → match by position among new files
+    let newFileIndex = 0;
+    const imagesDto = metadataList.map((meta) => {
+      if (meta.uid) {
+        // Existing image: no file upload needed, just metadata update
+        return {
+          uid: meta.uid,
+          name: meta.name ?? 'image.jpg',
+          order: meta.order ?? 0,
+          status: meta.status,
+          file: undefined as unknown as Buffer,
+        };
+      } else {
+        // New image: assign the next uploaded file
+        const uploadedFile = files[newFileIndex++];
+        return {
+          uid: undefined,
+          name: uploadedFile?.originalname ?? meta.name ?? 'image.jpg',
+          order: meta.order ?? newFileIndex - 1,
+          status: meta.status ?? VerificationStatus.PENDING,
+          file: uploadedFile?.buffer,
+        };
+      }
+    });
 
     const field = await this.fieldsAdminService.update(uid, { ...dto, images: imagesDto });
     return {
