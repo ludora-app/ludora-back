@@ -1,4 +1,5 @@
-import { ApiPropertyOptional, OmitType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
 import { VerificationStatus } from 'generated/prisma/enums';
 import { Sport } from 'src/shared/constants/constants';
@@ -33,14 +34,13 @@ export class UpdateFieldAdminDto {
   @IsOptional()
   readonly name?: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Address of the field',
     example: '123 Main St, Anytown, USA',
     type: String,
   })
   @IsString()
-  @IsOptional()
-  readonly address?: string;
+  readonly address: string;
 
   @IsOptional()
   @ApiPropertyOptional({
@@ -50,16 +50,28 @@ export class UpdateFieldAdminDto {
   })
   readonly images?: UpdateFieldImageDto[];
 
+  // ? @Transform is used because of the multipart/form-data type messing with the array
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [value];
+      } catch {
+        return [value];
+      }
+    }
+    return value ? [value] : value;
+  })
   @IsArray()
-  @IsOptional()
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Sports available on the field',
     example: [Sport.FOOTBALL, Sport.TENNIS, Sport.BASKETBALL],
     enum: Sport,
     isArray: true,
     type: 'array',
   })
-  readonly sports?: Sport[];
+  readonly sports: Sport[];
 
   @IsOptional()
   @ApiPropertyOptional({
