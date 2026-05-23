@@ -38,7 +38,7 @@ export const SWAGGER_DESCRIPTION_FIELDS =
 export const SWAGGER_DESCRIPTION_FRIENDS =
   'Friend relationship management: requests, listing, accept or decline, and removal';
 export const SWAGGER_DESCRIPTION_GEOLOCALISATION =
-  '(Dev only) Geocoding utilities: coordinates to address conversion and reverse';
+  'Geocoding utilities: coordinates to address conversion and reverse';
 export const SWAGGER_DESCRIPTION_HOUR_PREFERENCES =
   'User availability and hour preferences management';
 export const SWAGGER_DESCRIPTION_MODERATION = 'User moderation: block and report users';

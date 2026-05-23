@@ -117,6 +117,13 @@ describe('FieldsAdminController', () => {
         const uid = 'field-uid-1';
         const updateDto = {
           name: 'Updated Field',
+          imagesMetadata: JSON.stringify([
+            {
+              name: 'test.jpg',
+              order: 0,
+              status: 'APPROVED',
+            },
+          ]),
         };
         const images = [
           {

@@ -1,7 +1,9 @@
-import { AddressType, Client } from '@googlemaps/google-maps-services-js';
+import { AddressType, Client, Language } from '@googlemaps/google-maps-services-js';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PaginatedDataDto } from '../dto/responses/pagination-response-type';
 import { AddressComponentsTypes } from './dto/input/address-components-types';
+import { AddressAutocompleteResponseData } from './dto/output/address-autocomplete-response.dto';
 import {
   AddressResult,
   Coordinates,
@@ -9,6 +11,7 @@ import {
   GeolocalisationDetailsResponseDto,
   ShortAddressLocation,
 } from './dto/output/geolocalisation-details.response.dto';
+import { GeolocalisationMapper } from './mappers/geolocalisation.mapper';
 
 @Injectable()
 export class GeolocalisationService {
@@ -229,6 +232,37 @@ export class GeolocalisationService {
       shortAddress,
       zipCode,
     };
+  }
+
+  async getAddressAutocomplete(
+    address: string,
+  ): Promise<PaginatedDataDto<AddressAutocompleteResponseData>> {
+    try {
+      const response = await this.client.geocode({
+        params: {
+          address: address.trim(),
+          key: this.GOOGLE_MAPS_API_KEY,
+          language: Language.fr,
+        },
+      });
+
+      if (response.data.status === 'ZERO_RESULTS') {
+        return { items: [], totalCount: 0, nextCursor: null };
+      }
+
+      if (response.data.status !== 'OK') {
+        throw new Error(
+          response.data.error_message || `Geocoding API error status: ${response.data.status}`,
+        );
+      }
+
+      const results = response.data.results.map((result) =>
+        GeolocalisationMapper.toAutocompleteDto(result),
+      );
+      return { items: results, totalCount: results.length, nextCursor: null };
+    } catch (error) {
+      throw new BadRequestException(`Google Maps API error: ${error.message}`);
+    }
   }
 
   /**
