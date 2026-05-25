@@ -1,5 +1,23 @@
-import { OmitType } from '@nestjs/swagger';
+import { ApiProperty, OmitType } from '@nestjs/swagger';
 
 import { CreatePrivateFieldDto } from './create-private-field.dto';
 
 export class CreatePublicFieldDto extends OmitType(CreatePrivateFieldDto, ['partnerUid']) {}
+
+/**
+ * DTO utilisé uniquement pour la doc Swagger (multipart/form-data).
+ * Décrit "images" comme tableau de fichiers binaires pour que les clients (Orval, etc.)
+ * génèrent un FormData avec formData.append('images', file) et non JSON.stringify.
+ */
+export class CreatePublicFieldFormDto extends OmitType(CreatePublicFieldDto, ['images']) {
+  @ApiProperty({
+    description: 'Images du terrain (fichiers). Envoyer chaque fichier avec le champ "images".',
+    items: {
+      format: 'binary',
+      type: 'string',
+    },
+    required: false,
+    type: 'array',
+  })
+  images?: unknown;
+}

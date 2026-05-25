@@ -26,10 +26,11 @@ describe('FieldsAdminService', () => {
       delete: jest.fn(),
     },
     fieldSports: {
+      create: jest.fn(),
       createMany: jest.fn(),
       deleteMany: jest.fn(),
     },
-    $transaction: jest.fn(),
+    $transaction: jest.fn((cb) => cb(mockPrismaService)),
   };
 
   const mockGeolocalisationService = {
@@ -73,6 +74,10 @@ describe('FieldsAdminService', () => {
 
     service = module.get<FieldsAdminService>(FieldsAdminService);
     _prismaService = module.get<PrismaService>(PrismaService);
+    _geolocalisationService = module.get<GeolocalisationService>(GeolocalisationService);
+    _storageService = module.get<StorageService>(StorageService);
+
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -98,6 +103,7 @@ describe('FieldsAdminService', () => {
           uid: 'partner-1',
           rank: 0,
         },
+        creator: null,
       };
 
       mockPrismaService.fields.findUnique.mockResolvedValue(mockField);
@@ -168,13 +174,91 @@ describe('FieldsAdminService', () => {
         }),
       );
     });
+
+    it('should handle cursor pagination correctly', async () => {
+      mockPrismaService.fields.findMany.mockResolvedValue([]);
+      await service.findAllFieldsAdmin({ cursor: 'cursor-uid-1', limit: 10 } as any);
+
+      expect(mockPrismaService.fields.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cursor: { uid: 'cursor-uid-1' },
+          skip: 1,
+        }),
+      );
+    });
+
+    it('should handle search filtering correctly', async () => {
+      mockPrismaService.fields.findMany.mockResolvedValue([]);
+      await service.findAllFieldsAdmin({ search: 'nice field' } as any);
+
+      expect(mockPrismaService.fields.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: [
+              { name: { contains: 'nice field', mode: 'insensitive' } },
+              { address: { contains: 'nice field', mode: 'insensitive' } },
+            ],
+          }),
+        }),
+      );
+    });
+
+    it('should handle sports filtering correctly', async () => {
+      mockPrismaService.fields.findMany.mockResolvedValue([]);
+      await service.findAllFieldsAdmin({ sports: [Sport.FOOTBALL, Sport.BASKETBALL] } as any);
+
+      expect(mockPrismaService.fields.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            fieldSports: {
+              some: {
+                sport: {
+                  in: [Sport.FOOTBALL, Sport.BASKETBALL],
+                },
+              },
+            },
+          }),
+        }),
+      );
+    });
+
+    it('should return nextCursor when fields count exceeds the limit', async () => {
+      const mockFields = [
+        {
+          uid: 'field-1',
+          name: 'Admin Field 1',
+          address: '123 Main St',
+          shortAddress: '123 Main St',
+          latitude: 48.8566,
+          longitude: 2.3522,
+          fieldImages: [{ url: 'image1.jpg', order: 0 }],
+          fieldSports: [{ sport: Sport.FOOTBALL }],
+        },
+        {
+          uid: 'field-2',
+          name: 'Admin Field 2',
+          address: '456 Side St',
+          shortAddress: '456 Side St',
+          latitude: 48.8566,
+          longitude: 2.3522,
+          fieldImages: [{ url: 'image2.jpg', order: 0 }],
+          fieldSports: [{ sport: Sport.BASKETBALL }],
+        },
+      ];
+
+      mockPrismaService.fields.findMany.mockResolvedValue(mockFields);
+
+      // Limit is 1, mock returns 2 items (exceeds limit)
+      const result = await service.findAllFieldsAdmin({ limit: 1 } as any);
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].uid).toBe('field-1');
+      expect(result.nextCursor).toBe('field-2');
+      expect(result.totalCount).toBe(1);
+    });
   });
 
   describe('update', () => {
-    afterEach(() => {
-      jest.clearAllMocks();
-    });
-
     it('should update a field successfully', async () => {
       const uid = 'field-uid-1';
       const dto = {
@@ -233,6 +317,8 @@ describe('FieldsAdminService', () => {
         ...existingField,
         ...geoDetails,
         name: dto.name,
+        partner: null,
+        creator: null,
       });
 
       const result = await service.update(uid, dto as any);
@@ -289,6 +375,189 @@ describe('FieldsAdminService', () => {
       mockPrismaService.fields.findUnique.mockResolvedValue(null);
 
       await expect(service.update('invalid-uid', {} as any)).rejects.toThrow('Field not found');
+    });
+
+    it('should update field with unchanged address without calling geolocalisation service', async () => {
+      const uid = 'field-uid-1';
+      const dto = {
+        name: 'Updated Name',
+        address: 'Same Address',
+        sports: [Sport.FOOTBALL],
+        status: 'APPROVED' as any,
+      };
+
+      const existingField = {
+        uid,
+        name: 'Old Name',
+        address: 'Same Address',
+        fieldSports: [{ sport: Sport.FOOTBALL }],
+        fieldImages: [],
+      };
+
+      mockPrismaService.fields.findUnique.mockResolvedValue(existingField);
+      mockPrismaService.fields.update.mockResolvedValue({
+        ...existingField,
+        name: dto.name,
+        partner: null,
+        creator: null,
+      });
+
+      await service.update(uid, dto as any);
+
+      expect(mockGeolocalisationService.getDetailsFromAddress).not.toHaveBeenCalled();
+      expect(mockPrismaService.fields.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            address: 'Same Address',
+          }),
+        }),
+      );
+    });
+
+    it('should update field successfully when images are undefined', async () => {
+      const uid = 'field-uid-1';
+      const dto = {
+        name: 'Updated Name',
+        sports: [Sport.FOOTBALL],
+        status: 'APPROVED' as any,
+        images: undefined,
+      };
+
+      const existingField = {
+        uid,
+        name: 'Old Name',
+        address: 'Same Address',
+        fieldSports: [{ sport: Sport.FOOTBALL }],
+        fieldImages: [],
+      };
+
+      mockPrismaService.fields.findUnique.mockResolvedValue(existingField);
+      mockPrismaService.fields.update.mockResolvedValue({
+        ...existingField,
+        name: dto.name,
+        partner: null,
+        creator: null,
+      });
+
+      await service.update(uid, dto as any);
+
+      expect(mockPrismaService.fieldImages.create).not.toHaveBeenCalled();
+      expect(mockPrismaService.fieldImages.update).not.toHaveBeenCalled();
+      expect(mockPrismaService.fieldImages.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('create', () => {
+    it('should create a field with images and sports successfully', async () => {
+      const dto = {
+        name: 'Public Field',
+        address: '123 Main St',
+        sports: [Sport.FOOTBALL],
+        images: [
+          {
+            name: 'field.jpg',
+            file: Buffer.from('image-data'),
+          },
+        ],
+      };
+
+      const mockGeoDetails = {
+        city: 'Paris',
+        country: 'France',
+        department: '75',
+        latitude: 48.8566,
+        longitude: 2.3522,
+        zipCode: '75001',
+        shortAddress: '123 Main St Short',
+      };
+
+      const mockCreatedField = {
+        uid: 'new-field-uid',
+        name: 'Public Field',
+        address: '123 Main St',
+        ...mockGeoDetails,
+      };
+
+      mockGeolocalisationService.getDetailsFromAddress.mockResolvedValue(mockGeoDetails);
+      mockStorageService.upload.mockResolvedValue({ data: 'https://storage/field.jpg' });
+      mockPrismaService.fields.create.mockResolvedValue(mockCreatedField);
+      mockPrismaService.fieldImages.create.mockResolvedValue({
+        uid: 'img-1',
+        url: 'https://storage/field.jpg',
+      });
+
+      const result = await service.create(dto as any);
+
+      expect(result).toBe('new-field-uid');
+      expect(mockGeolocalisationService.getDetailsFromAddress).toHaveBeenCalledWith('123 Main St');
+      expect(mockStorageService.upload).toHaveBeenCalledWith(
+        'fields',
+        'field.jpg',
+        expect.any(Buffer),
+      );
+      expect(mockPrismaService.fields.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          address: '123 Main St',
+          city: 'Paris',
+          latitude: 48.8566,
+          longitude: 2.3522,
+        }),
+      });
+      expect(mockPrismaService.fieldSports.create).toHaveBeenCalledWith({
+        data: {
+          fieldUid: 'new-field-uid',
+          sport: Sport.FOOTBALL,
+        },
+      });
+      expect(mockPrismaService.fieldImages.create).toHaveBeenCalledWith({
+        data: {
+          fieldUid: 'new-field-uid',
+          order: 0,
+          url: 'https://storage/field.jpg',
+          status: 'APPROVED',
+        },
+      });
+    });
+
+    it('should use provided lat/lng/shortAddress if they are provided', async () => {
+      const dto = {
+        name: 'Public Field',
+        address: '123 Main St',
+        sports: [Sport.FOOTBALL],
+        lat: 45.0,
+        lng: -1.0,
+        shortAddress: 'Provided Short Address',
+      };
+
+      const mockGeoDetails = {
+        city: 'Paris',
+        country: 'France',
+        department: '75',
+        latitude: 48.8566,
+        longitude: 2.3522,
+        zipCode: '75001',
+        shortAddress: '123 Main St Short',
+      };
+
+      const mockCreatedField = {
+        uid: 'new-field-uid',
+        name: 'Public Field',
+        address: '123 Main St',
+      };
+
+      mockGeolocalisationService.getDetailsFromAddress.mockResolvedValue(mockGeoDetails);
+      mockPrismaService.fields.create.mockResolvedValue(mockCreatedField);
+
+      const result = await service.create(dto as any);
+
+      expect(result).toBe('new-field-uid');
+      expect(mockPrismaService.fields.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          latitude: 45.0,
+          longitude: -1.0,
+          shortAddress: 'Provided Short Address',
+        }),
+      });
     });
   });
 });

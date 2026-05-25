@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, VerificationStatus } from 'generated/prisma/browser';
+import { FieldType, Prisma, VerificationStatus } from 'generated/prisma/browser';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Sport, StorageFolderName } from 'src/shared/constants/constants';
@@ -9,6 +9,7 @@ import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisati
 import { SportsMapper } from 'src/shared/mappers/sports.mapper';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { AdminFieldFiltersDto } from '../dto/input/admin-field-filters.dto';
+import { CreatePublicFieldDto } from '../dto/input/create-public-field.dto';
 import { UpdateFieldAdminDto, UpdateFieldImageDto } from '../dto/input/update-field-admin.dto';
 import { AdminFieldCollectionResponseData } from '../dto/output/admin-field-collection-response.dto';
 import { AdminFindOneFieldResponseData } from '../dto/output/admin-find-one-field-response.dto';
@@ -189,6 +190,71 @@ export class FieldsAdminService {
     });
 
     return FieldMapper.toFindOneForAdminDto(updatedField);
+  }
+
+  async create(dto: CreatePublicFieldDto): Promise<string> {
+    const { address, images = [], lat, lng, name, shortAddress, sports } = dto;
+
+    let finalLat = lat;
+    let finalLng = lng;
+    let finalShortAddress = shortAddress;
+
+    const geo = await this.geolocalisationService.getDetailsFromAddress(address);
+
+    if (!finalLat || !finalLng || !finalShortAddress) {
+      finalLat = finalLat ?? geo.latitude;
+      finalLng = finalLng ?? geo.longitude;
+      finalShortAddress = finalShortAddress ?? geo.shortAddress;
+    }
+
+    const newField = await this.prisma.$transaction(async (tx) => {
+      const newField = await tx.fields.create({
+        data: {
+          address,
+          city: geo.city,
+          country: geo.country,
+          department: geo.department,
+          latitude: finalLat,
+          longitude: finalLng,
+          name: name,
+          shortAddress: finalShortAddress,
+          status: VerificationStatus.APPROVED,
+          type: FieldType.PUBLIC,
+          zipCode: geo.zipCode,
+        },
+      });
+
+      await Promise.all(
+        sports.map(async (sport) => {
+          await tx.fieldSports.create({
+            data: { fieldUid: newField.uid, sport },
+          });
+        }),
+      );
+
+      await Promise.all(
+        images.map(async (image, index) => {
+          const uploadResult = await this.storage.upload(
+            StorageFolderName.FIELDS,
+            image.name,
+            image.file,
+          );
+
+          const fieldImage = await tx.fieldImages.create({
+            data: {
+              fieldUid: newField.uid,
+              order: index,
+              url: uploadResult.data,
+              status: VerificationStatus.APPROVED,
+            },
+          });
+
+          return { order: index, uid: fieldImage.uid, url: fieldImage.url };
+        }),
+      );
+      return newField;
+    });
+    return newField.uid;
   }
 
   /**

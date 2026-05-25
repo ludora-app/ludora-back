@@ -6,6 +6,7 @@ import {
   HttpStatus,
   NotFoundException,
   Param,
+  Post,
   Put,
   Query,
   UseGuards,
@@ -15,6 +16,7 @@ import {
   ApiBadRequestResponse,
   ApiBody,
   ApiConsumes,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -34,6 +36,10 @@ import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-r
 import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
 import { SWAGGER_TAG_FIELDS_ADMIN } from 'src/swagger.config';
 import { AdminFieldFiltersDto } from '../dto/input/admin-field-filters.dto';
+import {
+  CreatePublicFieldDto,
+  CreatePublicFieldFormDto,
+} from '../dto/input/create-public-field.dto';
 import { UpdateFieldAdminDto, UpdateFieldAdminFormDto } from '../dto/input/update-field-admin.dto';
 import {
   AdminFieldCollectionResponseData,
@@ -48,6 +54,34 @@ import { FieldsAdminService } from './../services/fields-admin.service';
 @Protected()
 export class FieldsAdminController {
   constructor(private readonly fieldsAdminService: FieldsAdminService) {}
+
+  @Post()
+  @UseInterceptors(new FastifyFilesInterceptor('images'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: CreatePublicFieldFormDto })
+  @ApiCreatedResponse({
+    description: 'Field created successfully',
+    type: AdminFindOneFieldResponseDto,
+  })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiForbiddenResponse({ type: ForbiddenResponseDto })
+  @HttpCode(HttpStatus.CREATED)
+  async createField(
+    @Body() dto: CreatePublicFieldDto,
+    @UploadedFilesCustom() images: { buffer: Buffer; originalname: string }[],
+  ): Promise<AdminFindOneFieldResponseDto> {
+    const imagesDto = (Array.isArray(images) ? images : []).map((image, index) => ({
+      file: image.buffer,
+      name: image.originalname,
+      order: index,
+    }));
+    const uid = await this.fieldsAdminService.create({ ...dto, images: imagesDto });
+    const field = await this.fieldsAdminService.findOneForAdmin(uid);
+    return {
+      data: field,
+      message: 'Field created successfully',
+    };
+  }
 
   @Get(':uid')
   @ApiOkResponse({ type: AdminFindOneFieldResponseDto })

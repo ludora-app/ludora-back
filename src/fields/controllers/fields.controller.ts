@@ -39,8 +39,10 @@ import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.in
 import { SWAGGER_TAG_FIELDS } from 'src/swagger.config';
 import { CreateFieldSlotDto } from '../dto/input/create-field-slot.dto';
 import { CreatePrivateFieldDto } from '../dto/input/create-private-field.dto';
-import { CreatePublicFieldDto } from '../dto/input/create-public-field.dto';
-import { CreatePublicFieldFormDto } from '../dto/input/create-public-field-form.dto';
+import {
+  CreatePublicFieldDto,
+  CreatePublicFieldFormDto,
+} from '../dto/input/create-public-field.dto';
 import { FieldFilterDto } from '../dto/input/field-filter.dto';
 import { MyFieldsB2CFilterDto } from '../dto/input/my-fields-b2c-filter.dto';
 import { PublicFieldFilterDto } from '../dto/input/public-field-filter.dto';
