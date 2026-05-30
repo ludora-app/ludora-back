@@ -60,10 +60,10 @@ model Payments {
   stripeTransferId      String? @unique @map("stripe_transfer_id")
 
   amount                 Int // total amount in cents
-  amountPlatform         Int     @default(0) @map("amount_platform") // platform commission snapshot
-  amountPartner          Int     @default(0) @map("amount_partner") // partner share snapshot
-  commissionRateSnapshot Decimal @map("commission_rate_snapshot") @db.Decimal(5, 4) // commission rate snapshot
-  currency               String  @default("eur")
+  amountPlatform         Int      @default(0) @map("amount_platform") // platform commission snapshot
+  amountPartner          Int      @default(0) @map("amount_partner") // partner share snapshot
+  commissionRateSnapshot Decimal  @map("commission_rate_snapshot") @db.Decimal(5, 4) // commission rate snapshot
+  currency               Currency @default(EUR)
   metadata               Json?
 
   status         PaymentStatus @default(PENDING)

@@ -21,6 +21,7 @@ enum UserType {
   USER
   ADMIN
   PARTNER
+  TOURNAMENT_ORGANIZER
 
   @@map("user_type")
   @@schema("auth")
@@ -94,6 +95,9 @@ model Users {
   blockerUsers            UserBlocks[]              @relation("BlockerRelation")
   reportedByUsers         UserReports[]             @relation("ReportedRelation")
   reporterUsers           UserReports[]             @relation("ReporterRelation")
+  tournaments             Tournaments[]
+  tournamentRegistrations TournamentRegistrations[]
+  tournamentStaffs        TournamentStaff[]
 
   @@index([createdAt])
   @@index([isConnected])
