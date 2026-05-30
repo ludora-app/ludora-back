@@ -9,3 +9,10 @@ enum InvitationStatus {
   @@map("InvitationStatus")
   @@schema("shared")
 }
+
+enum Currency {
+  EUR
+
+  @@map("Currency")
+  @@schema("shared")
+}

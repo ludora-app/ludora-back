@@ -1,0 +1,184 @@
+enum TournamentStatus {
+  DRAFT
+  REGISTRATION_OPEN
+  REGISTRATION_CLOSED
+  ONGOING
+  COMPLETED
+  CANCELLED
+
+  @@map("tournament_status")
+  @@schema("tournaments")
+}
+
+enum TournamentFormat {
+  SINGLE_ELIMINATION
+  GROUP_STAGE
+  ROUND_ROBIN
+  SWISS
+
+  @@map("tournament_format")
+  @@schema("tournaments")
+}
+
+enum StaffRole {
+  REFEREE
+  SCOREKEEPER
+  ADMIN
+
+  @@map("staff_role")
+  @@schema("tournaments")
+}
+
+enum TeamStatus {
+  ACTIVE
+  ELEMINATED // lost a match
+  WINNER
+  FORFEIT
+  DISQUALIFIED // kicked out
+
+  @@map("team_status")
+  @@schema("tournaments")
+}
+
+enum MatchStatus {
+  SCHEDULED
+  ONGOING
+  COMPLETED
+  CANCELLED
+
+  @@map("match_status")
+  @@schema("tournaments")
+}
+
+enum CashPrizeType {
+  MONETARY
+  OTHER
+
+  @@map("cash_prize_type")
+  @@schema("tournaments")
+}
+
+model Tournaments {
+  uid          String           @id @default(cuid())
+  title        String
+  sport        String
+  organizerUid String?          @map("organizer_uid")
+  format       TournamentFormat @map("format")
+  status       TournamentStatus
+
+  entryFee             Int?           @map("entry_fee") // in cents
+  currency             Currency?
+  cashPrizeType        CashPrizeType? @map("cash_prize_type")
+  cashPrizeAmount      Int?           @map("cash_prize_amount") // in cents
+  cashPrizeDescription String?        @map("cash_prize_description")
+
+  description String?
+  visibility  SessionVisibility @default(PUBLIC)
+
+  maxTeams       Int @map("max_teams")
+  playersPerTeam Int @map("players_per_team")
+
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+
+  registrationOpensAt  DateTime @map("registration_opens_at")
+  registrationClosesAt DateTime @map("registration_closes_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sportRelation           Sports                    @relation(fields: [sport], references: [name])
+  organizer               Users?                    @relation(fields: [organizerUid], references: [uid], onDelete: SetNull)
+  tournamentTeams         TournamentTeams[]
+  tournamentMatches       TournamentMatches[]
+  tournamentRegistrations TournamentRegistrations[]
+  tournamentStaffs        TournamentStaff[]
+
+  @@map("Tournaments")
+  @@schema("tournaments")
+}
+
+model TournamentTeams {
+  uid           String @id @default(cuid())
+  tournamentUid String @map("tournament_uid")
+  name          String
+
+  status TeamStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tournament              Tournaments               @relation(fields: [tournamentUid], references: [uid], onDelete: Cascade)
+  tournamentMatches       TournamentMatches[]
+  teamARelation           TournamentMatches[]       @relation("teamARelation")
+  teamBRelation           TournamentMatches[]       @relation("teamBRelation")
+  tournamentRegistrations TournamentRegistrations[]
+
+  @@map("Tournament_teams")
+  @@schema("tournaments")
+}
+
+model TournamentMatches {
+  uid           String @id @default(cuid())
+  tournamentUid String @map("tournament_uid")
+  fieldUid      String @map("field_uid")
+  teamAUid      String @map("team_a_uid")
+  teamBUid      String @map("team_b_uid")
+
+  status MatchStatus @default(SCHEDULED)
+  round  Int
+
+  scoreA        Int     @default(0) @map("score_a")
+  scoreB        Int     @default(0) @map("score_b")
+  winnerTeamUid String? @map("winner_team_uid")
+  nextMatchUid  String? @map("next_match_uid")
+
+  startTime DateTime @map("start_time")
+  endTime   DateTime @map("end_time")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tournament  Tournaments         @relation(fields: [tournamentUid], references: [uid], onDelete: Cascade)
+  field       Fields              @relation(fields: [fieldUid], references: [uid])
+  teamA       TournamentTeams     @relation(fields: [teamAUid], references: [uid], name: "teamARelation", onDelete: Cascade)
+  teamB       TournamentTeams     @relation(fields: [teamBUid], references: [uid], name: "teamBRelation", onDelete: Cascade)
+  winnerTeam  TournamentTeams?    @relation(fields: [winnerTeamUid], references: [uid], onDelete: SetNull)
+  nextMatch   TournamentMatches?  @relation("nextMatchRelation", fields: [nextMatchUid], references: [uid], onDelete: SetNull)
+  prevMatches TournamentMatches[] @relation("nextMatchRelation")
+
+  @@map("Tournament_matches")
+  @@schema("tournaments")
+}
+
+model TournamentRegistrations {
+  uid           String           @id @default(cuid())
+  tournamentUid String           @map("tournament_uid")
+  userUid       String           @map("user_uid")
+  teamUid       String?          @map("team_uid")
+  status        InvitationStatus @default(PENDING)
+
+  registeredAt DateTime @default(now()) @map("registered_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  reviewedBy   String?  @map("reviewed_by") // admin who accepted or rejected the registration
+
+  user       Users            @relation(fields: [userUid], references: [uid], onDelete: Cascade)
+  tournament Tournaments      @relation(fields: [tournamentUid], references: [uid], onDelete: Cascade)
+  team       TournamentTeams? @relation(fields: [teamUid], references: [uid], onDelete: Cascade)
+
+  @@map("Tournament_registrations")
+  @@schema("tournaments")
+}
+
+model TournamentStaff {
+  uid           String    @id @default(cuid())
+  tournamentUid String    @map("tournament_uid")
+  userUid       String    @map("user_uid")
+  role          StaffRole
+
+  user       Users       @relation(fields: [userUid], references: [uid], onDelete: Cascade)
+  tournament Tournaments @relation(fields: [tournamentUid], references: [uid], onDelete: Cascade)
+
+  @@map("Tournament_staff")
+  @@schema("tournaments")
+}

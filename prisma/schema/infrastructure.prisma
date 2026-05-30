@@ -70,12 +70,13 @@ model Fields {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  fieldImages FieldImages[]
-  fieldSlots  FieldSlots[]
-  partner     Partners?     @relation(fields: [partnerUid], references: [uid], onDelete: SetNull)
-  creator     Users?        @relation("createdFields", fields: [creatorUid], references: [uid], onDelete: SetNull)
-  sessions    Sessions[]
-  fieldSports FieldSports[]
+  fieldImages       FieldImages[]
+  fieldSlots        FieldSlots[]
+  partner           Partners?           @relation(fields: [partnerUid], references: [uid], onDelete: SetNull)
+  creator           Users?              @relation("createdFields", fields: [creatorUid], references: [uid], onDelete: SetNull)
+  sessions          Sessions[]
+  fieldSports       FieldSports[]
+  tournamentMatches TournamentMatches[]
 
   @@index([partnerUid])
   @@index([creatorUid])
@@ -153,6 +154,7 @@ model Sports {
   sessions                Sessions[]
   fieldSports             FieldSports[]
   userRatings             UserRatings[]
+  tournaments             Tournaments[]
 
   @@schema("infrastructure")
 }

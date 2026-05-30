@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { StripeEventStatus } from 'generated/prisma/enums';
+import { Currency, StripeEventStatus } from 'generated/prisma/enums';
 import { Stripe } from 'stripe';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -110,7 +110,7 @@ export class WebhooksService {
       create: {
         stripePaymentIntentId: paymentIntent.id,
         amount: paymentIntent.amount,
-        currency: paymentIntent.currency,
+        currency: paymentIntent.currency as Currency,
         status: 'SUCCESS',
         sessionUid,
         userUid,
