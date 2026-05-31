@@ -8,7 +8,7 @@ vault {
 }
 
 secret {
-  path      = "secret/ludora/ludora-backend/dev"
+  path      = "secret/ludora/ludora-backend/local"
   no_prefix = true
 }
 

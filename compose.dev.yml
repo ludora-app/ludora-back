@@ -27,7 +27,6 @@ services:
     command: ["sh", "scripts/start-dev.sh"]
     networks:
       - ludora-network
-      - traefik
     depends_on:
       - ludora-db
     # Add healthcheck to ensure API is ready
@@ -82,58 +81,7 @@ services:
     labels:
       - "traefik.enable=false"
   # Include Grafana in development for monitoring
-  ludora-grafana:
-    image: grafana/grafana-oss:latest
-    container_name: ludora-grafana
-    restart: "no"
-    user: "0"
-    environment:
-      - GF_SERVER_ROOT_URL=https://grafana.gana-f4ll.fr
-      - GF_SECURITY_ADMIN_PASSWORD=admin # Simple password for dev
-    volumes:
-      - grafana-data:/var/lib/grafana
-    networks:
-      - ludora-network
-      - traefik
-    # Add Traefik labels for secure access
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=traefik"
-      - "traefik.http.routers.grafana-dev.rule=Host(`ludora-grafana-dev.gana-f4ll.fr`)"
-      - "traefik.http.routers.grafana-dev.entrypoints=websecure"
-      - "traefik.http.routers.grafana-dev.tls=true"
-      - "traefik.http.routers.grafana-dev.tls.certresolver=myresolver"
-      - "traefik.http.services.grafana-dev.loadbalancer.server.port=3000"
-  ludora-prometheus:
-    image: prom/prometheus:latest
-    container_name: ludora-prometheus
-    restart: "no"
-    volumes:
-      - prometheus-data:/prometheus
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    networks:
-      - ludora-network
-      - traefik
-    # Add Traefik labels for secure access
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=traefik"
-      - "traefik.http.routers.prometheus-dev.rule=Host(`ludora-prometheus-dev.gana-f4ll.fr`)"
-      - "traefik.http.routers.prometheus-dev.entrypoints=websecure"
-      - "traefik.http.routers.prometheus-dev.tls=true"
-      - "traefik.http.routers.prometheus-dev.tls.certresolver=myresolver"
-      - "traefik.http.services.prometheus-dev.loadbalancer.server.port=9090"
-      # Add basic auth middleware for Prometheus
-      - "traefik.http.middlewares.prometheus-basicauth.basicauth.users=${BASIC_AUTH_USERNAME}:${BASIC_AUTH_PASSWORD_HASH}"
-      - "traefik.http.routers.prometheus-dev.middlewares=prometheus-basicauth"
-    # Add development-specific configuration
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--web.console.libraries=/etc/prometheus/console_libraries"
-      - "--web.console.templates=/etc/prometheus/consoles"
-      - "--web.enable-lifecycle"
-      - "--log.level=debug" # More verbose logging in dev
+ 
 
   ludora-k6:
     image: grafana/k6:latest
@@ -148,11 +96,9 @@ services:
 
 volumes:
   postgres-data:
-  grafana-data:
-  prometheus-data:
+
 
 networks:
   ludora-network:
     driver: bridge
-  traefik:
-    external: true
+

@@ -1,6 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
 
-import { HttpErrorDto } from './http-error.dto';
+import { HttpErrorDto } from "./http-error.dto";
 
 /**
  * Creates a generic error DTO class from an enum and its associated error messages
@@ -11,31 +11,31 @@ import { HttpErrorDto } from './http-error.dto';
  * @returns A class that can be used as a Swagger response type
  */
 export function createEnumErrorDto<T extends Record<string, string>>(
-  className: string,
-  errorEnum: T,
+	className: string,
+	errorEnum: T,
 ) {
-  class GeneratedErrorDto extends HttpErrorDto {
-    @ApiProperty({
-      description: 'HTTP status code',
-      example: 404,
-    })
-    statusCode: number;
+	class GeneratedErrorDto extends HttpErrorDto {
+		@ApiProperty({
+			description: "HTTP status code",
+			example: 404,
+		})
+		statusCode: number;
 
-    @ApiProperty({
-      description: 'Exception error identifier',
-    })
-    error: string;
+		@ApiProperty({
+			description: "Exception error identifier",
+		})
+		error: string;
 
-    @ApiProperty({
-      description: 'Error type identifier',
-      enum: Object.values(errorEnum),
-      example: Object.values(errorEnum)[0],
-    })
-    message: string;
-  }
+		@ApiProperty({
+			description: "Error type identifier",
+			enum: Object.values(errorEnum),
+			example: Object.values(errorEnum)[0],
+		})
+		message: string;
+	}
 
-  // Set the class name dynamically for Swagger
-  Object.defineProperty(GeneratedErrorDto, 'name', { value: className });
+	// Set the class name dynamically for Swagger
+	Object.defineProperty(GeneratedErrorDto, "name", { value: className });
 
-  return GeneratedErrorDto;
+	return GeneratedErrorDto;
 }

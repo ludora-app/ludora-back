@@ -40,7 +40,7 @@ import { SessionFilterDto } from '../dto/input/session-filter.dto';
 import { MySessionFilterDto } from '../dto/input/my-session-filter.dto';
 import { CreateSessionFromRequestDto } from '../dto/input/create-session.dto';
 import { SessionResponseData, SessionResponseDto } from '../dto/output/session-response.dto';
-import { FindOneSessionResponseErrorDto } from '../dto/errors/find-one-session-response-error.dto';
+import { FindOneSessionResponseBadRequestErrorDto, FindOneSessionResponseErrorDto } from '../dto/errors/find-one-session-response-error.dto';
 import {
   PaginatedSessionCollectionResponseDto,
   SessionCollectionItemDto,
@@ -135,6 +135,9 @@ export class SessionsController {
     status: 400,
     type: FindOneSessionResponseErrorDto,
   })
+  @ApiBadRequestResponse(
+    {type: FindOneSessionResponseBadRequestErrorDto}
+  )
   async findOne(
     @Param('uid') uid: string,
     @Req() request: FastifyRequest,
