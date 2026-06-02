@@ -3,7 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
-import Stripe from 'stripe';
+import StripeConstructor from 'stripe';
+import type { Stripe } from 'stripe/cjs/stripe.core';
 import { BankDetailsDto, UpdateBankDetailsDto } from './dto/input/bank-details.dto';
 import { ConfirmPaymentIntentDto } from './dto/input/confirm-payment.dto';
 import { PaymentIntentDto } from './dto/input/payment-intent.dto';
@@ -16,8 +17,8 @@ export class PaymentService {
 
   private get stripe(): Stripe {
     if (!this._stripe) {
-      this._stripe = new Stripe(this.configService.getOrThrow('STRIPE_SECRET_KEY'), {
-        apiVersion: '2025-08-27.basil',
+      this._stripe = new StripeConstructor(this.configService.getOrThrow('STRIPE_SECRET_KEY'), {
+        apiVersion: '2026-05-27.dahlia',
         typescript: true,
       });
     }

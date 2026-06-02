@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { UserHourPreferenceType } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -22,6 +22,7 @@ export class HourPreferencesService {
     await this.prisma.$transaction(async (tx) => {
       for (const hourPreference of validHourPreferences) {
         let date: Date | undefined;
+        let dayOfWeek = hourPreference.dayOfWeek;
 
         if (hourPreference.date) {
           //? Check if the date is a valid date string,
@@ -34,10 +35,18 @@ export class HourPreferencesService {
             }
           }
         }
+
+        if (hourPreference.type === UserHourPreferenceType.ONE_TIME) {
+          if (!date) {
+            throw new BadRequestException('Date is required for one-time preferences');
+          }
+          dayOfWeek = date.getUTCDay();
+        }
+
         await tx.userHourPreferences.create({
           data: {
             date,
-            dayOfWeek: hourPreference.dayOfWeek,
+            dayOfWeek,
             timePeriod: hourPreference.timePeriod,
             type: hourPreference.type,
             userUid,

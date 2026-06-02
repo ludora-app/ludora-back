@@ -31,7 +31,7 @@ import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-r
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { SWAGGER_TAG_PAYMENT } from 'src/swagger.config';
-import Stripe from 'stripe';
+import type { Stripe } from 'stripe/cjs/stripe.core';
 import { BankDetailsDto, UpdateBankDetailsDto } from './dto/input/bank-details.dto';
 import { ConfirmPaymentIntentDto } from './dto/input/confirm-payment.dto';
 import { PaymentIntentDto } from './dto/input/payment-intent.dto';

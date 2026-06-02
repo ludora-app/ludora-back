@@ -425,7 +425,7 @@ describe('SessionsService', () => {
 
         // Act & Assert
         await expect(service.create(pastSessionDto)).rejects.toThrow(
-          new BadRequestException('The session is in the past'),
+          'The session is in the past',
         );
       });
 
@@ -440,7 +440,7 @@ describe('SessionsService', () => {
 
         // Act & Assert
         await expect(service.create(invalidDateSessionDto)).rejects.toThrow(
-          new BadRequestException('The end date must be after the start date'),
+          'The end date must be after the start date',
         );
       });
 
