@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import Stripe from 'stripe';
+import type { Stripe } from 'stripe/cjs/stripe.core';
 
 import { FutureRequirementsDto, RequirementsDto } from './stripe-responses.dto';
 

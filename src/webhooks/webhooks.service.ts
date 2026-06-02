@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { StripeEventStatus } from 'generated/prisma/enums';
-import { Stripe } from 'stripe';
+import StripeConstructor from 'stripe';
+import type { Stripe } from 'stripe/cjs/stripe.core';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -11,8 +12,8 @@ export class WebhooksService {
 
   private get stripe(): Stripe {
     if (!this._stripe) {
-      this._stripe = new Stripe(this.configService.getOrThrow<string>('STRIPE_SECRET_KEY'), {
-        apiVersion: '2025-08-27.basil' as any,
+      this._stripe = new StripeConstructor(this.configService.getOrThrow<string>('STRIPE_SECRET_KEY'), {
+        apiVersion: '2026-05-27.dahlia',
         typescript: true,
       });
     }
