@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
-import { AdminUsersController } from 'src/users/controllers/admin-users.controller';
+import { UsersAdminController } from 'src/users/controllers/users-admin.controller';
 import { UsersService } from 'src/users/users.service';
 
-describe('AdminUsersController', () => {
-  let controller: AdminUsersController;
+describe('UsersAdminController', () => {
+  let controller: UsersAdminController;
   let usersService: UsersService;
 
   const mockUsersService = {
@@ -13,7 +13,7 @@ describe('AdminUsersController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [AdminUsersController],
+      controllers: [UsersAdminController],
       providers: [
         {
           provide: UsersService,
@@ -25,7 +25,7 @@ describe('AdminUsersController', () => {
       .useValue({ canActivate: () => true })
       .compile();
 
-    controller = module.get<AdminUsersController>(AdminUsersController);
+    controller = module.get<UsersAdminController>(UsersAdminController);
     usersService = module.get<UsersService>(UsersService);
     jest.clearAllMocks();
   });

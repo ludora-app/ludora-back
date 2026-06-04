@@ -3,10 +3,10 @@ import { ApiExcludeController } from '@nestjs/swagger';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { UsersService } from '../users.service';
 
-@Controller('admin-users')
+@Controller('users/admin')
 @UseGuards(AdminGuard)
 @ApiExcludeController()
-export class AdminUsersController {
+export class UsersAdminController {
   constructor(private readonly usersService: UsersService) {}
 
   @Delete(':uid')
