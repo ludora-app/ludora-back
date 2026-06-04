@@ -27,7 +27,7 @@ import { EmailsService } from 'src/shared/emails/emails.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
 import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
 import { UserNameUtils } from 'src/users/utils/user-name.utils';
 import { CreateAppleUserDto } from '../dto/input/create-apple-user.dto';
 import { CreateGoogleUserDto } from '../dto/input/create-google-user.dto';

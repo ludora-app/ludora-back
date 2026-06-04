@@ -6,7 +6,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { FriendsService } from 'src/friends/friends.service';
 import { EventTypes } from 'src/notifications/constants/event.types';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
 
 describe('FriendsService', () => {
   let service: FriendsService;

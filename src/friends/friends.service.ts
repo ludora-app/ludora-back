@@ -13,7 +13,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { UserFilterDto } from 'src/users/dto';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
 
 import { FriendFilterDto } from './dto/input/friend-filter.dto';
 import { FriendRequestResponseData } from './dto/output/friend-request-response.dto';

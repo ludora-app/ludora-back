@@ -1,13 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { UsersAdminController } from 'src/users/controllers/users-admin.controller';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
+import { UsersAdminService } from 'src/users/services/users-admin.service';
 
 describe('UsersAdminController', () => {
   let controller: UsersAdminController;
-  let usersService: UsersService;
+  let usersAdminService: UsersAdminService;
 
-  const mockUsersService = {
+  const mockUsersAdminService = {
     adminDeleteUser: jest.fn(),
   };
 
@@ -16,8 +17,14 @@ describe('UsersAdminController', () => {
       controllers: [UsersAdminController],
       providers: [
         {
+          provide: UsersAdminService,
+          useValue: mockUsersAdminService,
+        },
+        {
           provide: UsersService,
-          useValue: mockUsersService,
+          useValue: {
+            findOne: jest.fn(),
+          },
         },
       ],
     })
@@ -26,7 +33,7 @@ describe('UsersAdminController', () => {
       .compile();
 
     controller = module.get<UsersAdminController>(UsersAdminController);
-    usersService = module.get<UsersService>(UsersService);
+    usersAdminService = module.get<UsersAdminService>(UsersAdminService);
     jest.clearAllMocks();
   });
 
@@ -35,16 +42,16 @@ describe('UsersAdminController', () => {
   });
 
   describe('deleteUser', () => {
-    it('should call usersService.adminDeleteUser with correct userUid', async () => {
+    it('should call usersAdminService.adminDeleteUser with correct userUid', async () => {
       const userUid = 'valid-uid';
       const expectedResult = { success: true };
 
-      mockUsersService.adminDeleteUser.mockResolvedValue(expectedResult);
+      mockUsersAdminService.adminDeleteUser.mockResolvedValue(expectedResult);
 
       const result = await controller.deleteUser(userUid);
 
-      expect(usersService.adminDeleteUser).toHaveBeenCalledWith(userUid);
-      expect(usersService.adminDeleteUser).toHaveBeenCalledTimes(1);
+      expect(usersAdminService.adminDeleteUser).toHaveBeenCalledWith(userUid);
+      expect(usersAdminService.adminDeleteUser).toHaveBeenCalledTimes(1);
       expect(result).toEqual(expectedResult);
     });
 
@@ -52,7 +59,7 @@ describe('UsersAdminController', () => {
       const userUid = 'valid-uid';
       const error = new Error('Deletion failed');
 
-      mockUsersService.adminDeleteUser.mockRejectedValue(error);
+      mockUsersAdminService.adminDeleteUser.mockRejectedValue(error);
 
       await expect(controller.deleteUser(userUid)).rejects.toThrow(error);
     });

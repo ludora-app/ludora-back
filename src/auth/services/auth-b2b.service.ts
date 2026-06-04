@@ -17,7 +17,7 @@ import { USERSELECT } from 'src/shared/constants/select-user';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { CreateUserDto } from 'src/users/dto';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
 
 import { RegisterB2BDto } from '../dto/input/register-b2b.dto';
 

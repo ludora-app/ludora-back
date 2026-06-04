@@ -14,7 +14,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
 
 describe('AuthB2CService', () => {
   let service: AuthB2CService;

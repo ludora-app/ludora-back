@@ -9,7 +9,7 @@ import { ChatGateway } from 'src/chat/chat.gateway';
 import { ConversationsService } from 'src/conversations/services/conversations.service';
 import { MessagesService } from 'src/conversations/services/messages.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
 
 describe('ChatGateway', () => {
   let gateway: ChatGateway;

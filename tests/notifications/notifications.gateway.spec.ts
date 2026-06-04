@@ -9,7 +9,7 @@ import { NotificationsGateway } from 'src/notifications/notifications.gateway';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Sport } from 'src/shared/constants/constants';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
 
 describe('NotificationsGateway', () => {
   let gateway: NotificationsGateway;
