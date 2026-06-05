@@ -28,7 +28,7 @@ export class UsersAdminService {
     this.logger.warn(`[ADMIN ACTION] - User ${user.email} (${uid}) has been deleted by an admin`);
   }
 
-  async getUsersOrderedByReports(
+  async findAllUsersOrderedByReports(
     params: ReportFilterDto,
   ): Promise<PaginatedDataDto<FindAllReportedUsersResponseData>> {
     const { reportReason, limit, cursor } = params;
@@ -70,5 +70,42 @@ export class UsersAdminService {
     const items = users.map((user) => UserMapper.toReportDto(user));
 
     return { items: items, totalCount: items.length, nextCursor };
+  }
+
+  async findOneWithReports(uid: string) {
+    const user = await this.prisma.users.findUnique({
+      where: { uid },
+      select: {
+        bio: true,
+        city: true,
+        firstname: true,
+        imageUrl: true,
+        lastname: true,
+        sex: true,
+        isEmailVerified: true,
+        uid: true,
+        email: true,
+        createdAt: true,
+        reportedByUsers: {
+          select: {
+            reason: true,
+            description: true,
+            createdAt: true,
+            reporter: {
+              select: { email: true, firstname: true, lastname: true, uid: true, imageUrl: true },
+            },
+          },
+        },
+        _count: {
+          select: {
+            sessionPlayers: true,
+          },
+        },
+      },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    return UserMapper.toFindOneWithReportsDto(user);
   }
 }

@@ -10,7 +10,7 @@ describe('UsersAdminController', () => {
 
   const mockUsersAdminService = {
     adminDeleteUser: jest.fn(),
-    getUsersOrderedByReports: jest.fn(),
+    findAllUsersOrderedByReports: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -66,7 +66,7 @@ describe('UsersAdminController', () => {
     });
   });
 
-  describe('getUsersOrderedByReports', () => {
+  describe('findAllUsersOrderedByReports', () => {
     it('should return paginated users and success message', async () => {
       const params = { limit: 10, reportReason: 'SPAM' } as any;
       const expectedData = {
@@ -75,12 +75,14 @@ describe('UsersAdminController', () => {
         nextCursor: null,
       };
 
-      mockUsersAdminService.getUsersOrderedByReports = jest.fn().mockResolvedValue(expectedData);
+      mockUsersAdminService.findAllUsersOrderedByReports = jest
+        .fn()
+        .mockResolvedValue(expectedData);
 
-      const result = await controller.getUsersOrderedByReports(params);
+      const result = await controller.findAllUsersOrderedByReports(params);
 
-      expect(usersAdminService.getUsersOrderedByReports).toHaveBeenCalledWith(params);
-      expect(usersAdminService.getUsersOrderedByReports).toHaveBeenCalledTimes(1);
+      expect(usersAdminService.findAllUsersOrderedByReports).toHaveBeenCalledWith(params);
+      expect(usersAdminService.findAllUsersOrderedByReports).toHaveBeenCalledTimes(1);
       expect(result).toEqual({
         data: expectedData,
         message: 'Users fetched successfully',
@@ -91,9 +93,9 @@ describe('UsersAdminController', () => {
       const params = {} as any;
       const error = new Error('Fetch failed');
 
-      mockUsersAdminService.getUsersOrderedByReports = jest.fn().mockRejectedValue(error);
+      mockUsersAdminService.findAllUsersOrderedByReports = jest.fn().mockRejectedValue(error);
 
-      await expect(controller.getUsersOrderedByReports(params)).rejects.toThrow(error);
+      await expect(controller.findAllUsersOrderedByReports(params)).rejects.toThrow(error);
     });
   });
 });

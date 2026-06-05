@@ -40,7 +40,7 @@ describe('UsersAdminService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('getUsersOrderedByReports', () => {
+  describe('findAllUsersOrderedByReports', () => {
     it('should return paginated reported users', async () => {
       const mockUsers = [
         {
@@ -58,7 +58,7 @@ describe('UsersAdminService', () => {
       mockPrismaService.users.findMany.mockResolvedValue(mockUsers);
 
       const params = { limit: 10, reportReason: 'SPAM' } as any;
-      const result = await service.getUsersOrderedByReports(params);
+      const result = await service.findAllUsersOrderedByReports(params);
 
       expect(mockPrismaService.users.findMany).toHaveBeenCalledWith({
         select: expect.any(Object),
@@ -98,7 +98,7 @@ describe('UsersAdminService', () => {
       mockPrismaService.users.findMany.mockResolvedValue(mockUsers);
 
       const params = { limit: 1, cursor: 'cursor-uid' } as any;
-      const result = await service.getUsersOrderedByReports(params);
+      const result = await service.findAllUsersOrderedByReports(params);
 
       expect(mockPrismaService.users.findMany).toHaveBeenCalledWith({
         select: expect.any(Object),

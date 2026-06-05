@@ -3,6 +3,7 @@ import {
   InvitationStatus,
   OnBoardingStatus,
   Provider,
+  ReportReason,
   Sex,
   TimePeriod,
   UserHourPreferenceType,
@@ -16,6 +17,7 @@ import {
   FindOneUserResponseData,
 } from '../dto';
 import { FindAllReportedUsersResponseData } from '../dto/output/find-all-reported-users-response.dto';
+import { FindOneUserWithReportsResponseData } from '../dto/output/find-one-with-reports-response.dto';
 
 export interface RawUserFindOne {
   bio: string;
@@ -84,10 +86,22 @@ export interface RawUserReport
     RawUserFindMe,
     'uid' | 'firstname' | 'lastname' | 'imageUrl' | 'isEmailVerified' | 'email' | 'sex'
   > {
-  createdAt: Date;
   _count: {
     reportedByUsers: number;
   };
+}
+
+export interface RawFindOneWithReports extends Omit<RawUserReport, '_count'> {
+  createdAt: Date;
+  _count: {
+    sessionPlayers: number;
+  };
+  reportedByUsers: {
+    reason: ReportReason;
+    description: string;
+    createdAt: Date;
+    reporter: { email: string; firstname: string; lastname: string; uid: string; imageUrl: string };
+  }[];
 }
 
 export class UserMapper {
@@ -173,6 +187,32 @@ export class UserMapper {
       email: entity.email,
       sex: entity.sex,
       reportCount: entity._count.reportedByUsers,
+    };
+  }
+
+  static toFindOneWithReportsDto(
+    entity: RawFindOneWithReports,
+  ): FindOneUserWithReportsResponseData {
+    return {
+      uid: entity.uid,
+      firstname: entity.firstname,
+      lastname: entity.lastname,
+      imageUrl: entity.imageUrl,
+      isEmailVerified: entity.isEmailVerified,
+      email: entity.email,
+      sex: entity.sex,
+      matchesCount: entity._count.sessionPlayers,
+      reports: entity.reportedByUsers.map((report) => ({
+        reason: report.reason,
+        description: report.description,
+        createdAt: report.createdAt,
+        reporter: {
+          uid: report.reporter.uid,
+          firstname: report.reporter.firstname,
+          lastname: report.reporter.lastname,
+          imageUrl: report.reporter.imageUrl,
+        },
+      })),
     };
   }
 }
