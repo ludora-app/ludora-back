@@ -15,6 +15,7 @@ import {
   FindMeUserResponseData,
   FindOneUserResponseData,
 } from '../dto';
+import { FindAllReportedUsersResponseData } from '../dto/output/find-all-reported-users-response.dto';
 
 export interface RawUserFindOne {
   bio: string;
@@ -76,6 +77,17 @@ export interface RawUserFindAll {
       uid: string;
     }[];
   }[];
+}
+
+export interface RawUserReport
+  extends Pick<
+    RawUserFindMe,
+    'uid' | 'firstname' | 'lastname' | 'imageUrl' | 'isEmailVerified' | 'email' | 'sex'
+  > {
+  createdAt: Date;
+  _count: {
+    reportedByUsers: number;
+  };
 }
 
 export class UserMapper {
@@ -148,6 +160,19 @@ export class UserMapper {
       ),
       uid: user.uid,
       userCity: user.city,
+    };
+  }
+
+  static toReportDto(entity: RawUserReport): FindAllReportedUsersResponseData {
+    return {
+      uid: entity.uid,
+      firstname: entity.firstname,
+      lastname: entity.lastname,
+      imageUrl: entity.imageUrl,
+      isEmailVerified: entity.isEmailVerified,
+      email: entity.email,
+      sex: entity.sex,
+      reportCount: entity._count.reportedByUsers,
     };
   }
 }

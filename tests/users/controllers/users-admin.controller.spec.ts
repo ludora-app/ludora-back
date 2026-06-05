@@ -10,6 +10,7 @@ describe('UsersAdminController', () => {
 
   const mockUsersAdminService = {
     adminDeleteUser: jest.fn(),
+    getUsersOrderedByReports: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -62,6 +63,37 @@ describe('UsersAdminController', () => {
       mockUsersAdminService.adminDeleteUser.mockRejectedValue(error);
 
       await expect(controller.deleteUser(userUid)).rejects.toThrow(error);
+    });
+  });
+
+  describe('getUsersOrderedByReports', () => {
+    it('should return paginated users and success message', async () => {
+      const params = { limit: 10, reportReason: 'SPAM' } as any;
+      const expectedData = {
+        items: [{ uid: 'user1', reportCount: 2 }],
+        totalCount: 1,
+        nextCursor: null,
+      };
+
+      mockUsersAdminService.getUsersOrderedByReports = jest.fn().mockResolvedValue(expectedData);
+
+      const result = await controller.getUsersOrderedByReports(params);
+
+      expect(usersAdminService.getUsersOrderedByReports).toHaveBeenCalledWith(params);
+      expect(usersAdminService.getUsersOrderedByReports).toHaveBeenCalledTimes(1);
+      expect(result).toEqual({
+        data: expectedData,
+        message: 'Users fetched successfully',
+      });
+    });
+
+    it('should surface exceptions thrown by the service', async () => {
+      const params = {} as any;
+      const error = new Error('Fetch failed');
+
+      mockUsersAdminService.getUsersOrderedByReports = jest.fn().mockRejectedValue(error);
+
+      await expect(controller.getUsersOrderedByReports(params)).rejects.toThrow(error);
     });
   });
 });
