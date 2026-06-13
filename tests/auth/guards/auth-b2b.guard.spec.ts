@@ -343,7 +343,7 @@ describe('AuthB2BGuard', () => {
         },
       });
       expect(mockPrismaService.users.findUnique).toHaveBeenCalledWith({
-        select: { isEmailVerified: true, uid: true, isConnected: true },
+        select: { isEmailVerified: true, uid: true, isConnected: true, isBanned: true },
         where: { uid: 'user123' },
       });
       expect(mockPrismaService.partners.findUnique).toHaveBeenCalledWith({

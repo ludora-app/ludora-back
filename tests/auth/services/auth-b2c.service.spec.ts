@@ -1,4 +1,9 @@
-import { BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
@@ -234,12 +239,25 @@ describe('AuthB2CService', () => {
       expect(result).toEqual({ accessToken: 'mock_token', refreshToken: 'mock_token' });
     });
 
-    it('should throw BadRequestException when user not found', async () => {
+    it('should throw NotFoundException when user not found', async () => {
       mockUsersService.findOneByEmail.mockResolvedValue(null);
 
       await expect(
         service.login({ email: 'nonexistent@test.com', password: 'password' }),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when user is banned', async () => {
+      mockUsersService.findOneByEmail.mockResolvedValue({
+        uid: '1',
+        email: 'banned@test.com',
+        password: await argon2.hash('password'),
+        isBanned: true,
+      });
+
+      await expect(
+        service.login({ email: 'banned@test.com', password: 'password' }),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -628,6 +646,27 @@ describe('AuthB2CService', () => {
       );
       await expect(service.createOrConnectGoogleUser(createGoogleUserDto)).rejects.toThrow(
         'Error creating or connecting Google user: Database error',
+      );
+    });
+
+    it('should throw ForbiddenException if existing user is banned', async () => {
+      const createGoogleUserDto: CreateGoogleUserDto = {
+        email: 'banned@test.com',
+        firstname: 'John',
+        imageUrl: 'https://example.com/photo.jpg',
+        lastname: 'Doe',
+      };
+
+      mockUsersService.findOneByEmail.mockResolvedValue({
+        uid: 'banned-user-1',
+        email: 'banned@test.com',
+        firstname: 'John',
+        lastname: 'Doe',
+        isBanned: true,
+      });
+
+      await expect(service.createOrConnectGoogleUser(createGoogleUserDto)).rejects.toThrow(
+        ForbiddenException,
       );
     });
   });

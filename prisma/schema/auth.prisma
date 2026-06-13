@@ -61,6 +61,7 @@ model Users {
   appleRefreshToken String?           @map("apple_refresh_token") @db.VarChar(255)
   isBanned          Boolean           @default(false) @map("is_banned")
   banReason         ReportReason?     @map("ban_reason")
+  bannedAt          DateTime?         @map("banned_at")
 
   messages            Messages[]
   // Event               Events[]

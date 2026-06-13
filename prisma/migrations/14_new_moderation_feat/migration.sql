@@ -9,6 +9,10 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='auth' AND table_name='Users' AND column_name='ban_reason') THEN
         ALTER TABLE "auth"."Users" ADD COLUMN "ban_reason" "moderation"."report_reason";
     END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='auth' AND table_name='Users' AND column_name='banned_at') THEN
+        ALTER TABLE "auth"."Users" ADD COLUMN "banned_at" TIMESTAMP(3);
+    END IF;
 END $$;
 
 CREATE TABLE IF NOT EXISTS "moderation"."Report_images" (

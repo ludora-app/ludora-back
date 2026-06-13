@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -23,6 +24,7 @@ import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-respons
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
+import { CreateUserBanParamDto } from '../dto/input/create-user-ban.dto';
 import { ReportFilterDto } from '../dto/input/report-filter.dto';
 import {
   FindAllReportedUsersResponseData,
@@ -36,15 +38,6 @@ import { UsersAdminService } from '../services/users-admin.service';
 @ApiExcludeController()
 export class UsersAdminController {
   constructor(private readonly usersAdminService: UsersAdminService) {}
-
-  @Delete(':uid')
-  @ApiExcludeEndpoint()
-  @ApiOperation({ description: 'complety deletes a user for ever from the database' })
-  @ApiNoContentResponse({ description: 'User deleted successfully' })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteUser(@Param('uid') userUid: string) {
-    return await this.usersAdminService.adminDeleteUser(userUid);
-  }
 
   @Get('list-reports/collection')
   @ApiOperation({ description: 'get users order by the number of reports made against them' })
@@ -67,5 +60,25 @@ export class UsersAdminController {
   async findOneWithReports(@Param('uid') uid: string) {
     const data = await this.usersAdminService.findOneWithReports(uid);
     return { data, message: 'User fetched successfully' };
+  }
+
+  @Delete(':uid')
+  @ApiExcludeEndpoint()
+  @ApiOperation({ description: 'complety deletes a user for ever from the database' })
+  @ApiNoContentResponse({ description: 'User deleted successfully' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteUser(@Param('uid') userUid: string) {
+    return await this.usersAdminService.adminDeleteUser(userUid);
+  }
+
+  @Delete(':uid/ban')
+  @ApiOperation({ description: 'bans a user' })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @ApiNoContentResponse({ description: 'User banned successfully' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async banUser(@Param('uid') userUid: string, @Body() body: CreateUserBanParamDto) {
+    return await this.usersAdminService.banUser({ userUid, ...body });
   }
 }

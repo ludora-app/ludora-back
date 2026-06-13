@@ -690,6 +690,7 @@ describe('UsersService', () => {
           email: true,
           firstname: true,
           imageUrl: true,
+          isBanned: true,
           isEmailVerified: true,
           lastname: true,
           provider: true,

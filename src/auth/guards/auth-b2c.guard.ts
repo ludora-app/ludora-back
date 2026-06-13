@@ -1,4 +1,11 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  HttpException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
@@ -73,6 +80,10 @@ export class AuthB2CGuard implements CanActivate {
         throw new UnauthorizedException('User not found');
       }
 
+      if (user.isBanned) {
+        throw new ForbiddenException('You have been banned from Ludora.');
+      }
+
       const fullPayload = {
         ...payload,
         email: user.email,
@@ -89,12 +100,10 @@ export class AuthB2CGuard implements CanActivate {
         timestamp: new Date().toISOString(),
       });
 
-      // if it's already a UnauthorizedException, we throw it
-      if (error instanceof UnauthorizedException) {
+      if (error instanceof HttpException) {
         throw error;
       }
 
-      // else, throws a generic error
       throw new UnauthorizedException('Access denied');
     }
   }

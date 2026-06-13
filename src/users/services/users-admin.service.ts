@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+import { CreateUserBanDto } from '../dto/input/create-user-ban.dto';
 import { ReportFilterDto } from '../dto/input/report-filter.dto';
 import { FindAllReportedUsersResponseData } from '../dto/output/find-all-reported-users-response.dto';
 import { UserMapper } from '../mappers/user.mapper';
@@ -107,5 +108,35 @@ export class UsersAdminService {
     if (!user) throw new NotFoundException('User not found');
 
     return UserMapper.toFindOneWithReportsDto(user);
+  }
+
+  async banUser(dto: CreateUserBanDto): Promise<void> {
+    const { userUid, banReason } = dto;
+
+    const user = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
+
+    if (!user) throw new NotFoundException('User not found');
+
+    if (user.isBanned) throw new BadRequestException('User is already banned');
+
+    await this.prisma.users.update({
+      where: { uid: userUid },
+      data: { isBanned: true, bannedAt: new Date(), banReason: banReason },
+    });
+
+    this.logger.warn(
+      `[ADMIN ACTION] - User ${user.email} (${userUid}) has been banned by an admin`,
+    );
+
+    await this.handleUserBan(userUid);
+  }
+
+  /**
+   *
+   * @param userUid
+   */
+  private async handleUserBan(userUid: string): Promise<void> {
+    await this.prisma.userTokens.deleteMany({ where: { uid: userUid } });
+    // TODO: send email
   }
 }

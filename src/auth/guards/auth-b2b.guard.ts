@@ -1,4 +1,11 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  HttpException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
@@ -53,7 +60,7 @@ export class AuthB2BGuard implements CanActivate {
 
       // Check if the user is verified and active
       const user = await this.prisma.users.findUnique({
-        select: { isConnected: true, isEmailVerified: true, uid: true },
+        select: { isConnected: true, isEmailVerified: true, uid: true, isBanned: true },
         where: { uid: userUid },
       });
 
@@ -64,6 +71,11 @@ export class AuthB2BGuard implements CanActivate {
       if (!user.isConnected) {
         throw new UnauthorizedException('User account disabled');
       }
+
+      if (user.isBanned) {
+        throw new ForbiddenException('You have been banned from Ludora.');
+      }
+
       const partner = await this.prisma.partners.findUnique({
         where: { uid: organisationUid },
       });
@@ -80,8 +92,7 @@ export class AuthB2BGuard implements CanActivate {
         timestamp: new Date().toISOString(),
       });
 
-      // if it's already a UnauthorizedException, we throw it
-      if (error instanceof UnauthorizedException) {
+      if (error instanceof HttpException) {
         throw error;
       }
 
