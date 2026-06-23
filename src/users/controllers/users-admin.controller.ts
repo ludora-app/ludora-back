@@ -11,12 +11,12 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
-  ApiExcludeController,
   ApiExcludeEndpoint,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
@@ -24,6 +24,7 @@ import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-respons
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
+import { SWAGGER_TAG_USERS_ADMIN } from 'src/swagger.config';
 import { CreateUserBanParamDto } from '../dto/input/create-user-ban.dto';
 import { ReportFilterDto } from '../dto/input/report-filter.dto';
 import {
@@ -33,14 +34,14 @@ import {
 import { FindOneUserWithReportsResponseDto } from '../dto/output/find-one-with-reports-response.dto';
 import { UsersAdminService } from '../services/users-admin.service';
 
+@ApiTags(SWAGGER_TAG_USERS_ADMIN)
 @Controller('users/admin')
 @UseGuards(AdminGuard)
-@ApiExcludeController()
 export class UsersAdminController {
   constructor(private readonly usersAdminService: UsersAdminService) {}
 
   @Get('list-reports/collection')
-  @ApiOperation({ description: 'get users order by the number of reports made against them' })
+  @ApiOperation({ summary: 'get users order by the number of reports made against them' })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiOkResponse({ type: FindAllReportedUsersResponseDto })
@@ -52,7 +53,7 @@ export class UsersAdminController {
   }
 
   @Get(':uid/reports')
-  @ApiOperation({ description: 'get user with all the reports made against them' })
+  @ApiOperation({ summary: 'get user with all the reports made against them' })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
@@ -64,15 +65,17 @@ export class UsersAdminController {
 
   @Delete(':uid')
   @ApiExcludeEndpoint()
-  @ApiOperation({ description: 'complety deletes a user for ever from the database' })
+  @ApiOperation({ summary: 'complety deletes a user for ever from the database' })
+  @ApiOkResponse({ type: FindOneUserWithReportsResponseDto })
   @ApiNoContentResponse({ description: 'User deleted successfully' })
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteUser(@Param('uid') userUid: string) {
-    return await this.usersAdminService.adminDeleteUser(userUid);
+    const data = await this.usersAdminService.adminDeleteUser(userUid);
+    return { data, message: 'User deleted successfully' };
   }
 
   @Delete(':uid/ban')
-  @ApiOperation({ description: 'bans a user' })
+  @ApiOperation({ summary: 'bans a user' })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })

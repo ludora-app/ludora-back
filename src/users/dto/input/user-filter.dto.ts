@@ -6,6 +6,7 @@ import { Sport, UserSportLevel } from 'src/shared/constants/constants';
 export class UserFilterDto {
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => (value !== undefined ? String(value) : undefined))
   @ApiProperty({
     description: 'Search by first name or last name',
     example: 'John',
@@ -50,6 +51,7 @@ export class UserFilterDto {
   levels?: number[];
 
   @IsOptional()
+  @Transform(({ value }) => (value !== undefined ? parseInt(value, 10) : undefined))
   @Type(() => Number)
   @IsInt()
   @Min(1)

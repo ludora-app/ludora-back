@@ -46,7 +46,6 @@ export class FindOneUserWithReportsResponseData extends OmitType(FindAllReported
   @ApiProperty({
     description: 'List of reports made against the user',
     type: [Reports],
-    isArray: true,
   })
   @ValidateNested({ each: true })
   @Type(() => Reports)

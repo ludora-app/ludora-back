@@ -1,3 +1,4 @@
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -11,6 +12,10 @@ describe('UsersAdminService', () => {
     users: {
       delete: jest.fn(),
       findMany: jest.fn(),
+      update: jest.fn(),
+    },
+    userTokens: {
+      deleteMany: jest.fn(),
     },
   };
 
@@ -119,6 +124,60 @@ describe('UsersAdminService', () => {
       expect(result.items.length).toBe(1);
       expect(result.items[0].uid).toBe('user1');
       expect(result.nextCursor).toBe('user2');
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('banUser', () => {
+    const dto = { userUid: 'user-uid', banReason: 'Spamming' };
+
+    it('should successfully ban a user', async () => {
+      mockUsersService.findOne.mockResolvedValueOnce({
+        uid: 'user-uid',
+        email: 'test@example.com',
+        isBanned: false,
+      });
+
+      await service.banUser(dto as any);
+
+      expect(mockUsersService.findOne).toHaveBeenCalledWith('user-uid', expect.any(Object));
+      expect(mockPrismaService.users.update).toHaveBeenCalledWith({
+        where: { uid: 'user-uid' },
+        data: {
+          isBanned: true,
+          bannedAt: expect.any(Date),
+          banReason: 'Spamming',
+        },
+      });
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        '[ADMIN ACTION] - User test@example.com (user-uid) has been banned by an admin',
+      );
+      expect(mockPrismaService.userTokens.deleteMany).toHaveBeenCalledWith({
+        where: { uid: 'user-uid' },
+      });
+    });
+
+    it('should throw NotFoundException if user is not found', async () => {
+      mockUsersService.findOne.mockResolvedValueOnce(null);
+
+      await expect(service.banUser(dto as any)).rejects.toThrow(NotFoundException);
+      expect(mockPrismaService.users.update).not.toHaveBeenCalled();
+      expect(mockPrismaService.userTokens.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException if user is already banned', async () => {
+      mockUsersService.findOne.mockResolvedValueOnce({
+        uid: 'user-uid',
+        email: 'test@example.com',
+        isBanned: true,
+      });
+
+      await expect(service.banUser(dto as any)).rejects.toThrow(BadRequestException);
+      expect(mockPrismaService.users.update).not.toHaveBeenCalled();
+      expect(mockPrismaService.userTokens.deleteMany).not.toHaveBeenCalled();
     });
   });
 });

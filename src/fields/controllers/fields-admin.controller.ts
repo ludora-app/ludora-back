@@ -58,6 +58,7 @@ export class FieldsAdminController {
   @Post()
   @UseInterceptors(new FastifyFilesInterceptor('images'))
   @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Create a new field, automatically approved' })
   @ApiBody({ type: CreatePublicFieldFormDto })
   @ApiCreatedResponse({
     description: 'Field created successfully',

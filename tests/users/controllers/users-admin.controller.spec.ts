@@ -45,15 +45,15 @@ describe('UsersAdminController', () => {
   describe('deleteUser', () => {
     it('should call usersAdminService.adminDeleteUser with correct userUid', async () => {
       const userUid = 'valid-uid';
-      const expectedResult = { success: true };
+      const serviceResult = { success: true };
 
-      mockUsersAdminService.adminDeleteUser.mockResolvedValue(expectedResult);
+      mockUsersAdminService.adminDeleteUser.mockResolvedValue(serviceResult);
 
       const result = await controller.deleteUser(userUid);
 
       expect(usersAdminService.adminDeleteUser).toHaveBeenCalledWith(userUid);
       expect(usersAdminService.adminDeleteUser).toHaveBeenCalledTimes(1);
-      expect(result).toEqual(expectedResult);
+      expect(result).toEqual({ data: serviceResult, message: 'User deleted successfully' });
     });
 
     it('should surface exceptions thrown by the service', async () => {
