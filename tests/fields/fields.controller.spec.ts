@@ -1,5 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { FieldsController } from 'src/fields/controllers/fields.controller';
 import { FieldSlotsService } from 'src/fields/services/field-slots.service';
 import { FieldsService } from 'src/fields/services/fields.service';
 import { AuthB2BGuard } from '../../src/auth/guards/auth-b2b.guard';
@@ -7,7 +8,6 @@ import { AuthB2CGuard } from '../../src/auth/guards/auth-b2c.guard';
 import { CreatePublicFieldDto } from '../../src/fields/dto/input/create-public-field.dto';
 import { FieldFilterDto } from '../../src/fields/dto/input/field-filter.dto';
 import { PublicFieldFilterDto } from '../../src/fields/dto/input/public-field-filter.dto';
-import { FieldsController } from '../../src/fields/fields.controller';
 import { Sport } from '../../src/shared/constants/constants';
 
 describe('FieldsController', () => {
@@ -51,6 +51,7 @@ describe('FieldsController', () => {
       .useValue(mockAuthB2CGuard)
       .overrideGuard(AuthB2BGuard)
       .useValue(mockAuthB2BGuard)
+
       .compile();
 
     controller = module.get<FieldsController>(FieldsController);

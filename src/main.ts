@@ -7,12 +7,22 @@ import { AppModule } from './app.module';
 import { buildSwaggerDocument, SWAGGER_OPTIONS } from './swagger.config';
 
 async function bootstrap() {
+  const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+
+  const dashboardOrigin = process.env.DASHBOARD_URL;
+
+  const allowedOrigins = [dashboardOrigin, 'https://ludora.app'];
+  if (process.env.NODE_ENV !== 'production') {
+    allowedOrigins.push('http://localhost:3000');
+  }
   /**
    * { rawBody: true } is used for the stripe webhooks
    */
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), {
     rawBody: true,
   });
+
+  app.enableCors({ methods, origin: allowedOrigins });
   // Limit to 10 Mo per file to support HEIC (iPhone) and other photos
   await app.register(contentParser, { limits: { fileSize: 10 * 1024 * 1024 } });
 

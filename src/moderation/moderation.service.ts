@@ -113,6 +113,11 @@ export class ModerationService {
   }
 
   async createReport(reporterUid: string, report: CreateReportDto): Promise<void> {
+    if (reporterUid === report.reportedUid) {
+      this.logger.warn(`User ${reporterUid} tried to report themselves`);
+      throw new BadRequestException("You can't report yourself");
+    }
+
     const existingReport = await this.prisma.userReports.findFirst({
       where: {
         reason: report.reason,

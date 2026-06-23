@@ -14,7 +14,7 @@ import { SessionPlayersService } from 'src/sessions/services/session-players.ser
 import { SessionsService } from 'src/sessions/services/sessions.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
 import { CreateManySessionInvitationDto } from '../dto/input/create-many-session-invitation.dto';
 import { SessionInvitationFilterDto } from '../dto/input/session-invitation-filter.dto';
 import { UpdateSessionInvitationDto } from '../dto/input/update-session-invitation.dto';
@@ -422,11 +422,16 @@ export class SessionInvitationsService {
   }
 
   async getTotalPendingInvitations(): Promise<number> {
-    return await this.prisma.sessionInvitations.count({
+    const result = await this.prisma.sessionInvitations.count({
       where: {
         status: InvitationStatus.PENDING,
       },
     });
+    this.logger.debug(
+      `Cron job "totalPendingInvitationsCounter" executed: ${result} total pending invitations`,
+    );
+
+    return result;
   }
 
   /**

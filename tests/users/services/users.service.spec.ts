@@ -7,7 +7,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { StorageService } from 'src/shared/storage/storage.service';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
 
 jest.mock('argon2', () => ({
   hash: jest.fn().mockResolvedValue('hashedPassword'),
@@ -690,6 +690,7 @@ describe('UsersService', () => {
           email: true,
           firstname: true,
           imageUrl: true,
+          isBanned: true,
           isEmailVerified: true,
           lastname: true,
           provider: true,

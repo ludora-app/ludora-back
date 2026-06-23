@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  ForbiddenException,
+  HttpException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -27,7 +29,7 @@ import { EmailsService } from 'src/shared/emails/emails.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
 import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
 import { UserNameUtils } from 'src/users/utils/user-name.utils';
 import { CreateAppleUserDto } from '../dto/input/create-apple-user.dto';
 import { CreateGoogleUserDto } from '../dto/input/create-google-user.dto';
@@ -143,6 +145,9 @@ export class AuthB2CService {
 
       // if the user exists, connect the Google account to the user
       if (existingUser) {
+        if (existingUser.isBanned)
+          throw new ForbiddenException('You have been banned from Ludora.');
+
         isNewUser = false;
         const payload = { uid: existingUser.uid };
         const accessToken = this.jwt.sign(
@@ -215,6 +220,7 @@ export class AuthB2CService {
 
       return { accessToken, isNewUser, message, refreshToken };
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new BadRequestException(`Error creating or connecting Google user: ${error.message}`);
     }
   }
@@ -239,6 +245,8 @@ export class AuthB2CService {
 
       // if the user exists, connect the Apple account to the user
       if (existingUser) {
+        if (existingUser.isBanned)
+          throw new ForbiddenException('You have been banned from Ludora.');
         isNewUser = false;
         const payload = { uid: existingUser.uid };
         const accessToken = this.jwt.sign(
@@ -311,6 +319,7 @@ export class AuthB2CService {
 
       return { accessToken, isNewUser, message, refreshToken };
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new BadRequestException(`Error creating or connecting Apple user: ${error.message}`);
     }
   }
@@ -324,6 +333,8 @@ export class AuthB2CService {
       if (!user) {
         throw new NotFoundException('User not found');
       }
+
+      if (user.isBanned) throw new ForbiddenException('You have been banned from Ludora.');
 
       const isPasswordValid = await argon2.verify(user.password, password);
       if (!isPasswordValid) {
@@ -361,6 +372,7 @@ export class AuthB2CService {
 
       return { accessToken, refreshToken };
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new BadRequestException(error.message);
     }
   }

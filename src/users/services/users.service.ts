@@ -18,16 +18,16 @@ import { EmailsService } from 'src/shared/emails/emails.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
-import { USERSELECT } from '../shared/constants/select-user';
-import { USER_SUGGESTION_CONFIG } from './constants/users.constants';
+import { USERSELECT } from '../../shared/constants/select-user';
+import { USER_SUGGESTION_CONFIG } from '../constants/users.constants';
 import {
   CreateUserDto,
   FindAllUsersResponseDataDto,
   UpdatePasswordDto,
   UpdateUserDto,
   UserFilterDto,
-} from './dto';
-import { RawUserFindAll, UserMapper } from './mappers/user.mapper';
+} from '../dto';
+import { RawUserFindAll, UserMapper } from '../mappers/user.mapper';
 
 @Injectable()
 export class UsersService {
@@ -583,20 +583,6 @@ export class UsersService {
     });
   }
 
-  /**
-   * This async function returns the count of active users who are connected.
-   * @returns The `getActiveUsersCount` function returns a Promise that resolves to a number, which
-   * represents the count of users where the `isConnected` property is true in the database.
-   * @description This method is used in the metrics service to get the count of active users.
-   */
-  async getActiveUsersCount(): Promise<number> {
-    return await this.prismaService.users.count({
-      where: {
-        isConnected: true,
-      },
-    });
-  }
-
   /**   * @param user - The user
    * @description This method is used to send a verification code for password reset to the user
    */
@@ -688,15 +674,5 @@ export class UsersService {
     if (result.count === 0) {
       throw new BadRequestException('User does not have a deletion request');
     }
-  }
-
-  async adminDeleteUser(uid: string): Promise<void> {
-    const user = await this.findOne(uid, USERSELECT.checkIfUserExists);
-
-    if (!user) throw new NotFoundException('User not found');
-
-    await this.prismaService.users.delete({ where: { uid } });
-
-    this.logger.warn(`[ADMIN ACTION] - User ${user.email} (${uid}) has been deleted by an admin`);
   }
 }

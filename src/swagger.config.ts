@@ -21,6 +21,8 @@ export const SWAGGER_TAG_SESSIONS = 'Sessions';
 export const SWAGGER_TAG_SPORT_PREFERENCES = 'Sport Preferences';
 export const SWAGGER_TAG_STORAGE = 'Storage';
 export const SWAGGER_TAG_USERS = 'Users';
+export const SWAGGER_TAG_FIELDS_ADMIN = 'Fields [ADMIN]';
+export const SWAGGER_TAG_USERS_ADMIN = 'Users [ADMIN]';
 
 export const SWAGGER_DESCRIPTION_APP = 'Health check and application status';
 export const SWAGGER_DESCRIPTION_AUTH_B2C =
@@ -37,7 +39,7 @@ export const SWAGGER_DESCRIPTION_FIELDS =
 export const SWAGGER_DESCRIPTION_FRIENDS =
   'Friend relationship management: requests, listing, accept or decline, and removal';
 export const SWAGGER_DESCRIPTION_GEOLOCALISATION =
-  '(Dev only) Geocoding utilities: coordinates to address conversion and reverse';
+  'Geocoding utilities: coordinates to address conversion and reverse';
 export const SWAGGER_DESCRIPTION_HOUR_PREFERENCES =
   'User availability and hour preferences management';
 export const SWAGGER_DESCRIPTION_MODERATION = 'User moderation: block and report users';
@@ -58,6 +60,8 @@ export const SWAGGER_DESCRIPTION_SPORT_PREFERENCES =
 export const SWAGGER_DESCRIPTION_STORAGE = 'File upload and signed URL generation';
 export const SWAGGER_DESCRIPTION_USERS =
   'User profile management, password and email updates, and account lifecycle';
+export const SWAGGER_DESCRIPTION_FIELDS_ADMIN = 'Field management (ADMIN ONLY)';
+export const SWAGGER_DESCRIPTION_USERS_ADMIN = 'User management (ADMIN ONLY)';
 
 export const SWAGGER_OPTIONS: SwaggerCustomOptions = {
   swaggerOptions: { operationsSorter: 'method', tagsSorter: 'alpha' },
@@ -75,6 +79,7 @@ export function buildSwaggerDocument() {
     .addTag(SWAGGER_TAG_DEVICES, SWAGGER_DESCRIPTION_DEVICES)
     .addTag(SWAGGER_TAG_EMAILS, SWAGGER_DESCRIPTION_EMAILS)
     .addTag(SWAGGER_TAG_FIELDS, SWAGGER_DESCRIPTION_FIELDS)
+    .addTag(SWAGGER_TAG_FIELDS_ADMIN, SWAGGER_DESCRIPTION_FIELDS_ADMIN)
     .addTag(SWAGGER_TAG_FRIENDS, SWAGGER_DESCRIPTION_FRIENDS)
     .addTag(SWAGGER_TAG_GEOLOCALISATION, SWAGGER_DESCRIPTION_GEOLOCALISATION)
     .addTag(SWAGGER_TAG_HOUR_PREFERENCES, SWAGGER_DESCRIPTION_HOUR_PREFERENCES)

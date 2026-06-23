@@ -9,6 +9,7 @@ describe('AuthB2BController', () => {
   const mockAuthB2BService = {
     register: jest.fn(),
     login: jest.fn(),
+    adminLogin: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -76,6 +77,28 @@ describe('AuthB2BController', () => {
         message: 'PARTNER user logged in successfully',
       });
       expect(mockAuthB2BService.login).toHaveBeenCalledWith(loginDto);
+    });
+  });
+
+  describe('loginAdmin', () => {
+    it('should login an admin successfully', async () => {
+      const loginDto = {
+        email: 'admin@test.com',
+        password: 'Password123!',
+      };
+
+      mockAuthB2BService.adminLogin.mockResolvedValue({
+        accessToken: 'mock_access_token',
+        refreshToken: 'mock_refresh_token',
+      });
+
+      const result = await controller.loginAdmin(loginDto);
+
+      expect(result).toEqual({
+        data: { accessToken: 'mock_access_token', refreshToken: 'mock_refresh_token' },
+        message: 'ADMIN user logged in successfully',
+      });
+      expect(mockAuthB2BService.adminLogin).toHaveBeenCalledWith(loginDto);
     });
   });
 });

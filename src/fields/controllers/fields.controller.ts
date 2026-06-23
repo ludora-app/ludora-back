@@ -1,13 +1,11 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
   NotFoundException,
   Param,
-  Patch,
   Post,
   Query,
   Req,
@@ -20,8 +18,6 @@ import {
   ApiConflictResponse,
   ApiConsumes,
   ApiCreatedResponse,
-  ApiForbiddenResponse,
-  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -29,44 +25,43 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
-import { UserType } from 'generated/prisma/enums';
 import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
-import { ForbiddenResponseDto } from 'src/shared/dto/errors/forbidden-response.dto';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
 import { SWAGGER_TAG_FIELDS } from 'src/swagger.config';
-import { CreateFieldSlotDto } from './dto/input/create-field-slot.dto';
-import { CreatePrivateFieldDto } from './dto/input/create-private-field.dto';
-import { CreatePublicFieldDto } from './dto/input/create-public-field.dto';
-import { CreatePublicFieldFormDto } from './dto/input/create-public-field-form.dto';
-import { FieldFilterDto } from './dto/input/field-filter.dto';
-import { MyFieldsB2CFilterDto } from './dto/input/my-fields-b2c-filter.dto';
-import { PublicFieldFilterDto } from './dto/input/public-field-filter.dto';
-import { UpdateFieldDto } from './dto/input/update-field.dto';
+import { CreateFieldSlotDto } from '../dto/input/create-field-slot.dto';
+import { CreatePrivateFieldDto } from '../dto/input/create-private-field.dto';
+import {
+  CreatePublicFieldDto,
+  CreatePublicFieldFormDto,
+} from '../dto/input/create-public-field.dto';
+import { FieldFilterDto } from '../dto/input/field-filter.dto';
+import { MyFieldsB2CFilterDto } from '../dto/input/my-fields-b2c-filter.dto';
+import { PublicFieldFilterDto } from '../dto/input/public-field-filter.dto';
 import {
   FieldResponseDto,
   PaginatedFieldResponse,
   PaginatedPublicFieldResponse,
   PublicFieldResponseData,
-} from './dto/output/field-response.dto';
+} from '../dto/output/field-response.dto';
 import {
   FindOneFieldResponseData,
   FindOneFieldResponseDto,
-} from './dto/output/find-one-field-response.dto';
+} from '../dto/output/find-one-field-response.dto';
 import {
   MyFieldsResponseData,
   PaginatedMyFieldsResponse,
-} from './dto/output/my-fields-response.dto';
-import { FieldSlotsService } from './services/field-slots.service';
-import { FieldsService } from './services/fields.service';
+} from '../dto/output/my-fields-response.dto';
+import { FieldSlotsService } from '../services/field-slots.service';
+import { FieldsService } from '../services/fields.service';
 
 // ? Guards at endpoint level for the whole controller because some routes will be accessible by both B2C and B2B users.
 @ApiTags(SWAGGER_TAG_FIELDS)
@@ -239,40 +234,8 @@ export class FieldsController {
     };
   }
 
-  @Get('admin/:uid')
-  @UseGuards(AuthB2CGuard)
-  @Protected()
-  @ApiOkResponse({ type: FindOneFieldResponseDto })
-  @ApiBadRequestResponse({ type: BadRequestResponseDto })
-  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  @ApiForbiddenResponse({ type: ForbiddenResponseDto })
-  @ApiNotFoundResponse({ type: NotFoundResponseDto })
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Get a field by uid without verification status filter, used for admin purposes',
-  })
-  async findOneForAdmin(
-    @Param('uid') uid: string,
-    @Req() request: FastifyRequest,
-  ): Promise<ResponseTypeDto<FindOneFieldResponseData>> {
-    const userType = request['user'].userType;
-
-    if (userType !== UserType.ADMIN) {
-      throw new ForbiddenException('You are not authorized to access this resource');
-    }
-    const field = await this.fieldsService.findOneForAdmin(uid);
-
-    if (!field) {
-      throw new NotFoundException(`Field with uid ${uid} not found`);
-    }
-
-    return {
-      data: field,
-      message: 'Field fetched successfully',
-    };
-  }
-
   @Get('list-public/collection')
+  @Protected()
   @ApiOkResponse({ type: PaginatedPublicFieldResponse })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
@@ -287,44 +250,4 @@ export class FieldsController {
       message: 'Public fields fetched successfully',
     };
   }
-  @Patch('update-public/:uid')
-  @UseGuards(AuthB2CGuard)
-  @Protected()
-  @ApiNoContentResponse({ description: 'Field updated successfully' })
-  @ApiBadRequestResponse({ type: BadRequestResponseDto })
-  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  @ApiNotFoundResponse({ type: NotFoundResponseDto })
-  @ApiOperation({ summary: 'Update a public field' })
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @UseInterceptors(new FastifyFilesInterceptor('files'))
-  async updatePublicField(
-    @Param('uid') uid: string,
-    @Body() updateFieldDto: UpdateFieldDto,
-    @UploadedFilesCustom() files: { buffer: Buffer; originalname: string }[],
-  ) {
-    return this.fieldsService.updatePublicField(uid, updateFieldDto, files);
-  }
-
-  // @Patch('update-private/:uid')
-  // @UseGuards(AuthB2BGuard)
-  // @Protected()
-  // @ApiNoContentResponse({ description: 'Field updated successfully' })
-  // @ApiBadRequestResponse({ type: BadRequestResponseDto })
-  // @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  // @ApiNotFoundResponse({ type: NotFoundResponseDto })
-  // @ApiOperation({ summary: 'Update a partner field' })
-  // @HttpCode(HttpStatus.NO_CONTENT)
-  // async updatePartnerField(
-  //   @Req() request: Request,
-  //   @Param('uid') uid: string,
-  //   @Body() updatePrivateFieldDto: UpdatePrivateFieldDto,
-  // ) {
-  //   const partnerUid = request['user'].organisationUid;
-  //   return this.fieldsService.updatePartnerField(uid, partnerUid, updatePrivateFieldDto);
-  // }
-
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.fieldsService.remove(+id);
-  // }
 }

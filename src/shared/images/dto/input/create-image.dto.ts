@@ -1,25 +1,28 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class CreateImageDto {
   @IsString()
   @ApiProperty({
-    description: "nom de l'image",
+    description: 'image name',
     example: '10121551_image.jpg',
     type: String,
   })
   readonly name: string;
-  @IsNumber()
+
   @IsOptional()
   @ApiProperty({
-    description: "Ordre d'affichage de l'image",
+    description: 'Display order of the image',
     example: 1,
     type: Number,
   })
+  @IsNumber()
+  @Min(0)
+  @Max(4)
   order?: number;
 
   @ApiProperty({
-    description: "Fichier de l'image",
+    description: 'image file',
     format: 'binary',
     type: 'string',
   })

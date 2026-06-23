@@ -6,7 +6,7 @@ import { UserType } from 'generated/prisma/enums';
 import { PinoLogger } from 'nestjs-pino';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
 
 describe('AdminGuard', () => {
   let guard: AdminGuard;

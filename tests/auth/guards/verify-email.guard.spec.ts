@@ -5,7 +5,7 @@ import { VerifyEmailGuard } from 'src/auth/guards/verify-email.guard';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TokenType } from 'src/shared/constants/constants';
 import { USERSELECT } from 'src/shared/constants/select-user';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
 
 describe('VerifyEmailGuard', () => {
   let guard: VerifyEmailGuard;

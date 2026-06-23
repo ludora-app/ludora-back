@@ -1,14 +1,14 @@
 import { ConflictException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
+import { CreatePublicFieldDto } from 'src/fields/dto/input/create-public-field.dto';
 import { FieldsService } from 'src/fields/services/fields.service';
-import { CreatePublicFieldDto } from '../../src/fields/dto/input/create-public-field.dto';
-import { PartnersService } from '../../src/partners/partners.service';
-import { PrismaService } from '../../src/prisma/prisma.service';
-import { Sport } from '../../src/shared/constants/constants';
-import { EmailsService } from '../../src/shared/emails/emails.service';
-import { GeolocalisationService } from '../../src/shared/geolocalisation/geolocalisation.service';
-import { StorageService } from '../../src/shared/storage/storage.service';
+import { PartnersService } from 'src/partners/partners.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { Sport } from 'src/shared/constants/constants';
+import { EmailsService } from 'src/shared/emails/emails.service';
+import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
+import { StorageService } from 'src/shared/storage/storage.service';
 
 describe('FieldsService', () => {
   let service: FieldsService;

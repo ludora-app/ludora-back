@@ -1,14 +1,15 @@
 import { Global, Module } from '@nestjs/common';
 import { StorageService } from 'src/shared/storage/storage.service';
-import { AdminUsersController } from './controllers/admin-users.controller';
 import { UsersController } from './controllers/users.controller';
-import { UsersService } from './users.service';
+import { UsersAdminController } from './controllers/users-admin.controller';
+import { UsersService } from './services/users.service';
+import { UsersAdminService } from './services/users-admin.service';
 
 @Global()
 @Module({
-  controllers: [UsersController, AdminUsersController],
+  controllers: [UsersController, UsersAdminController],
   exports: [UsersService],
   imports: [],
-  providers: [UsersService, StorageService],
+  providers: [UsersService, StorageService, UsersAdminService],
 })
 export class UsersModule {}

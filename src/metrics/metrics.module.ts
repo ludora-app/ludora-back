@@ -13,7 +13,6 @@ import { SessionInvitationsService } from 'src/sessions/services/session-invitat
 import { SessionsService } from 'src/sessions/services/sessions.service';
 import { SessionsModule } from 'src/sessions/sessions.module';
 import { UserPreferencesModule } from 'src/user-preferences/user-preferences.module';
-import { UsersService } from 'src/users/users.service';
 import { HttpMetricsInterceptor } from './http-metrics.interceptor';
 import { MetricsController } from './metrics.controller';
 import { MetricsService } from './metrics.service';
@@ -39,10 +38,6 @@ import { MetricsService } from './metrics.service';
   providers: [
     MetricsService,
     makeGaugeProvider({
-      help: 'Number of active users',
-      name: 'active_users',
-    }),
-    makeGaugeProvider({
       help: 'Number of sessions created within the last 24 hours',
       name: 'sessions_created_last_24_hours',
     }),
@@ -60,7 +55,6 @@ import { MetricsService } from './metrics.service';
       provide: APP_INTERCEPTOR,
       useClass: HttpMetricsInterceptor,
     },
-    UsersService,
     SessionsService,
     SessionInvitationsService,
     ConversationsService,

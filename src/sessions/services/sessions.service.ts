@@ -35,27 +35,6 @@ import { SessionTeamsService } from './session-teams.service';
 
 @Injectable()
 export class SessionsService {
-  async getUserSessionStats(
-    userUid: string,
-  ): Promise<{ organizedCount: number; participatedCount: number }> {
-    const [organizedCount, participatedCount] = await Promise.all([
-      this.prisma.sessions.count({
-        where: { creatorUid: userUid },
-      }),
-      this.prisma.sessions.count({
-        where: {
-          sessionPlayers: {
-            some: {
-              userUid: userUid,
-            },
-          },
-        },
-      }),
-    ]);
-
-    return { organizedCount, participatedCount };
-  }
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly teamsService: SessionTeamsService,
@@ -999,6 +978,27 @@ export class SessionsService {
     });
   }
 
+  async getUserSessionStats(
+    userUid: string,
+  ): Promise<{ organizedCount: number; participatedCount: number }> {
+    const [organizedCount, participatedCount] = await Promise.all([
+      this.prisma.sessions.count({
+        where: { creatorUid: userUid },
+      }),
+      this.prisma.sessions.count({
+        where: {
+          sessionPlayers: {
+            some: {
+              userUid: userUid,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return { organizedCount, participatedCount };
+  }
+
   /**
    * This TypeScript function retrieves the count of sessions created within the last 24 hours using
    * Prisma.
@@ -1007,12 +1007,17 @@ export class SessionsService {
    * @description This method is used in the metrics service to get the count of sessions created within the last 24 hours.
    */
   async getCreatedSessionsCount(): Promise<number> {
-    return await this.prisma.sessions.count({
+    const result = await this.prisma.sessions.count({
       where: {
         createdAt: {
           gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
         },
       },
     });
+    this.logger.debug(
+      `Cron job "sessionsCreatedLast24HoursCounter" executed: ${result} sessions created within the last 24 hours`,
+    );
+
+    return result;
   }
 }

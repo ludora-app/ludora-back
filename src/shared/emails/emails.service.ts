@@ -97,40 +97,48 @@ export class EmailsService {
   }
 
   async testEmail() {
+    // await this.sendEmail({
+    //   data: {
+    //     name: 'John Doe',
+    //   },
+    //   recipients: ['ganafall9498@gmail.com'],
+    //   template: 'welcomeEmail',
+    // });
+    // await this.sendEmail({
+    //   data: {
+    //     link: 'https://ludora.app/verify-email?token=123456',
+    //   },
+    //   recipients: ['ganafall9498@gmail.com'],
+    //   template: 'verificationLink',
+    // });
+    // await this.sendEmail({
+    //   data: {
+    //     name: 'John Doe',
+    //   },
+    //   recipients: ['ganafall9498@gmail.com'],
+    //   template: 'emailVerified',
+    // });
+    // await this.sendEmail({
+    //   data: {
+    //     name: 'John Doe',
+    //   },
+    //   recipients: ['ganafall9498@gmail.com'],
+    //   template: 'passwordReset',
+    // });
+    // await this.sendEmail({
+    //   data: {
+    //     name: 'John Doe',
+    //   },
+    //   recipients: ['ganafall9498@gmail.com'],
+    //   template: 'passwordResetRequest',
+    // });
     await this.sendEmail({
       data: {
         name: 'John Doe',
+        reason: 'bruh',
       },
       recipients: ['ganafall9498@gmail.com'],
-      template: 'welcomeEmail',
-    });
-    await this.sendEmail({
-      data: {
-        link: 'https://ludora.app/verify-email?token=123456',
-      },
-      recipients: ['ganafall9498@gmail.com'],
-      template: 'verificationLink',
-    });
-    await this.sendEmail({
-      data: {
-        name: 'John Doe',
-      },
-      recipients: ['ganafall9498@gmail.com'],
-      template: 'emailVerified',
-    });
-    await this.sendEmail({
-      data: {
-        name: 'John Doe',
-      },
-      recipients: ['ganafall9498@gmail.com'],
-      template: 'passwordReset',
-    });
-    await this.sendEmail({
-      data: {
-        name: 'John Doe',
-      },
-      recipients: ['ganafall9498@gmail.com'],
-      template: 'passwordResetRequest',
+      template: 'banEmail',
     });
   }
 }

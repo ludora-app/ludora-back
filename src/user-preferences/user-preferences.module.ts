@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
 import { HourPreferencesController } from './controllers/hour-preferences.controller';
 import { SportPreferencesController } from './controllers/sport-preferences.controller';
 import { HourPreferencesService } from './services/hour-preferences.service';

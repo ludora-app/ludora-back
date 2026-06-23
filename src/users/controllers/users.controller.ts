@@ -53,7 +53,7 @@ import {
 } from '../dto';
 import { PasswordResetRequestDto } from '../dto/input/password-reset-request.dto';
 import { RawUserFindMe, RawUserFindOne, UserMapper } from '../mappers/user.mapper';
-import { UsersService } from '../users.service';
+import { UsersService } from '../services/users.service';
 
 @ApiTags(SWAGGER_TAG_USERS)
 @Controller('users')
