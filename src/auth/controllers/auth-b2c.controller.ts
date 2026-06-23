@@ -20,6 +20,7 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -44,6 +45,7 @@ import {
 } from 'src/auth/dto';
 import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { ForbiddenResponseDto } from 'src/shared/dto/errors/forbidden-response.dto';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { SuccessTypeDto } from 'src/shared/dto/responses/success-type';
@@ -172,6 +174,9 @@ export class AuthB2CController {
   })
   @ApiBadRequestResponse({
     type: BadRequestResponseDto,
+  })
+  @ApiForbiddenResponse({
+    type: ForbiddenResponseDto,
   })
   async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
     const tokens = await this.authService.login(loginDto);

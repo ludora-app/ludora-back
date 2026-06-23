@@ -18,16 +18,16 @@ import { EmailsService } from 'src/shared/emails/emails.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
-import { USERSELECT } from '../shared/constants/select-user';
-import { USER_SUGGESTION_CONFIG } from './constants/users.constants';
+import { USERSELECT } from '../../shared/constants/select-user';
+import { USER_SUGGESTION_CONFIG } from '../constants/users.constants';
 import {
   CreateUserDto,
   FindAllUsersResponseDataDto,
   UpdatePasswordDto,
   UpdateUserDto,
   UserFilterDto,
-} from './dto';
-import { RawUserFindAll, UserMapper } from './mappers/user.mapper';
+} from '../dto';
+import { RawUserFindAll, UserMapper } from '../mappers/user.mapper';
 
 @Injectable()
 export class UsersService {
@@ -674,15 +674,5 @@ export class UsersService {
     if (result.count === 0) {
       throw new BadRequestException('User does not have a deletion request');
     }
-  }
-
-  async adminDeleteUser(uid: string): Promise<void> {
-    const user = await this.findOne(uid, USERSELECT.checkIfUserExists);
-
-    if (!user) throw new NotFoundException('User not found');
-
-    await this.prismaService.users.delete({ where: { uid } });
-
-    this.logger.warn(`[ADMIN ACTION] - User ${user.email} (${uid}) has been deleted by an admin`);
   }
 }

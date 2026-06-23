@@ -8,7 +8,7 @@ import { SessionInvitationsService } from 'src/sessions/services/session-invitat
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
 import { SessionsService } from 'src/sessions/services/sessions.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
 import { UpdateSessionInvitationDto } from '../../../src/sessions/dto/input/update-session-invitation.dto';
 
 describe('SessionInvitationsService', () => {

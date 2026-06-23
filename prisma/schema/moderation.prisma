@@ -29,10 +29,24 @@ model UserReports {
   description String?
   createdAt   DateTime     @default(now()) @map("created_at")
 
-  reporter Users @relation("ReporterRelation", fields: [reporterUid], references: [uid], onDelete: Cascade)
-  reported Users @relation("ReportedRelation", fields: [reportedUid], references: [uid], onDelete: Cascade)
+  reporter     Users          @relation("ReporterRelation", fields: [reporterUid], references: [uid], onDelete: Cascade)
+  reported     Users          @relation("ReportedRelation", fields: [reportedUid], references: [uid], onDelete: Cascade)
+  reportImages ReportImages[]
 
   @@unique([reporterUid, reportedUid, reason])
   @@map("User_reports")
+  @@schema("moderation")
+}
+
+model ReportImages {
+  uid       String   @id @default(cuid())
+  reportUid String   @map("report_uid")
+  imageUrl  String   @map("image_url")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  report UserReports @relation(fields: [reportUid], references: [id], onDelete: Cascade)
+
+  @@index([reportUid])
+  @@map("Report_images")
   @@schema("moderation")
 }

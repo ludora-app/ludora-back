@@ -19,6 +19,7 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     type: true,
     uid: true,
     isEmailVerified: true,
+    isBanned: true,
   },
 
   checkIfUserExistsByEmail: {
@@ -115,16 +116,19 @@ export const USERSELECT: Record<string, Prisma.UsersSelect> = {
     lastname: true,
     provider: true,
     uid: true,
+    isBanned: true,
   },
   login: {
     email: true,
     password: true,
     type: true,
     uid: true,
+    isBanned: true,
   },
   findOneByAppleId: {
     appleId: true,
     uid: true,
     email: true,
+    isBanned: true,
   },
 };

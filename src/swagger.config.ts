@@ -22,6 +22,7 @@ export const SWAGGER_TAG_SPORT_PREFERENCES = 'Sport Preferences';
 export const SWAGGER_TAG_STORAGE = 'Storage';
 export const SWAGGER_TAG_USERS = 'Users';
 export const SWAGGER_TAG_FIELDS_ADMIN = 'Fields [ADMIN]';
+export const SWAGGER_TAG_USERS_ADMIN = 'Users [ADMIN]';
 
 export const SWAGGER_DESCRIPTION_APP = 'Health check and application status';
 export const SWAGGER_DESCRIPTION_AUTH_B2C =
@@ -60,6 +61,7 @@ export const SWAGGER_DESCRIPTION_STORAGE = 'File upload and signed URL generatio
 export const SWAGGER_DESCRIPTION_USERS =
   'User profile management, password and email updates, and account lifecycle';
 export const SWAGGER_DESCRIPTION_FIELDS_ADMIN = 'Field management (ADMIN ONLY)';
+export const SWAGGER_DESCRIPTION_USERS_ADMIN = 'User management (ADMIN ONLY)';
 
 export const SWAGGER_OPTIONS: SwaggerCustomOptions = {
   swaggerOptions: { operationsSorter: 'method', tagsSorter: 'alpha' },

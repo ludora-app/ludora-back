@@ -9,7 +9,7 @@ import { AuthB2BService } from 'src/auth/services/auth-b2b.service';
 import { PartnersService } from 'src/partners/partners.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
 
 describe('AuthB2BService', () => {
   let service: AuthB2BService;

@@ -6,7 +6,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
 import { PartnersService } from 'src/partners/partners.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from 'src/users/services/users.service';
 
 describe('AuthB2BGuard', () => {
   let guard: AuthB2BGuard;
@@ -343,7 +343,7 @@ describe('AuthB2BGuard', () => {
         },
       });
       expect(mockPrismaService.users.findUnique).toHaveBeenCalledWith({
-        select: { isEmailVerified: true, uid: true, isConnected: true },
+        select: { isEmailVerified: true, uid: true, isConnected: true, isBanned: true },
         where: { uid: 'user123' },
       });
       expect(mockPrismaService.partners.findUnique).toHaveBeenCalledWith({

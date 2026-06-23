@@ -94,8 +94,24 @@ export const NEW_FIELD_ADMINISTRATION_REQUEST_TEMPLATE: EmailTemplate = {
   subject: 'Nouvelle demande de création de terrain à valider',
 };
 
+export const BAN_EMAIL_TEMPLATE: EmailTemplate = {
+  html: (data: { name: string; reason?: string }) => `
+    <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+        <h2 style="color: #dc2626;">Compte suspendu</h2>
+        <p style="font-size: 16px; line-height: 1.5;">Bonjour ${data.name},</p>
+        <p style="font-size: 16px; line-height: 1.5;">Nous t'informons que ton compte Ludora a été suspendu suite à un non-respect de nos conditions d'utilisation.</p>
+        ${data.reason ? `<p style="font-size: 16px; line-height: 1.5;"><strong>Motif :</strong> ${data.reason}</p>` : ''}
+        <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0; font-size: 14px; color: #991b1b;">Si tu penses qu'il s'agit d'une erreur, tu peux nous contacter en répondant à cet email.</p>
+        </div>
+    </div>
+  `,
+  subject: 'Ton compte Ludora a été suspendu',
+};
+
 // Objet qui regroupe tous les templates pour faciliter l'accès
 export const emailTemplates = {
+  banEmail: BAN_EMAIL_TEMPLATE,
   emailVerified: VERIFIED_EMAIL_TEMPLATE,
   newFieldAdministrationRequest: NEW_FIELD_ADMINISTRATION_REQUEST_TEMPLATE,
   passwordReset: PASSWORD_RESET_TEMPLATE,
