@@ -11,7 +11,7 @@ async function bootstrap() {
 
   const dashboardOrigin = process.env.DASHBOARD_URL;
 
-  const allowedOrigins = [dashboardOrigin, 'https://ludora.app'];
+  const allowedOrigins = [dashboardOrigin];
   if (process.env.NODE_ENV !== 'production') {
     allowedOrigins.push('http://localhost:3000');
   }

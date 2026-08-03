@@ -25,7 +25,7 @@ export class FieldFilterDto {
   })
   @IsEnum(Sport, { each: true })
   @ApiProperty({
-    description: 'Sports of the session',
+    description: 'Sports of the field',
     enum: Sport,
     example: [Sport.BASKETBALL, Sport.FOOTBALL],
     isArray: true,

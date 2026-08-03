@@ -61,7 +61,6 @@ export class AdminGuard implements CanActivate {
         throw new UnauthorizedException('Token expired or invalid');
       }
 
-      // Check if the user is verified and active
       const user = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
 
       if (!user) {
