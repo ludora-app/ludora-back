@@ -7,7 +7,7 @@ import { AppModule } from './app.module';
 import { buildSwaggerDocument, SWAGGER_OPTIONS } from './swagger.config';
 
 async function bootstrap() {
-  const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+  const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
 
   const dashboardOrigin = process.env.DASHBOARD_URL;
 

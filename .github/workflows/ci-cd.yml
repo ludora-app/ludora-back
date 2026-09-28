@@ -17,6 +17,7 @@ on:
       - main
       - dev
       - staging
+  workflow_dispatch:
 
 jobs:
   # ============================================
