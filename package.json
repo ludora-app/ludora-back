@@ -146,5 +146,5 @@
     "ts-check": "tsc --noEmit"
   },
   "packageManager": "pnpm@10.4.1",
-  "version": "1.0.0-alpha.1"
+  "version": "1.0.0"
 }
