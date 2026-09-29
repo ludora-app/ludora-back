@@ -64,3 +64,8 @@ STRIPE_TESTING.md
 /generated
 /config
 
+
+# Generated OpenAPI specs (pnpm swagger:generate)
+swagger.json
+swagger-admin.json
+swagger-public.json

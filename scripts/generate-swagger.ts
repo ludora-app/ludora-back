@@ -1,38 +1,37 @@
 import { writeFileSync } from 'node:fs';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from '../src/app.module';
+import {
+  buildSwaggerDocuments,
+  SWAGGER_FILE_ADMIN,
+  SWAGGER_FILE_LEGACY,
+  SWAGGER_FILE_PUBLIC,
+} from '../src/swagger/swagger.config';
 
 async function generateSwagger() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), {
     logger: false,
   });
 
-  const config = new DocumentBuilder()
-    .setTitle('Ludora API')
-    .setDescription('API for the Ludora app')
-    .setVersion(process.env.npm_package_version ?? '0.0.1')
-    .addBearerAuth(
-      {
-        bearerFormat: 'JWT',
-        description: 'Enter JWT token',
-        scheme: 'bearer',
-        type: 'http',
-      },
-      'JWT-auth',
-    )
-    .build();
+  const documents = buildSwaggerDocuments(app);
+  const files = {
+    [SWAGGER_FILE_ADMIN]: documents.admin,
+    [SWAGGER_FILE_PUBLIC]: documents.public,
+    // Deprecated: kept for existing consumers of swagger.json
+    [SWAGGER_FILE_LEGACY]: documents.admin,
+  };
 
-  const document = SwaggerModule.createDocument(app, config);
-  writeFileSync('swagger.json', JSON.stringify(document, null, 2));
+  for (const [file, document] of Object.entries(files)) {
+    writeFileSync(file, JSON.stringify(document, null, 2));
+  }
 
   await app.close();
-  console.log('swagger.json generated successfully');
+  console.log(`Swagger specs generated successfully: ${Object.keys(files).join(', ')}`);
 }
 
 generateSwagger().catch((err) => {
-  console.error('Failed to generate swagger.json:', err);
+  console.error('Failed to generate swagger specs:', err);
   process.exit(1);
 });

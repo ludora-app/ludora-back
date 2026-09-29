@@ -30,7 +30,7 @@ import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-resp
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
-import { SWAGGER_TAG_PAYMENT } from 'src/swagger.config';
+import { SWAGGER_TAG_PAYMENT } from 'src/swagger/swagger.config';
 import Stripe from 'stripe';
 import { BankDetailsDto, UpdateBankDetailsDto } from './dto/input/bank-details.dto';
 import { ConfirmPaymentIntentDto } from './dto/input/confirm-payment.dto';

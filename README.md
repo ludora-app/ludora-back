@@ -57,7 +57,13 @@ docker compose -f docker/compose.local.yml --env-file .env.local up --build
 ```
 
 The API will be available at `http://localhost:2424`.
-Swagger documentation is available at `http://localhost:2424/swagger`.
+Swagger documentation is available (non-production only) at:
+
+- `http://localhost:2424/swagger-admin` (JSON: `/swagger-admin-json`): full API, for the admin web app
+- `http://localhost:2424/swagger-public` (JSON: `/swagger-public-json`): without `[ADMIN]` endpoints, for the mobile app
+- `http://localhost:2424/swagger` (JSON: `/swagger-json`): deprecated alias of the admin spec
+
+`pnpm swagger:generate` writes the same specs to `swagger-admin.json`, `swagger-public.json` and `swagger.json` (deprecated).
 
 ### Docker Environment
 

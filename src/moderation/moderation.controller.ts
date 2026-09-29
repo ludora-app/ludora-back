@@ -25,7 +25,7 @@ import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-respons
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
-import { SWAGGER_TAG_MODERATION } from 'src/swagger.config';
+import { SWAGGER_TAG_MODERATION } from 'src/swagger/swagger.config';
 import { UserSimpleDisplayWithUidData } from 'src/users/dto';
 import { CreateReportDto } from './dto/input/create-report.dto';
 import { PaginatedBlockedUsersResponseDto } from './dto/output/blocked-users-response.dto';

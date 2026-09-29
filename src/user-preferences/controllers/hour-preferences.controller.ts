@@ -24,7 +24,7 @@ import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-respons
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
-import { SWAGGER_TAG_HOUR_PREFERENCES } from 'src/swagger.config';
+import { SWAGGER_TAG_HOUR_PREFERENCES } from 'src/swagger/swagger.config';
 import {
   CreateHourPreferenceDto,
   HourPreferenceData,

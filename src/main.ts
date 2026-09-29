@@ -2,9 +2,8 @@ import contentParser from '@fastify/multipart';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
-import { SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { buildSwaggerDocument, SWAGGER_OPTIONS } from './swagger.config';
+import { setupSwagger } from './swagger/swagger.config';
 
 async function bootstrap() {
   const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
@@ -35,8 +34,7 @@ async function bootstrap() {
   );
 
   if (process.env.NODE_ENV !== 'production') {
-    const document = SwaggerModule.createDocument(app, buildSwaggerDocument());
-    SwaggerModule.setup('swagger', app, document, SWAGGER_OPTIONS);
+    setupSwagger(app);
   }
 
   // In Docker, Fastify must listen on 0.0.0.0 to be reachable from outside the container.

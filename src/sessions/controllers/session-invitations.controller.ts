@@ -32,7 +32,7 @@ import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dt
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import { SWAGGER_TAG_SESSION_INVITATIONS } from 'src/swagger.config';
+import { SWAGGER_TAG_SESSION_INVITATIONS } from 'src/swagger/swagger.config';
 import { CreateManySessionInvitationDto } from '../dto/input/create-many-session-invitation.dto';
 import { SessionInvitationFilterDto } from '../dto/input/session-invitation-filter.dto';
 import { UpdateSessionInvitationDto } from '../dto/input/update-session-invitation.dto';

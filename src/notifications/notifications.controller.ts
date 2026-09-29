@@ -27,7 +27,7 @@ import { Protected } from 'src/shared/decorators/protected.decorator';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
-import { SWAGGER_TAG_NOTIFICATIONS } from 'src/swagger.config';
+import { SWAGGER_TAG_NOTIFICATIONS } from 'src/swagger/swagger.config';
 import { NotificationFilterDto } from './dto/input/notification-filter.dto';
 import {
   FriendAcceptedData,
