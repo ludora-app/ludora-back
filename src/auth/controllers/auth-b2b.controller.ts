@@ -107,7 +107,7 @@ export class AuthB2BController {
     };
   }
 
-  @Post('login-admin')
+  @Post('login/admin')
   @Public()
   @ApiOperation({ summary: 'Login a admin user account' })
   @ApiBadRequestResponse({
