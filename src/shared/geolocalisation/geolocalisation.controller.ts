@@ -9,7 +9,10 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
-import { SWAGGER_TAG_GEOLOCALISATION } from 'src/swagger.config';
+import {
+  SWAGGER_TAG_GEOLOCALISATION,
+  SWAGGER_TAG_GEOLOCALISATION_ADMIN,
+} from 'src/swagger/swagger.config';
 import { Protected } from '../decorators/protected.decorator';
 import { Public } from '../decorators/public.decorator';
 import { BadRequestResponseDto } from '../dto/errors/bad-request-response.dto';
@@ -60,6 +63,7 @@ export class GeolocalisationController {
   @Get('admin/list/collection')
   @Protected()
   @UseGuards(AdminGuard)
+  @ApiTags(SWAGGER_TAG_GEOLOCALISATION_ADMIN)
   @ApiOperation({ summary: '[ADMIN] Get address autocomplete' })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })

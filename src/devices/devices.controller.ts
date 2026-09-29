@@ -23,7 +23,7 @@ import { Protected } from 'src/shared/decorators/protected.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import { SWAGGER_TAG_DEVICES } from 'src/swagger.config';
+import { SWAGGER_TAG_DEVICES } from 'src/swagger/swagger.config';
 import { DevicesService } from './devices.service';
 import { RegisterDeviceDto } from './dto/input/register-device.dto';
 import { UnregisterDeviceDto } from './dto/input/unregister-device.dto';

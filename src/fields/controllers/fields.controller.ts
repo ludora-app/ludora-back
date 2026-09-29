@@ -36,7 +36,7 @@ import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-resp
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
-import { SWAGGER_TAG_FIELDS } from 'src/swagger.config';
+import { SWAGGER_TAG_FIELDS } from 'src/swagger/swagger.config';
 import { CreateFieldSlotDto } from '../dto/input/create-field-slot.dto';
 import { CreatePrivateFieldDto } from '../dto/input/create-private-field.dto';
 import {

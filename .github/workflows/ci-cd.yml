@@ -99,15 +99,19 @@ jobs:
   #         retention-days: 7
 
   # ============================================
-  # JOB 3: Swagger — génération de swagger.json en artifact
-  # Déclenché uniquement sur les PR vers main, dev ou staging.
+  # JOB 3: Swagger — génération des specs OpenAPI en artifact
+  # Déclenché sur push (main, dev, staging) et workflow_dispatch, pas sur les PR.
+  # Artifact swagger-<branche> :
+  #   - swagger-admin.json  : spec complète (web app d'admin)
+  #   - swagger-public.json : spec sans les endpoints [ADMIN] (app mobile)
+  #   - swagger.json        : DÉPRÉCIÉ, copie de swagger-admin.json pour les consommateurs existants
   # SWAGGER_ONLY=true empêche Prisma et Firebase de tenter une vraie connexion.
   # JWT_SECRET est requis par JwtModule.registerAsync() au démarrage.
   # ============================================
   swagger:
     name: SWAGGER
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: github.event_name != 'pull_request'
     container:
       image: node:22.13.1-slim
 
@@ -150,15 +154,40 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm prisma generate
 
-      - name: Generate swagger.json
+      - name: Generate swagger specs
         run: pnpm swagger:generate
 
-      - name: Upload swagger.json artifact
+      # Garde-fou : la spec publique (mobile) ne doit exposer aucun endpoint d'admin
+      # (ni tag/texte [ADMIN], ni chemin contenant un segment /admin).
+      - name: Check public spec has no admin endpoints
+        run: |
+          FAILED=0
+          if grep -qF '[ADMIN]' swagger-public.json; then
+            echo "::error file=swagger-public.json::The public spec contains [ADMIN] entries."
+            grep -nF '[ADMIN]' swagger-public.json
+            FAILED=1
+          fi
+          ADMIN_PATHS=$(node -e '
+            const { paths } = require("./swagger-public.json");
+            console.log(Object.keys(paths).filter((p) => /(^|\/)admin(\/|$)/i.test(p)).join("\n"));
+          ')
+          if [ -n "$ADMIN_PATHS" ]; then
+            echo "::error file=swagger-public.json::The public spec contains /admin paths."
+            echo "$ADMIN_PATHS"
+            FAILED=1
+          fi
+          exit $FAILED
+
+      - name: Upload swagger artifacts
         uses: actions/upload-artifact@v4
         with:
           name: swagger-${{ github.base_ref || github.ref_name }}
-          path: swagger.json
-          retention-days: 7
+          path: |
+            swagger-admin.json
+            swagger-public.json
+            swagger.json
+          if-no-files-found: error
+          retention-days: 90
 
   # ============================================
   # JOB 4: Build

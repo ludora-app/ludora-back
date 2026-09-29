@@ -38,7 +38,7 @@ import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-resp
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
-import { SWAGGER_TAG_CONVERSATIONS } from 'src/swagger.config';
+import { SWAGGER_TAG_CONVERSATIONS } from 'src/swagger/swagger.config';
 import { ConversationFilterDto } from './dto/input/conversation-filter.dto';
 import { CreateMessageDto } from './dto/input/create-message.dto';
 import {

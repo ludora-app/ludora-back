@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiExcludeEndpoint, ApiOperation, ApiTags } from '@nestj
 import { AppService } from './app.service';
 import { AuthB2CGuard } from './auth/guards/auth-b2c.guard';
 import { Public } from './shared/decorators/public.decorator';
-import { SWAGGER_TAG_APP } from './swagger.config';
+import { SWAGGER_TAG_APP } from './swagger/swagger.config';
 
 @ApiTags(SWAGGER_TAG_APP)
 @Controller()

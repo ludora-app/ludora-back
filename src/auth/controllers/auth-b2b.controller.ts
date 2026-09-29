@@ -25,7 +25,7 @@ import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-respons
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.interceptor';
-import { SWAGGER_TAG_AUTH_B2B } from 'src/swagger.config';
+import { SWAGGER_TAG_AUTH_B2B } from 'src/swagger/swagger.config';
 import { RegisterB2BWithFileDto } from '../dto/input/register-b2b.dto';
 import { AuthB2BGuard } from '../guards/auth-b2b.guard';
 import { AuthB2BService } from '../services/auth-b2b.service';

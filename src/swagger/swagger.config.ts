@@ -1,4 +1,11 @@
-import { DocumentBuilder, SwaggerCustomOptions } from '@nestjs/swagger';
+import { INestApplication } from '@nestjs/common';
+import {
+  DocumentBuilder,
+  OpenAPIObject,
+  SwaggerCustomOptions,
+  SwaggerModule,
+} from '@nestjs/swagger';
+import { excludeAdmin } from './exclude-admin';
 
 export const SWAGGER_TAG_APP = 'App';
 export const SWAGGER_TAG_AUTH_B2C = 'Auth B2C';
@@ -22,6 +29,7 @@ export const SWAGGER_TAG_SPORT_PREFERENCES = 'Sport Preferences';
 export const SWAGGER_TAG_STORAGE = 'Storage';
 export const SWAGGER_TAG_USERS = 'Users';
 export const SWAGGER_TAG_FIELDS_ADMIN = 'Fields [ADMIN]';
+export const SWAGGER_TAG_GEOLOCALISATION_ADMIN = 'Geolocalisation [ADMIN]';
 export const SWAGGER_TAG_USERS_ADMIN = 'Users [ADMIN]';
 
 export const SWAGGER_DESCRIPTION_APP = 'Health check and application status';
@@ -61,6 +69,7 @@ export const SWAGGER_DESCRIPTION_STORAGE = 'File upload and signed URL generatio
 export const SWAGGER_DESCRIPTION_USERS =
   'User profile management, password and email updates, and account lifecycle';
 export const SWAGGER_DESCRIPTION_FIELDS_ADMIN = 'Field management (ADMIN ONLY)';
+export const SWAGGER_DESCRIPTION_GEOLOCALISATION_ADMIN = 'Address autocomplete (ADMIN ONLY)';
 export const SWAGGER_DESCRIPTION_USERS_ADMIN = 'User management (ADMIN ONLY)';
 
 export const SWAGGER_OPTIONS: SwaggerCustomOptions = {
@@ -82,6 +91,7 @@ export function buildSwaggerDocument() {
     .addTag(SWAGGER_TAG_FIELDS_ADMIN, SWAGGER_DESCRIPTION_FIELDS_ADMIN)
     .addTag(SWAGGER_TAG_FRIENDS, SWAGGER_DESCRIPTION_FRIENDS)
     .addTag(SWAGGER_TAG_GEOLOCALISATION, SWAGGER_DESCRIPTION_GEOLOCALISATION)
+    .addTag(SWAGGER_TAG_GEOLOCALISATION_ADMIN, SWAGGER_DESCRIPTION_GEOLOCALISATION_ADMIN)
     .addTag(SWAGGER_TAG_HOUR_PREFERENCES, SWAGGER_DESCRIPTION_HOUR_PREFERENCES)
     .addTag(SWAGGER_TAG_MODERATION, SWAGGER_DESCRIPTION_MODERATION)
     .addTag(SWAGGER_TAG_NOTIFICATIONS, SWAGGER_DESCRIPTION_NOTIFICATIONS)
@@ -104,4 +114,36 @@ export function buildSwaggerDocument() {
       'JWT-auth',
     )
     .build();
+}
+
+/** Swagger UI paths. The JSON spec is served at `<path>-json` (e.g. `/swagger-admin-json`). */
+export const SWAGGER_PATH_ADMIN = 'swagger-admin';
+export const SWAGGER_PATH_PUBLIC = 'swagger-public';
+/** @deprecated Alias of the admin spec, kept for existing consumers. Use SWAGGER_PATH_ADMIN. */
+export const SWAGGER_PATH_LEGACY = 'swagger';
+
+/** Spec files written by `pnpm swagger:generate` (and published by the CI). */
+export const SWAGGER_FILE_ADMIN = 'swagger-admin.json';
+export const SWAGGER_FILE_PUBLIC = 'swagger-public.json';
+/** @deprecated Copy of the admin spec, kept for existing consumers. Use SWAGGER_FILE_ADMIN. */
+export const SWAGGER_FILE_LEGACY = 'swagger.json';
+
+export interface SwaggerDocuments {
+  /** Full document, for the admin web app. */
+  admin: OpenAPIObject;
+  /** Document without any `[ADMIN]` operation, for the mobile app. */
+  public: OpenAPIObject;
+}
+
+/** Single source of truth for the OpenAPI documents (used by main.ts and scripts/generate-swagger.ts). */
+export function buildSwaggerDocuments(app: INestApplication): SwaggerDocuments {
+  const admin = SwaggerModule.createDocument(app, buildSwaggerDocument());
+  return { admin, public: excludeAdmin(admin) };
+}
+
+export function setupSwagger(app: INestApplication): void {
+  const documents = buildSwaggerDocuments(app);
+  SwaggerModule.setup(SWAGGER_PATH_ADMIN, app, documents.admin, SWAGGER_OPTIONS);
+  SwaggerModule.setup(SWAGGER_PATH_PUBLIC, app, documents.public, SWAGGER_OPTIONS);
+  SwaggerModule.setup(SWAGGER_PATH_LEGACY, app, documents.admin, SWAGGER_OPTIONS);
 }

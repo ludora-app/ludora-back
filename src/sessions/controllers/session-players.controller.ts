@@ -29,7 +29,7 @@ import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-respons
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
-import { SWAGGER_TAG_SESSION_PLAYERS } from 'src/swagger.config';
+import { SWAGGER_TAG_SESSION_PLAYERS } from 'src/swagger/swagger.config';
 import { UserSimpleDisplayData } from 'src/users/dto';
 import { JoinSessionDto } from '../dto/input/create-session-player.dto';
 import {

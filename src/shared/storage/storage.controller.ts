@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Query, Req, UseInterceptors } from '@nestjs/common';
 import { ApiConsumes, ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
-import { SWAGGER_TAG_STORAGE } from 'src/swagger.config';
+import { SWAGGER_TAG_STORAGE } from 'src/swagger/swagger.config';
 import { Public } from '../decorators/public.decorator';
 import { FastifyFilesInterceptor } from '../interceptors/fastify-file.interceptor';
 import { StorageService } from './storage.service';

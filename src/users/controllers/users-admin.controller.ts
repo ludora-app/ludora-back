@@ -24,7 +24,7 @@ import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-respons
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
-import { SWAGGER_TAG_USERS_ADMIN } from 'src/swagger.config';
+import { SWAGGER_TAG_USERS_ADMIN } from 'src/swagger/swagger.config';
 import { CreateUserBanParamDto } from '../dto/input/create-user-ban.dto';
 import { ReportFilterDto } from '../dto/input/report-filter.dto';
 import {
