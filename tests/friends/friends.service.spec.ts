@@ -6,11 +6,11 @@ import { PinoLogger } from 'nestjs-pino';
 import { FriendsService } from 'src/friends/friends.service';
 import { EventTypes } from 'src/notifications/constants/event.types';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UsersService } from 'src/users/services/users.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 
 describe('FriendsService', () => {
   let service: FriendsService;
-  let usersService: any;
+  let userLookupService: any;
   let prismaService: any;
   let eventEmitter: any;
   let logger: any;
@@ -48,7 +48,7 @@ describe('FriendsService', () => {
   };
 
   beforeEach(async () => {
-    const mockUsersService = {
+    const mockUserLookupService = {
       findOne: jest.fn(),
     };
 
@@ -78,7 +78,7 @@ describe('FriendsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FriendsService,
-        { provide: UsersService, useValue: mockUsersService },
+        { provide: UserLookupService, useValue: mockUserLookupService },
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: EventEmitter2, useValue: mockEventEmitter },
         { provide: PinoLogger, useValue: mockLogger },
@@ -86,7 +86,7 @@ describe('FriendsService', () => {
     }).compile();
 
     service = module.get<FriendsService>(FriendsService);
-    usersService = module.get(UsersService) as any;
+    userLookupService = module.get(UserLookupService) as any;
     prismaService = module.get(PrismaService) as any;
     eventEmitter = module.get(EventEmitter2) as any;
     logger = module.get(PinoLogger) as any;
@@ -98,15 +98,15 @@ describe('FriendsService', () => {
 
   describe('create', () => {
     it('should create a friend request successfully', async () => {
-      usersService.findOne.mockResolvedValueOnce(mockUser as any);
-      usersService.findOne.mockResolvedValueOnce(mockOtherUser as any);
+      userLookupService.findOne.mockResolvedValueOnce(mockUser as any);
+      userLookupService.findOne.mockResolvedValueOnce(mockOtherUser as any);
       prismaService.friends.findFirst.mockResolvedValue(null);
       prismaService.friends.create.mockResolvedValue(mockFriendRequest as any);
 
       const result = await service.create('user-123', 'user-456');
 
       expect(result).toBeUndefined();
-      expect(usersService.findOne).toHaveBeenCalledTimes(2);
+      expect(userLookupService.findOne).toHaveBeenCalledTimes(2);
       expect(prismaService.friends.findFirst).toHaveBeenCalled();
       expect(prismaService.friends.create).toHaveBeenCalledWith({
         data: {
@@ -146,7 +146,7 @@ describe('FriendsService', () => {
     });
 
     it('should throw BadRequestException when sender does not exist', async () => {
-      usersService.findOne.mockResolvedValueOnce(null);
+      userLookupService.findOne.mockResolvedValueOnce(null);
 
       await expect(service.create('user-123', 'user-456')).rejects.toThrow(
         new BadRequestException('Sender not found'),
@@ -155,8 +155,8 @@ describe('FriendsService', () => {
     });
 
     it('should throw BadRequestException when receiver does not exist', async () => {
-      usersService.findOne.mockResolvedValueOnce(mockUser as any);
-      usersService.findOne.mockResolvedValueOnce(null);
+      userLookupService.findOne.mockResolvedValueOnce(mockUser as any);
+      userLookupService.findOne.mockResolvedValueOnce(null);
 
       await expect(service.create('user-123', 'user-456')).rejects.toThrow(
         new BadRequestException('Receiver not found'),
@@ -165,8 +165,8 @@ describe('FriendsService', () => {
     });
 
     it('should throw ConflictException when friend request already exists', async () => {
-      usersService.findOne.mockResolvedValueOnce(mockUser as any);
-      usersService.findOne.mockResolvedValueOnce(mockOtherUser as any);
+      userLookupService.findOne.mockResolvedValueOnce(mockUser as any);
+      userLookupService.findOne.mockResolvedValueOnce(mockOtherUser as any);
       prismaService.friends.findFirst.mockResolvedValue(mockFriendRequest as any);
 
       await expect(service.create('user-123', 'user-456')).rejects.toThrow(
@@ -429,7 +429,7 @@ describe('FriendsService', () => {
 
   describe('update', () => {
     it('should accept a friend request successfully', async () => {
-      usersService.findOne.mockResolvedValue(mockOtherUser as any);
+      userLookupService.findOne.mockResolvedValue(mockOtherUser as any);
       prismaService.friends.findFirst.mockResolvedValue(mockFriendRequest as any);
       const updatedFriend = { ...mockFriendRequest, status: InvitationStatus.ACCEPTED };
       prismaService.friends.update.mockResolvedValue(updatedFriend as any);
@@ -454,7 +454,7 @@ describe('FriendsService', () => {
     });
 
     it('should cancel a friend request and delete it', async () => {
-      usersService.findOne.mockResolvedValue(mockOtherUser as any);
+      userLookupService.findOne.mockResolvedValue(mockOtherUser as any);
       prismaService.friends.findFirst.mockResolvedValue(mockFriendRequest as any);
       const canceledFriend = { ...mockFriendRequest, status: InvitationStatus.CANCELED };
       prismaService.friends.update.mockResolvedValue(canceledFriend as any);
@@ -476,7 +476,7 @@ describe('FriendsService', () => {
     });
 
     it('should throw NotFoundException when receiver does not exist', async () => {
-      usersService.findOne.mockResolvedValue(null);
+      userLookupService.findOne.mockResolvedValue(null);
 
       await expect(
         service.update('user-123', 'user-456', InvitationStatus.ACCEPTED),
@@ -484,7 +484,7 @@ describe('FriendsService', () => {
     });
 
     it('should throw NotFoundException when friend request not found', async () => {
-      usersService.findOne.mockResolvedValue(mockOtherUser as any);
+      userLookupService.findOne.mockResolvedValue(mockOtherUser as any);
       prismaService.friends.findFirst.mockResolvedValue(null);
 
       await expect(

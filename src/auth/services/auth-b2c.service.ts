@@ -29,6 +29,7 @@ import { EmailsService } from 'src/shared/emails/emails.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
 import { CreateUserDto } from 'src/users/dto/input/create-user.dto';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 import { UsersService } from 'src/users/services/users.service';
 import { UserNameUtils } from 'src/users/utils/user-name.utils';
 import { CreateAppleUserDto } from '../dto/input/create-apple-user.dto';
@@ -40,6 +41,7 @@ export class AuthB2CService {
     private readonly prismaService: PrismaService,
     private readonly jwt: JwtService,
     private readonly userService: UsersService,
+    private readonly userLookupService: UserLookupService,
     private readonly emailsService: EmailsService,
     private readonly configService: ConfigService,
     private readonly logger: PinoLogger,
@@ -141,7 +143,10 @@ export class AuthB2CService {
     let isNewUser = true;
     const provider = Provider.GOOGLE;
     try {
-      const existingUser = await this.userService.findOneByEmail(email, USERSELECT.findOneByEmail);
+      const existingUser = await this.userLookupService.findOneByEmail(
+        email,
+        USERSELECT.findOneByEmail,
+      );
 
       // if the user exists, connect the Google account to the user
       if (existingUser) {
@@ -241,7 +246,7 @@ export class AuthB2CService {
     });
 
     try {
-      const existingUser = await this.userService.findOneByAppleId(appleResult.appleUserId);
+      const existingUser = await this.userLookupService.findOneByAppleId(appleResult.appleUserId);
 
       // if the user exists, connect the Apple account to the user
       if (existingUser) {
@@ -329,7 +334,7 @@ export class AuthB2CService {
       const { email, password } = loginDto;
       const formattedEmail = email.toLowerCase();
 
-      const user = await this.userService.findOneByEmail(formattedEmail, USERSELECT.login);
+      const user = await this.userLookupService.findOneByEmail(formattedEmail, USERSELECT.login);
       if (!user) {
         throw new NotFoundException('User not found');
       }
@@ -380,7 +385,10 @@ export class AuthB2CService {
   async verifyEmail(emailDto: VerifyMailDto): Promise<boolean> {
     const { email } = emailDto;
     const formattedEmail = email.toLowerCase();
-    const user = await this.userService.findOneByEmail(formattedEmail, USERSELECT.findOneByEmail);
+    const user = await this.userLookupService.findOneByEmail(
+      formattedEmail,
+      USERSELECT.findOneByEmail,
+    );
     if (!user) {
       return true;
     }
@@ -648,7 +656,10 @@ export class AuthB2CService {
    */
   async generateAccessTokenFromCode(code: string, email: string): Promise<string> {
     const formattedEmail = email.toLowerCase();
-    const user = await this.userService.findOneByEmail(formattedEmail, USERSELECT.findOneByEmail);
+    const user = await this.userLookupService.findOneByEmail(
+      formattedEmail,
+      USERSELECT.findOneByEmail,
+    );
     if (!user) {
       this.logger.error(`User email not found`);
       throw new NotFoundException(`User ${email} not found`);

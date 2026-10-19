@@ -19,6 +19,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 import { UsersService } from 'src/users/services/users.service';
 
 describe('AuthB2CService', () => {
@@ -89,8 +90,12 @@ describe('AuthB2CService', () => {
   const mockUsersService = {
     create: jest.fn(),
     createUser: jest.fn(),
-    findOneByEmail: jest.fn(),
+  };
+
+  const mockUserLookupService = {
     findOne: jest.fn(),
+    findOneByAppleId: jest.fn(),
+    findOneByEmail: jest.fn(),
   };
 
   const mockEmailsService = {
@@ -134,6 +139,10 @@ describe('AuthB2CService', () => {
         {
           provide: UsersService,
           useValue: mockUsersService,
+        },
+        {
+          provide: UserLookupService,
+          useValue: mockUserLookupService,
         },
         {
           provide: EmailsService,
@@ -232,7 +241,7 @@ describe('AuthB2CService', () => {
         password: hashedPassword,
       };
 
-      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(mockUser);
 
       const result = await service.login(loginDto);
 
@@ -240,7 +249,7 @@ describe('AuthB2CService', () => {
     });
 
     it('should throw NotFoundException when user not found', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(null);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(null);
 
       await expect(
         service.login({ email: 'nonexistent@test.com', password: 'password' }),
@@ -248,7 +257,7 @@ describe('AuthB2CService', () => {
     });
 
     it('should throw ForbiddenException when user is banned', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue({
+      mockUserLookupService.findOneByEmail.mockResolvedValue({
         uid: '1',
         email: 'banned@test.com',
         password: await argon2.hash('password'),
@@ -263,7 +272,7 @@ describe('AuthB2CService', () => {
 
   describe('verifyEmail', () => {
     it('should return true when email is available', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(null);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(null);
 
       const result = await service.verifyEmail({ email: 'new@test.com' });
 
@@ -271,7 +280,7 @@ describe('AuthB2CService', () => {
     });
 
     it('should return false when email is already used', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue({ uid: '1' });
+      mockUserLookupService.findOneByEmail.mockResolvedValue({ uid: '1' });
 
       const result = await service.verifyEmail({ email: 'existing@test.com' });
 
@@ -425,7 +434,7 @@ describe('AuthB2CService', () => {
         firstname: 'John',
       };
 
-      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(mockUser);
       mockPrismaService.emailVerification.findFirst.mockResolvedValue(mockVerificationCode);
       mockPrismaService.userTokens.create.mockResolvedValue({
         uid: 'token-uid-1',
@@ -436,7 +445,7 @@ describe('AuthB2CService', () => {
       const result = await service.generateAccessTokenFromCode(mockCode, mockEmail);
 
       expect(result).toBe('mock_token');
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+      expect(mockUserLookupService.findOneByEmail).toHaveBeenCalledWith(
         mockEmail.toLowerCase(),
         USERSELECT.findOneByEmail,
       );
@@ -459,7 +468,7 @@ describe('AuthB2CService', () => {
       const mockCode = 'invalid-code';
       const mockEmail = 'test@test.com';
 
-      mockUsersService.findOneByEmail.mockResolvedValue(null);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(null);
 
       await expect(service.generateAccessTokenFromCode(mockCode, mockEmail)).rejects.toThrow(
         NotFoundException,
@@ -480,7 +489,7 @@ describe('AuthB2CService', () => {
         firstname: 'John',
       };
 
-      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(mockUser);
       mockPrismaService.emailVerification.findFirst.mockResolvedValue(null);
 
       await expect(service.generateAccessTokenFromCode(mockCode, mockEmail)).rejects.toThrow(
@@ -507,7 +516,7 @@ describe('AuthB2CService', () => {
         expiresAt: new Date(Date.now() - 10 * 60 * 1000), // 10 minutes in the past
       };
 
-      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(mockUser);
       mockPrismaService.emailVerification.findFirst.mockResolvedValue(mockVerificationCode);
 
       await expect(service.generateAccessTokenFromCode(mockCode, mockEmail)).rejects.toThrow(
@@ -536,7 +545,7 @@ describe('AuthB2CService', () => {
         lastname: 'Doe',
       };
 
-      mockUsersService.findOneByEmail.mockResolvedValue(existingUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(existingUser);
       mockPrismaService.userTokens.create.mockResolvedValue({
         uid: 'token-1',
         token: 'mock_token',
@@ -556,7 +565,7 @@ describe('AuthB2CService', () => {
         message: 'User already exists, successfully connected to Google account',
         refreshToken: 'mock_token',
       });
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+      expect(mockUserLookupService.findOneByEmail).toHaveBeenCalledWith(
         'existing@test.com',
         USERSELECT.findOneByEmail,
       );
@@ -592,7 +601,7 @@ describe('AuthB2CService', () => {
         provider: Provider.GOOGLE,
       };
 
-      mockUsersService.findOneByEmail.mockResolvedValue(null);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(null);
       mockPrismaService.users.create.mockResolvedValue(newUser);
       mockPrismaService.userTokens.create.mockResolvedValue({
         uid: 'token-1',
@@ -613,7 +622,7 @@ describe('AuthB2CService', () => {
         message: 'New user created and connected to Google account',
         refreshToken: 'mock_token',
       });
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+      expect(mockUserLookupService.findOneByEmail).toHaveBeenCalledWith(
         'new@test.com',
         USERSELECT.findOneByEmail,
       );
@@ -639,7 +648,7 @@ describe('AuthB2CService', () => {
         lastname: 'User',
       };
 
-      mockUsersService.findOneByEmail.mockRejectedValue(new Error('Database error'));
+      mockUserLookupService.findOneByEmail.mockRejectedValue(new Error('Database error'));
 
       await expect(service.createOrConnectGoogleUser(createGoogleUserDto)).rejects.toThrow(
         BadRequestException,
@@ -657,7 +666,7 @@ describe('AuthB2CService', () => {
         lastname: 'Doe',
       };
 
-      mockUsersService.findOneByEmail.mockResolvedValue({
+      mockUserLookupService.findOneByEmail.mockResolvedValue({
         uid: 'banned-user-1',
         email: 'banned@test.com',
         firstname: 'John',

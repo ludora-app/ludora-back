@@ -7,6 +7,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { StorageService } from 'src/shared/storage/storage.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 import { UsersService } from 'src/users/services/users.service';
 
 jest.mock('argon2', () => ({
@@ -75,6 +76,7 @@ describe('UsersService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
+        UserLookupService,
         {
           provide: PrismaService,
           useValue: mockPrismaService,
@@ -279,117 +281,6 @@ describe('UsersService', () => {
         NotFoundException,
       );
       expect(mockPrismaService.$queryRaw).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('findOne', () => {
-    const select = {
-      bio: true,
-      firstname: true,
-      imageUrl: true,
-      lastname: true,
-      name: true,
-      uid: true,
-    };
-
-    const mockUser = {
-      email: 'test@test.com',
-      firstname: 'John',
-      uid: '1',
-    };
-
-    it('should return a user if found and no searcherUid provided', async () => {
-      mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
-
-      const result = await service.findOne('1', select);
-
-      expect(result).toBeDefined();
-      expect(result.uid).toBe('1');
-      expect(mockPrismaService.userBlocks.findFirst).not.toHaveBeenCalled();
-    });
-
-    it('should return null when user does not exist', async () => {
-      mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
-
-      const result = await service.findOne('unknown-uid', select);
-
-      expect(result).toBeNull();
-      expect(mockPrismaService.userBlocks.findFirst).not.toHaveBeenCalled();
-    });
-
-    it('should return user when searcherUid provided and no block exists', async () => {
-      mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
-      mockPrismaService.userBlocks.findFirst.mockResolvedValueOnce(null);
-
-      const result = await service.findOne('1', select, 'searcher-uid');
-
-      expect(result).toBeDefined();
-      expect(result.uid).toBe('1');
-      expect(mockPrismaService.userBlocks.findFirst).toHaveBeenCalledWith({
-        where: {
-          OR: [
-            { blockerUid: 'searcher-uid', blockedUid: '1' },
-            { blockerUid: '1', blockedUid: 'searcher-uid' },
-          ],
-        },
-      });
-    });
-
-    it('should return null when searcher has blocked the target user', async () => {
-      mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
-      mockPrismaService.userBlocks.findFirst.mockResolvedValueOnce({
-        blockedUid: '1',
-        blockerUid: 'searcher-uid',
-      });
-
-      const result = await service.findOne('1', select, 'searcher-uid');
-
-      expect(result).toBeNull();
-      expect(mockPrismaService.userBlocks.findFirst).toHaveBeenCalledTimes(1);
-    });
-
-    it('should return null when the target user has blocked the searcher', async () => {
-      mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
-      mockPrismaService.userBlocks.findFirst.mockResolvedValueOnce({
-        blockedUid: 'searcher-uid',
-        blockerUid: '1',
-      });
-
-      const result = await service.findOne('1', select, 'searcher-uid');
-
-      expect(result).toBeNull();
-      expect(mockPrismaService.userBlocks.findFirst).toHaveBeenCalledTimes(1);
-    });
-
-    it('should skip block check when searcherUid is not provided', async () => {
-      mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
-
-      await service.findOne('1', select, undefined);
-
-      expect(mockPrismaService.userBlocks.findFirst).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('findOneByEmail', () => {
-    it('should return a user if found by email', async () => {
-      const mockUser = {
-        email: 'test@test.com',
-        firstname: 'John',
-        uid: '1',
-      };
-
-      mockPrismaService.users.findUnique.mockResolvedValueOnce(mockUser);
-
-      const result = await service.findOneByEmail('test@test.com');
-
-      expect(result).toBeDefined();
-      expect(result.email).toBe('test@test.com');
-    });
-
-    it('should propagate database errors', async () => {
-      mockPrismaService.users.findUnique.mockRejectedValueOnce(new Error('Database error'));
-
-      await expect(service.findOneByEmail('test@test.com')).rejects.toThrow(Error);
     });
   });
 

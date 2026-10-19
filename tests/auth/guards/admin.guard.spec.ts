@@ -6,7 +6,7 @@ import { UserType } from 'generated/prisma/enums';
 import { PinoLogger } from 'nestjs-pino';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UsersService } from 'src/users/services/users.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 
 describe('AdminGuard', () => {
   let guard: AdminGuard;
@@ -27,7 +27,7 @@ describe('AdminGuard', () => {
     },
   };
 
-  const mockUsersService = {
+  const mockUserLookupService = {
     findOne: jest.fn(),
   };
 
@@ -45,7 +45,7 @@ describe('AdminGuard', () => {
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: PrismaService, useValue: mockPrismaService },
-        { provide: UsersService, useValue: mockUsersService },
+        { provide: UserLookupService, useValue: mockUserLookupService },
         { provide: PinoLogger, useValue: mockLogger },
       ],
     }).compile();
@@ -122,7 +122,7 @@ describe('AdminGuard', () => {
       const context = createMockContext({ authorization: 'Bearer token123' });
       mockJwtService.verifyAsync.mockResolvedValue({ uid: 'user-uid' });
       mockPrismaService.userTokens.findFirst.mockResolvedValue({ token: 'token123' });
-      mockUsersService.findOne.mockResolvedValue(null);
+      mockUserLookupService.findOne.mockResolvedValue(null);
 
       await expect(guard.canActivate(context)).rejects.toThrow(
         new UnauthorizedException('User not found'),
@@ -133,7 +133,10 @@ describe('AdminGuard', () => {
       const context = createMockContext({ authorization: 'Bearer token123' });
       mockJwtService.verifyAsync.mockResolvedValue({ uid: 'user-uid' });
       mockPrismaService.userTokens.findFirst.mockResolvedValue({ token: 'token123' });
-      mockUsersService.findOne.mockResolvedValue({ type: UserType.USER, email: 'admin1@test.com' });
+      mockUserLookupService.findOne.mockResolvedValue({
+        type: UserType.USER,
+        email: 'admin1@test.com',
+      });
 
       await expect(guard.canActivate(context)).rejects.toThrow(
         new UnauthorizedException('User is not an admin'),
@@ -144,7 +147,7 @@ describe('AdminGuard', () => {
       const context = createMockContext({ authorization: 'Bearer token123' });
       mockJwtService.verifyAsync.mockResolvedValue({ uid: 'user-uid' });
       mockPrismaService.userTokens.findFirst.mockResolvedValue({ token: 'token123' });
-      mockUsersService.findOne.mockResolvedValue({
+      mockUserLookupService.findOne.mockResolvedValue({
         type: UserType.ADMIN,
         email: 'hacker@test.com',
       });
@@ -161,7 +164,7 @@ describe('AdminGuard', () => {
 
       mockJwtService.verifyAsync.mockResolvedValue({ uid: 'user-uid', iat: 1234 });
       mockPrismaService.userTokens.findFirst.mockResolvedValue({ token: 'token123' });
-      mockUsersService.findOne.mockResolvedValue({
+      mockUserLookupService.findOne.mockResolvedValue({
         type: UserType.ADMIN,
         email: 'admin2@test.com',
       });

@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { FirebaseService } from 'src/firebase/firebase.service';
-import { UsersService } from 'src/users/services/users.service';
 import { DevicesController } from './devices.controller';
 import { DevicesService } from './devices.service';
 
@@ -8,6 +7,6 @@ import { DevicesService } from './devices.service';
   controllers: [DevicesController],
   exports: [DevicesService],
   imports: [],
-  providers: [DevicesService, FirebaseService, UsersService],
+  providers: [DevicesService, FirebaseService],
 })
 export class DevicesModule {}

@@ -5,20 +5,20 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UsersService } from 'src/users/services/users.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 
 describe('AuthB2CGuard', () => {
   let guard: AuthB2CGuard;
   let _jwtService: JwtService;
   let _reflector: Reflector;
   let _prismaService: PrismaService;
-  let _usersService: UsersService;
+  let _userLookupService: UserLookupService;
 
   const mockJwtService = {
     verifyAsync: jest.fn(),
   };
 
-  const mockUsersService = {
+  const mockUserLookupService = {
     findOne: jest.fn(),
   };
 
@@ -75,8 +75,8 @@ describe('AuthB2CGuard', () => {
           useValue: mockPrismaService,
         },
         {
-          provide: UsersService,
-          useValue: mockUsersService,
+          provide: UserLookupService,
+          useValue: mockUserLookupService,
         },
       ],
     }).compile();
@@ -227,7 +227,7 @@ describe('AuthB2CGuard', () => {
         isEmailVerified: true,
         isConnected: true,
       };
-      mockUsersService.findOne.mockResolvedValue(mockUser);
+      mockUserLookupService.findOne.mockResolvedValue(mockUser);
 
       const result = await guard.canActivate(context);
 
@@ -245,7 +245,7 @@ describe('AuthB2CGuard', () => {
           userUid: 'user123',
         },
       });
-      expect(mockUsersService.findOne).toHaveBeenCalled();
+      expect(mockUserLookupService.findOne).toHaveBeenCalled();
     });
 
     it('should handle different token types correctly (only Bearer)', async () => {
@@ -321,7 +321,7 @@ describe('AuthB2CGuard', () => {
         userUid: 'user789',
       });
 
-      mockUsersService.findOne.mockResolvedValue({
+      mockUserLookupService.findOne.mockResolvedValue({
         uid: 'user789',
         isEmailVerified: true,
         isConnected: true,

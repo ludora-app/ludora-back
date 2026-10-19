@@ -7,19 +7,24 @@ import { UsersController } from 'src/users/controllers/users.controller';
 import { UpdatePasswordDto, UpdateUserDto, UserFilterDto } from 'src/users/dto';
 import { PasswordResetRequestDto } from 'src/users/dto/input/password-reset-request.dto';
 import { UpdateUserEmailDto } from 'src/users/dto/input/update-user.dto';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 import { UsersService } from 'src/users/services/users.service';
 
 describe('UsersController', () => {
   let controller: UsersController;
   let service: UsersService;
+  let lookupService: UserLookupService;
+
+  const mockUserLookupService = {
+    findOne: jest.fn(),
+    findOneByEmail: jest.fn(),
+  };
 
   const mockUsersService = {
     cancelDeletionRequest: jest.fn(),
     deactivate: jest.fn(),
     deletionRequest: jest.fn(),
     findAll: jest.fn(),
-    findOne: jest.fn(),
-    findOneByEmail: jest.fn(),
     remove: jest.fn(),
     sendCodeForPasswordResetRequest: jest.fn(),
     update: jest.fn(),
@@ -75,6 +80,10 @@ describe('UsersController', () => {
           provide: UsersService,
           useValue: mockUsersService,
         },
+        {
+          provide: UserLookupService,
+          useValue: mockUserLookupService,
+        },
       ],
     })
       .overrideGuard(AuthB2CGuard)
@@ -85,6 +94,7 @@ describe('UsersController', () => {
 
     controller = module.get<UsersController>(UsersController);
     service = module.get<UsersService>(UsersService);
+    lookupService = module.get<UserLookupService>(UserLookupService);
   });
 
   it('should be defined', () => {
@@ -119,7 +129,7 @@ describe('UsersController', () => {
       const mockRequest = { user: { uid: 'searcher-uid' } } as unknown as Parameters<
         UsersController['findOne']
       >[1];
-      mockUsersService.findOne.mockResolvedValue(mockUser);
+      mockUserLookupService.findOne.mockResolvedValue(mockUser);
 
       const result = await controller.findOne('1', mockRequest);
 
@@ -137,19 +147,19 @@ describe('UsersController', () => {
         },
         message: 'User fetched successfully',
       });
-      expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findOne, 'searcher-uid');
+      expect(lookupService.findOne).toHaveBeenCalledWith('1', USERSELECT.findOne, 'searcher-uid');
     });
 
     it('should throw NotFoundException when user is not found', async () => {
       const mockRequest = { user: { uid: 'searcher-uid' } } as unknown as Parameters<
         UsersController['findOne']
       >[1];
-      mockUsersService.findOne.mockResolvedValue(null);
+      mockUserLookupService.findOne.mockResolvedValue(null);
 
       await expect(controller.findOne('unknown-uid', mockRequest)).rejects.toThrow(
         NotFoundException,
       );
-      expect(service.findOne).toHaveBeenCalledWith(
+      expect(lookupService.findOne).toHaveBeenCalledWith(
         'unknown-uid',
         USERSELECT.findOne,
         'searcher-uid',
@@ -160,12 +170,12 @@ describe('UsersController', () => {
       const mockRequest = { user: { uid: 'searcher-uid' } } as unknown as Parameters<
         UsersController['findOne']
       >[1];
-      mockUsersService.findOne.mockResolvedValue(null);
+      mockUserLookupService.findOne.mockResolvedValue(null);
 
       await expect(controller.findOne('blocked-uid', mockRequest)).rejects.toThrow(
         NotFoundException,
       );
-      expect(service.findOne).toHaveBeenCalledWith(
+      expect(lookupService.findOne).toHaveBeenCalledWith(
         'blocked-uid',
         USERSELECT.findOne,
         'searcher-uid',
@@ -175,12 +185,12 @@ describe('UsersController', () => {
     it('should return user with undefined searcherUid when called without auth token (public access)', async () => {
       // request.user exists but has no uid (e.g. optional auth guard leaves user empty)
       const mockRequest = { user: {} } as unknown as Parameters<UsersController['findOne']>[1];
-      mockUsersService.findOne.mockResolvedValue(mockUser);
+      mockUserLookupService.findOne.mockResolvedValue(mockUser);
 
       const result = await controller.findOne('1', mockRequest);
 
       expect(result).toBeDefined();
-      expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findOne, undefined);
+      expect(lookupService.findOne).toHaveBeenCalledWith('1', USERSELECT.findOne, undefined);
     });
   });
 
@@ -190,7 +200,7 @@ describe('UsersController', () => {
         user: { uid: '1' },
       };
 
-      mockUsersService.findOne.mockResolvedValue(mockUserFindMe);
+      mockUserLookupService.findOne.mockResolvedValue(mockUserFindMe);
 
       const result = await controller.findMe(mockRequest as any);
 
@@ -199,13 +209,13 @@ describe('UsersController', () => {
       expect(result.data.email).toBe('test@test.com');
       expect(result.data.profileStatus).toBe('INCOMPLETE');
       expect(result.message).toBe('User fetched successfully');
-      expect(service.findOne).toHaveBeenCalledWith('1', USERSELECT.findMe);
+      expect(lookupService.findOne).toHaveBeenCalledWith('1', USERSELECT.findMe);
     });
   });
 
   describe('findOneByEmail', () => {
     it('should return a user by email', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(mockUser);
 
       const result = await controller.findOneByEmail('test@test.com');
 
@@ -213,7 +223,7 @@ describe('UsersController', () => {
         data: mockUser,
         message: 'User fetched successfully',
       });
-      expect(service.findOneByEmail).toHaveBeenCalledWith('test@test.com');
+      expect(lookupService.findOneByEmail).toHaveBeenCalledWith('test@test.com');
     });
   });
 

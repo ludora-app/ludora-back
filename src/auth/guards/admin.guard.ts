@@ -6,7 +6,7 @@ import { UserType } from 'generated/prisma/enums';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
-import { UsersService } from 'src/users/services/users.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
@@ -14,7 +14,7 @@ export class AdminGuard implements CanActivate {
     private readonly jwtService: JwtService,
     readonly configService: ConfigService,
     private readonly prisma: PrismaService,
-    private readonly usersService: UsersService,
+    private readonly userLookupService: UserLookupService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(AdminGuard.name);
@@ -61,7 +61,7 @@ export class AdminGuard implements CanActivate {
         throw new UnauthorizedException('Token expired or invalid');
       }
 
-      const user = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
+      const user = await this.userLookupService.findOne(userUid, USERSELECT.checkIfUserExists);
 
       if (!user) {
         throw new UnauthorizedException('User not found');

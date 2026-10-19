@@ -9,6 +9,7 @@ import { AuthB2BService } from 'src/auth/services/auth-b2b.service';
 import { PartnersService } from 'src/partners/partners.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 import { UsersService } from 'src/users/services/users.service';
 
 describe('AuthB2BService', () => {
@@ -19,9 +20,12 @@ describe('AuthB2BService', () => {
   let _prismaService: PrismaService;
 
   const mockUsersService = {
-    findOneByEmail: jest.fn(),
-    findOne: jest.fn(),
     create: jest.fn(),
+  };
+
+  const mockUserLookupService = {
+    findOne: jest.fn(),
+    findOneByEmail: jest.fn(),
   };
 
   const mockPartnersService = {
@@ -68,6 +72,10 @@ describe('AuthB2BService', () => {
         {
           provide: UsersService,
           useValue: mockUsersService,
+        },
+        {
+          provide: UserLookupService,
+          useValue: mockUserLookupService,
         },
         {
           provide: PartnersService,
@@ -127,7 +135,7 @@ describe('AuthB2BService', () => {
     };
 
     it('should login successfully and return tokens', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(mockUser);
       mockPartnersService.findOneByEmail.mockResolvedValue(mockPartner);
       jest.spyOn(argon2, 'verify').mockResolvedValue(true);
       mockJwtService.sign
@@ -140,7 +148,7 @@ describe('AuthB2BService', () => {
         accessToken: 'mock_access_token',
         refreshToken: 'mock_refresh_token',
       });
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+      expect(mockUserLookupService.findOneByEmail).toHaveBeenCalledWith(
         'partner@test.com',
         expect.any(Object),
       );
@@ -171,7 +179,7 @@ describe('AuthB2BService', () => {
         deviceUid: 'device-123',
       };
 
-      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(mockUser);
       mockPartnersService.findOneByEmail.mockResolvedValue(mockPartner);
       jest.spyOn(argon2, 'verify').mockResolvedValue(true);
       mockJwtService.sign
@@ -208,7 +216,7 @@ describe('AuthB2BService', () => {
         password: 'Password123!',
       };
 
-      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(mockUser);
       mockPartnersService.findOneByEmail.mockResolvedValue(mockPartner);
       jest.spyOn(argon2, 'verify').mockResolvedValue(true);
       mockJwtService.sign
@@ -217,7 +225,7 @@ describe('AuthB2BService', () => {
 
       await service.login(loginDtoUpperCase);
 
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+      expect(mockUserLookupService.findOneByEmail).toHaveBeenCalledWith(
         'partner@test.com',
         expect.any(Object),
       );
@@ -225,12 +233,12 @@ describe('AuthB2BService', () => {
     });
 
     it('should throw NotFoundException when user is not found', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(null);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(null);
 
       await expect(service.login(loginDto)).rejects.toThrow(
         new NotFoundException('User not found'),
       );
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+      expect(mockUserLookupService.findOneByEmail).toHaveBeenCalledWith(
         'partner@test.com',
         expect.any(Object),
       );
@@ -243,12 +251,12 @@ describe('AuthB2BService', () => {
         type: UserType.USER,
       };
 
-      mockUsersService.findOneByEmail.mockResolvedValue(nonPartnerUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(nonPartnerUser);
 
       await expect(service.login(loginDto)).rejects.toThrow(
         new NotFoundException('User not found'),
       );
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+      expect(mockUserLookupService.findOneByEmail).toHaveBeenCalledWith(
         'partner@test.com',
         expect.any(Object),
       );
@@ -256,13 +264,13 @@ describe('AuthB2BService', () => {
     });
 
     it('should throw NotFoundException when partner is not found', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(mockUser);
       mockPartnersService.findOneByEmail.mockResolvedValue(null);
 
       await expect(service.login(loginDto)).rejects.toThrow(
         new NotFoundException('User not found'),
       );
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+      expect(mockUserLookupService.findOneByEmail).toHaveBeenCalledWith(
         'partner@test.com',
         expect.any(Object),
       );
@@ -270,7 +278,7 @@ describe('AuthB2BService', () => {
     });
 
     it('should throw BadRequestException when password is invalid', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(mockUser);
       mockPartnersService.findOneByEmail.mockResolvedValue(mockPartner);
       jest.spyOn(argon2, 'verify').mockResolvedValue(false);
 
@@ -282,7 +290,7 @@ describe('AuthB2BService', () => {
     });
 
     it('should log error when user is not found', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(null);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(null);
 
       await expect(service.login(loginDto)).rejects.toThrow(NotFoundException);
       expect(mockPinoLogger.error).toHaveBeenCalledWith(
@@ -296,7 +304,7 @@ describe('AuthB2BService', () => {
         type: UserType.USER,
       };
 
-      mockUsersService.findOneByEmail.mockResolvedValue(nonPartnerUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(nonPartnerUser);
 
       await expect(service.login(loginDto)).rejects.toThrow(NotFoundException);
       expect(mockPinoLogger.error).toHaveBeenCalledWith(
@@ -305,7 +313,7 @@ describe('AuthB2BService', () => {
     });
 
     it('should log error when partner is not found', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(mockUser);
       mockPartnersService.findOneByEmail.mockResolvedValue(null);
 
       await expect(service.login(loginDto)).rejects.toThrow(NotFoundException);
@@ -331,7 +339,7 @@ describe('AuthB2BService', () => {
     };
 
     it('should login successfully and return tokens', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(mockAdminUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(mockAdminUser);
       jest.spyOn(argon2, 'verify').mockResolvedValue(true);
       mockJwtService.sign
         .mockReturnValueOnce('mock_access_token')
@@ -343,7 +351,7 @@ describe('AuthB2BService', () => {
         accessToken: 'mock_access_token',
         refreshToken: 'mock_refresh_token',
       });
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+      expect(mockUserLookupService.findOneByEmail).toHaveBeenCalledWith(
         'admin@test.com',
         expect.any(Object),
       );
@@ -373,7 +381,7 @@ describe('AuthB2BService', () => {
         password: 'Password123!',
       };
 
-      mockUsersService.findOneByEmail.mockResolvedValue(mockAdminUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(mockAdminUser);
       jest.spyOn(argon2, 'verify').mockResolvedValue(true);
       mockJwtService.sign
         .mockReturnValueOnce('mock_access_token')
@@ -381,14 +389,14 @@ describe('AuthB2BService', () => {
 
       await service.adminLogin(loginDtoUpperCase);
 
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+      expect(mockUserLookupService.findOneByEmail).toHaveBeenCalledWith(
         'admin@test.com',
         expect.any(Object),
       );
     });
 
     it('should throw NotFoundException when user is not found', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(null);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(null);
 
       await expect(service.adminLogin(loginDto)).rejects.toThrow(
         new NotFoundException('User not found'),
@@ -401,7 +409,7 @@ describe('AuthB2BService', () => {
         type: UserType.USER,
       };
 
-      mockUsersService.findOneByEmail.mockResolvedValue(nonAdminUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(nonAdminUser);
 
       await expect(service.adminLogin(loginDto)).rejects.toThrow(
         new NotFoundException('User not found'),
@@ -409,7 +417,7 @@ describe('AuthB2BService', () => {
     });
 
     it('should throw BadRequestException when password is invalid', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(mockAdminUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(mockAdminUser);
       jest.spyOn(argon2, 'verify').mockResolvedValue(false);
 
       await expect(service.adminLogin(loginDto)).rejects.toThrow(
@@ -418,7 +426,7 @@ describe('AuthB2BService', () => {
     });
 
     it('should log error when user is not found', async () => {
-      mockUsersService.findOneByEmail.mockResolvedValue(null);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(null);
 
       await expect(service.adminLogin(loginDto)).rejects.toThrow(NotFoundException);
       expect(mockPinoLogger.error).toHaveBeenCalledWith(
@@ -432,7 +440,7 @@ describe('AuthB2BService', () => {
         type: UserType.USER,
       };
 
-      mockUsersService.findOneByEmail.mockResolvedValue(nonAdminUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(nonAdminUser);
 
       await expect(service.adminLogin(loginDto)).rejects.toThrow(NotFoundException);
       expect(mockPinoLogger.error).toHaveBeenCalledWith(
