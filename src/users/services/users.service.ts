@@ -28,6 +28,7 @@ import {
   UserFilterDto,
 } from '../dto';
 import { RawUserFindAll, UserMapper } from '../mappers/user.mapper';
+import { UserLookupService } from './user-lookup.service';
 
 @Injectable()
 export class UsersService {
@@ -37,6 +38,7 @@ export class UsersService {
     private readonly storageService: StorageService,
     private readonly logger: PinoLogger,
     private readonly configService: ConfigService,
+    private readonly userLookupService: UserLookupService,
   ) {
     this.logger.setContext(UsersService.name);
   }
@@ -360,70 +362,12 @@ export class UsersService {
     return { items, nextCursor, totalCount };
   }
 
-  async findOne(uid: string, select: Prisma.UsersSelect, searcherUid?: string): Promise<Users> {
-    const existingUser = await this.prismaService.users.findUnique({
-      select: {
-        ...select,
-      },
-      where: { uid },
-    });
-
-    if (!existingUser) {
-      return null;
-    }
-
-    if (searcherUid) {
-      const existingBlock = await this.prismaService.userBlocks.findFirst({
-        where: {
-          OR: [
-            { blockerUid: searcherUid, blockedUid: uid },
-            { blockerUid: uid, blockedUid: searcherUid },
-          ],
-        },
-      });
-
-      if (existingBlock) {
-        return null;
-      }
-    }
-
-    return existingUser;
-  }
-
-  /**
-   * Find a user by email
-   * @param email - The email of the user
-   * @description This method is used in the auth service to find a user by email
-   * @returns The user
-   */
-  async findOneByEmail(email: string, select?: Prisma.UsersSelect): Promise<Users> {
-    const user = await this.prismaService.users.findUnique({
-      select: select ?? USERSELECT.checkIfUserExistsByEmail,
-      where: { email },
-    });
-
-    if (!user) return null;
-
-    return user;
-  }
-
-  async findOneByAppleId(appleId: string) {
-    const user = await this.prismaService.users.findUnique({
-      select: USERSELECT.findOneByAppleId,
-      where: { appleId },
-    });
-
-    if (!user) return null;
-
-    return user;
-  }
-
   async update(
     uid: string,
     updateUserDto: UpdateUserDto,
     createImageDto?: CreateImageDto,
   ): Promise<void> {
-    const existingUser = await this.findOne(uid, USERSELECT.findMe);
+    const existingUser = await this.userLookupService.findOne(uid, USERSELECT.findMe);
 
     if (!existingUser) throw new NotFoundException('User not found');
     let imageUrl = existingUser.imageUrl;
@@ -502,10 +446,13 @@ export class UsersService {
   }
 
   async updateEmail(uid: string, email: string): Promise<void> {
-    const existingUser = await this.findOne(uid, USERSELECT.checkIfUserExistsByEmail);
+    const existingUser = await this.userLookupService.findOne(
+      uid,
+      USERSELECT.checkIfUserExistsByEmail,
+    );
     if (!existingUser) throw new NotFoundException('User not found');
 
-    const existingUserWithEmail = await this.findOneByEmail(
+    const existingUserWithEmail = await this.userLookupService.findOneByEmail(
       email,
       USERSELECT.checkIfUserExistsByEmail,
     );
@@ -624,7 +571,7 @@ export class UsersService {
    * @description This method is used to send a verification code for password reset to the user email
    */
   async sendCodeForPasswordResetRequest(email: string): Promise<void> {
-    const user = await this.findOneByEmail(email, USERSELECT.findOneByEmail);
+    const user = await this.userLookupService.findOneByEmail(email, USERSELECT.findOneByEmail);
 
     if (!user) {
       this.logger.error(`User not found for email: ${email}`);

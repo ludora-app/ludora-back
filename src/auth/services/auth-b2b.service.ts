@@ -17,6 +17,7 @@ import { USERSELECT } from 'src/shared/constants/select-user';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { CreateUserDto } from 'src/users/dto';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 import { UsersService } from 'src/users/services/users.service';
 
 import { RegisterB2BDto } from '../dto/input/register-b2b.dto';
@@ -26,6 +27,7 @@ export class AuthB2BService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly userService: UsersService,
+    private readonly userLookupService: UserLookupService,
     private readonly partnerService: PartnersService,
     private readonly geolocalisationService: GeolocalisationService,
     private readonly jwt: JwtService,
@@ -56,7 +58,10 @@ export class AuthB2BService {
       userPhone,
     } = dto;
 
-    const existingUser = await this.userService.findOneByEmail(email, USERSELECT.findOneByEmail);
+    const existingUser = await this.userLookupService.findOneByEmail(
+      email,
+      USERSELECT.findOneByEmail,
+    );
     if (existingUser) {
       throw new ConflictException('User already exists');
     }
@@ -124,7 +129,7 @@ export class AuthB2BService {
     const { email, password } = loginDto;
     const formattedEmail = email.toLowerCase();
 
-    const user = await this.userService.findOneByEmail(formattedEmail, USERSELECT.login);
+    const user = await this.userLookupService.findOneByEmail(formattedEmail, USERSELECT.login);
     if (!user) {
       this.logger.error(`User not found with email ${email}`);
       throw new NotFoundException('User not found');
@@ -177,7 +182,7 @@ export class AuthB2BService {
     const { email, password } = loginDto;
     const formattedEmail = email.toLowerCase();
 
-    const user = await this.userService.findOneByEmail(formattedEmail, USERSELECT.login);
+    const user = await this.userLookupService.findOneByEmail(formattedEmail, USERSELECT.login);
     if (!user) {
       this.logger.error(`User not found with email ${email}`);
       throw new NotFoundException('User not found');

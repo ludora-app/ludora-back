@@ -14,7 +14,7 @@ import { SessionPlayersService } from 'src/sessions/services/session-players.ser
 import { SessionsService } from 'src/sessions/services/sessions.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
-import { UsersService } from 'src/users/services/users.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 import { CreateManySessionInvitationDto } from '../dto/input/create-many-session-invitation.dto';
 import { SessionInvitationFilterDto } from '../dto/input/session-invitation-filter.dto';
 import { UpdateSessionInvitationDto } from '../dto/input/update-session-invitation.dto';
@@ -24,7 +24,7 @@ export class SessionInvitationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly sessionsService: SessionsService,
-    private readonly usersService: UsersService,
+    private readonly userLookupService: UserLookupService,
     private readonly playersService: SessionPlayersService,
     private readonly logger: PinoLogger,
     private readonly eventEmitter: EventEmitter2,
@@ -37,7 +37,7 @@ export class SessionInvitationsService {
     sessionUid: string,
     createManySessionInvitationDto: CreateManySessionInvitationDto,
   ): Promise<void> {
-    const existingSender = await this.usersService.findOne(
+    const existingSender = await this.userLookupService.findOne(
       senderUid,
       USERSELECT.basicUserInfoDisplay,
     );
@@ -110,7 +110,7 @@ export class SessionInvitationsService {
     receiverUid: string,
     filter: SessionInvitationFilterDto,
   ): Promise<PaginatedDataDto<SessionInvitations>> {
-    const existingUser = await this.usersService.findOne(receiverUid, USERSELECT.findOne);
+    const existingUser = await this.userLookupService.findOne(receiverUid, USERSELECT.findOne);
 
     if (!existingUser) {
       throw new NotFoundException('User not found');
@@ -255,7 +255,7 @@ export class SessionInvitationsService {
       throw new NotFoundException(`Session ${sessionUid} not found`);
     }
 
-    const existingReceiver = await this.usersService.findOne(receiverUid, USERSELECT.findOne);
+    const existingReceiver = await this.userLookupService.findOne(receiverUid, USERSELECT.findOne);
     if (!existingReceiver) {
       throw new NotFoundException(`User ${receiverUid} not found`);
     }
@@ -464,7 +464,7 @@ export class SessionInvitationsService {
         this.logger.error(`User ${receiverUid} cannot invite himself`);
         continue;
       }
-      const existingReceiver = await this.usersService.findOne(
+      const existingReceiver = await this.userLookupService.findOne(
         receiverUid,
         USERSELECT.checkIfUserExists,
       );

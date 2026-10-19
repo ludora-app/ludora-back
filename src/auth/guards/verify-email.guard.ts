@@ -4,7 +4,7 @@ import { FastifyRequest } from 'fastify';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TokenType } from 'src/shared/constants/constants';
 import { USERSELECT } from 'src/shared/constants/select-user';
-import { UsersService } from 'src/users/services/users.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 
 /**
  * @description This guard is used to verify the email of the user by clicking on the link in the email
@@ -14,7 +14,7 @@ import { UsersService } from 'src/users/services/users.service';
 export class VerifyEmailGuard implements CanActivate {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly usersService: UsersService,
+    private readonly userLookupService: UserLookupService,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -38,7 +38,7 @@ export class VerifyEmailGuard implements CanActivate {
         throw new UnauthorizedException('Invalid token type');
       }
 
-      const user = await this.usersService.findOneByEmail(email, USERSELECT.findOneByEmail);
+      const user = await this.userLookupService.findOneByEmail(email, USERSELECT.findOneByEmail);
       if (!user) {
         throw new UnauthorizedException('User not found');
       }

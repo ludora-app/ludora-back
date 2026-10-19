@@ -5,19 +5,19 @@ import { VerifyEmailGuard } from 'src/auth/guards/verify-email.guard';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TokenType } from 'src/shared/constants/constants';
 import { USERSELECT } from 'src/shared/constants/select-user';
-import { UsersService } from 'src/users/services/users.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 
 describe('VerifyEmailGuard', () => {
   let guard: VerifyEmailGuard;
   let _jwtService: JwtService;
   let _prismaService: PrismaService;
-  let _usersService: UsersService;
+  let _userLookupService: UserLookupService;
 
   const mockJwtService = {
     verifyAsync: jest.fn(),
   };
 
-  const mockUsersService = {
+  const mockUserLookupService = {
     findOneByEmail: jest.fn(),
   };
 
@@ -54,8 +54,8 @@ describe('VerifyEmailGuard', () => {
           useValue: mockPrismaService,
         },
         {
-          provide: UsersService,
-          useValue: mockUsersService,
+          provide: UserLookupService,
+          useValue: mockUserLookupService,
         },
       ],
     }).compile();
@@ -63,7 +63,7 @@ describe('VerifyEmailGuard', () => {
     guard = module.get<VerifyEmailGuard>(VerifyEmailGuard);
     _jwtService = module.get<JwtService>(JwtService);
     _prismaService = module.get<PrismaService>(PrismaService);
-    _usersService = module.get<UsersService>(UsersService);
+    _userLookupService = module.get<UserLookupService>(UserLookupService);
   });
 
   afterEach(() => {
@@ -99,7 +99,7 @@ describe('VerifyEmailGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
-      expect(mockUsersService.findOneByEmail).not.toHaveBeenCalled();
+      expect(mockUserLookupService.findOneByEmail).not.toHaveBeenCalled();
     });
 
     it('should throw UnauthorizedException when payload is missing code', async () => {
@@ -111,7 +111,7 @@ describe('VerifyEmailGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
-      expect(mockUsersService.findOneByEmail).not.toHaveBeenCalled();
+      expect(mockUserLookupService.findOneByEmail).not.toHaveBeenCalled();
     });
 
     it('should throw UnauthorizedException when user is not found', async () => {
@@ -122,10 +122,10 @@ describe('VerifyEmailGuard', () => {
         code: '123456',
         type: TokenType.VERIFY_EMAIL,
       });
-      mockUsersService.findOneByEmail.mockResolvedValue(null);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(null);
 
       await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+      expect(mockUserLookupService.findOneByEmail).toHaveBeenCalledWith(
         'unknown@example.com',
         USERSELECT.findOneByEmail,
       );
@@ -139,7 +139,7 @@ describe('VerifyEmailGuard', () => {
         code: '123456',
         type: TokenType.VERIFY_EMAIL,
       });
-      mockUsersService.findOneByEmail.mockResolvedValue({
+      mockUserLookupService.findOneByEmail.mockResolvedValue({
         uid: 'user-123',
         email: 'user@example.com',
       });
@@ -175,7 +175,7 @@ describe('VerifyEmailGuard', () => {
         code: '123456',
         type: TokenType.VERIFY_EMAIL,
       });
-      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
+      mockUserLookupService.findOneByEmail.mockResolvedValue(mockUser);
       mockPrismaService.emailVerification.findFirst.mockResolvedValue(mockVerification);
 
       const result = await guard.canActivate(context);
@@ -184,7 +184,7 @@ describe('VerifyEmailGuard', () => {
       expect(request).toHaveProperty('verificationCode', '123456');
       expect(request).toHaveProperty('user', mockUser);
       expect(mockJwtService.verifyAsync).toHaveBeenCalledWith('valid-jwt');
-      expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
+      expect(mockUserLookupService.findOneByEmail).toHaveBeenCalledWith(
         'user@example.com',
         USERSELECT.findOneByEmail,
       );

@@ -2,7 +2,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UsersService } from 'src/users/services/users.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 import { UsersAdminService } from 'src/users/services/users-admin.service';
 
 describe('UsersAdminService', () => {
@@ -19,7 +19,7 @@ describe('UsersAdminService', () => {
     },
   };
 
-  const mockUsersService = {
+  const mockUserLookupService = {
     findOne: jest.fn(),
   };
 
@@ -33,7 +33,7 @@ describe('UsersAdminService', () => {
       providers: [
         UsersAdminService,
         { provide: PrismaService, useValue: mockPrismaService },
-        { provide: UsersService, useValue: mockUsersService },
+        { provide: UserLookupService, useValue: mockUserLookupService },
         { provide: PinoLogger, useValue: mockLogger },
       ],
     }).compile();
@@ -135,7 +135,7 @@ describe('UsersAdminService', () => {
     const dto = { userUid: 'user-uid', banReason: 'Spamming' };
 
     it('should successfully ban a user', async () => {
-      mockUsersService.findOne.mockResolvedValueOnce({
+      mockUserLookupService.findOne.mockResolvedValueOnce({
         uid: 'user-uid',
         email: 'test@example.com',
         isBanned: false,
@@ -143,7 +143,7 @@ describe('UsersAdminService', () => {
 
       await service.banUser(dto as any);
 
-      expect(mockUsersService.findOne).toHaveBeenCalledWith('user-uid', expect.any(Object));
+      expect(mockUserLookupService.findOne).toHaveBeenCalledWith('user-uid', expect.any(Object));
       expect(mockPrismaService.users.update).toHaveBeenCalledWith({
         where: { uid: 'user-uid' },
         data: {
@@ -161,7 +161,7 @@ describe('UsersAdminService', () => {
     });
 
     it('should throw NotFoundException if user is not found', async () => {
-      mockUsersService.findOne.mockResolvedValueOnce(null);
+      mockUserLookupService.findOne.mockResolvedValueOnce(null);
 
       await expect(service.banUser(dto as any)).rejects.toThrow(NotFoundException);
       expect(mockPrismaService.users.update).not.toHaveBeenCalled();
@@ -169,7 +169,7 @@ describe('UsersAdminService', () => {
     });
 
     it('should throw BadRequestException if user is already banned', async () => {
-      mockUsersService.findOne.mockResolvedValueOnce({
+      mockUserLookupService.findOne.mockResolvedValueOnce({
         uid: 'user-uid',
         email: 'test@example.com',
         isBanned: true,

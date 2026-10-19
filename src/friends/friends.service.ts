@@ -13,7 +13,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { UserFilterDto } from 'src/users/dto';
-import { UsersService } from 'src/users/services/users.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 
 import { FriendFilterDto } from './dto/input/friend-filter.dto';
 import { FriendRequestResponseData } from './dto/output/friend-request-response.dto';
@@ -28,7 +28,7 @@ export class FriendsService {
   private readonly WORD_SIMILARITY_THRESHOLD = 0.2;
 
   constructor(
-    private readonly usersService: UsersService,
+    private readonly userLookupService: UserLookupService,
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
     private readonly eventEmitter: EventEmitter2,
@@ -40,12 +40,15 @@ export class FriendsService {
       this.logger.error(`User ${senderUid} cannot add himself as a friend`);
       throw new BadRequestException('You cannot add yourself as a friend');
     }
-    const existingSender = await this.usersService.findOne(senderUid, USERSELECT.checkIfUserExists);
+    const existingSender = await this.userLookupService.findOne(
+      senderUid,
+      USERSELECT.checkIfUserExists,
+    );
     if (!existingSender) {
       this.logger.error(`Sender ${senderUid} not found`);
       throw new BadRequestException('Sender not found');
     }
-    const existingReceiver = await this.usersService.findOne(
+    const existingReceiver = await this.userLookupService.findOne(
       receiverUid,
       USERSELECT.checkIfUserExists,
     );
@@ -308,7 +311,7 @@ export class FriendsService {
   ): Promise<void> {
     let connectedUserIsSender = false;
     let otherUserIsSender = false;
-    const existingReceiver = await this.usersService.findOne(
+    const existingReceiver = await this.userLookupService.findOne(
       receiverUid,
       USERSELECT.checkIfUserExists,
     );

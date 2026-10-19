@@ -53,6 +53,7 @@ import {
 } from '../dto';
 import { PasswordResetRequestDto } from '../dto/input/password-reset-request.dto';
 import { RawUserFindMe, RawUserFindOne, UserMapper } from '../mappers/user.mapper';
+import { UserLookupService } from '../services/user-lookup.service';
 import { UsersService } from '../services/users.service';
 
 @ApiTags(SWAGGER_TAG_USERS)
@@ -60,7 +61,10 @@ import { UsersService } from '../services/users.service';
 @UseGuards(AuthB2CGuard)
 @ApiBearerAuth('JWT-auth')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly userLookupService: UserLookupService,
+  ) {}
 
   @Public()
   @Protected()
@@ -129,7 +133,7 @@ export class UsersController {
     @Req() request: FastifyRequest,
   ): Promise<ResponseTypeDto<FindOneUserResponseData>> {
     const searcherUid = request['user'].uid;
-    const data = await this.usersService.findOne(uid, USERSELECT.findOne, searcherUid);
+    const data = await this.userLookupService.findOne(uid, USERSELECT.findOne, searcherUid);
 
     if (!data) {
       throw new NotFoundException('User not found');
@@ -162,7 +166,7 @@ export class UsersController {
   async findMe(@Req() request: Request): Promise<ResponseTypeDto<FindMeUserResponseData>> {
     const uid = request['user'].uid;
 
-    const data = await this.usersService.findOne(uid, USERSELECT.findMe);
+    const data = await this.userLookupService.findOne(uid, USERSELECT.findMe);
 
     if (!data) {
       throw new NotFoundException('User not found');
@@ -190,7 +194,7 @@ export class UsersController {
     type: UnauthorizedResponseDto,
   })
   async findOneByEmail(@Param('email') email: string): Promise<ResponseTypeDto<Users>> {
-    const data = await this.usersService.findOneByEmail(email);
+    const data = await this.userLookupService.findOneByEmail(email);
     if (!data) {
       throw new NotFoundException(`Error finding user by email: ${email}`);
     }

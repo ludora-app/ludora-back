@@ -13,7 +13,7 @@ import { FastifyRequest } from 'fastify';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TokenType } from 'src/shared/constants/constants';
 import { USERSELECT } from 'src/shared/constants/select-user';
-import { UsersService } from 'src/users/services/users.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 import { RESET_PASSWORD_KEY } from '../../auth/decorators/reset-password.decorator';
 import { IS_PUBLIC_KEY } from '../../shared/decorators/public.decorator';
 
@@ -24,7 +24,7 @@ export class AuthB2CGuard implements CanActivate {
     private readonly reflector: Reflector,
     readonly _configService: ConfigService,
     private readonly prisma: PrismaService,
-    private readonly usersService: UsersService,
+    private readonly userLookupService: UserLookupService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -74,7 +74,7 @@ export class AuthB2CGuard implements CanActivate {
       }
 
       // Check if the user is verified and active
-      const user = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
+      const user = await this.userLookupService.findOne(userUid, USERSELECT.checkIfUserExists);
 
       if (!user) {
         throw new UnauthorizedException('User not found');

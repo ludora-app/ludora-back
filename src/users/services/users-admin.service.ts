@@ -7,20 +7,20 @@ import { CreateUserBanDto } from '../dto/input/create-user-ban.dto';
 import { ReportFilterDto } from '../dto/input/report-filter.dto';
 import { FindAllReportedUsersResponseData } from '../dto/output/find-all-reported-users-response.dto';
 import { UserMapper } from '../mappers/user.mapper';
-import { UsersService } from './users.service';
+import { UserLookupService } from './user-lookup.service';
 
 @Injectable()
 export class UsersAdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly logger: PinoLogger,
-    private readonly usersService: UsersService,
+    private readonly userLookupService: UserLookupService,
   ) {
     this.logger.setContext(UsersAdminService.name);
   }
 
   async adminDeleteUser(uid: string): Promise<void> {
-    const user = await this.usersService.findOne(uid, USERSELECT.checkIfUserExists);
+    const user = await this.userLookupService.findOne(uid, USERSELECT.checkIfUserExists);
 
     if (!user) throw new NotFoundException('User not found');
 
@@ -113,7 +113,7 @@ export class UsersAdminService {
   async banUser(dto: CreateUserBanDto): Promise<void> {
     const { userUid, banReason } = dto;
 
-    const user = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
+    const user = await this.userLookupService.findOne(userUid, USERSELECT.checkIfUserExists);
 
     if (!user) throw new NotFoundException('User not found');
 

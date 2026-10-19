@@ -6,14 +6,14 @@ import { Socket } from 'socket.io';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TokenType } from 'src/shared/constants/constants';
 import { USERSELECT } from 'src/shared/constants/select-user';
-import { UsersService } from 'src/users/services/users.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 
 @Injectable()
 export class WebSocketAuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
-    private readonly usersService: UsersService,
+    private readonly userLookupService: UserLookupService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(WebSocketAuthService.name);
@@ -50,7 +50,7 @@ export class WebSocketAuthService {
       }
 
       // Check if the user exists and is active
-      const user = await this.usersService.findOne(userUid, USERSELECT.checkIfUserExists);
+      const user = await this.userLookupService.findOne(userUid, USERSELECT.checkIfUserExists);
 
       if (!user) {
         this.logger.error(`User not found for userUid: ${userUid}`);
