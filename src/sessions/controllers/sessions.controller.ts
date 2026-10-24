@@ -39,6 +39,7 @@ import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.in
 import { SWAGGER_TAG_SESSIONS } from 'src/swagger/swagger.config';
 import { CreateSessionFromRequestDto } from '../dto/input/create-session.dto';
 import { MySessionFilterDto } from '../dto/input/my-session-filter.dto';
+import { RecommendedSessionFilterDto } from '../dto/input/recommended-session-filter.dto';
 import { SessionFilterDto } from '../dto/input/session-filter.dto';
 import { UpdateSessionDto } from '../dto/input/update-session.dto';
 import {
@@ -121,6 +122,34 @@ export class SessionsController {
         totalCount: sessions.totalCount,
       },
       message: 'Sessions fetched successfully',
+    };
+  }
+
+  @Get('recommended-list/collection')
+  @Protected()
+  @Throttle({ default: { limit: 100, ttl: 60000 } })
+  @ApiOperation({
+    summary: "Get the sessions matching the current user's sport and hour preferences",
+  })
+  @ApiOkResponse({ type: PaginatedSessionCollectionResponseDto })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiNotFoundResponse({ type: NotFoundResponseDto })
+  @HttpCode(HttpStatus.OK)
+  async findRecommended(
+    @Req() request: Request,
+    @Query() filter: RecommendedSessionFilterDto,
+  ): Promise<PaginationResponseTypeDto<SessionCollectionItemDto>> {
+    const userUid = request['user'].uid;
+
+    const sessions = await this.sessionsService.findRecommended({ userUid, ...filter });
+    return {
+      data: {
+        items: sessions.items,
+        nextCursor: sessions.nextCursor,
+        totalCount: sessions.totalCount,
+      },
+      message: 'Recommended sessions fetched successfully',
     };
   }
 

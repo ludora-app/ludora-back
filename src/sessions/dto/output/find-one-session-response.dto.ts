@@ -66,6 +66,7 @@ export class CreatorInfoResponseData extends UserSimpleDisplayData {
 export class FindOneSessionResponseData extends OmitType(SessionCollectionItemDto, [
   'sessionTeams',
   'fieldImage',
+  'creator',
 ]) {
   @ApiProperty({
     example: [

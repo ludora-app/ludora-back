@@ -13,7 +13,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { UserSimpleDisplayData } from 'src/users/dto';
 import { ConversationMembersService } from './../../conversations/services/conversation-members.service';
-import { CreateSessionPlayerDto } from '../dto/input/create-session-player.dto';
+import { CreateSessionPlayerDto, JoinSessionDto } from '../dto/input/create-session-player.dto';
 import { JoinSessionResponseData } from '../dto/output/join-session-response.dto';
 
 @Injectable()
@@ -92,19 +92,17 @@ export class SessionPlayersService {
    * @returns
    */
   async joinSession(
-    createSessionPlayerDto: CreateSessionPlayerDto,
+    createSessionPlayerDto: JoinSessionDto & { userUid: string },
     session: Sessions,
   ): Promise<JoinSessionResponseData> {
-    await this.verifyPlayerEligibilityBeforeJoin(
-      createSessionPlayerDto.userUid,
-      createSessionPlayerDto.teamUid,
-      session,
-    );
+    const teamUid = createSessionPlayerDto.teamUid ?? (await this.findTeamToJoin(session));
+
+    await this.verifyPlayerEligibilityBeforeJoin(createSessionPlayerDto.userUid, teamUid, session);
 
     const newPlayer = await this.prisma.sessionPlayers.create({
       data: {
         sessionUid: createSessionPlayerDto.sessionUid,
-        teamUid: createSessionPlayerDto.teamUid,
+        teamUid,
         userUid: createSessionPlayerDto.userUid,
       },
       include: {
@@ -149,7 +147,30 @@ export class SessionPlayersService {
     return {
       conversationUid: newPlayer.session.conversation.uid,
       sessionUid: newPlayer.sessionUid,
+      teamUid,
     };
+  }
+
+  /**
+   * The team that needs the most players (fewest players, then team A first), so joining keeps
+   * the teams balanced.
+   * @throws BadRequestException when every team is full
+   */
+  private async findTeamToJoin(session: Sessions): Promise<string> {
+    const teams = await this.prisma.sessionTeams.findMany({
+      orderBy: [{ sessionPlayers: { _count: 'asc' } }, { teamLabel: 'asc' }],
+      select: { _count: { select: { sessionPlayers: true } }, uid: true },
+      where: { sessionUid: session.uid },
+    });
+
+    const team = teams.find((item) => item._count.sessionPlayers < session.maxPlayersPerTeam);
+    if (!team) {
+      this.logger.warn(`Session ${session.uid} is full, no team to join`);
+      throw new BadRequestException(`Session ${session.uid} is full`);
+    }
+
+    this.logger.debug(`Team ${team.uid} picked to join session ${session.uid}`);
+    return team.uid;
   }
 
   /**

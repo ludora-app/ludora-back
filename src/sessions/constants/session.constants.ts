@@ -33,3 +33,10 @@ export const SESSION_SUGGESTION_CONFIG = {
 };
 
 export type SessionSuggestionConfig = typeof SESSION_SUGGESTION_CONFIG;
+
+export const SESSION_RECOMMENDATION_CONFIG = {
+  DEFAULT_DAYS: 14,
+  MAX_DAYS: 30,
+  // Hour preferences are expressed in the players' local time
+  TIME_ZONE: 'Europe/Paris',
+};

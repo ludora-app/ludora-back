@@ -1,6 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { FieldType, GameModes } from 'generated/prisma/client';
+import { FieldType, GameModes, Prisma } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { ConversationsService } from 'src/conversations/services/conversations.service';
 import { FieldSlotsService } from 'src/fields/services/field-slots.service';
@@ -1931,6 +1931,177 @@ describe('SessionsService', () => {
           },
         },
       });
+    });
+  });
+
+  describe('findRecommended', () => {
+    const userUid = 'user-uid-1';
+    const footballPreference = {
+      gameModes: [GameModes.FIVE_V_FIVE],
+      level: 2,
+      sport: Sport.FOOTBALL,
+      uid: 'pref-uid-1',
+    };
+    const saturdayMorning = {
+      date: null,
+      dayOfWeek: 6,
+      timePeriod: 'MORNING',
+      type: 'RECURRENT',
+    };
+    const mockRows = [
+      { distance_val: 500, total_count: BigInt(2), uid: 'session-uid-1' },
+      { distance_val: 1000, total_count: BigInt(2), uid: 'session-uid-2' },
+    ];
+    const mockSession = {
+      creator: { firstname: 'Léa', imageUrl: null, lastname: 'Martin' },
+      creatorUid: 'user-uid-2',
+      endDate: new Date('2023-01-07T11:00:00Z'),
+      field: {
+        fieldImages: [],
+        latitude: 48.8566,
+        longitude: 2.3522,
+        shortAddress: '123 Main St, Paris',
+      },
+      gameMode: GameModes.FIVE_V_FIVE,
+      level: 2,
+      maxPlayersPerTeam: 5,
+      sessionTeams: [
+        { _count: { sessionPlayers: 3 }, teamLabel: 'A', teamName: 'Team A', uid: 'team-uid-a' },
+      ],
+      sport: Sport.FOOTBALL,
+      startDate: new Date('2023-01-07T09:00:00Z'),
+      teamsPerGame: 2,
+      uid: 'session-uid-1',
+    };
+
+    const mockPreferences = ({
+      hourPreferences = [],
+      sportPreferences = [],
+    }: {
+      hourPreferences?: unknown[];
+      sportPreferences?: unknown[];
+    }) => {
+      mockUserSportPreferencesService.findAllByUserUid.mockResolvedValueOnce({
+        items: sportPreferences,
+      });
+      mockUserHourPreferencesService.findAllByUserUid.mockResolvedValueOnce({
+        items: hourPreferences,
+      });
+    };
+
+    /** Rebuilds the SQL sent to `$queryRaw` (tagged template) to assert on its text and values. */
+    const getQuery = () => {
+      const [strings, ...values] = (prismaService.$queryRaw as jest.Mock).mock.calls[0];
+      return Prisma.sql(strings, ...values);
+    };
+
+    beforeEach(() => {
+      (prismaService.$queryRaw as jest.Mock) = jest.fn().mockResolvedValue(mockRows);
+      (prismaService.sessions.findMany as jest.Mock).mockResolvedValue([mockSession]);
+    });
+
+    it('should return an empty result without querying when the user has no preference', async () => {
+      mockPreferences({});
+
+      const result = await service.findRecommended({ userUid });
+
+      expect(result).toEqual({ items: [], nextCursor: null, totalCount: 0 });
+      expect(prismaService.$queryRaw).not.toHaveBeenCalled();
+    });
+
+    it('should return the matching sessions with the next cursor', async () => {
+      mockPreferences({ sportPreferences: [footballPreference] });
+
+      const result = await service.findRecommended({ limit: 1, userUid });
+
+      expect(result.items).toEqual([
+        expect.objectContaining({
+          creator: { firstname: 'Léa', imageUrl: null, lastname: 'Martin' },
+          sessionTeams: [
+            { numberOfPlayers: 3, teamLabel: 'A', teamName: 'Team A', teamUid: 'team-uid-a' },
+          ],
+          teamsPerGame: 2,
+          uid: 'session-uid-1',
+        }),
+      ]);
+      expect(result.nextCursor).toBe('1');
+      expect(result.totalCount).toBe(2);
+    });
+
+    it('should keep the level and game modes of each sport preference', async () => {
+      mockPreferences({ sportPreferences: [footballPreference] });
+
+      await service.findRecommended({ userUid });
+
+      const query = getQuery();
+      expect(query.sql).toContain('s.game_mode::text IN');
+      expect(query.values).toEqual(
+        expect.arrayContaining([
+          Sport.FOOTBALL,
+          footballPreference.level,
+          SessionSportLevel.ANY,
+          GameModes.FIVE_V_FIVE,
+        ]),
+      );
+    });
+
+    it('should not filter on game modes when the preference has none', async () => {
+      mockPreferences({ sportPreferences: [{ ...footballPreference, gameModes: [] }] });
+
+      await service.findRecommended({ userUid });
+
+      expect(getQuery().sql).not.toContain('s.game_mode::text IN');
+    });
+
+    it('should match the hour preferences in local time', async () => {
+      mockPreferences({ hourPreferences: [saturdayMorning] });
+
+      await service.findRecommended({ userUid });
+
+      const query = getQuery();
+      expect(query.sql).toContain('EXTRACT(DOW FROM');
+      expect(query.sql).toContain('AT TIME ZONE');
+      expect(query.values).toEqual(expect.arrayContaining(['Europe/Paris', 6]));
+      expect(query.sql).not.toContain('s.sport =');
+    });
+
+    it('should exclude own, joined and full sessions and blocked creators', async () => {
+      mockPreferences({ sportPreferences: [footballPreference] });
+
+      await service.findRecommended({ userUid });
+
+      const { sql } = getQuery();
+      expect(sql).toContain('s.creator_uid <>');
+      expect(sql).toContain('sp.user_uid =');
+      expect(sql).toContain('s.max_players_per_team * s.teams_per_game');
+      expect(sql).toContain('moderation."User_blocks"');
+    });
+
+    it('should limit the start date to the requested number of days', async () => {
+      mockPreferences({ sportPreferences: [footballPreference] });
+
+      await service.findRecommended({ days: 7, userUid });
+
+      expect(getQuery().values).toEqual(expect.arrayContaining([new Date('2023-01-08T12:00:00Z')]));
+    });
+
+    it('should filter on distance only when the location is known', async () => {
+      mockPreferences({ sportPreferences: [footballPreference] });
+      await service.findRecommended({ userUid });
+      expect(getQuery().sql).not.toContain('ST_DistanceSphere');
+
+      (prismaService.$queryRaw as jest.Mock).mockClear();
+      mockPreferences({ sportPreferences: [footballPreference] });
+      await service.findRecommended({
+        maxDistance: 10,
+        userLat: 48.8566,
+        userLon: 2.3522,
+        userUid,
+      });
+
+      const query = getQuery();
+      expect(query.sql).toContain('ST_DistanceSphere');
+      expect(query.values).toEqual(expect.arrayContaining([10000]));
     });
   });
 });

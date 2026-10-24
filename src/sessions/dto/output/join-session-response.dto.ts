@@ -13,6 +13,12 @@ export class JoinSessionResponseData {
     example: 'cmkiwtv9r02d65pmp40klxt2i',
   })
   sessionUid: string;
+
+  @ApiProperty({
+    description: 'The uid of the team joined (picked by the API when none was sent)',
+    example: 'cmkiwtv9r02d65pmp40klxt2i',
+  })
+  teamUid: string;
 }
 
 export class JoinSessionResponseDto extends ResponseTypeDto<JoinSessionResponseData> {

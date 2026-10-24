@@ -24,6 +24,7 @@ describe('SessionsController', () => {
   const mockSessionsService = {
     create: jest.fn(),
     findAll: jest.fn(),
+    findRecommended: jest.fn(),
     findAllByUserUid: jest.fn(),
     findOne: jest.fn(),
     findOneWithDistance: jest.fn(),
@@ -790,6 +791,31 @@ describe('SessionsController', () => {
       expect(result).toEqual({
         data: mockStats,
         message: 'Session stats fetched successfully',
+      });
+    });
+  });
+
+  describe('findRecommended', () => {
+    const mockRequest = { user: { uid: 'user-uid-1' } } as unknown as Request;
+
+    it('should return the recommended sessions of the current user', async () => {
+      const sessionsData = {
+        items: [{ sport: Sport.FOOTBALL, uid: 'session-uid-1' }],
+        nextCursor: null,
+        totalCount: 1,
+      };
+      mockSessionsService.findRecommended.mockResolvedValue(sessionsData);
+
+      const result = await controller.findRecommended(mockRequest, { days: 14, limit: 5 });
+
+      expect(mockSessionsService.findRecommended).toHaveBeenCalledWith({
+        days: 14,
+        limit: 5,
+        userUid: 'user-uid-1',
+      });
+      expect(result).toEqual({
+        data: sessionsData,
+        message: 'Recommended sessions fetched successfully',
       });
     });
   });

@@ -48,7 +48,10 @@ export class SessionPlayersController {
 
   @Post('join')
   @Protected()
-  @ApiOperation({ summary: 'Allows a user to join a session' })
+  @ApiOperation({
+    summary:
+      'Allows a user to join a session, in the given team or in the one that needs the most players',
+  })
   @ApiCreatedResponse({ type: JoinSessionResponseDto })
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
