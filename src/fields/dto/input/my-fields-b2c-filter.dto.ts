@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsEnum, IsOptional } from 'class-validator';
 import { VerificationStatus } from 'generated/prisma/enums';
+import { BaseFilterDto } from 'src/shared/dto/input/base-filter.dto';
 
-export class MyFieldsB2CFilterDto {
+export class MyFieldsB2CFilterDto extends BaseFilterDto {
   @IsOptional()
   @IsEnum(VerificationStatus)
   @ApiProperty({
@@ -13,25 +13,4 @@ export class MyFieldsB2CFilterDto {
     required: false,
   })
   status?: VerificationStatus;
-
-  @IsOptional()
-  @IsString()
-  @ApiProperty({
-    description: 'Cursor for pagination',
-    example: 'abc123',
-    required: false,
-  })
-  cursor?: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(50)
-  @ApiProperty({
-    description: 'Number of results to return',
-    example: 10,
-    required: false,
-  })
-  limit?: number;
 }

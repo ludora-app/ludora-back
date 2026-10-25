@@ -1,23 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import {
-  IsArray,
-  IsDate,
-  IsEnum,
-  IsInt,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsArray, IsDate, IsEnum, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
 import { GameModes } from 'generated/prisma/enums';
 import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
+import { BaseFilterDto } from 'src/shared/dto/input/base-filter.dto';
 
 /**
  * @description DTO for filtering the sessions in most use cases (findAll methods)
  */
-export class SessionFilterDto {
+export class SessionFilterDto extends BaseFilterDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
@@ -88,27 +79,6 @@ export class SessionFilterDto {
     required: false,
   })
   maxDistance?: number;
-
-  @IsOptional()
-  @IsString()
-  @ApiProperty({
-    description: 'Cursor for pagination',
-    example: 'abc123',
-    required: false,
-  })
-  cursor?: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(50)
-  @ApiProperty({
-    description: 'Number of results to return',
-    example: 10,
-    required: false,
-  })
-  limit?: number;
 
   @IsOptional()
   @Transform(({ value }) => value === 'true')
