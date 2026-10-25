@@ -51,7 +51,7 @@ describe('SessionInvitationsController', () => {
       const dto = { receiverUids: ['user-2', 'user-3'] };
       mockSessionInvitationsService.createMany.mockResolvedValue(undefined);
 
-      const result = await controller.createMany(sessionUid, dto, req);
+      const result = await controller.createMany(sessionUid, dto, req.user.uid);
 
       expect(mockSessionInvitationsService.createMany).toHaveBeenCalledWith(
         'sender-1',
@@ -67,7 +67,7 @@ describe('SessionInvitationsController', () => {
       const dto = { receiverUids: ['user-a'] };
       mockSessionInvitationsService.createMany.mockResolvedValue(undefined);
 
-      await expect(controller.createMany(sessionUid, dto, req)).resolves.toBeUndefined();
+      await expect(controller.createMany(sessionUid, dto, req.user.uid)).resolves.toBeUndefined();
     });
   });
 
@@ -157,7 +157,7 @@ describe('SessionInvitationsController', () => {
 
       mockSessionInvitationsService.update.mockResolvedValue(undefined);
 
-      await expect(controller.update(sessionUid, body, req)).resolves.toBeUndefined();
+      await expect(controller.update(sessionUid, body, req.user.uid)).resolves.toBeUndefined();
       expect(mockSessionInvitationsService.update).toHaveBeenCalledWith({
         sessionUid: 'sess-1',
         status: 'ACCEPTED',

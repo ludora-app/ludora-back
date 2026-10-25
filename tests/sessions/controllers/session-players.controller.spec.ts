@@ -92,7 +92,11 @@ describe('SessionPlayersController', () => {
     it('should successfully join a session and return the new player', async () => {
       mockPlayersService.joinSession.mockResolvedValue(mockNewPlayer);
 
-      const result = await controller.joinSession(mockRequest, mockSession, mockJoinSessionDto);
+      const result = await controller.joinSession(
+        mockRequest.user.uid,
+        mockSession,
+        mockJoinSessionDto,
+      );
 
       expect(playersService.joinSession).toHaveBeenCalledWith(
         {
@@ -110,7 +114,7 @@ describe('SessionPlayersController', () => {
     it('should pass the correct userUid from the request to the service', async () => {
       mockPlayersService.joinSession.mockResolvedValue(mockNewPlayer);
 
-      await controller.joinSession(mockRequest, mockSession, mockJoinSessionDto);
+      await controller.joinSession(mockRequest.user.uid, mockSession, mockJoinSessionDto);
 
       expect(playersService.joinSession).toHaveBeenCalledWith(
         {
@@ -128,7 +132,7 @@ describe('SessionPlayersController', () => {
       );
 
       await expect(
-        controller.joinSession(mockRequest, mockSession, mockJoinSessionDto),
+        controller.joinSession(mockRequest.user.uid, mockSession, mockJoinSessionDto),
       ).rejects.toThrow(NotFoundException);
 
       expect(playersService.joinSession).toHaveBeenCalledWith(
@@ -146,7 +150,7 @@ describe('SessionPlayersController', () => {
       );
 
       await expect(
-        controller.joinSession(mockRequest, mockSession, mockJoinSessionDto),
+        controller.joinSession(mockRequest.user.uid, mockSession, mockJoinSessionDto),
       ).rejects.toThrow(NotFoundException);
 
       expect(playersService.joinSession).toHaveBeenCalledWith(
@@ -166,7 +170,7 @@ describe('SessionPlayersController', () => {
       );
 
       await expect(
-        controller.joinSession(mockRequest, mockSession, mockJoinSessionDto),
+        controller.joinSession(mockRequest.user.uid, mockSession, mockJoinSessionDto),
       ).rejects.toThrow(BadRequestException);
 
       expect(playersService.joinSession).toHaveBeenCalledWith(
@@ -186,7 +190,7 @@ describe('SessionPlayersController', () => {
       );
 
       await expect(
-        controller.joinSession(mockRequest, mockSession, mockJoinSessionDto),
+        controller.joinSession(mockRequest.user.uid, mockSession, mockJoinSessionDto),
       ).rejects.toThrow(BadRequestException);
 
       expect(playersService.joinSession).toHaveBeenCalledWith(
@@ -222,7 +226,7 @@ describe('SessionPlayersController', () => {
         mockPaginatedSuggestions,
       );
 
-      const result = await controller.suggestPlayerFromPreviousSessions(mockRequest);
+      const result = await controller.suggestPlayerFromPreviousSessions(mockRequest.user.uid);
 
       expect(playersService.suggestPlayerFromPreviousSessions).toHaveBeenCalledWith(
         mockRequest.user.uid,
@@ -240,7 +244,7 @@ describe('SessionPlayersController', () => {
         totalCount: 0,
       });
 
-      await controller.suggestPlayerFromPreviousSessions(mockRequest);
+      await controller.suggestPlayerFromPreviousSessions(mockRequest.user.uid);
 
       expect(playersService.suggestPlayerFromPreviousSessions).toHaveBeenCalledWith('user-uid-123');
     });
@@ -249,9 +253,9 @@ describe('SessionPlayersController', () => {
       const error = new Error('Database error');
       mockPlayersService.suggestPlayerFromPreviousSessions.mockRejectedValue(error);
 
-      await expect(controller.suggestPlayerFromPreviousSessions(mockRequest)).rejects.toThrow(
-        'Database error',
-      );
+      await expect(
+        controller.suggestPlayerFromPreviousSessions(mockRequest.user.uid),
+      ).rejects.toThrow('Database error');
     });
   });
 
@@ -271,7 +275,7 @@ describe('SessionPlayersController', () => {
     it('should call playersService.switchPlayerToAnotherTeam and return void', async () => {
       mockPlayersService.switchPlayerToAnotherTeam.mockResolvedValue(undefined);
 
-      await controller.switchTeams(mockSession, mockRequest, teamUid);
+      await controller.switchTeams(mockSession, mockRequest.user.uid, teamUid);
 
       expect(playersService.switchPlayerToAnotherTeam).toHaveBeenCalledWith(
         mockSession,
@@ -285,9 +289,9 @@ describe('SessionPlayersController', () => {
         new BadRequestException('Player not found'),
       );
 
-      await expect(controller.switchTeams(mockSession, mockRequest, teamUid)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.switchTeams(mockSession, mockRequest.user.uid, teamUid),
+      ).rejects.toThrow(BadRequestException);
       expect(playersService.switchPlayerToAnotherTeam).toHaveBeenCalledWith(
         mockSession,
         mockRequest.user.uid,
@@ -300,9 +304,9 @@ describe('SessionPlayersController', () => {
         new BadRequestException('Team not found'),
       );
 
-      await expect(controller.switchTeams(mockSession, mockRequest, teamUid)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.switchTeams(mockSession, mockRequest.user.uid, teamUid),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException when player already on team', async () => {
@@ -310,9 +314,9 @@ describe('SessionPlayersController', () => {
         new BadRequestException('Player already on this team'),
       );
 
-      await expect(controller.switchTeams(mockSession, mockRequest, teamUid)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.switchTeams(mockSession, mockRequest.user.uid, teamUid),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -330,7 +334,7 @@ describe('SessionPlayersController', () => {
     it('should call playersService.leaveSession and return void', async () => {
       mockPlayersService.leaveSession.mockResolvedValue(undefined);
 
-      await controller.leaveSession(mockSession, mockRequest);
+      await controller.leaveSession(mockSession, mockRequest.user.uid);
 
       expect(playersService.leaveSession).toHaveBeenCalledWith(mockSession, mockRequest.user.uid);
     });
@@ -340,7 +344,7 @@ describe('SessionPlayersController', () => {
         new BadRequestException('You cannot leave a session after it has started'),
       );
 
-      await expect(controller.leaveSession(mockSession, mockRequest)).rejects.toThrow(
+      await expect(controller.leaveSession(mockSession, mockRequest.user.uid)).rejects.toThrow(
         BadRequestException,
       );
     });
@@ -350,7 +354,7 @@ describe('SessionPlayersController', () => {
         new BadRequestException('You are not a player of this session'),
       );
 
-      await expect(controller.leaveSession(mockSession, mockRequest)).rejects.toThrow(
+      await expect(controller.leaveSession(mockSession, mockRequest.user.uid)).rejects.toThrow(
         BadRequestException,
       );
     });

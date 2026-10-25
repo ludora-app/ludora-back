@@ -91,7 +91,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.findAllByUserUid.mockResolvedValue(mockResponse);
 
-      const result = await controller.findAllByUserUid({}, mockRequest);
+      const result = await controller.findAllByUserUid({}, mockRequest.user.uid);
 
       expect(result).toEqual({
         data: mockResponse,
@@ -117,7 +117,7 @@ describe('ConversationsController', () => {
         totalCount: 0,
       });
 
-      await controller.findAllByUserUid(filters, mockRequest);
+      await controller.findAllByUserUid(filters, mockRequest.user.uid);
 
       expect(mockConversationsService.findAllByUserUid).toHaveBeenCalledWith(filters, 'user-456');
     });
@@ -138,7 +138,7 @@ describe('ConversationsController', () => {
         totalCount: 0,
       });
 
-      const result = await controller.findAllByUserUid(filters, mockRequest);
+      const result = await controller.findAllByUserUid(filters, mockRequest.user.uid);
 
       expect(result.data.nextCursor).toBe('conv-cursor-456');
     });
@@ -175,7 +175,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.findOne.mockResolvedValue(mockConversation);
 
-      const result = await controller.findOne('conv-123', mockRequest);
+      const result = await controller.findOne('conv-123', mockRequest.user.uid);
 
       expect(result).toEqual({
         data: mockConversation,
@@ -201,7 +201,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.findOne.mockResolvedValue(mockConversationResponse);
 
-      await controller.findOne('conv-456', mockRequest);
+      await controller.findOne('conv-456', mockRequest.user.uid);
 
       expect(mockConversationsService.findOne).toHaveBeenCalledWith('conv-456', 'user-789');
     });
@@ -222,7 +222,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.createMessage.mockResolvedValue(undefined);
 
-      await controller.createMessage(mockRequest, dto, files);
+      await controller.createMessage(mockRequest.user.uid, dto, files);
 
       expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
         'user-123',
@@ -245,7 +245,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.createMessage.mockResolvedValue(undefined);
 
-      await controller.createMessage(mockRequest, dto, files);
+      await controller.createMessage(mockRequest.user.uid, dto, files);
 
       expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
         'user-123',
@@ -263,7 +263,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.createMessage.mockResolvedValue(undefined);
 
-      await controller.createMessage(mockRequest, dto, files);
+      await controller.createMessage(mockRequest.user.uid, dto, files);
 
       expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
         'user-123',
@@ -285,7 +285,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.createMessage.mockResolvedValue(undefined);
 
-      await controller.createMessage(differentUserRequest, dto, files);
+      await controller.createMessage(differentUserRequest.user.uid, dto, files);
 
       expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
         'user-456',
@@ -308,7 +308,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.createMessage.mockResolvedValue(undefined);
 
-      await controller.createMessage(mockRequest, dto, files);
+      await controller.createMessage(mockRequest.user.uid, dto, files);
 
       expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
         'user-123',
@@ -334,7 +334,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.createMessage.mockResolvedValue(undefined);
 
-      await controller.createMessage(mockRequest, dto, files);
+      await controller.createMessage(mockRequest.user.uid, dto, files);
 
       expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
         'user-123',
@@ -353,7 +353,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.createMessage.mockResolvedValue(undefined);
 
-      await controller.createMessage(mockRequest, dto, files);
+      await controller.createMessage(mockRequest.user.uid, dto, files);
 
       expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
         'user-123',
@@ -372,7 +372,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.createMessage.mockResolvedValue(undefined);
 
-      await controller.createMessage(mockRequest, dto, files);
+      await controller.createMessage(mockRequest.user.uid, dto, files);
 
       expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
         'user-123',
@@ -395,7 +395,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.createMessage.mockResolvedValue(undefined);
 
-      await controller.createMessage(mockRequest, dto, files);
+      await controller.createMessage(mockRequest.user.uid, dto, files);
 
       expect(mockConversationsService.createMessage).toHaveBeenCalledWith(
         'user-123',
@@ -439,7 +439,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.loadMoreMessages.mockResolvedValue(mockMessages);
 
-      const result = await controller.loadMoreMessages(conversationUid, mockRequest);
+      const result = await controller.loadMoreMessages(conversationUid, mockRequest.user.uid);
 
       expect(result).toEqual({
         data: mockMessages,
@@ -468,7 +468,11 @@ describe('ConversationsController', () => {
 
       mockConversationsService.loadMoreMessages.mockResolvedValue(mockMessages);
 
-      const result = await controller.loadMoreMessages(conversationUid, mockRequest, cursor);
+      const result = await controller.loadMoreMessages(
+        conversationUid,
+        mockRequest.user.uid,
+        cursor,
+      );
 
       expect(mockConversationsService.loadMoreMessages).toHaveBeenCalledWith(
         conversationUid,
@@ -492,7 +496,7 @@ describe('ConversationsController', () => {
         totalCount: 0,
       });
 
-      await controller.loadMoreMessages(conversationUid, mockRequest, undefined, limit);
+      await controller.loadMoreMessages(conversationUid, mockRequest.user.uid, undefined, limit);
 
       expect(mockConversationsService.loadMoreMessages).toHaveBeenCalledWith(
         conversationUid,
@@ -516,7 +520,7 @@ describe('ConversationsController', () => {
         totalCount: 0,
       });
 
-      await controller.loadMoreMessages(conversationUid, mockRequest, cursor, limit);
+      await controller.loadMoreMessages(conversationUid, mockRequest.user.uid, cursor, limit);
 
       expect(mockConversationsService.loadMoreMessages).toHaveBeenCalledWith(
         conversationUid,
@@ -538,7 +542,7 @@ describe('ConversationsController', () => {
         totalCount: 0,
       });
 
-      await controller.loadMoreMessages(conversationUid, mockRequest);
+      await controller.loadMoreMessages(conversationUid, mockRequest.user.uid);
 
       expect(mockConversationsService.loadMoreMessages).toHaveBeenCalledWith(
         conversationUid,
@@ -572,7 +576,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.loadMoreMessages.mockResolvedValue(mockMessages);
 
-      const result = await controller.loadMoreMessages(conversationUid, mockRequest);
+      const result = await controller.loadMoreMessages(conversationUid, mockRequest.user.uid);
 
       expect(result).toHaveProperty('data');
       expect(result).toHaveProperty('message', 'Messages fetched successfully');
@@ -631,7 +635,7 @@ describe('ConversationsController', () => {
 
       mockMembersService.updateMuteSettings.mockResolvedValue(undefined);
 
-      await controller.updateMuteSettings(conversationUid, mockRequest, settings);
+      await controller.updateMuteSettings(conversationUid, mockRequest.user.uid, settings);
 
       expect(mockMembersService.updateMuteSettings).toHaveBeenCalledWith(
         conversationUid,
@@ -649,7 +653,7 @@ describe('ConversationsController', () => {
 
       mockMembersService.updateArchivedSettings.mockResolvedValue(undefined);
 
-      await controller.updateArchivedSettings(conversationUid, mockRequest, settings);
+      await controller.updateArchivedSettings(conversationUid, mockRequest.user.uid, settings);
 
       expect(mockMembersService.updateArchivedSettings).toHaveBeenCalledWith(
         conversationUid,
@@ -666,7 +670,7 @@ describe('ConversationsController', () => {
 
       mockMembersService.updateDisplayMessagesAfterDeletion.mockResolvedValue(undefined);
 
-      await controller.remove(conversationUid, mockRequest);
+      await controller.remove(conversationUid, mockRequest.user.uid);
 
       expect(mockMembersService.updateDisplayMessagesAfterDeletion).toHaveBeenCalledWith(
         conversationUid,
@@ -680,7 +684,7 @@ describe('ConversationsController', () => {
 
       mockMembersService.updateDisplayMessagesAfterDeletion.mockResolvedValue(undefined);
 
-      const result = await controller.remove(conversationUid, mockRequest);
+      const result = await controller.remove(conversationUid, mockRequest.user.uid);
 
       expect(result).toBeUndefined();
     });
@@ -694,7 +698,7 @@ describe('ConversationsController', () => {
 
       mockMessagesService.delete.mockResolvedValue(undefined);
 
-      await controller.deleteMessage(conversationUid, messageUid, mockRequest);
+      await controller.deleteMessage(conversationUid, messageUid, mockRequest.user.uid);
 
       expect(mockMessagesService.delete).toHaveBeenCalledWith(messageUid, 'user-123');
       expect(mockMessagesService.delete).toHaveBeenCalledTimes(1);
@@ -707,7 +711,7 @@ describe('ConversationsController', () => {
 
       mockMessagesService.delete.mockResolvedValue(undefined);
 
-      await controller.deleteMessage(conversationUid, messageUid, mockRequest);
+      await controller.deleteMessage(conversationUid, messageUid, mockRequest.user.uid);
 
       expect(mockMessagesService.delete).toHaveBeenCalledWith('msg-to-delete', 'user-456');
     });
@@ -719,7 +723,7 @@ describe('ConversationsController', () => {
 
       mockMessagesService.delete.mockResolvedValue(undefined);
 
-      await controller.deleteMessage(conversationUid, messageUid, mockRequest);
+      await controller.deleteMessage(conversationUid, messageUid, mockRequest.user.uid);
 
       expect(mockMessagesService.delete).toHaveBeenCalledWith(messageUid, 'user-789');
       expect(mockMessagesService.delete).not.toHaveBeenCalledWith(conversationUid);
@@ -739,7 +743,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.findByUserUids.mockResolvedValue(mockResponse);
 
-      const result = await controller.findByUserUids(otherUserUid, mockRequest);
+      const result = await controller.findByUserUids(otherUserUid, mockRequest.user.uid);
 
       expect(result).toEqual({
         data: mockResponse,
@@ -759,7 +763,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.findByUserUids.mockResolvedValue(mockResponse);
 
-      const result = await controller.findByUserUids(otherUserUid, mockRequest);
+      const result = await controller.findByUserUids(otherUserUid, mockRequest.user.uid);
 
       expect(result).toEqual({
         data: mockResponse,
@@ -773,7 +777,7 @@ describe('ConversationsController', () => {
       } as any;
       const sameUserUid = 'user-123';
 
-      await expect(controller.findByUserUids(sameUserUid, mockRequest)).rejects.toThrow(
+      await expect(controller.findByUserUids(sameUserUid, mockRequest.user.uid)).rejects.toThrow(
         'Connected user uid and other user uid cannot be the same',
       );
       expect(mockConversationsService.findByUserUids).not.toHaveBeenCalled();
@@ -789,7 +793,7 @@ describe('ConversationsController', () => {
         conversationUid: 'conv-test',
       });
 
-      await controller.findByUserUids(otherUserUid, mockRequest);
+      await controller.findByUserUids(otherUserUid, mockRequest.user.uid);
 
       expect(mockConversationsService.findByUserUids).toHaveBeenCalledWith(
         'user-different-123',
@@ -807,7 +811,7 @@ describe('ConversationsController', () => {
         conversationUid: 'conv-found',
       });
 
-      await controller.findByUserUids(routeParamUserUid, mockRequest);
+      await controller.findByUserUids(routeParamUserUid, mockRequest.user.uid);
 
       const [connectedUid, otherUid] = mockConversationsService.findByUserUids.mock.calls[0];
       expect(connectedUid).toBe('user-aaa');
@@ -826,7 +830,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.findByUserUids.mockResolvedValue(mockResponse);
 
-      const result = await controller.findByUserUids(otherUserUid, mockRequest);
+      const result = await controller.findByUserUids(otherUserUid, mockRequest.user.uid);
 
       expect(result.data.conversationUid).toBeNull();
       expect(mockConversationsService.findByUserUids).toHaveBeenCalledWith(
@@ -844,7 +848,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.hasUnreadMessages.mockResolvedValue({ hasUnreadMessages: true });
 
-      const result = await controller.hasUnreadMessages(mockRequest);
+      const result = await controller.hasUnreadMessages(mockRequest.user.uid);
 
       expect(result).toEqual({
         data: { hasUnreadMessages: true },
@@ -860,7 +864,7 @@ describe('ConversationsController', () => {
 
       mockConversationsService.hasUnreadMessages.mockResolvedValue({ hasUnreadMessages: false });
 
-      const result = await controller.hasUnreadMessages(mockRequest);
+      const result = await controller.hasUnreadMessages(mockRequest.user.uid);
 
       expect(result).toEqual({
         data: { hasUnreadMessages: false },

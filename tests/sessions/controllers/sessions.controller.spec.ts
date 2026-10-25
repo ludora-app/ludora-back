@@ -113,7 +113,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.create.mockResolvedValue(createdSession);
 
-      const result = await controller.create(createSessionDto, mockRequest, mockFiles);
+      const result = await controller.create(createSessionDto, mockRequest.user.uid, mockFiles);
 
       expect(result).toEqual({
         data: expect.objectContaining({
@@ -138,7 +138,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.create.mockResolvedValue(createdSession);
 
-      await controller.create(createSessionDto, mockRequest, filesWithImages);
+      await controller.create(createSessionDto, mockRequest.user.uid, filesWithImages);
 
       expect(service.create).toHaveBeenCalledWith({
         ...createSessionWithUserDto,
@@ -150,9 +150,9 @@ describe('SessionsController', () => {
       const errorMessage = 'Field not found';
       mockSessionsService.create.mockRejectedValue(new BadRequestException(errorMessage));
 
-      await expect(controller.create(createSessionDto, mockRequest, mockFiles)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.create(createSessionDto, mockRequest.user.uid, mockFiles),
+      ).rejects.toThrow(BadRequestException);
       expect(service.create).toHaveBeenCalledWith({ ...createSessionWithUserDto, images: [] });
     });
   });
@@ -194,7 +194,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.findAll.mockResolvedValue(sessionsData);
 
-      const result = await controller.findAll(mockRequest, sessionFilterDto);
+      const result = await controller.findAll(mockRequest.user.uid, sessionFilterDto);
 
       expect(result).toEqual({
         data: {
@@ -233,7 +233,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.findAll.mockResolvedValue(paginatedData);
 
-      const result = await controller.findAll(mockRequest, paginatedFilter);
+      const result = await controller.findAll(mockRequest.user.uid, paginatedFilter);
 
       expect(result).toEqual({
         data: {
@@ -274,7 +274,7 @@ describe('SessionsController', () => {
 
       mockSessionsService.findOne.mockResolvedValue(sessionData);
 
-      const result = await controller.findOne(sessionUid, mockRequest);
+      const result = await controller.findOne(sessionUid, mockRequest.user.uid);
 
       expect(result).toEqual({
         data: sessionData,
@@ -286,7 +286,7 @@ describe('SessionsController', () => {
     it('should throw NotFoundException when session not found', async () => {
       mockSessionsService.findOne.mockRejectedValue(new NotFoundException('Session not found'));
 
-      await expect(controller.findOne('non-existent-uid', mockRequest)).rejects.toThrow(
+      await expect(controller.findOne('non-existent-uid', mockRequest.user.uid)).rejects.toThrow(
         NotFoundException,
       );
       expect(service.findOne).toHaveBeenCalledWith('non-existent-uid', 'user-uid-1');
@@ -324,7 +324,7 @@ describe('SessionsController', () => {
 
       const result = await controller.findOneWithDistance(
         sessionUid,
-        mockRequest,
+        mockRequest.user.uid,
         latitude,
         longitude,
       );
@@ -347,7 +347,12 @@ describe('SessionsController', () => {
       );
 
       await expect(
-        controller.findOneWithDistance('non-existent-uid', mockRequest, latitude, longitude),
+        controller.findOneWithDistance(
+          'non-existent-uid',
+          mockRequest.user.uid,
+          latitude,
+          longitude,
+        ),
       ).rejects.toThrow(NotFoundException);
       expect(mockSessionsService.findOneWithDistance).toHaveBeenCalledWith(
         'non-existent-uid',
@@ -770,7 +775,7 @@ describe('SessionsController', () => {
       const mockStats = { organizedCount: 5, participatedCount: 10 };
       (service.getUserSessionStats as jest.Mock).mockResolvedValue(mockStats);
 
-      const result = await controller.getMyStats(mockRequest);
+      const result = await controller.getMyStats(mockRequest.user.uid);
 
       expect(service.getUserSessionStats).toHaveBeenCalledWith('user-uid-1');
       expect(result).toEqual({

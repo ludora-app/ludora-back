@@ -166,7 +166,7 @@ describe('AuthB2CController', () => {
 
       mockAuthB2CService.verifyToken.mockResolvedValue(true);
 
-      const result = await controller.verifyToken(mockRequest as any);
+      const result = await controller.verifyToken(mockRequest.user.uid);
 
       expect(result).toEqual({
         data: { isValid: true },
@@ -184,7 +184,7 @@ describe('AuthB2CController', () => {
 
       mockAuthB2CService.verifyEmailLink.mockResolvedValue(undefined);
 
-      const result = await controller.verifyEmailCode(mockRequest as any);
+      const result = await controller.verifyEmailCode((mockRequest as any).user);
 
       expect(result).toBeUndefined();
       expect(mockAuthB2CService.verifyEmailLink).toHaveBeenCalledWith({ uid: '1' });
@@ -200,7 +200,7 @@ describe('AuthB2CController', () => {
 
       mockAuthB2CService.resendVerificationCode.mockResolvedValue(undefined);
 
-      const result = await controller.resendVerificationCode(mockRequest as any);
+      const result = await controller.resendVerificationCode(mockRequest.user);
 
       expect(result).toEqual({
         message: 'Verification code resent successfully',
@@ -236,7 +236,7 @@ describe('AuthB2CController', () => {
 
       mockAuthB2CService.logout.mockResolvedValue(undefined);
 
-      const result = await controller.logout(mockRequest as any);
+      const result = await controller.logout(mockRequest.user.uid);
 
       expect(result).toEqual({
         message: 'Logged out successfully',
@@ -253,7 +253,7 @@ describe('AuthB2CController', () => {
 
       mockAuthB2CService.logoutAllDevices.mockResolvedValue(undefined);
 
-      const result = await controller.logoutAllDevices(mockRequest as any);
+      const result = await controller.logoutAllDevices(mockRequest.user.uid);
 
       expect(result).toEqual({
         message: 'Logged out from all devices successfully',
@@ -394,7 +394,7 @@ describe('AuthB2CController', () => {
         refreshToken: 'new_refresh_token',
       });
 
-      const result = await controller.passwordReset(dto, mockRequest as any);
+      const result = await controller.passwordReset(dto, mockRequest.user.uid);
 
       expect(result).toEqual({
         data: {
@@ -419,7 +419,7 @@ describe('AuthB2CController', () => {
 
       mockAuthB2CService.resetForgottenPassword.mockRejectedValue(new Error('User not found'));
 
-      await expect(controller.passwordReset(dto, mockRequest as any)).rejects.toThrow(
+      await expect(controller.passwordReset(dto, mockRequest.user.uid)).rejects.toThrow(
         'User not found',
       );
       expect(mockAuthB2CService.resetForgottenPassword).toHaveBeenCalledWith(
@@ -438,7 +438,7 @@ describe('AuthB2CController', () => {
 
       mockAuthB2CService.resetForgottenPassword.mockRejectedValue(new Error('Transaction failed'));
 
-      await expect(controller.passwordReset(dto, mockRequest as any)).rejects.toThrow(
+      await expect(controller.passwordReset(dto, mockRequest.user.uid)).rejects.toThrow(
         'Transaction failed',
       );
       expect(mockAuthB2CService.resetForgottenPassword).toHaveBeenCalledWith(
@@ -461,7 +461,7 @@ describe('AuthB2CController', () => {
 
       mockAuthB2CService.resetForgottenPassword.mockResolvedValue(expectedTokens);
 
-      const result = await controller.passwordReset(dto, mockRequest as any);
+      const result = await controller.passwordReset(dto, mockRequest.user.uid);
 
       expect(result.data.accessToken).toBe('jwt_access_token_xyz');
       expect(result.data.refreshToken).toBe('jwt_refresh_token_abc');

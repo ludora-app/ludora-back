@@ -87,7 +87,12 @@ describe('FieldsController', () => {
       mockFieldsService.create.mockResolvedValue(mockResponse);
 
       const mockRequest = { user: { uid: 'user-uid-1', email: 'test@example.com' } };
-      const result = await controller.create(createFieldDto, mockImages, mockRequest as any);
+      const result = await controller.create(
+        createFieldDto,
+        mockImages,
+        mockRequest.user.uid,
+        mockRequest.user.email,
+      );
 
       expect(result).toEqual({
         data: mockResponse,
@@ -123,7 +128,12 @@ describe('FieldsController', () => {
       mockFieldsService.create.mockResolvedValue(mockResponse);
 
       const mockRequest = { user: { uid: 'user-uid-1', email: 'test@example.com' } };
-      const result = await controller.create(createFieldDto, undefined as any, mockRequest as any);
+      const result = await controller.create(
+        createFieldDto,
+        undefined as any,
+        mockRequest.user.uid,
+        mockRequest.user.email,
+      );
 
       expect(result).toEqual({
         data: mockResponse,
@@ -153,7 +163,12 @@ describe('FieldsController', () => {
       mockFieldsService.create.mockResolvedValue(mockResponse);
 
       const mockRequest = { user: { uid: 'user-uid-1', email: 'test@example.com' } };
-      const result = await controller.create(createFieldDto, [], mockRequest as any);
+      const result = await controller.create(
+        createFieldDto,
+        [],
+        mockRequest.user.uid,
+        mockRequest.user.email,
+      );
 
       expect(result).toEqual({
         data: mockResponse,
@@ -183,7 +198,12 @@ describe('FieldsController', () => {
       mockFieldsService.create.mockResolvedValue(mockResponse);
 
       const mockRequest = { user: { uid: 'user-uid-1', email: 'test@example.com' } };
-      const result = await controller.create(createFieldDto, {} as any, mockRequest as any);
+      const result = await controller.create(
+        createFieldDto,
+        {} as any,
+        mockRequest.user.uid,
+        mockRequest.user.email,
+      );
 
       expect(result).toEqual({
         data: mockResponse,

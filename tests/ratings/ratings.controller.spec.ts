@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { FastifyRequest } from 'fastify';
 import { Sessions } from 'generated/prisma/browser';
 import { CreateRatingDto } from 'src/ratings/dto/input/create-rating.dto';
 import { RatingsController } from 'src/ratings/ratings.controller';
@@ -41,12 +40,12 @@ describe('RatingsController', () => {
         { sport: Sport.FOOTBALL, rating: 5, targetUserUid: 'user-2' } as any,
       ];
       const mockSession = { uid: 'session-1' } as Sessions;
-      const mockReq = { user: { uid: 'evaluator-1' } } as unknown as FastifyRequest;
+      const mockReq = { user: { uid: 'evaluator-1' } };
       const expectedResult = [{ uid: 'rating-1' }];
 
       jest.spyOn(service, 'createMany').mockResolvedValue(expectedResult as any);
 
-      const result = await controller.createMany(mockRatings, mockSession, mockReq);
+      const result = await controller.createMany(mockRatings, mockSession, mockReq.user.uid);
 
       expect(service.createMany).toHaveBeenCalledWith(mockRatings, 'evaluator-1', mockSession);
       expect(result).toEqual(expectedResult);

@@ -9,7 +9,6 @@ import {
   Patch,
   Post,
   Query,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -23,6 +22,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
@@ -61,8 +61,10 @@ export class FriendsController {
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @ApiConflictResponse({ type: ConflictResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async create(@Body() createFriendDto: CreateFriendDto, @Req() req: Request): Promise<void> {
-    const senderUid = req['user'].uid;
+  async create(
+    @Body() createFriendDto: CreateFriendDto,
+    @CurrentUser('uid') senderUid: string,
+  ): Promise<void> {
     await this.friendsService.create(senderUid, createFriendDto.receiverUid);
     return;
   }
@@ -76,9 +78,8 @@ export class FriendsController {
   @HttpCode(HttpStatus.OK)
   async findAllMyFriends(
     @Query() filters: FriendFilterDto,
-    @Req() req: Request,
+    @CurrentUser('uid') userUid: string,
   ): Promise<PaginationResponseTypeDto<FriendResponseData>> {
-    const userUid = req['user'].uid;
     const friends = await this.friendsService.findAllMyFriends(filters, userUid);
     return {
       data: friends,
@@ -95,9 +96,8 @@ export class FriendsController {
   @HttpCode(HttpStatus.OK)
   async findAllMyRequests(
     @Query() filters: UserFilterDto,
-    @Req() req: Request,
+    @CurrentUser('uid') userUid: string,
   ): Promise<PaginationResponseTypeDto<FriendRequestResponseData>> {
-    const userUid = req['user'].uid;
     const friends = await this.friendsService.findAllMyRequests(filters, userUid);
     return {
       data: friends,
@@ -115,9 +115,8 @@ export class FriendsController {
   @HttpCode(HttpStatus.OK)
   async findMyFriendRequest(
     @Param('otherUserUid') otherUserUid: string,
-    @Req() req: Request,
+    @CurrentUser('uid') connectedUserUid: string,
   ): Promise<ResponseTypeDto<FriendResponseData>> {
-    const connectedUserUid = req['user'].uid;
     const friendRequest = await this.friendsService.findOne(connectedUserUid, otherUserUid);
 
     return {
@@ -137,9 +136,8 @@ export class FriendsController {
   update(
     @Param('userUid') userUid: string,
     @Body() updateFriendDto: UpdateFriendDto,
-    @Req() req: Request,
+    @CurrentUser('uid') connectedUserUid: string,
   ): Promise<void> {
-    const connectedUserUid = req['user'].uid;
     return this.friendsService.update(connectedUserUid, userUid, updateFriendDto.status);
   }
 
@@ -151,8 +149,10 @@ export class FriendsController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('otherUserUid') otherUserUid: string, @Req() req: Request): Promise<void> {
-    const connectedUserUid = req['user'].uid;
+  remove(
+    @Param('otherUserUid') otherUserUid: string,
+    @CurrentUser('uid') connectedUserUid: string,
+  ): Promise<void> {
     return this.friendsService.remove(connectedUserUid, otherUserUid);
   }
 }

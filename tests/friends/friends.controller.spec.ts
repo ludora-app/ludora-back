@@ -83,7 +83,7 @@ describe('FriendsController', () => {
       };
       friendsService.create.mockResolvedValue(undefined);
 
-      const result = await controller.create(createFriendDto, mockRequest);
+      const result = await controller.create(createFriendDto, mockRequest.user.uid);
 
       expect(result).toBeUndefined();
       expect(friendsService.create).toHaveBeenCalledWith('user-123', 'user-456');
@@ -95,7 +95,7 @@ describe('FriendsController', () => {
       };
       friendsService.create.mockResolvedValue(undefined);
 
-      await controller.create(createFriendDto, mockRequest);
+      await controller.create(createFriendDto, mockRequest.user.uid);
 
       expect(friendsService.create).toHaveBeenCalledWith('user-123', 'user-789');
     });
@@ -110,7 +110,7 @@ describe('FriendsController', () => {
       };
       friendsService.findAllMyFriends.mockResolvedValue(mockPaginatedResponse);
 
-      const result = await controller.findAllMyFriends(filters, mockRequest);
+      const result = await controller.findAllMyFriends(filters, mockRequest.user.uid);
 
       expect(result).toEqual({
         data: mockPaginatedResponse,
@@ -127,7 +127,7 @@ describe('FriendsController', () => {
       };
       friendsService.findAllMyFriends.mockResolvedValue(mockPaginatedResponse);
 
-      await controller.findAllMyFriends(filters, mockRequest);
+      await controller.findAllMyFriends(filters, mockRequest.user.uid);
 
       expect(friendsService.findAllMyFriends).toHaveBeenCalledWith(filters, 'user-123');
     });
@@ -145,7 +145,7 @@ describe('FriendsController', () => {
       };
       friendsService.findAllMyFriends.mockResolvedValue(emptyResponse);
 
-      const result = await controller.findAllMyFriends(filters, mockRequest);
+      const result = await controller.findAllMyFriends(filters, mockRequest.user.uid);
 
       expect(result).toEqual({
         data: emptyResponse,
@@ -177,7 +177,7 @@ describe('FriendsController', () => {
       };
       friendsService.findAllMyRequests.mockResolvedValue(mockRequestsPaginatedResponse);
 
-      const result = await controller.findAllMyRequests(filters, mockRequest);
+      const result = await controller.findAllMyRequests(filters, mockRequest.user.uid);
 
       expect(result).toEqual({
         data: mockRequestsPaginatedResponse,
@@ -194,7 +194,7 @@ describe('FriendsController', () => {
       };
       friendsService.findAllMyRequests.mockResolvedValue(mockRequestsPaginatedResponse);
 
-      await controller.findAllMyRequests(filters, mockRequest);
+      await controller.findAllMyRequests(filters, mockRequest.user.uid);
 
       expect(friendsService.findAllMyRequests).toHaveBeenCalledWith(filters, 'user-123');
     });
@@ -212,7 +212,7 @@ describe('FriendsController', () => {
       };
       friendsService.findAllMyRequests.mockResolvedValue(emptyResponse);
 
-      const result = await controller.findAllMyRequests(filters, mockRequest);
+      const result = await controller.findAllMyRequests(filters, mockRequest.user.uid);
 
       expect(result).toEqual({
         data: emptyResponse,
@@ -234,7 +234,7 @@ describe('FriendsController', () => {
       };
       friendsService.findAllMyRequests.mockResolvedValue(mockRequestsPaginatedResponse);
 
-      await controller.findAllMyRequests(filters, customRequest);
+      await controller.findAllMyRequests(filters, customRequest.user.uid);
 
       expect(friendsService.findAllMyRequests).toHaveBeenCalledWith(filters, 'custom-user-456');
     });
@@ -252,7 +252,7 @@ describe('FriendsController', () => {
       };
       friendsService.findAllMyRequests.mockResolvedValue(paginatedResponse);
 
-      const result = await controller.findAllMyRequests(filters, mockRequest);
+      const result = await controller.findAllMyRequests(filters, mockRequest.user.uid);
 
       expect(result.data.nextCursor).toBe('user-790');
       expect(result.data.totalCount).toBe(5);
@@ -264,7 +264,7 @@ describe('FriendsController', () => {
     it('should return a friend request successfully', async () => {
       friendsService.findOne.mockResolvedValue(mockFriendResponseDto);
 
-      const result = await controller.findMyFriendRequest('user-456', mockRequest);
+      const result = await controller.findMyFriendRequest('user-456', mockRequest.user.uid);
 
       expect(result).toEqual({
         data: mockFriendResponseDto,
@@ -276,7 +276,7 @@ describe('FriendsController', () => {
     it('should pass correct user UIDs to the service', async () => {
       friendsService.findOne.mockResolvedValue(mockFriendResponseDto);
 
-      await controller.findMyFriendRequest('user-789', mockRequest);
+      await controller.findMyFriendRequest('user-789', mockRequest.user.uid);
 
       expect(friendsService.findOne).toHaveBeenCalledWith('user-123', 'user-789');
     });
@@ -289,7 +289,7 @@ describe('FriendsController', () => {
       };
       friendsService.update.mockResolvedValue(undefined);
 
-      const result = await controller.update('user-456', updateFriendDto, mockRequest);
+      const result = await controller.update('user-456', updateFriendDto, mockRequest.user.uid);
 
       expect(result).toBeUndefined();
       expect(friendsService.update).toHaveBeenCalledWith(
@@ -305,7 +305,7 @@ describe('FriendsController', () => {
       };
       friendsService.update.mockResolvedValue(undefined);
 
-      await controller.update('user-456', updateFriendDto, mockRequest);
+      await controller.update('user-456', updateFriendDto, mockRequest.user.uid);
 
       expect(friendsService.update).toHaveBeenCalledWith(
         'user-123',
@@ -320,7 +320,7 @@ describe('FriendsController', () => {
       };
       friendsService.update.mockResolvedValue(undefined);
 
-      await controller.update('user-456', updateFriendDto, mockRequest);
+      await controller.update('user-456', updateFriendDto, mockRequest.user.uid);
 
       expect(friendsService.update).toHaveBeenCalledWith(
         'user-123',
@@ -335,7 +335,7 @@ describe('FriendsController', () => {
       };
       friendsService.update.mockResolvedValue(undefined);
 
-      await controller.update('user-789', updateFriendDto, mockRequest);
+      await controller.update('user-789', updateFriendDto, mockRequest.user.uid);
 
       expect(friendsService.update).toHaveBeenCalledWith(
         'user-123',
@@ -349,7 +349,7 @@ describe('FriendsController', () => {
     it('should remove a friend successfully', async () => {
       friendsService.remove.mockResolvedValue(undefined);
 
-      const result = await controller.remove('user-456', mockRequest);
+      const result = await controller.remove('user-456', mockRequest.user.uid);
 
       expect(result).toBeUndefined();
       expect(friendsService.remove).toHaveBeenCalledWith('user-123', 'user-456');
@@ -358,7 +358,7 @@ describe('FriendsController', () => {
     it('should pass correct user UIDs to the service', async () => {
       friendsService.remove.mockResolvedValue(undefined);
 
-      await controller.remove('user-789', mockRequest);
+      await controller.remove('user-789', mockRequest.user.uid);
 
       expect(friendsService.remove).toHaveBeenCalledWith('user-123', 'user-789');
     });
@@ -377,7 +377,7 @@ describe('FriendsController', () => {
       };
       friendsService.create.mockResolvedValue(undefined);
 
-      await controller.create(createFriendDto, customRequest);
+      await controller.create(createFriendDto, customRequest.user.uid);
 
       expect(friendsService.create).toHaveBeenCalledWith('custom-user-123', 'user-456');
     });

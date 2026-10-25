@@ -1,4 +1,4 @@
-import { Controller, Get, NotFoundException, Param, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, NotFoundException, Param, UseGuards } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
@@ -8,9 +8,9 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { FastifyRequest } from 'fastify';
 import { Sessions } from 'generated/prisma/browser';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
@@ -42,9 +42,8 @@ export class SessionTeamsController {
   @ApiParam({ name: 'sessionUid', type: 'string' })
   async findTeamsBySessionUid(
     @Param('sessionUid', SessionsPipe) session: Sessions,
-    @Req() request: FastifyRequest,
+    @CurrentUser('uid') userUid: string,
   ): Promise<PaginationResponseTypeDto<SessionTeamResponseData>> {
-    const userUid = request['user'].uid;
     const teams = await this.teamsService.findTeamsBySessionUid(session.uid, userUid);
 
     if (teams.items.length === 0) {

@@ -1,9 +1,9 @@
-import { Body, Controller, Param, Post, Req } from '@nestjs/common';
+import { Body, Controller, Param, Post } from '@nestjs/common';
 import { ApiBody, ApiExtraModels, ApiParam, getSchemaPath } from '@nestjs/swagger';
-import { FastifyRequest } from 'fastify';
 import { Sessions } from 'generated/prisma/browser';
 import { SessionsPipe } from 'src/sessions/pipes/sessions.pipe';
 import { Sport } from 'src/shared/constants/constants';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import {
   CreateBadmintonRatingDto,
   CreateBasketRatingDto,
@@ -59,9 +59,8 @@ export class RatingsController {
   createMany(
     @Body() ratings: CreateRatingDto[],
     @Param('sessionUid', SessionsPipe) session: Sessions,
-    @Req() req: FastifyRequest,
+    @CurrentUser('uid') evaluatorUid: string,
   ) {
-    const evaluatorUid = req['user'].uid;
     return this.ratingsService.createMany(ratings, evaluatorUid, session);
   }
 }

@@ -105,16 +105,14 @@ describe('UsersController', () => {
     it('should return an array of users', async () => {
       const filters: UserFilterDto = { limit: 10 };
       const userUid = 'current-user-uid';
-      const mockRequest = { user: { uid: userUid } } as unknown as Parameters<
-        UsersController['findAll']
-      >[0];
+      const mockRequest = { user: { uid: userUid } };
       mockUsersService.findAll.mockResolvedValue({
         items: [mockUser],
         nextCursor: null,
         totalCount: 1,
       });
 
-      const result = await controller.findAll(mockRequest, filters);
+      const result = await controller.findAll(mockRequest.user.uid, filters);
 
       expect(result).toEqual({
         data: { items: [mockUser], nextCursor: null, totalCount: 1 },
@@ -126,12 +124,10 @@ describe('UsersController', () => {
 
   describe('findOne', () => {
     it('should return a single user by uid with searcherUid from request', async () => {
-      const mockRequest = { user: { uid: 'searcher-uid' } } as unknown as Parameters<
-        UsersController['findOne']
-      >[1];
+      const mockRequest = { user: { uid: 'searcher-uid' } };
       mockUserLookupService.findOne.mockResolvedValue(mockUser);
 
-      const result = await controller.findOne('1', mockRequest);
+      const result = await controller.findOne('1', mockRequest.user.uid);
 
       expect(result).toEqual({
         data: {
@@ -151,12 +147,10 @@ describe('UsersController', () => {
     });
 
     it('should throw NotFoundException when user is not found', async () => {
-      const mockRequest = { user: { uid: 'searcher-uid' } } as unknown as Parameters<
-        UsersController['findOne']
-      >[1];
+      const mockRequest = { user: { uid: 'searcher-uid' } };
       mockUserLookupService.findOne.mockResolvedValue(null);
 
-      await expect(controller.findOne('unknown-uid', mockRequest)).rejects.toThrow(
+      await expect(controller.findOne('unknown-uid', mockRequest.user.uid)).rejects.toThrow(
         NotFoundException,
       );
       expect(lookupService.findOne).toHaveBeenCalledWith(
@@ -167,12 +161,10 @@ describe('UsersController', () => {
     });
 
     it('should throw NotFoundException when a block exists between searcher and target', async () => {
-      const mockRequest = { user: { uid: 'searcher-uid' } } as unknown as Parameters<
-        UsersController['findOne']
-      >[1];
+      const mockRequest = { user: { uid: 'searcher-uid' } };
       mockUserLookupService.findOne.mockResolvedValue(null);
 
-      await expect(controller.findOne('blocked-uid', mockRequest)).rejects.toThrow(
+      await expect(controller.findOne('blocked-uid', mockRequest.user.uid)).rejects.toThrow(
         NotFoundException,
       );
       expect(lookupService.findOne).toHaveBeenCalledWith(
@@ -184,10 +176,10 @@ describe('UsersController', () => {
 
     it('should return user with undefined searcherUid when called without auth token (public access)', async () => {
       // request.user exists but has no uid (e.g. optional auth guard leaves user empty)
-      const mockRequest = { user: {} } as unknown as Parameters<UsersController['findOne']>[1];
+      const mockRequest: { user: { uid?: string } } = { user: {} };
       mockUserLookupService.findOne.mockResolvedValue(mockUser);
 
-      const result = await controller.findOne('1', mockRequest);
+      const result = await controller.findOne('1', mockRequest.user.uid);
 
       expect(result).toBeDefined();
       expect(lookupService.findOne).toHaveBeenCalledWith('1', USERSELECT.findOne, undefined);
@@ -202,7 +194,7 @@ describe('UsersController', () => {
 
       mockUserLookupService.findOne.mockResolvedValue(mockUserFindMe);
 
-      const result = await controller.findMe(mockRequest as any);
+      const result = await controller.findMe(mockRequest.user.uid);
 
       expect(result.data).toBeDefined();
       expect(result.data.uid).toBe('1');
@@ -237,7 +229,7 @@ describe('UsersController', () => {
       };
       mockUsersService.update.mockResolvedValue(undefined);
 
-      const result = await controller.update(mockRequest as any, updateDto);
+      const result = await controller.update(mockRequest.user.uid, updateDto);
 
       expect(result).toBeUndefined();
       expect(service.update).toHaveBeenCalledWith('1', updateDto, undefined);
@@ -253,7 +245,7 @@ describe('UsersController', () => {
       const mockFiles = [{ buffer: Buffer.from('image1'), originalname: 'profile.jpg' }];
       mockUsersService.update.mockResolvedValue(undefined);
 
-      const result = await controller.update(mockRequest as any, updateDto, mockFiles);
+      const result = await controller.update(mockRequest.user.uid, updateDto, mockFiles);
 
       expect(result).toBeUndefined();
       expect(service.update).toHaveBeenCalledWith('1', updateDto, {
@@ -276,7 +268,7 @@ describe('UsersController', () => {
         message: 'User password updated successfully',
       });
 
-      const result = await controller.updatePassword(mockRequest as any, updatePasswordDto);
+      const result = await controller.updatePassword(mockRequest.user.uid, updatePasswordDto);
 
       expect(result).toEqual({
         message: 'User password updated successfully',
@@ -295,7 +287,7 @@ describe('UsersController', () => {
       };
       mockUsersService.updateEmail.mockResolvedValue(undefined);
 
-      const result = await controller.updateEmail(mockRequest as any, updateEmailDto);
+      const result = await controller.updateEmail(mockRequest.user.uid, updateEmailDto);
 
       expect(result).toBeUndefined();
       expect(service.updateEmail).toHaveBeenCalledWith('1', 'newemail@test.com');
@@ -310,7 +302,7 @@ describe('UsersController', () => {
       };
       mockUsersService.updateEmail.mockRejectedValue(new Error('Email update failed'));
 
-      await expect(controller.updateEmail(mockRequest as any, updateEmailDto)).rejects.toThrow(
+      await expect(controller.updateEmail(mockRequest.user.uid, updateEmailDto)).rejects.toThrow(
         'Email update failed',
       );
       expect(service.updateEmail).toHaveBeenCalledWith('1', 'newemail@test.com');
@@ -326,7 +318,7 @@ describe('UsersController', () => {
         message: 'User 1 has been deactivated',
       });
 
-      const result = await controller.deactivate(mockRequest as any);
+      const result = await controller.deactivate(mockRequest.user.uid);
 
       expect(result).toEqual({
         message: 'User 1 has been deactivated',
@@ -340,7 +332,7 @@ describe('UsersController', () => {
       const mockRequest = { user: { uid: 'user-123' } };
       mockUsersService.deletionRequest.mockResolvedValue(undefined);
 
-      const result = await controller.deletionRequest(mockRequest as any);
+      const result = await controller.deletionRequest(mockRequest.user.uid);
 
       expect(result).toBeUndefined();
       expect(service.deletionRequest).toHaveBeenCalledWith('user-123');
@@ -352,7 +344,7 @@ describe('UsersController', () => {
         new Error('User already has a deletion request'),
       );
 
-      await expect(controller.deletionRequest(mockRequest as any)).rejects.toThrow(
+      await expect(controller.deletionRequest(mockRequest.user.uid)).rejects.toThrow(
         'User already has a deletion request',
       );
       expect(service.deletionRequest).toHaveBeenCalledWith('user-123');
@@ -364,7 +356,7 @@ describe('UsersController', () => {
       const mockRequest = { user: { uid: 'user-123' } };
       mockUsersService.cancelDeletionRequest.mockResolvedValue(undefined);
 
-      const result = await controller.cancelDeletionRequest(mockRequest as any);
+      const result = await controller.cancelDeletionRequest(mockRequest.user.uid);
 
       expect(result).toBeUndefined();
       expect(service.cancelDeletionRequest).toHaveBeenCalledWith('user-123');
@@ -376,7 +368,7 @@ describe('UsersController', () => {
         new Error('User does not have a deletion request'),
       );
 
-      await expect(controller.cancelDeletionRequest(mockRequest as any)).rejects.toThrow(
+      await expect(controller.cancelDeletionRequest(mockRequest.user.uid)).rejects.toThrow(
         'User does not have a deletion request',
       );
       expect(service.cancelDeletionRequest).toHaveBeenCalledWith('user-123');

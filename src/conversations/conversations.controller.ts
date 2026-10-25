@@ -12,7 +12,6 @@ import {
   Patch,
   Post,
   Query,
-  Req,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -28,7 +27,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { FastifyRequest } from 'fastify';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
@@ -93,12 +92,10 @@ export class ConversationsController {
   @ApiOperation({ summary: 'Create a message' })
   @HttpCode(HttpStatus.NO_CONTENT)
   async createMessage(
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
     @Body() dto: CreateMessageDto,
     @UploadedFilesCustom() files: { buffer: Buffer; originalname: string }[],
   ) {
-    const userUid = request['user'].uid;
-
     if (dto.recipientUid && userUid === dto.recipientUid) {
       throw new BadRequestException('You cannot send a message to yourself');
     }
@@ -116,9 +113,8 @@ export class ConversationsController {
   @HttpCode(HttpStatus.OK)
   async findAllByUserUid(
     @Query() filters: ConversationFilterDto,
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
   ): Promise<PaginationResponseTypeDto<ConversationCollectionResponseData>> {
-    const userUid = request['user'].uid;
     const conversations = await this.conversationsService.findAllByUserUid(filters, userUid);
     return {
       data: conversations,
@@ -135,8 +131,7 @@ export class ConversationsController {
   })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
-  async hasUnreadMessages(@Req() request: Request): Promise<UnreadMessagesResponseDto> {
-    const userUid = request['user'].uid;
+  async hasUnreadMessages(@CurrentUser('uid') userUid: string): Promise<UnreadMessagesResponseDto> {
     const data = await this.conversationsService.hasUnreadMessages(userUid);
 
     return {
@@ -157,9 +152,8 @@ export class ConversationsController {
   @HttpCode(HttpStatus.OK)
   async findOne(
     @Param('uid') uid: string,
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
   ): Promise<ResponseTypeDto<FindOneConversationResponseData>> {
-    const userUid = request['user'].uid;
     const conversation = await this.conversationsService.findOne(uid, userUid);
 
     return {
@@ -178,9 +172,8 @@ export class ConversationsController {
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   async findByUserUids(
     @Param('userUid') userUid: string,
-    @Req() request: Request,
+    @CurrentUser('uid') connectedUserUid: string,
   ): Promise<ResponseTypeDto<{ conversationUid: string }>> {
-    const connectedUserUid = request['user'].uid;
     if (connectedUserUid === userUid) {
       throw new BadRequestException('Connected user uid and other user uid cannot be the same');
     }
@@ -214,11 +207,10 @@ export class ConversationsController {
   @HttpCode(HttpStatus.OK)
   async loadMoreMessages(
     @Param('uid') uid: string,
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
     @Query('cursor') cursor?: string,
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit?: number,
   ): Promise<PaginationResponseTypeDto<MessageCollectionItemDto>> {
-    const userUid = request['user'].uid;
     const messages = await this.conversationsService.loadMoreMessages(uid, userUid, cursor, limit);
     return {
       data: messages,
@@ -256,10 +248,9 @@ export class ConversationsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   updateMuteSettings(
     @Param('uid') conversationUid: string,
-    @Req() request: FastifyRequest,
+    @CurrentUser('uid') userUid: string,
     @Body() settings: MutedConversationSettingsDto,
   ) {
-    const userUid = request['user'].uid;
     return this.membersService.updateMuteSettings(conversationUid, userUid, settings);
   }
 
@@ -275,10 +266,9 @@ export class ConversationsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   updateArchivedSettings(
     @Param('uid') conversationUid: string,
-    @Req() request: FastifyRequest,
+    @CurrentUser('uid') userUid: string,
     @Body() settings: ArchivedConversationSettingsDto,
   ) {
-    const userUid = request['user'].uid;
     return this.membersService.updateArchivedSettings(conversationUid, userUid, settings);
   }
 
@@ -295,8 +285,7 @@ export class ConversationsController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiForbiddenResponse({ type: ForbiddenResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('uid') conversationUid: string, @Req() request: FastifyRequest) {
-    const userUid = request['user'].uid;
+  remove(@Param('uid') conversationUid: string, @CurrentUser('uid') userUid: string) {
     return this.membersService.updateDisplayMessagesAfterDeletion(conversationUid, userUid);
   }
 
@@ -312,9 +301,8 @@ export class ConversationsController {
   async deleteMessage(
     @Param('uid') _conversationUid: string,
     @Param('messageUid') messageUid: string,
-    @Req() request: FastifyRequest,
+    @CurrentUser('uid') userUid: string,
   ) {
-    const userUid = request['user'].uid;
     return this.messagesService.delete(messageUid, userUid);
   }
 }
