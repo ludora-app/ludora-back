@@ -1,0 +1,40 @@
+# Fix Prisma TS2742 with pnpm + custom client output
+# See: https://github.com/prisma/prisma/issues/28581
+publicHoistPattern:
+  - '@prisma/client-runtime-utils'
+  - '@prisma/client'
+
+allowBuilds:
+  '@firebase/util': true
+  '@nestjs/core': true
+  '@prisma/engines': true
+  '@scarf/scarf': true
+  argon2: true
+  prisma: true
+  protobufjs: true
+
+overrides:
+  fastify: '>=5.8.4'
+  brace-expansion: '>=5.0.5'
+  minimatch: '>=10.2.5'
+  'ajv@>=7.0.0-alpha.0 <8.18.0': '>=8.18.0'
+  fast-xml-parser: '>=5.5.6'
+  'hono@<4.9.7': '>=4.9.7'
+  'hono@<4.10.3': '>=4.10.3'
+  'hono@<4.11.4': '>=4.11.4'
+  'hono@<4.11.7': '>=4.11.7'
+  'hono@<4.11.10': '>=4.11.10'
+  'hono@>=1.1.0 <4.10.2': '>=4.10.2'
+  lodash: '>=4.18.0'
+  nodemailer: '>=8.0.5'
+  qs: '>=6.14.2'
+  'valibot@>=0.31.0 <1.2.0': '>=1.2.0'
+  handlebars: '>=4.7.9'
+  multer: '>=2.1.1'
+  socket.io-parser: '>=4.2.6'
+  picomatch: '>=4.0.4'
+  path-to-regexp: '>=8.4.0'
+  node-forge: '>=1.4.0'
+  yaml: '>=2.8.3'
+  '@hono/node-server': '>=1.19.13'
+  '@tootallnate/once': '>=3.0.1'

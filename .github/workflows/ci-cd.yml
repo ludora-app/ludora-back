@@ -30,7 +30,7 @@ jobs:
   #   runs-on: ubuntu-latest
   #   if: github.event_name == 'pull_request'
   #   container:
-  #     image: node:22.13.1-slim
+  #     image: node:24.22.1-slim
   #   steps:
   #     - uses: actions/checkout@v4
   #     - name: Install pnpm
@@ -40,7 +40,7 @@ jobs:
   #     - name: Setup Node.js
   #       uses: actions/setup-node@v4
   #       with:
-  #         node-version: 22.13.1
+  #         node-version-file: .nvmrc
   #         cache: pnpm
   #     - run: pnpm install --no-frozen-lockfile
   #     - run: pnpm format
@@ -57,7 +57,7 @@ jobs:
   #   needs: format
   #   if: github.event_name == 'pull_request'
   #   container:
-  #     image: node:22.13.1-slim
+  #     image: node:24.22.1-slim
   #   services:
   #     postgres:
   #       image: postgres:17
@@ -82,7 +82,7 @@ jobs:
   #     - name: Setup Node.js
   #       uses: actions/setup-node@v4
   #       with:
-  #         node-version: 22.13.1
+  #         node-version-file: .nvmrc
   #         cache: pnpm
   #     - run: pnpm install --no-frozen-lockfile
   #     - run: pnpm prisma generate
@@ -113,7 +113,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     container:
-      image: node:22.13.1-slim
+      image: node:24.22.1-slim
 
     env:
       SWAGGER_ONLY: 'true'
@@ -139,13 +139,11 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10.4.1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22.13.1
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install dependencies
@@ -199,7 +197,7 @@ jobs:
     # Sur un push, test était skippé → build skippé → release skippée.
     # Le pipeline entier ne faisait rien sur push. Suppression du needs.
     container:
-      image: node:22.13.1-slim
+      image: node:24.22.1-slim
 
     steps:
       - name: Checkout code
@@ -209,13 +207,11 @@ jobs:
       # Plus fiable que corepack dans les containers slim (pas de vérification de signature).
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10.4.1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22.13.1
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install dependencies
@@ -313,14 +309,12 @@ jobs:
       - name: Install pnpm
         if: steps.check.outputs.should_release == 'true'
         uses: pnpm/action-setup@v4
-        with:
-          version: 10.4.1
 
       - name: Setup Node.js
         if: steps.check.outputs.should_release == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: 22.13.1
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install dependencies
@@ -362,7 +356,7 @@ jobs:
   #     url: ${{ github.ref == 'refs/heads/main' && vars.PROD_URL || vars.DEV_URL }}
 
   #   container:
-  #     image: node:22.13.1-slim
+  #     image: node:24.22.1-slim
 
   #   steps:
   #     - name: Checkout code
@@ -371,7 +365,7 @@ jobs:
   #     - name: Setup Node.js
   #       uses: actions/setup-node@v3
   #       with:
-  #         node-version: 22.13.1
+  #         node-version-file: .nvmrc
 
   #     - name: Install pnpm
   #       run: npm install -g pnpm
