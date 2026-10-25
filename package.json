@@ -131,6 +131,8 @@
     "seed:dev": "node dist/prisma/seeds/local-seed.js",
     "seed:admin": "ts-node prisma/seeds/admin-seed.ts",
     "seed:admin:prod": "node dist/prisma/seeds/admin-seed.js",
+    "seed:recommended": "ts-node prisma/seeds/recommended-sessions-seed.ts",
+    "seed:recommended:clean": "ts-node prisma/seeds/recommended-sessions-seed.ts --clean",
     "start": "nest start",
     "start:debug": "nest start --debug --watch",
     "start:dev": "sh scripts/start-dev.sh",

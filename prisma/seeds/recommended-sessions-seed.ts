@@ -1,13 +1,13 @@
 /**
- * TEMPORARY seed (SCRUM-689): many upcoming sessions to test GET /sessions/recommended-list/collection.
+ * Dev seed: many upcoming sessions over the next 14 days, to test the recommendations
+ * (GET /sessions/recommended-list/collection) and the session suggestions.
  * Every session is tagged with SEED_TITLE_PREFIX, so `--clean` removes exactly what this seed created.
+ * Each run removes the previous seed sessions first. Never runs in production.
  *
  * Run (inside the local API container, with the Vault env):
  *   make local-sh
- *   pnpm exec ts-node prisma/seeds/temp-recommended-sessions-seed.ts
- *   pnpm exec ts-node prisma/seeds/temp-recommended-sessions-seed.ts --clean
- *
- * To delete before merging.
+ *   pnpm seed:recommended
+ *   pnpm seed:recommended:clean
  */
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
@@ -191,6 +191,9 @@ async function seed() {
 }
 
 async function main() {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('The recommended sessions seed must not run in production');
+  }
   const isClean = process.argv.includes('--clean');
   try {
     await clean();
