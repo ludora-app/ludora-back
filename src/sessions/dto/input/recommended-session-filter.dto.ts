@@ -1,43 +1,19 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, PickType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsNumber, IsOptional, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, Max, Min } from 'class-validator';
 import { SESSION_RECOMMENDATION_CONFIG } from 'src/sessions/constants/session.constants';
-import { BaseFilterDto } from 'src/shared/dto/input/base-filter.dto';
+import { SessionFilterDto } from './session-filter.dto';
 
 /**
  * @description DTO for the sessions recommended from the user's sport and hour preferences
  */
-export class RecommendedSessionFilterDto extends BaseFilterDto {
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @ApiProperty({
-    description: 'User latitude for location-based filtering',
-    example: 48.8566,
-    required: false,
-  })
-  userLat?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @ApiProperty({
-    description: 'User longitude for location-based filtering',
-    example: 2.3522,
-    required: false,
-  })
-  userLon?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @ApiProperty({
-    description: 'Maximum distance for location-based filtering (in km)',
-    example: 30,
-    required: false,
-  })
-  maxDistance?: number;
-
+export class RecommendedSessionFilterDto extends PickType(SessionFilterDto, [
+  'cursor',
+  'limit',
+  'maxDistance',
+  'userLat',
+  'userLon',
+]) {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -52,5 +28,9 @@ export class RecommendedSessionFilterDto extends BaseFilterDto {
 }
 
 export class FindRecommendedSessionsDto extends RecommendedSessionFilterDto {
+  @ApiProperty({
+    description: 'The uid of the user the sessions are recommended to',
+    example: 'cmajhjkjf000bq77q4b5ugn8b',
+  })
   userUid: string;
 }
