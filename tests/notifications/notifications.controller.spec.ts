@@ -58,7 +58,7 @@ describe('NotificationsController', () => {
       };
       mockNotificationsService.findAllByUserUid.mockResolvedValue(mockNotifications);
 
-      const result = await controller.findAll(mockReq as any, filters as any);
+      const result = await controller.findAll(mockReq.user.uid, filters as any);
 
       expect(mockNotificationsService.findAllByUserUid).toHaveBeenCalledWith('user-123', filters);
       expect(result).toEqual({
@@ -77,7 +77,7 @@ describe('NotificationsController', () => {
       };
       mockNotificationsService.findAllByUserUid.mockResolvedValue(mockNotifications);
 
-      const result = await controller.findAll(mockReq as any, filters as any);
+      const result = await controller.findAll(mockReq.user.uid, filters as any);
 
       expect(mockNotificationsService.findAllByUserUid).toHaveBeenCalledWith('user-456', {});
       expect(result.data).toEqual(mockNotifications);
@@ -93,7 +93,7 @@ describe('NotificationsController', () => {
         totalCount: 0,
       });
 
-      await controller.findAll(mockReq as any, filters as any);
+      await controller.findAll(mockReq.user.uid, filters as any);
 
       expect(mockNotificationsService.findAllByUserUid).toHaveBeenCalledWith('user-789', {
         type: NotificationTypeFilter.FRIEND,
@@ -108,7 +108,7 @@ describe('NotificationsController', () => {
       const mockResponse = { unreadCount: 5 };
       mockNotificationsService.getUnreadCount.mockResolvedValue(mockResponse);
 
-      const result = await controller.getUnreadCount(mockReq as any, filters as any);
+      const result = await controller.getUnreadCount(mockReq.user.uid, filters as any);
 
       expect(mockNotificationsService.getUnreadCount).toHaveBeenCalledWith('user-123', filters);
       expect(result).toEqual({

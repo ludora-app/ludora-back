@@ -8,7 +8,6 @@ import {
   Param,
   Post,
   Put,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -24,6 +23,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
@@ -67,8 +67,9 @@ export class PaymentController {
     description: 'Stripe connect account created successfully',
   })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async createStripeConnectAccount(@Req() request: Request): Promise<void> {
-    const partnerUid = request['user'].organisationUid;
+  async createStripeConnectAccount(
+    @CurrentUser('organisationUid') partnerUid: string,
+  ): Promise<void> {
     return this.paymentService.createStripeConnectAccount(partnerUid);
   }
 
@@ -90,8 +91,9 @@ export class PaymentController {
     description: 'Stripe connect account link generated successfully',
   })
   @HttpCode(HttpStatus.OK)
-  async generateStripeAccountLink(@Req() request: Request): Promise<{ url: string }> {
-    const partnerUid = request['user'].organisationUid;
+  async generateStripeAccountLink(
+    @CurrentUser('organisationUid') partnerUid: string,
+  ): Promise<{ url: string }> {
     return this.paymentService.generateStripeAccountLink(partnerUid);
   }
 
@@ -113,8 +115,9 @@ export class PaymentController {
     description: 'Stripe connect account link refreshed successfully',
   })
   @HttpCode(HttpStatus.OK)
-  async refreshStripeAccountLink(@Req() request: Request): Promise<{ url: string }> {
-    const partnerUid = request['user'].organisationUid;
+  async refreshStripeAccountLink(
+    @CurrentUser('organisationUid') partnerUid: string,
+  ): Promise<{ url: string }> {
     // We use the same service method since type='account_onboarding' works for both
     return this.paymentService.generateStripeAccountLink(partnerUid);
   }
@@ -183,9 +186,8 @@ export class PaymentController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async addBankAccount(
     @Body() bankDetails: BankDetailsDto,
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
   ): Promise<void> {
-    const userUid = request['user'].uid;
     await this.paymentService.addBankAccount(userUid, bankDetails);
   }
 
@@ -207,8 +209,9 @@ export class PaymentController {
     description: 'Token invalid: user missing',
     type: UnauthorizedResponseDto,
   })
-  async getStripeConnectAccount(@Req() request: Request): Promise<ResponseTypeDto<Stripe.Account>> {
-    const partnerUid = request['user'].organisationUid;
+  async getStripeConnectAccount(
+    @CurrentUser('organisationUid') partnerUid: string,
+  ): Promise<ResponseTypeDto<Stripe.Account>> {
     const stripeAccount = await this.paymentService.getStripeConnectAccount(partnerUid);
 
     return {
@@ -233,9 +236,8 @@ export class PaymentController {
   })
   @HttpCode(HttpStatus.OK)
   async getBankAccountsList(
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
   ): Promise<PaginationResponseTypeDto<BankAccountListResponseDataDto>> {
-    const userUid = request['user'].uid;
     const result = await this.paymentService.getBankAccountsList(userUid);
     return {
       data: result,
@@ -264,10 +266,9 @@ export class PaymentController {
   })
   @HttpCode(HttpStatus.OK)
   async getBankAccount(
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
     @Param('bankAccountId') bankAccountId: string,
   ): Promise<ResponseTypeDto<Stripe.ExternalAccount>> {
-    const userUid = request['user'].uid;
     const bankAccount = await this.paymentService.getBankAccount(userUid, bankAccountId);
     return {
       data: bankAccount,
@@ -295,10 +296,9 @@ export class PaymentController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async updateBankAccount(
     @Body() bankDetails: UpdateBankDetailsDto,
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
     @Param('bankAccountId') bankAccountId: string,
   ) {
-    const userUid = request['user'].uid;
     return this.paymentService.updateDefaultBankAccount(userUid, bankAccountId, bankDetails);
   }
 
@@ -322,10 +322,9 @@ export class PaymentController {
   })
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteBankAccount(
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
     @Param('bankAccountId') bankAccountId: string,
   ): Promise<void> {
-    const userUid = request['user'].uid;
     return this.paymentService.deleteBankAccount(userUid, bankAccountId);
   }
 

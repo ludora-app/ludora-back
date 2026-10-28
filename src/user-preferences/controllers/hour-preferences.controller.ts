@@ -6,7 +6,6 @@ import {
   HttpCode,
   HttpStatus,
   Put,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -19,6 +18,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
@@ -46,9 +46,8 @@ export class HourPreferencesController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findMyHourPreferences(
-    @Req() request: Request,
+    @CurrentUser('uid') uid: string,
   ): Promise<PaginationResponseTypeDto<HourPreferenceData>> {
-    const uid = request['user'].uid;
     const data = await this.hourPreferencesService.findAllByUserUid(uid);
 
     if (data.items.length === 0) {
@@ -73,11 +72,9 @@ export class HourPreferencesController {
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
   async createMany(
-    @Req() request: Request,
+    @CurrentUser('uid') uid: string,
     @Body() createHourPreferenceDto: CreateHourPreferenceDto,
   ): Promise<void> {
-    const uid = request['user'].uid;
-
     await this.hourPreferencesService.createMany(createHourPreferenceDto.hourPreferences, uid);
   }
 
@@ -88,8 +85,7 @@ export class HourPreferencesController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Req() request: Request): Promise<void> {
-    const userUid = request['user'].uid;
+  async remove(@CurrentUser('uid') userUid: string): Promise<void> {
     await this.hourPreferencesService.clearPreferences(userUid);
   }
 }

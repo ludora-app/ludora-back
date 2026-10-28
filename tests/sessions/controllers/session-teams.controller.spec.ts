@@ -1,6 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { FastifyRequest } from 'fastify';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SessionTeamsController } from 'src/sessions/controllers/session-teams.controller';
@@ -78,8 +77,8 @@ describe('SessionTeamsController', () => {
         totalCount: 1,
       });
 
-      const mockRequest = { user: { uid: 'test-user-uid' } } as unknown as FastifyRequest;
-      const result = await controller.findTeamsBySessionUid(mockSession, mockRequest);
+      const mockRequest = { user: { uid: 'test-user-uid' } };
+      const result = await controller.findTeamsBySessionUid(mockSession, mockRequest.user.uid);
 
       expect(mockSessionTeamsService.findTeamsBySessionUid).toHaveBeenCalledWith(
         'session-1',
@@ -96,9 +95,9 @@ describe('SessionTeamsController', () => {
         totalCount: 0,
       });
 
-      const mockRequest = { user: { uid: 'test-user-uid' } } as unknown as FastifyRequest;
+      const mockRequest = { user: { uid: 'test-user-uid' } };
       await expect(
-        controller.findTeamsBySessionUid({ uid: 'missing' } as any, mockRequest),
+        controller.findTeamsBySessionUid({ uid: 'missing' } as any, mockRequest.user.uid),
       ).rejects.toBeInstanceOf(NotFoundException);
       expect(mockSessionTeamsService.findTeamsBySessionUid).toHaveBeenCalledWith(
         'missing',

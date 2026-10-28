@@ -7,7 +7,6 @@ import {
   HttpStatus,
   Param,
   Put,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -20,8 +19,8 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { FastifyRequest } from 'fastify';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
@@ -68,9 +67,8 @@ export class SportPreferencesController {
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.OK)
   async findMySportPreferences(
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
   ): Promise<PaginationResponseTypeDto<SportPreferenceResponseData>> {
-    const userUid = request['user'].uid;
     const data = await this.sportPreferencesService.findAllByUserUid(userUid);
 
     if (data.items.length === 0) {
@@ -95,10 +93,9 @@ export class SportPreferencesController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
   async createManyWithGameModes(
-    @Req() req: FastifyRequest,
+    @CurrentUser('uid') userUid: string,
     @Body() dto: CreateSportPreferenceDto,
   ): Promise<void> {
-    const userUid = req['user'].uid;
     await this.sportPreferencesService.createManyWithGameModes(dto.sportPreferences, userUid);
   }
 
@@ -109,8 +106,7 @@ export class SportPreferencesController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Req() request: Request): Promise<void> {
-    const userUid = request['user'].uid;
+  async remove(@CurrentUser('uid') userUid: string): Promise<void> {
     await this.sportPreferencesService.clearPreferences(userUid);
   }
 }

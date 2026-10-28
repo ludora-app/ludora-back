@@ -67,7 +67,7 @@ describe('HourPreferencesController', () => {
 
       mockHourPreferencesService.findAllByUserUid.mockResolvedValue(mockPreferences);
 
-      const result = await controller.findMyHourPreferences(mockRequest);
+      const result = await controller.findMyHourPreferences(mockRequest.user.uid);
 
       expect(result).toEqual({
         data: mockPreferences,
@@ -85,7 +85,7 @@ describe('HourPreferencesController', () => {
 
       mockHourPreferencesService.findAllByUserUid.mockResolvedValue(mockEmptyPreferences);
 
-      const result = await controller.findMyHourPreferences(mockRequest);
+      const result = await controller.findMyHourPreferences(mockRequest.user.uid);
 
       expect(result).toEqual({
         data: null,
@@ -99,7 +99,7 @@ describe('HourPreferencesController', () => {
         new NotFoundException('User not found'),
       );
 
-      await expect(controller.findMyHourPreferences(mockRequest)).rejects.toThrow(
+      await expect(controller.findMyHourPreferences(mockRequest.user.uid)).rejects.toThrow(
         NotFoundException,
       );
       expect(service.findAllByUserUid).toHaveBeenCalledWith('user-uid-1');
@@ -121,7 +121,7 @@ describe('HourPreferencesController', () => {
     it('should call service createMany and return void', async () => {
       mockHourPreferencesService.createMany.mockResolvedValue(undefined);
 
-      const result = await controller.createMany(mockRequest, createHourPreferenceDto);
+      const result = await controller.createMany(mockRequest.user.uid, createHourPreferenceDto);
 
       expect(result).toBeUndefined();
       expect(service.createMany).toHaveBeenCalledWith(
@@ -135,9 +135,9 @@ describe('HourPreferencesController', () => {
         new NotFoundException('User not found'),
       );
 
-      await expect(controller.createMany(mockRequest, createHourPreferenceDto)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        controller.createMany(mockRequest.user.uid, createHourPreferenceDto),
+      ).rejects.toThrow(NotFoundException);
       expect(service.createMany).toHaveBeenCalledWith(
         createHourPreferenceDto.hourPreferences,
         'user-uid-1',
@@ -151,7 +151,7 @@ describe('HourPreferencesController', () => {
     it('should clear all hour preferences for the connected user and return void', async () => {
       mockHourPreferencesService.clearPreferences.mockResolvedValue(undefined);
 
-      const result = await controller.remove(mockRequest);
+      const result = await controller.remove(mockRequest.user.uid);
 
       expect(result).toBeUndefined();
       expect(service.clearPreferences).toHaveBeenCalledWith('user-uid-1');
@@ -162,7 +162,7 @@ describe('HourPreferencesController', () => {
         new NotFoundException('User not found'),
       );
 
-      await expect(controller.remove(mockRequest)).rejects.toThrow(NotFoundException);
+      await expect(controller.remove(mockRequest.user.uid)).rejects.toThrow(NotFoundException);
       expect(service.clearPreferences).toHaveBeenCalledWith('user-uid-1');
     });
   });

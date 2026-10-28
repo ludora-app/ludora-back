@@ -9,7 +9,6 @@ import {
   Patch,
   Post,
   Query,
-  Req,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -24,10 +23,10 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { FastifyRequest } from 'fastify';
 import { Users } from 'generated/prisma/client';
 import { CreateImageDto } from 'src/auth/dto';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { Public } from 'src/shared/decorators/public.decorator';
 import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
@@ -99,10 +98,9 @@ export class UsersController {
   })
   @HttpCode(HttpStatus.OK)
   async findAll(
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
     @Query() filters: UserFilterDto,
   ): Promise<PaginationResponseTypeDto<FindAllUsersResponseDataDto>> {
-    const userUid = request['user'].uid;
     const data = await this.usersService.findAll(filters, userUid);
 
     return {
@@ -130,9 +128,8 @@ export class UsersController {
   })
   async findOne(
     @Param('uid') uid: string,
-    @Req() request: FastifyRequest,
+    @CurrentUser('uid') searcherUid: string,
   ): Promise<ResponseTypeDto<FindOneUserResponseData>> {
-    const searcherUid = request['user'].uid;
     const data = await this.userLookupService.findOne(uid, USERSELECT.findOne, searcherUid);
 
     if (!data) {
@@ -163,9 +160,7 @@ export class UsersController {
     description: 'Token invalid: user missing',
     type: UnauthorizedResponseDto,
   })
-  async findMe(@Req() request: Request): Promise<ResponseTypeDto<FindMeUserResponseData>> {
-    const uid = request['user'].uid;
-
+  async findMe(@CurrentUser('uid') uid: string): Promise<ResponseTypeDto<FindMeUserResponseData>> {
     const data = await this.userLookupService.findOne(uid, USERSELECT.findMe);
 
     if (!data) {
@@ -224,7 +219,7 @@ export class UsersController {
   @ApiNoContentResponse({ description: 'User updated successfully' })
   @HttpCode(HttpStatus.NO_CONTENT)
   async update(
-    @Req() request: Request,
+    @CurrentUser('uid') uid: string,
     @Body() updateUserDto: UpdateUserDto,
     @UploadedFilesCustom() files?: { buffer: Buffer; originalname: string }[],
   ): Promise<void> {
@@ -236,7 +231,6 @@ export class UsersController {
         name: file.originalname,
       };
     }
-    const uid = request['user'].uid;
     await this.usersService.update(uid, updateUserDto, createImageDto);
     return;
   }
@@ -261,10 +255,9 @@ export class UsersController {
   @ApiNoContentResponse({ description: 'Password updated successfully' })
   @HttpCode(HttpStatus.NO_CONTENT)
   updatePassword(
-    @Req() request: Request,
+    @CurrentUser('uid') uid: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
   ): Promise<void> {
-    const uid = request['user'].uid;
     return this.usersService.updatePassword(uid, updatePasswordDto);
   }
 
@@ -288,10 +281,9 @@ export class UsersController {
   @ApiNoContentResponse({ description: 'Email updated successfully' })
   @HttpCode(HttpStatus.NO_CONTENT)
   updateEmail(
-    @Req() request: Request,
+    @CurrentUser('uid') uid: string,
     @Body() updateUserEmailDto: UpdateUserEmailDto,
   ): Promise<void> {
-    const uid = request['user'].uid;
     return this.usersService.updateEmail(uid, updateUserEmailDto.email);
   }
 
@@ -314,8 +306,7 @@ export class UsersController {
   })
   @ApiNoContentResponse({ description: 'User deactivated successfully' })
   @HttpCode(HttpStatus.NO_CONTENT)
-  deactivate(@Req() request: Request) {
-    const uid = request['user'].uid;
+  deactivate(@CurrentUser('uid') uid: string) {
     return this.usersService.deactivate(uid);
   }
 
@@ -336,8 +327,7 @@ export class UsersController {
   })
   @ApiNoContentResponse({ description: 'User deletion request sent successfully' })
   @HttpCode(HttpStatus.NO_CONTENT)
-  deletionRequest(@Req() request: Request) {
-    const uid = request['user'].uid;
+  deletionRequest(@CurrentUser('uid') uid: string) {
     return this.usersService.deletionRequest(uid);
   }
 
@@ -357,8 +347,7 @@ export class UsersController {
   })
   @ApiNoContentResponse({ description: 'User deletion request canceled successfully' })
   @HttpCode(HttpStatus.NO_CONTENT)
-  cancelDeletionRequest(@Req() request: Request) {
-    const uid = request['user'].uid;
+  cancelDeletionRequest(@CurrentUser('uid') uid: string) {
     return this.usersService.cancelDeletionRequest(uid);
   }
 }

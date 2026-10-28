@@ -9,7 +9,6 @@ import {
   Patch,
   Post,
   Query,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -25,6 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { InvitationStatus } from 'generated/prisma/client';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
@@ -61,9 +61,8 @@ export class SessionInvitationsController {
   async createMany(
     @Param('sessionUid') sessionUid: string,
     @Body() dto: CreateManySessionInvitationDto,
-    @Req() request: Request,
+    @CurrentUser('uid') senderUid: string,
   ): Promise<void> {
-    const senderUid = request['user'].uid;
     await this.sessionInvitationsService.createMany(senderUid, sessionUid, dto);
     return;
   }
@@ -146,9 +145,8 @@ export class SessionInvitationsController {
   update(
     @Param('sessionUid') sessionUid: string,
     @Body() body: { status: InvitationStatus },
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
   ): Promise<void> {
-    const userUid = request['user'].uid;
     const updateSessionInvitationDto: UpdateSessionInvitationDto = {
       sessionUid,
       status: body.status,

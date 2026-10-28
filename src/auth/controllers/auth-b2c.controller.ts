@@ -10,7 +10,6 @@ import {
   Post,
   Redirect,
   Req,
-  Request,
   Res,
   UseGuards,
   UseInterceptors,
@@ -28,7 +27,6 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { FastifyRequest } from 'fastify';
 import { Users } from 'generated/prisma/browser';
 import {
   CreateImageDto,
@@ -43,6 +41,7 @@ import {
   VerifyMailDto,
   VerifyTokenResponseDto,
 } from 'src/auth/dto';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { ForbiddenResponseDto } from 'src/shared/dto/errors/forbidden-response.dto';
@@ -227,8 +226,7 @@ export class AuthB2CController {
   @ApiOkResponse({
     description: 'Redirects to the email verified page',
   })
-  async verifyEmailCode(@Request() req): Promise<void> {
-    const user = req.user as Users;
+  async verifyEmailCode(@CurrentUser() user: Users): Promise<void> {
     await this.authService.verifyEmailLink(user);
   }
 
@@ -250,8 +248,9 @@ export class AuthB2CController {
     type: SuccessTypeDto,
   })
   @HttpCode(HttpStatus.OK)
-  async resendVerificationCode(@Request() req: FastifyRequest): Promise<SuccessTypeDto> {
-    const user = req['user'] as Pick<Users, 'uid' | 'isEmailVerified' | 'email'>;
+  async resendVerificationCode(
+    @CurrentUser() user: Pick<Users, 'uid' | 'isEmailVerified' | 'email'>,
+  ): Promise<SuccessTypeDto> {
     await this.authService.resendVerificationCode(user);
 
     return {
@@ -296,8 +295,7 @@ export class AuthB2CController {
     type: UnauthorizedResponseDto,
   })
   @HttpCode(HttpStatus.OK)
-  async logout(@Request() req): Promise<LogoutResponseDto> {
-    const { uid } = req.user;
+  async logout(@CurrentUser('uid') uid: string): Promise<LogoutResponseDto> {
     await this.authService.logout(uid);
 
     return {
@@ -319,8 +317,7 @@ export class AuthB2CController {
     type: UnauthorizedResponseDto,
   })
   @HttpCode(HttpStatus.OK)
-  async logoutAllDevices(@Request() req): Promise<LogoutResponseDto> {
-    const { uid } = req.user;
+  async logoutAllDevices(@CurrentUser('uid') uid: string): Promise<LogoutResponseDto> {
     await this.authService.logoutAllDevices(uid);
 
     return {
@@ -376,9 +373,7 @@ export class AuthB2CController {
     type: VerifyTokenResponseDto,
   })
   @HttpCode(HttpStatus.OK)
-  async verifyToken(@Req() request: Request): Promise<VerifyTokenResponseDto> {
-    const uid = request['user'].uid;
-
+  async verifyToken(@CurrentUser('uid') uid: string): Promise<VerifyTokenResponseDto> {
     const isValid = await this.authService.verifyToken(uid);
     return { data: { isValid: isValid }, message: 'token is valid' };
   }
@@ -426,9 +421,8 @@ export class AuthB2CController {
   @HttpCode(HttpStatus.OK)
   async passwordReset(
     @Body() dto: ForgottenPasswordDto,
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
   ): Promise<LoginResponseDto> {
-    const userUid = request['user'].uid;
     const { accessToken, refreshToken } = await this.authService.resetForgottenPassword(
       dto.newPassword,
       userUid,

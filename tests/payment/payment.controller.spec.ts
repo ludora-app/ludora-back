@@ -68,19 +68,19 @@ describe('PaymentController', () => {
   });
 
   it('createStripeConnectAccount should call service', async () => {
-    await controller.createStripeConnectAccount(mockRequestB2B as any);
+    await controller.createStripeConnectAccount(mockRequestB2B.user.organisationUid);
     expect(mockPaymentService.createStripeConnectAccount).toHaveBeenCalledWith('org-1');
   });
 
   it('generateStripeAccountLink should return link', async () => {
     mockPaymentService.generateStripeAccountLink.mockResolvedValue({ url: 'link' });
-    const result = await controller.generateStripeAccountLink(mockRequestB2B as any);
+    const result = await controller.generateStripeAccountLink(mockRequestB2B.user.organisationUid);
     expect(result.url).toBe('link');
   });
 
   it('refreshStripeAccountLink should return link', async () => {
     mockPaymentService.generateStripeAccountLink.mockResolvedValue({ url: 'link2' });
-    const result = await controller.refreshStripeAccountLink(mockRequestB2B as any);
+    const result = await controller.refreshStripeAccountLink(mockRequestB2B.user.organisationUid);
     expect(result.url).toBe('link2');
   });
 
@@ -106,37 +106,37 @@ describe('PaymentController', () => {
 
   it('addBankAccount should call service', async () => {
     const dto: BankDetailsDto = { accountNumber: '123', holderName: 'A', routingNumber: '1' };
-    await controller.addBankAccount(dto, mockRequestB2C as any);
+    await controller.addBankAccount(dto, mockRequestB2C.user.uid);
     expect(mockPaymentService.addBankAccount).toHaveBeenCalledWith('user-1', dto);
   });
 
   it('getStripeConnectAccount should return account', async () => {
     mockPaymentService.getStripeConnectAccount.mockResolvedValue({ id: 'acct' });
-    const result = await controller.getStripeConnectAccount(mockRequestB2B as any);
+    const result = await controller.getStripeConnectAccount(mockRequestB2B.user.organisationUid);
     expect(result.data.id).toBe('acct');
     expect(result.message).toBeDefined();
   });
 
   it('getBankAccountsList should return list', async () => {
     mockPaymentService.getBankAccountsList.mockResolvedValue({ items: [], totalCount: 0 });
-    const result = await controller.getBankAccountsList(mockRequestB2C as any);
+    const result = await controller.getBankAccountsList(mockRequestB2C.user.uid);
     expect(result.data.items).toEqual([]);
   });
 
   it('getBankAccount should return one account', async () => {
     mockPaymentService.getBankAccount.mockResolvedValue({ id: 'ba_1' });
-    const result = await controller.getBankAccount(mockRequestB2C as any, 'ba_1');
+    const result = await controller.getBankAccount(mockRequestB2C.user.uid, 'ba_1');
     expect(result.data.id).toBe('ba_1');
   });
 
   it('updateBankAccount should call service', async () => {
     const dto: UpdateBankDetailsDto = { defaultForCurrency: true };
-    await controller.updateBankAccount(dto, mockRequestB2C as any, 'ba_1');
+    await controller.updateBankAccount(dto, mockRequestB2C.user.uid, 'ba_1');
     expect(mockPaymentService.updateDefaultBankAccount).toHaveBeenCalledWith('user-1', 'ba_1', dto);
   });
 
   it('deleteBankAccount should call service', async () => {
-    await controller.deleteBankAccount(mockRequestB2C as any, 'ba_1');
+    await controller.deleteBankAccount(mockRequestB2C.user.uid, 'ba_1');
     expect(mockPaymentService.deleteBankAccount).toHaveBeenCalledWith('user-1', 'ba_1');
   });
 

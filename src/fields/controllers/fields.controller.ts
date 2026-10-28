@@ -8,7 +8,6 @@ import {
   Param,
   Post,
   Query,
-  Req,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -24,9 +23,9 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { FastifyRequest } from 'fastify';
 import { AuthB2BGuard } from 'src/auth/guards/auth-b2b.guard';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
@@ -80,8 +79,10 @@ export class FieldsController {
   @ApiConflictResponse({ type: ConflictResponseDto })
   @ApiOperation({ summary: 'Create a field slot' })
   @HttpCode(HttpStatus.CREATED)
-  async createFieldSlot(@Body() dto: CreateFieldSlotDto, @Req() request: FastifyRequest) {
-    const partnerUid = request['user'].organisationUid;
+  async createFieldSlot(
+    @Body() dto: CreateFieldSlotDto,
+    @CurrentUser('organisationUid') partnerUid: string,
+  ) {
     return this.fieldSlotsService.create(dto, partnerUid);
   }
 
@@ -100,10 +101,9 @@ export class FieldsController {
   async create(
     @Body() createFieldDto: CreatePublicFieldDto,
     @UploadedFilesCustom() images: { buffer: Buffer; originalname: string }[],
-    @Req() request: FastifyRequest,
+    @CurrentUser('uid') userUid: string,
+    @CurrentUser('email') userEmail: string,
   ) {
-    const userUid = request['user'].uid;
-    const userEmail = request['user'].email;
     const imagesDto = (Array.isArray(images) ? images : []).map((image, index) => ({
       file: image.buffer,
       name: image.originalname,
@@ -165,10 +165,9 @@ export class FieldsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all fields created by the connected user' })
   async findAllMyFields(
-    @Req() request: FastifyRequest,
+    @CurrentUser('uid') userUid: string,
     @Query() filters: MyFieldsB2CFilterDto,
   ): Promise<PaginationResponseTypeDto<MyFieldsResponseData>> {
-    const userUid = request['user'].uid;
     const data = await this.fieldsService.findAllMyFields(userUid, filters);
     return {
       data,
@@ -203,8 +202,10 @@ export class FieldsController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all fields by partner uid' })
-  async findAllByPartnerUid(@Req() request: Request, @Query() filter: FieldFilterDto) {
-    const partnerUid = request['user'].organisationUid;
+  async findAllByPartnerUid(
+    @CurrentUser('organisationUid') partnerUid: string,
+    @Query() filter: FieldFilterDto,
+  ) {
     const data = await this.fieldsService.findAllByPartnerUid(partnerUid, filter);
     return {
       data,

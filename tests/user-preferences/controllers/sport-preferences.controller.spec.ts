@@ -68,7 +68,7 @@ describe('SportPreferencesController', () => {
 
       mockUserSportPreferencesService.createManyWithGameModes.mockResolvedValue(undefined);
 
-      await controller.createManyWithGameModes(mockRequest, dto);
+      await controller.createManyWithGameModes(mockRequest.user.uid, dto);
 
       expect(service.createManyWithGameModes).toHaveBeenCalledTimes(1);
       expect(service.createManyWithGameModes).toHaveBeenCalledWith(
@@ -94,7 +94,7 @@ describe('SportPreferencesController', () => {
 
       mockUserSportPreferencesService.createManyWithGameModes.mockResolvedValue(undefined);
 
-      await controller.createManyWithGameModes(differentMockRequest, dto);
+      await controller.createManyWithGameModes(differentMockRequest.user.uid, dto);
 
       expect(service.createManyWithGameModes).toHaveBeenCalledWith(
         dto.sportPreferences,
@@ -114,7 +114,7 @@ describe('SportPreferencesController', () => {
         new BadRequestException('Each sport preference must have a unique sport.'),
       );
 
-      await expect(controller.createManyWithGameModes(mockRequest, dto)).rejects.toThrow(
+      await expect(controller.createManyWithGameModes(mockRequest.user.uid, dto)).rejects.toThrow(
         BadRequestException,
       );
       expect(service.createManyWithGameModes).toHaveBeenCalledWith(
@@ -136,7 +136,7 @@ describe('SportPreferencesController', () => {
 
       mockUserSportPreferencesService.createManyWithGameModes.mockResolvedValue(undefined);
 
-      const result = await controller.createManyWithGameModes(mockRequest, dto);
+      const result = await controller.createManyWithGameModes(mockRequest.user.uid, dto);
 
       expect(result).toBeUndefined();
     });
@@ -259,7 +259,7 @@ describe('SportPreferencesController', () => {
     it('should call service.clearPreferences with user uid from request', async () => {
       mockUserSportPreferencesService.clearPreferences.mockResolvedValue(undefined);
 
-      await controller.remove(mockRequest);
+      await controller.remove(mockRequest.user.uid);
 
       expect(service.clearPreferences).toHaveBeenCalledTimes(1);
       expect(service.clearPreferences).toHaveBeenCalledWith('user-uid-1');
@@ -272,7 +272,7 @@ describe('SportPreferencesController', () => {
 
       mockUserSportPreferencesService.clearPreferences.mockResolvedValue(undefined);
 
-      await controller.remove(differentMockRequest);
+      await controller.remove(differentMockRequest.user.uid);
 
       expect(service.clearPreferences).toHaveBeenCalledWith('different-user-uid');
     });

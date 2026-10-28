@@ -10,7 +10,6 @@ import {
   Patch,
   Post,
   Query,
-  Req,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -26,8 +25,8 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { FastifyRequest } from 'fastify';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
@@ -78,10 +77,9 @@ export class SessionsController {
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createSessionDto: CreateSessionFromRequestDto,
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
     @UploadedFilesCustom() files: { buffer: Buffer; originalname: string }[],
   ): Promise<ResponseTypeDto<SessionResponseData>> {
-    const userUid = request['user'].uid;
     const newSession = await this.sessionsService.create({
       ...createSessionDto,
       images: (files ?? []).map((file) => ({
@@ -106,11 +104,9 @@ export class SessionsController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findAll(
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
     @Query() filter: SessionFilterDto,
   ): Promise<PaginationResponseTypeDto<SessionCollectionItemDto>> {
-    const userUid = request['user'].uid;
-
     const sessions = await this.sessionsService.findAll({
       userUid,
       ...filter,
@@ -160,9 +156,8 @@ export class SessionsController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async getMyStats(
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
   ): Promise<ResponseTypeDto<UserSessionStatsResponseDataDto>> {
-    const userUid = request['user'].uid;
     const stats = await this.sessionsService.getUserSessionStats(userUid);
 
     return {
@@ -197,10 +192,9 @@ export class SessionsController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.OK)
   async findAllMySessions(
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
     @Query() filters: MySessionFilterDto,
   ): Promise<PaginationResponseTypeDto<SessionCollectionItemDto>> {
-    const userUid = request['user'].uid;
     const sessions = await this.sessionsService.findAllByUserUid(userUid, filters);
     return {
       data: sessions,
@@ -236,9 +230,8 @@ export class SessionsController {
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   async findOne(
     @Param('uid') uid: string,
-    @Req() request: FastifyRequest,
+    @CurrentUser('uid') userUid: string,
   ): Promise<ResponseTypeDto<FindOneSessionResponseData>> {
-    const userUid = request['user'].uid;
     const session = await this.sessionsService.findOne(uid, userUid);
 
     if (!session) {
@@ -262,11 +255,10 @@ export class SessionsController {
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   async findOneWithDistance(
     @Param('uid') uid: string,
-    @Req() request: FastifyRequest,
+    @CurrentUser('uid') userUid: string,
     @Query('latitude') latitude: number,
     @Query('longitude') longitude: number,
   ): Promise<ResponseTypeDto<FindOneSessionWithDistanceResponseData>> {
-    const userUid = request['user'].uid;
     const session = await this.sessionsService.findOneWithDistance(
       uid,
       userUid,

@@ -8,7 +8,6 @@ import {
   Param,
   Patch,
   Post,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -21,9 +20,9 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { FastifyRequest } from 'fastify';
 import { Sessions } from 'generated/prisma/client';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
@@ -56,11 +55,10 @@ export class SessionPlayersController {
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   async joinSession(
-    @Req() request: FastifyRequest,
+    @CurrentUser('uid') userUid: string,
     @Body('sessionUid', SessionsPipe) session: Sessions,
     @Body() joinSessionDto: JoinSessionDto,
   ): Promise<ResponseTypeDto<JoinSessionResponseData>> {
-    const userUid = request['user'].uid;
     const data = await this.playersService.joinSession({ ...joinSessionDto, userUid }, session);
     return {
       data,
@@ -77,9 +75,8 @@ export class SessionPlayersController {
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   async suggestPlayerFromPreviousSessions(
-    @Req() request: Request,
+    @CurrentUser('uid') userUid: string,
   ): Promise<PaginationResponseTypeDto<UserSimpleDisplayData>> {
-    const userUid = request['user'].uid;
     const data = await this.playersService.suggestPlayerFromPreviousSessions(userUid);
     return {
       data,
@@ -98,10 +95,9 @@ export class SessionPlayersController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async switchTeams(
     @Param('sessionUid', SessionsPipe) session: Sessions,
-    @Req() request: FastifyRequest,
+    @CurrentUser('uid') userUid: string,
     @Param('teamUid') teamUid: string,
   ): Promise<void> {
-    const userUid = request['user'].uid;
     await this.playersService.switchPlayerToAnotherTeam(session, userUid, teamUid);
   }
 
@@ -115,9 +111,8 @@ export class SessionPlayersController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async leaveSession(
     @Param('sessionUid', SessionsPipe) session: Sessions,
-    @Req() request: FastifyRequest,
+    @CurrentUser('uid') userUid: string,
   ): Promise<void> {
-    const userUid = request['user'].uid;
     await this.playersService.leaveSession(session, userUid);
   }
 }

@@ -7,7 +7,6 @@ import {
   HttpStatus,
   Param,
   Post,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -20,6 +19,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { ConflictResponseDto } from 'src/shared/dto/errors/conflict-response.dto';
@@ -45,10 +45,9 @@ export class ModerationController {
   @ApiConflictResponse({ type: ConflictResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
   async blockUser(
-    @Req() request: Request,
+    @CurrentUser('uid') blockerUid: string,
     @Param('userToBlockUid') userToBlockUid: string,
   ): Promise<void> {
-    const blockerUid = request['user'].uid;
     return await this.moderationService.blockUser(blockerUid, userToBlockUid);
   }
 
@@ -60,10 +59,9 @@ export class ModerationController {
   @ApiConflictResponse({ type: ConflictResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
   async createReport(
-    @Req() request: Request,
+    @CurrentUser('uid') reporterUid: string,
     @Body() createReportDto: CreateReportDto,
   ): Promise<void> {
-    const reporterUid = request['user'].uid;
     return await this.moderationService.createReport(reporterUid, createReportDto);
   }
 
@@ -75,9 +73,8 @@ export class ModerationController {
     type: PaginatedBlockedUsersResponseDto,
   })
   async findAllBlockedUsers(
-    @Req() request: Request,
+    @CurrentUser('uid') blockerUid: string,
   ): Promise<PaginationResponseTypeDto<UserSimpleDisplayWithUidData>> {
-    const blockerUid = request['user'].uid;
     const data = await this.moderationService.findAllBlockedUsers(blockerUid);
     return {
       data,
@@ -93,10 +90,9 @@ export class ModerationController {
   @ApiBadRequestResponse({ type: BadRequestResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
   async unblockUser(
-    @Req() request: Request,
+    @CurrentUser('uid') blockerUid: string,
     @Param('userToUnblockUid') userToUnblockUid: string,
   ): Promise<void> {
-    const blockerUid = request['user'].uid;
     return await this.moderationService.unblockUser(blockerUid, userToUnblockUid);
   }
 }

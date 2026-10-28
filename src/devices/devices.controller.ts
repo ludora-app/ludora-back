@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -17,8 +8,8 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { FastifyRequest } from 'fastify';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
@@ -43,9 +34,8 @@ export class DevicesController {
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   async registerDevice(
     @Body() registerDeviceDto: RegisterDeviceDto,
-    @Req() req: FastifyRequest,
+    @CurrentUser('uid') userUid: string,
   ): Promise<ResponseTypeDto<DeviceResponseData>> {
-    const userUid = req['user'].uid;
     const device = await this.devicesService.registerDevice(userUid, registerDeviceDto);
     return {
       data: device,

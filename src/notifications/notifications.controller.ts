@@ -9,7 +9,6 @@ import {
   Patch,
   Post,
   Query,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -21,8 +20,8 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { FastifyRequest } from 'fastify';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { CurrentUser } from 'src/shared/decorators/current-user.decorator';
 import { Protected } from 'src/shared/decorators/protected.decorator';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
@@ -59,10 +58,9 @@ export class NotificationsController {
   })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   async findAll(
-    @Req() req: FastifyRequest,
+    @CurrentUser('uid') userUid: string,
     @Query() filters: NotificationFilterDto,
   ): Promise<PaginationResponseTypeDto<NotificationResponseData>> {
-    const userUid = req['user'].uid;
     const notifications = await this.notificationsService.findAllByUserUid(userUid, filters);
     return {
       data: notifications,
@@ -79,10 +77,9 @@ export class NotificationsController {
   })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   async getUnreadCount(
-    @Req() req: FastifyRequest,
+    @CurrentUser('uid') userUid: string,
     @Query() filters: NotificationFilterDto,
   ): Promise<UnreadCountResponseDto> {
-    const userUid = req['user'].uid;
     const data = await this.notificationsService.getUnreadCount(userUid, filters);
     return { data, message: 'Unread count fetched successfully' };
   }
@@ -92,8 +89,7 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Mark a notification as read' })
   @ApiNoContentResponse({ description: 'Notification marked as read' })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
-  async markAsRead(@Req() req, @Param('uid') uid: string) {
-    const userUid = req['user'].uid;
+  async markAsRead(@CurrentUser('uid') userUid: string, @Param('uid') uid: string) {
     return this.notificationsService.markAsRead(uid, userUid);
   }
 
@@ -103,8 +99,7 @@ export class NotificationsController {
   @ApiNoContentResponse({ description: 'All notifications marked as read' })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async markAllAsRead(@Req() req) {
-    const userUid = req['user'].uid;
+  async markAllAsRead(@CurrentUser('uid') userUid: string) {
     await this.notificationsService.markAllAsRead(userUid);
     return;
   }
@@ -115,8 +110,7 @@ export class NotificationsController {
   @ApiNoContentResponse({ description: 'Notification deleted successfully' })
   @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteNotification(@Req() req, @Param('uid') uid: string) {
-    const userUid = req['user'].uid;
+  async deleteNotification(@CurrentUser('uid') userUid: string, @Param('uid') uid: string) {
     await this.notificationsService.delete(uid, userUid);
     return;
   }

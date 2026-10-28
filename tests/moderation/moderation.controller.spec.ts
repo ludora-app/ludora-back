@@ -63,13 +63,13 @@ describe('ModerationController', () => {
   describe('blockUser', () => {
     const mockRequest = {
       user: { uid: 'blocker-uid-123' },
-    } as unknown as Request;
+    };
     const userToBlockUid = 'blocked-uid-456';
 
     it('should call service.blockUser with request user uid and param, return void', async () => {
       mockModerationService.blockUser.mockResolvedValue(undefined);
 
-      await controller.blockUser(mockRequest, userToBlockUid);
+      await controller.blockUser(mockRequest.user.uid, userToBlockUid);
 
       expect(moderationService.blockUser).toHaveBeenCalledWith(
         mockRequest['user'].uid,
@@ -81,10 +81,10 @@ describe('ModerationController', () => {
     it('should throw NotFoundException when user to block does not exist', async () => {
       mockModerationService.blockUser.mockRejectedValue(new NotFoundException('User not found'));
 
-      await expect(controller.blockUser(mockRequest, userToBlockUid)).rejects.toThrow(
+      await expect(controller.blockUser(mockRequest.user.uid, userToBlockUid)).rejects.toThrow(
         NotFoundException,
       );
-      await expect(controller.blockUser(mockRequest, userToBlockUid)).rejects.toThrow(
+      await expect(controller.blockUser(mockRequest.user.uid, userToBlockUid)).rejects.toThrow(
         'User not found',
       );
     });
@@ -94,10 +94,10 @@ describe('ModerationController', () => {
         new ConflictException('User already blocked'),
       );
 
-      await expect(controller.blockUser(mockRequest, userToBlockUid)).rejects.toThrow(
+      await expect(controller.blockUser(mockRequest.user.uid, userToBlockUid)).rejects.toThrow(
         ConflictException,
       );
-      await expect(controller.blockUser(mockRequest, userToBlockUid)).rejects.toThrow(
+      await expect(controller.blockUser(mockRequest.user.uid, userToBlockUid)).rejects.toThrow(
         'User already blocked',
       );
     });
@@ -106,13 +106,13 @@ describe('ModerationController', () => {
   describe('unblockUser', () => {
     const mockRequest = {
       user: { uid: 'blocker-uid-123' },
-    } as unknown as Request;
+    };
     const userToUnblockUid = 'blocked-uid-456';
 
     it('should call service.unblockUser with request user uid and param, return void', async () => {
       mockModerationService.unblockUser.mockResolvedValue(undefined);
 
-      await controller.unblockUser(mockRequest, userToUnblockUid);
+      await controller.unblockUser(mockRequest.user.uid, userToUnblockUid);
 
       expect(moderationService.unblockUser).toHaveBeenCalledWith(
         mockRequest['user'].uid,
@@ -126,10 +126,10 @@ describe('ModerationController', () => {
         new BadRequestException("You haven't blocked this user"),
       );
 
-      await expect(controller.unblockUser(mockRequest, userToUnblockUid)).rejects.toThrow(
+      await expect(controller.unblockUser(mockRequest.user.uid, userToUnblockUid)).rejects.toThrow(
         BadRequestException,
       );
-      await expect(controller.unblockUser(mockRequest, userToUnblockUid)).rejects.toThrow(
+      await expect(controller.unblockUser(mockRequest.user.uid, userToUnblockUid)).rejects.toThrow(
         "You haven't blocked this user",
       );
     });
@@ -138,7 +138,7 @@ describe('ModerationController', () => {
       const error = new Error('Database error');
       mockModerationService.unblockUser.mockRejectedValue(error);
 
-      await expect(controller.unblockUser(mockRequest, userToUnblockUid)).rejects.toThrow(
+      await expect(controller.unblockUser(mockRequest.user.uid, userToUnblockUid)).rejects.toThrow(
         'Database error',
       );
     });
@@ -147,7 +147,7 @@ describe('ModerationController', () => {
   describe('createReport', () => {
     const mockRequest = {
       user: { uid: 'reporter-uid-123' },
-    } as unknown as Request;
+    };
     const createReportDto = {
       description: undefined as string | undefined,
       reason: 'SPAM' as const,
@@ -157,7 +157,7 @@ describe('ModerationController', () => {
     it('should call service.createReport with reporter uid and body, return void', async () => {
       mockModerationService.createReport.mockResolvedValue(undefined);
 
-      await controller.createReport(mockRequest, createReportDto);
+      await controller.createReport(mockRequest.user.uid, createReportDto);
 
       expect(moderationService.createReport).toHaveBeenCalledWith(
         mockRequest['user'].uid,
@@ -171,10 +171,10 @@ describe('ModerationController', () => {
         new ConflictException('You already reported this user for this reason'),
       );
 
-      await expect(controller.createReport(mockRequest, createReportDto)).rejects.toThrow(
+      await expect(controller.createReport(mockRequest.user.uid, createReportDto)).rejects.toThrow(
         ConflictException,
       );
-      await expect(controller.createReport(mockRequest, createReportDto)).rejects.toThrow(
+      await expect(controller.createReport(mockRequest.user.uid, createReportDto)).rejects.toThrow(
         'You already reported this user for this reason',
       );
     });
@@ -183,7 +183,7 @@ describe('ModerationController', () => {
       const error = new Error('Database error');
       mockModerationService.createReport.mockRejectedValue(error);
 
-      await expect(controller.createReport(mockRequest, createReportDto)).rejects.toThrow(
+      await expect(controller.createReport(mockRequest.user.uid, createReportDto)).rejects.toThrow(
         'Database error',
       );
     });
@@ -192,7 +192,7 @@ describe('ModerationController', () => {
   describe('findAllBlockedUsers', () => {
     const mockRequest = {
       user: { uid: 'blocker-uid-123' },
-    } as unknown as Request;
+    };
 
     const mockBlockedUsersPaginated = {
       items: [
@@ -209,7 +209,7 @@ describe('ModerationController', () => {
     it('should return blocked users with success message', async () => {
       mockModerationService.findAllBlockedUsers.mockResolvedValue(mockBlockedUsersPaginated);
 
-      const result = await controller.findAllBlockedUsers(mockRequest);
+      const result = await controller.findAllBlockedUsers(mockRequest.user.uid);
 
       expect(moderationService.findAllBlockedUsers).toHaveBeenCalledWith(mockRequest['user'].uid);
       expect(result).toEqual({
@@ -224,7 +224,7 @@ describe('ModerationController', () => {
         totalCount: 0,
       });
 
-      await controller.findAllBlockedUsers(mockRequest);
+      await controller.findAllBlockedUsers(mockRequest.user.uid);
 
       expect(moderationService.findAllBlockedUsers).toHaveBeenCalledWith('blocker-uid-123');
     });
@@ -233,7 +233,9 @@ describe('ModerationController', () => {
       const error = new Error('Database error');
       mockModerationService.findAllBlockedUsers.mockRejectedValue(error);
 
-      await expect(controller.findAllBlockedUsers(mockRequest)).rejects.toThrow('Database error');
+      await expect(controller.findAllBlockedUsers(mockRequest.user.uid)).rejects.toThrow(
+        'Database error',
+      );
     });
   });
 });
