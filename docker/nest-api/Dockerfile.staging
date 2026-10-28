@@ -55,9 +55,6 @@ RUN apt-get update && apt-get install -y \
     chmod +x /usr/local/bin/envconsul && \
     rm -rf /var/lib/apt/lists/*
 
-# Install pnpm
-RUN npm i -g pnpm@12.15.0 && npm uninstall -g npm
-
 # Create non-root user
 RUN groupadd -r nodejs && useradd -r -g nodejs nodejs
 
