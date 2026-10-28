@@ -801,7 +801,7 @@ describe('SessionsController', () => {
   });
 
   describe('findRecommended', () => {
-    const mockRequest = { user: { uid: 'user-uid-1' } } as unknown as Request;
+    const mockRequest = { user: { uid: 'user-uid-1' } };
 
     it('should return the recommended sessions of the current user', async () => {
       const sessionsData = {
@@ -811,7 +811,7 @@ describe('SessionsController', () => {
       };
       mockSessionsService.findRecommended.mockResolvedValue(sessionsData);
 
-      const result = await controller.findRecommended(mockRequest, { days: 14, limit: 5 });
+      const result = await controller.findRecommended({ days: 14, limit: 5 }, mockRequest.user.uid);
 
       expect(mockSessionsService.findRecommended).toHaveBeenCalledWith({
         days: 14,

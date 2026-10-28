@@ -133,11 +133,9 @@ export class SessionsController {
   @ApiNotFoundResponse({ type: NotFoundResponseDto })
   @HttpCode(HttpStatus.OK)
   async findRecommended(
-    @Req() request: Request,
     @Query() filter: RecommendedSessionFilterDto,
+    @CurrentUser('uid') userUid: string,
   ): Promise<PaginationResponseTypeDto<SessionCollectionItemDto>> {
-    const userUid = request['user'].uid;
-
     const sessions = await this.sessionsService.findRecommended({ userUid, ...filter });
     return {
       data: {
