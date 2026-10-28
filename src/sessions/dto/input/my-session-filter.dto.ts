@@ -1,9 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsDate, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsDate, IsEnum, IsNumber, IsOptional } from 'class-validator';
 import { SessionVisibility } from 'generated/prisma/enums';
 import { SortOrder } from 'generated/prisma/internal/prismaNamespace';
 import { SessionScope, SessionSportLevel, Sport } from 'src/shared/constants/constants';
+import { BaseFilterDto } from 'src/shared/dto/input/base-filter.dto';
 
 export enum SessionOwnnership {
   CREATOR = 'CREATOR',
@@ -13,7 +14,7 @@ export enum SessionOwnnership {
 /**
  * @description DTO for filtering the sessions of the current user
  */
-export class MySessionFilterDto {
+export class MySessionFilterDto extends BaseFilterDto {
   @IsOptional()
   @IsEnum(SessionOwnnership)
   @ApiProperty({
@@ -123,25 +124,4 @@ export class MySessionFilterDto {
     required: false,
   })
   visibility?: SessionVisibility;
-
-  @IsOptional()
-  @IsString()
-  @ApiProperty({
-    description: 'Cursor for pagination',
-    example: 'abc123',
-    required: false,
-  })
-  cursor?: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(50)
-  @ApiProperty({
-    description: 'Number of results to return',
-    example: 10,
-    required: false,
-  })
-  limit?: number;
 }

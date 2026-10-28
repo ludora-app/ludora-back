@@ -9,7 +9,7 @@ export class BaseFilterDto {
   @Min(1)
   @Max(50)
   @ApiProperty({
-    description: 'Limit of users to return',
+    description: 'Number of results to return',
     example: 10,
     required: false,
     type: Number,
@@ -20,7 +20,7 @@ export class BaseFilterDto {
   @IsString()
   @ApiProperty({
     description: 'Cursor for pagination',
-    example: '10',
+    example: 'cmajhjkjf000bq77q4b5ugn8b',
     required: false,
     type: String,
   })

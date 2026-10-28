@@ -1,9 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
-import { IsArray, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsArray, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { Sport, UserSportLevel } from 'src/shared/constants/constants';
+import { BaseFilterDto } from 'src/shared/dto/input/base-filter.dto';
 
-export class UserFilterDto {
+export class UserFilterDto extends BaseFilterDto {
   @IsOptional()
   @IsString()
   @Transform(({ value }) => (value !== undefined ? String(value) : undefined))
@@ -49,28 +50,4 @@ export class UserFilterDto {
     required: false,
   })
   levels?: number[];
-
-  @IsOptional()
-  @Transform(({ value }) => (value !== undefined ? parseInt(value, 10) : undefined))
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(50)
-  @ApiProperty({
-    description: 'Limit of users to return',
-    example: 10,
-    required: false,
-    type: Number,
-  })
-  limit?: number;
-
-  @IsOptional()
-  @IsString()
-  @ApiProperty({
-    description: 'Cursor for pagination',
-    example: '10',
-    required: false,
-    type: String,
-  })
-  cursor?: string;
 }

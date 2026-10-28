@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { InvitationStatus } from 'generated/prisma/client';
+import { BaseFilterDto } from 'src/shared/dto/input/base-filter.dto';
 
-export class SessionInvitationFilterDto {
+export class SessionInvitationFilterDto extends BaseFilterDto {
   @IsString()
   @IsOptional()
   sessionUid: string;
@@ -11,29 +11,6 @@ export class SessionInvitationFilterDto {
   @IsString()
   @IsOptional()
   userId: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(50)
-  @ApiProperty({
-    description: 'Limit of session invitations to return',
-    example: 10,
-    required: false,
-    type: Number,
-  })
-  limit?: number;
-
-  @IsOptional()
-  @IsString()
-  @ApiProperty({
-    description: 'Cursor ID for pagination',
-    example: 'fcacfaca3c2a323bhf',
-    required: false,
-    type: String,
-  })
-  cursor?: string;
 
   @IsOptional()
   @IsEnum(InvitationStatus)

@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
   IsDateString,
@@ -12,12 +12,13 @@ import {
 } from 'class-validator';
 import { FieldType, GameModes } from 'generated/prisma/enums';
 import { Sport } from 'src/shared/constants/constants';
+import { BaseFilterDto } from 'src/shared/dto/input/base-filter.dto';
 
 /**
  * @description DTO for filtering the fields in most use cases (findAll methods)
  * Used by classic users
  */
-export class FieldFilterDto {
+export class FieldFilterDto extends OmitType(BaseFilterDto, ['limit'] as const) {
   @IsOptional()
   @Transform(({ value }) => {
     if (Array.isArray(value)) return value;
@@ -95,16 +96,6 @@ export class FieldFilterDto {
     example: 'Europe/Paris',
   })
   readonly timezone?: string;
-
-  @IsOptional()
-  @IsString()
-  @ApiProperty({
-    description: 'Cursor for pagination',
-    example: 'fcacfaca3c2a323bhf',
-    required: false,
-    type: String,
-  })
-  cursor?: string;
 
   @IsOptional()
   @Type(() => Number)
