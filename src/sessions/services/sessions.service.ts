@@ -1,5 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { FieldSlots, FieldType, GameModes, SessionVisibility } from 'generated/prisma/browser';
+import {
+  FieldSlots,
+  FieldType,
+  GameModes,
+  SessionVisibility,
+  UserHourPreferenceType,
+} from 'generated/prisma/browser';
 import { ConversationType, Prisma, Sessions } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { ConversationsService } from 'src/conversations/services/conversations.service';
@@ -7,7 +13,7 @@ import { FieldSlotsService } from 'src/fields/services/field-slots.service';
 import { FieldsService } from 'src/fields/services/fields.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
-import { SessionScope, StorageFolderName } from 'src/shared/constants/constants';
+import { SessionScope, SessionSportLevel, StorageFolderName } from 'src/shared/constants/constants';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
@@ -15,9 +21,13 @@ import { StorageService } from 'src/shared/storage/storage.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
 import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
-import { SESSION_SUGGESTION_CONFIG } from '../constants/session.constants';
+import {
+  SESSION_RECOMMENDATION_CONFIG,
+  SESSION_SUGGESTION_CONFIG,
+} from '../constants/session.constants';
 import { CreateSessionDto } from '../dto/input/create-session.dto';
 import { MySessionFilterDto, SessionOwnnership } from '../dto/input/my-session-filter.dto';
+import { FindRecommendedSessionsDto } from '../dto/input/recommended-session-filter.dto';
 import { FindAllSessionsDto } from '../dto/input/session-filter.dto';
 import { UpdateSessionDto } from '../dto/input/update-session.dto';
 import {
@@ -382,13 +392,7 @@ export class SessionsService {
     // ---------------------------------------------------------
 
     // F. BLOCK FILTER — exclude sessions whose creator has a block relationship with the current user
-    const blockFilterSql = Prisma.sql`
-      AND NOT EXISTS (
-        SELECT 1 FROM moderation."User_blocks" ub
-        WHERE (ub.blocker_uid = ${userUid} AND ub.blocked_uid = s.creator_uid)
-           OR (ub.blocker_uid = s.creator_uid AND ub.blocked_uid = ${userUid})
-      )
-    `;
+    const blockFilterSql = this.getBlockFilterSql(userUid);
 
     // C. DISTANCE (maxDistance in km, convert to meters for PostGIS)
     let distanceScoreSql = Prisma.sql`0`;
@@ -397,12 +401,7 @@ export class SessionsService {
     if (hasLocation) {
       const maxDistanceMeters = maxDistance * 1000;
       // 1. Define the formula once
-      distanceValueSql = Prisma.sql`
-        public.ST_DistanceSphere(
-          public.ST_MakePoint(f.longitude::float, f.latitude::float), 
-          public.ST_MakePoint(${userLon}::float, ${userLat}::float)
-        )
-      `;
+      distanceValueSql = this.getDistanceValueSql({ userLat, userLon });
 
       // 2. Reuse the variable in the Score (Cleaner!)
       distanceScoreSql = Prisma.sql`
@@ -533,60 +532,116 @@ export class SessionsService {
     // 7. HYDRATION & RETURN (Standard Code)
     // ---------------------------------------------------------
 
-    if (!rankedSessions || rankedSessions.length === 0) {
+    return this.toPaginatedCollection({ currentOffset, limit, rows: rankedSessions });
+  }
+
+  /**
+   * Sessions matching the user's profile, as strict filters (unlike `findAll`, which only ranks with it):
+   * a sport preference with its level and game modes, a slot among the hour preferences (local time),
+   * public, upcoming within `days`, not full, not created nor joined by the user, no block, within
+   * `maxDistance` when the location is known. Empty when the user has no preference at all.
+   */
+  async findRecommended({
+    cursor,
+    days = SESSION_RECOMMENDATION_CONFIG.DEFAULT_DAYS,
+    limit = 10,
+    maxDistance = SESSION_SUGGESTION_CONFIG.THRESHOLDS.MAX_DISTANCE_KM,
+    userLat,
+    userLon,
+    userUid,
+  }: FindRecommendedSessionsDto): Promise<PaginatedDataDto<SessionCollectionItemDto>> {
+    this.logger.debug(`Finding recommended sessions for user ${userUid} (days: ${days})`);
+
+    const [sportPreferencesResponse, hourPreferencesResponse] = await Promise.all([
+      this.sportPreferencesService.findAllByUserUid(userUid),
+      this.hourPreferencesService.findAllByUserUid(userUid),
+    ]);
+    const sportPreferences = sportPreferencesResponse.items || [];
+    const hourPreferences = hourPreferencesResponse.items || [];
+
+    if (sportPreferences.length === 0 && hourPreferences.length === 0) {
+      this.logger.debug(`No preferences for user ${userUid}, no recommended session`);
       return { items: [], nextCursor: null, totalCount: 0 };
     }
 
-    const totalCount = Number(rankedSessions[0].total_count);
-    let nextCursor: string | null = null;
-    const itemsToFetch = rankedSessions;
+    const currentOffset = cursor ? parseInt(cursor, 10) : 0;
+    const now = new Date();
+    const lastStartDate = new Date(now);
+    lastStartDate.setDate(lastStartDate.getDate() + days);
 
-    if (rankedSessions.length > limit) {
-      itemsToFetch.pop();
-      nextCursor = (currentOffset + limit).toString();
+    // A. SPORT: each preference keeps its own level and game modes
+    let sportWhereSql = Prisma.empty;
+    if (sportPreferences.length > 0) {
+      const sportConditions = sportPreferences.map((preference) => {
+        const gameModeSql =
+          preference.gameModes.length > 0
+            ? Prisma.sql`AND s.game_mode::text IN (${Prisma.join(preference.gameModes)})`
+            : Prisma.empty;
+        return Prisma.sql`(
+          s.sport = ${preference.sport}
+          AND s.level IN (${preference.level}, ${SessionSportLevel.ANY})
+          ${gameModeSql}
+        )`;
+      });
+      sportWhereSql = Prisma.sql`AND (${Prisma.join(sportConditions, ' OR ')})`;
     }
 
-    const sessionUids = itemsToFetch.map((r) => r.uid);
-    const sessions = await this.prisma.sessions.findMany({
-      select: {
-        creatorUid: true,
-        endDate: true,
-        field: {
-          select: {
-            fieldImages: { select: { url: true }, take: 1 },
-            latitude: true,
-            longitude: true,
-            shortAddress: true,
-          },
-        },
-        gameMode: true,
-        level: true,
-        maxPlayersPerTeam: true,
-        sessionTeams: { select: { _count: { select: { sessionPlayers: true } }, teamName: true } },
-        sport: true,
-        startDate: true,
-        uid: true,
-        visibility: true,
-      },
-      where: { uid: { in: sessionUids } },
-    });
+    // B. HOUR PREFERENCES: start_date is stored in UTC, the preferences are in local time
+    let timeWhereSql = Prisma.empty;
+    if (hourPreferences.length > 0) {
+      const localStartSql = Prisma.sql`(s.start_date AT TIME ZONE 'UTC' AT TIME ZONE ${SESSION_RECOMMENDATION_CONFIG.TIME_ZONE})`;
+      const timeConditions = hourPreferences.map((preference) => {
+        const { max, min } = DateUtils.getHoursForPeriod(preference.timePeriod);
+        const hourSql = Prisma.sql`EXTRACT(HOUR FROM ${localStartSql}) >= ${min} AND EXTRACT(HOUR FROM ${localStartSql}) < ${max}`;
+        if (preference.type === UserHourPreferenceType.RECURRENT) {
+          return Prisma.sql`(EXTRACT(DOW FROM ${localStartSql}) = ${preference.dayOfWeek} AND ${hourSql})`;
+        }
+        return Prisma.sql`(DATE(${localStartSql}) = DATE(${preference.date}) AND ${hourSql})`;
+      });
+      timeWhereSql = Prisma.sql`AND (${Prisma.join(timeConditions, ' OR ')})`;
+    }
 
-    const rawDataMap = new Map(
-      itemsToFetch.map((item, index) => [item.uid, { distance: item.distance_val, index }]),
-    );
-    const sortedSessions = sessions.sort((a, b) => {
-      const indexA = rawDataMap.get(a.uid)?.index ?? 999;
-      const indexB = rawDataMap.get(b.uid)?.index ?? 999;
-      return indexA - indexB;
-    });
+    // C. DISTANCE
+    let distanceValueSql = Prisma.sql`NULL`;
+    let distanceWhereSql = Prisma.empty;
+    if (userLat != null && userLon != null) {
+      distanceValueSql = this.getDistanceValueSql({ userLat, userLon });
+      distanceWhereSql = Prisma.sql`AND (${distanceValueSql}) < ${maxDistance * 1000}`;
+    }
 
-    const items = SessionMapper.fromRawToSessionResponses(sortedSessions, rawDataMap);
+    const rows = await this.prisma.$queryRaw<
+      { uid: string; total_count: bigint; distance_val: number | null }[]
+    >`
+      SELECT
+        s.uid,
+        (${distanceValueSql}) as distance_val,
+        count(*) OVER() as total_count
+      FROM sessions."Sessions" s
+      JOIN infrastructure."Fields" f ON s.field_uid = f.uid
+      WHERE
+        s.visibility = ${SessionVisibility.PUBLIC}
+        AND s.start_date > ${now}
+        AND s.start_date <= ${lastStartDate}
+        AND (s.creator_uid IS NULL OR s.creator_uid <> ${userUid})
+        AND NOT EXISTS (
+          SELECT 1 FROM sessions."Session_players" sp
+          WHERE sp.session_uid = s.uid AND sp.user_uid = ${userUid}
+        )
+        AND (
+          SELECT COUNT(*) FROM sessions."Session_players" sp WHERE sp.session_uid = s.uid
+        ) < s.max_players_per_team * s.teams_per_game
+        ${sportWhereSql}
+        ${timeWhereSql}
+        ${distanceWhereSql}
+        ${this.getBlockFilterSql(userUid)}
+      ORDER BY s.start_date ASC, s.uid ASC
+      LIMIT ${limit + 1}
+      OFFSET ${currentOffset};
+    `;
 
-    return {
-      items,
-      nextCursor,
-      totalCount,
-    };
+    this.logger.debug(`Found ${rows.length} recommended session rows for user ${userUid}`);
+
+    return this.toPaginatedCollection({ currentOffset, limit, rows });
   }
 
   async findAllByUserUid(
@@ -685,6 +740,7 @@ export class SessionsService {
         cursor: cursor ? { uid: cursor } : undefined,
         orderBy,
         select: {
+          creator: { select: { firstname: true, imageUrl: true, lastname: true } },
           creatorUid: true,
           endDate: true,
           field: {
@@ -699,10 +755,16 @@ export class SessionsService {
           level: true,
           maxPlayersPerTeam: true,
           sessionTeams: {
-            select: { _count: { select: { sessionPlayers: true } }, teamName: true },
+            select: {
+              _count: { select: { sessionPlayers: true } },
+              teamLabel: true,
+              teamName: true,
+              uid: true,
+            },
           },
           sport: true,
           startDate: true,
+          teamsPerGame: true,
           uid: true,
           visibility: true,
         },
@@ -1019,5 +1081,113 @@ export class SessionsService {
     );
 
     return result;
+  }
+
+  /**
+   * Excludes sessions whose creator has a block relationship with the user, in either direction.
+   * Expects the sessions table aliased as `s`.
+   */
+  private getBlockFilterSql(userUid: string): Prisma.Sql {
+    return Prisma.sql`
+      AND NOT EXISTS (
+        SELECT 1 FROM moderation."User_blocks" ub
+        WHERE (ub.blocker_uid = ${userUid} AND ub.blocked_uid = s.creator_uid)
+           OR (ub.blocker_uid = s.creator_uid AND ub.blocked_uid = ${userUid})
+      )
+    `;
+  }
+
+  /** Distance in meters between the field (aliased as `f`) and the user. */
+  private getDistanceValueSql({
+    userLat,
+    userLon,
+  }: {
+    userLat: number;
+    userLon: number;
+  }): Prisma.Sql {
+    return Prisma.sql`
+      public.ST_DistanceSphere(
+        public.ST_MakePoint(f.longitude::float, f.latitude::float),
+        public.ST_MakePoint(${userLon}::float, ${userLat}::float)
+      )
+    `;
+  }
+
+  /**
+   * Turns the ordered rows of a raw collection query (`limit + 1` rows, offset cursor)
+   * into a paginated list of collection items, keeping the order of the rows.
+   */
+  private async toPaginatedCollection({
+    currentOffset,
+    limit,
+    rows,
+  }: {
+    currentOffset: number;
+    limit: number;
+    rows: { uid: string; total_count: bigint; distance_val: number | null }[];
+  }): Promise<PaginatedDataDto<SessionCollectionItemDto>> {
+    if (!rows || rows.length === 0) {
+      return { items: [], nextCursor: null, totalCount: 0 };
+    }
+
+    const totalCount = Number(rows[0].total_count);
+    let nextCursor: string | null = null;
+    const itemsToFetch = rows;
+
+    if (rows.length > limit) {
+      itemsToFetch.pop();
+      nextCursor = (currentOffset + limit).toString();
+    }
+
+    const sessionUids = itemsToFetch.map((r) => r.uid);
+    const sessions = await this.prisma.sessions.findMany({
+      select: {
+        creator: { select: { firstname: true, imageUrl: true, lastname: true } },
+        creatorUid: true,
+        endDate: true,
+        field: {
+          select: {
+            fieldImages: { select: { url: true }, take: 1 },
+            latitude: true,
+            longitude: true,
+            shortAddress: true,
+          },
+        },
+        gameMode: true,
+        level: true,
+        maxPlayersPerTeam: true,
+        sessionTeams: {
+          select: {
+            _count: { select: { sessionPlayers: true } },
+            teamLabel: true,
+            teamName: true,
+            uid: true,
+          },
+        },
+        sport: true,
+        startDate: true,
+        teamsPerGame: true,
+        uid: true,
+        visibility: true,
+      },
+      where: { uid: { in: sessionUids } },
+    });
+
+    const rawDataMap = new Map(
+      itemsToFetch.map((item, index) => [item.uid, { distance: item.distance_val, index }]),
+    );
+    const sortedSessions = sessions.sort((a, b) => {
+      const indexA = rawDataMap.get(a.uid)?.index ?? 999;
+      const indexB = rawDataMap.get(b.uid)?.index ?? 999;
+      return indexA - indexB;
+    });
+
+    const items = SessionMapper.fromRawToSessionResponses(sortedSessions, rawDataMap);
+
+    return {
+      items,
+      nextCursor,
+      totalCount,
+    };
   }
 }

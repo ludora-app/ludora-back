@@ -1,4 +1,10 @@
-import { FieldType, GameModes, Sessions, SessionVisibility } from 'generated/prisma/client';
+import {
+  FieldType,
+  GameModes,
+  Sessions,
+  SessionVisibility,
+  TeamLabels,
+} from 'generated/prisma/client';
 import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
 import { FindOneSessionResponseData } from '../dto/output/find-one-session-response.dto';
 import { SessionCollectionItemDto } from '../dto/output/session-collection-response.dto';
@@ -17,8 +23,12 @@ export interface RawSessionCollectionItem {
   gameMode: string;
   creatorUid: string;
   maxPlayersPerTeam: number;
+  teamsPerGame: number;
   visibility?: SessionVisibility;
+  creator: { firstname: string; lastname: string; imageUrl: string | null } | null;
   sessionTeams: {
+    uid: string;
+    teamLabel: TeamLabels;
     teamName: string;
     _count: {
       sessionPlayers: number;
@@ -136,10 +146,13 @@ export class SessionMapper {
     session: RawSessionCollectionItem,
     distanceMap: Map<string, { distance: number | null; index: number }>,
   ): SessionCollectionItemDto {
-    const { field, sessionTeams, ...sessionData } = session;
+    const { creator, field, sessionTeams, ...sessionData } = session;
     const distData = distanceMap.get(session.uid);
 
     return {
+      creator: creator
+        ? { firstname: creator.firstname, imageUrl: creator.imageUrl, lastname: creator.lastname }
+        : undefined,
       creatorUid: sessionData.creatorUid,
       endDate: sessionData.endDate,
 
@@ -154,13 +167,16 @@ export class SessionMapper {
       maxPlayersPerTeam: sessionData.maxPlayersPerTeam,
       sport: sessionData.sport as Sport,
       startDate: sessionData.startDate,
+      teamsPerGame: sessionData.teamsPerGame,
       uid: sessionData.uid,
       visibility: sessionData.visibility as SessionVisibility,
 
       // Teams
       sessionTeams: sessionTeams.map((team) => ({
         numberOfPlayers: team._count.sessionPlayers,
+        teamLabel: team.teamLabel,
         teamName: team.teamName,
+        teamUid: team.uid,
       })),
 
       // Distance (brut PostGIS en m → converti en km, 2 décimales)

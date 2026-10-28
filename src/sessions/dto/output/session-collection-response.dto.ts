@@ -1,10 +1,25 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger';
+import { TeamLabels } from 'generated/prisma/enums';
 import { SessionSportLevel } from 'src/shared/constants/constants';
 import { toPaginationResponseType } from 'src/shared/dto/responses/pagination-response-type';
+import { UserSimpleDisplayData } from 'src/users/dto';
 
 import { SessionResponseData } from './session-response.dto';
 
 export class TeamFromSessionCollectionItemDto {
+  @ApiProperty({
+    description: 'Team ID',
+    example: 'cmkiwtv9r02d65pmp40klxt2i',
+  })
+  teamUid: string;
+
+  @ApiProperty({
+    description: 'Team label',
+    enum: TeamLabels,
+    example: TeamLabels.A,
+  })
+  teamLabel: TeamLabels;
+
   @ApiProperty({
     description: 'Team name',
     example: 'Team A',
@@ -38,6 +53,14 @@ export class SessionCollectionItemDto extends OmitType(SessionResponseData, [
     readOnly: true,
   })
   fieldShortAddress: string;
+
+  @ApiProperty({
+    description: 'Session creator, absent when the account was deleted',
+    readOnly: true,
+    required: false,
+    type: UserSimpleDisplayData,
+  })
+  creator?: UserSimpleDisplayData;
 
   @ApiProperty({
     description: 'Session teams',

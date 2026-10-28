@@ -89,17 +89,18 @@ export class DateUtils {
 
   /**
    * Returns the min and max hours for a given time period
+   * The periods cover 6:00 to midnight so that every session start time can match one
    * @param period - The time period (MORNING, AFTERNOON, EVENING)
-   * @returns Object with min and max hours
+   * @returns Object with min (included) and max (excluded) hours
    */
   public static getHoursForPeriod(period: string): { min: number; max: number } {
     switch (period) {
       case 'MORNING':
-        return { max: 12, min: 9 };
+        return { max: 12, min: 6 };
       case 'AFTERNOON':
         return { max: 17, min: 12 };
       case 'EVENING':
-        return { max: 22, min: 17 };
+        return { max: 24, min: 17 };
       default:
         return { max: 24, min: 0 }; // Fallback
     }

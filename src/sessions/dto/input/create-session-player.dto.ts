@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateSessionPlayerDto {
   @IsString()
@@ -27,4 +27,15 @@ export class CreateSessionPlayerDto {
   sessionUid: string;
 }
 
-export class JoinSessionDto extends OmitType(CreateSessionPlayerDto, ['userUid']) {}
+export class JoinSessionDto extends OmitType(CreateSessionPlayerDto, ['userUid', 'teamUid']) {
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    description:
+      'The uid of the team to join. When omitted, the team that needs the most players is picked',
+    example: 'cmajhjkjf000bq77q4b5ugn8b',
+    required: false,
+  })
+  teamUid?: string;
+}

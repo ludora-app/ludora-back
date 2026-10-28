@@ -21,6 +21,7 @@ describe('SessionPlayersService', () => {
       update: jest.fn(),
     },
     sessionTeams: {
+      findMany: jest.fn(),
       findUnique: jest.fn(),
     },
     sessions: {
@@ -415,7 +416,54 @@ describe('SessionPlayersService', () => {
       expect(result).toEqual({
         conversationUid,
         sessionUid,
+        teamUid,
       });
+      expect(prismaService.sessionTeams.findMany).not.toHaveBeenCalled();
+    });
+
+    it('should join the team that needs the most players when no team is given', async () => {
+      (mockPrismaService.sessionTeams.findMany as jest.Mock).mockResolvedValue([
+        { _count: { sessionPlayers: 10 }, uid: 'team-full' },
+        { _count: { sessionPlayers: 3 }, uid: 'team-open' },
+      ]);
+      jest.spyOn(service, 'verifyPlayerEligibilityBeforeJoin').mockResolvedValue(undefined);
+      (mockPrismaService.sessionPlayers.create as jest.Mock).mockResolvedValue({
+        session: { conversation: { uid: conversationUid } },
+        sessionUid,
+        user: { firstname: 'John', imageUrl: 'avatar', lastname: 'Doe', uid: userUid },
+      });
+
+      const result = await service.joinSession({ sessionUid, userUid }, mockSession);
+
+      expect(prismaService.sessionTeams.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: [{ sessionPlayers: { _count: 'asc' } }, { teamLabel: 'asc' }],
+          where: { sessionUid },
+        }),
+      );
+      expect(service.verifyPlayerEligibilityBeforeJoin).toHaveBeenCalledWith(
+        userUid,
+        'team-open',
+        mockSession,
+      );
+      expect(prismaService.sessionPlayers.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { sessionUid, teamUid: 'team-open', userUid },
+        }),
+      );
+      expect(result.teamUid).toBe('team-open');
+    });
+
+    it('should throw BadRequestException when no team is given and the session is full', async () => {
+      (mockPrismaService.sessionTeams.findMany as jest.Mock).mockResolvedValue([
+        { _count: { sessionPlayers: 10 }, uid: 'team-a' },
+        { _count: { sessionPlayers: 10 }, uid: 'team-b' },
+      ]);
+
+      await expect(service.joinSession({ sessionUid, userUid }, mockSession)).rejects.toThrow(
+        `Session ${sessionUid} is full`,
+      );
+      expect(prismaService.sessionPlayers.create).not.toHaveBeenCalled();
     });
   });
 
