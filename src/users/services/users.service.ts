@@ -15,15 +15,17 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { StorageFolderName } from 'src/shared/constants/constants';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { EmailsService } from 'src/shared/emails/emails.service';
+import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { VerificationCodeUtil } from 'src/shared/utils/verification-code.utils';
 import { USERSELECT } from '../../shared/constants/select-user';
-import { USER_SUGGESTION_CONFIG } from '../constants/users.constants';
+import { PLAY_AREA_CONFIG, USER_SUGGESTION_CONFIG } from '../constants/users.constants';
 import {
   CreateUserDto,
   FindAllUsersResponseDataDto,
   UpdatePasswordDto,
+  UpdatePlayAreaDto,
   UpdateUserDto,
   UserFilterDto,
 } from '../dto';
@@ -36,6 +38,7 @@ export class UsersService {
     private readonly prismaService: PrismaService,
     private readonly emailsService: EmailsService,
     private readonly storageService: StorageService,
+    private readonly geolocalisationService: GeolocalisationService,
     private readonly logger: PinoLogger,
     private readonly configService: ConfigService,
     private readonly userLookupService: UserLookupService,
@@ -393,6 +396,82 @@ export class UsersService {
     }
     this.logger.debug('User updated successfully');
     return;
+  }
+
+  /**
+   * Save the play area of a user. The coordinates are rounded (≈ 1 km) so that the exact position
+   * of the user is never stored, and the city of the user is set from the center of the play area.
+   * @param uid - The uid of the user
+   * @param updatePlayAreaDto - The center and radius of the play area
+   */
+  async updatePlayArea(uid: string, updatePlayAreaDto: UpdatePlayAreaDto): Promise<void> {
+    const { latitude, longitude, radiusKm } = updatePlayAreaDto;
+    this.logger.debug(`Updating play area of user ${uid} (radius ${radiusKm} km)`);
+
+    const existingUser = await this.userLookupService.findOne(uid, USERSELECT.checkIfUserExists);
+    if (!existingUser) {
+      this.logger.warn(`Cannot update play area, user not found: ${uid}`);
+      throw new NotFoundException('User not found');
+    }
+
+    const city = await this.findPlayAreaCity(uid, latitude, longitude);
+
+    await this.prismaService.users.update({
+      data: {
+        ...(city && { city }),
+        playAreaLatitude: this.roundCoordinate(latitude),
+        playAreaLongitude: this.roundCoordinate(longitude),
+        playAreaRadiusKm: radiusKm,
+      },
+      where: { uid },
+    });
+    this.logger.debug(`Play area of user ${uid} updated`);
+  }
+
+  /**
+   * Find the city of the play area. The precise coordinates are only sent to the geocoder, never stored.
+   * A geocoding failure keeps the current city instead of blocking the play area update.
+   */
+  private async findPlayAreaCity(
+    uid: string,
+    latitude: number,
+    longitude: number,
+  ): Promise<string | null> {
+    try {
+      return await this.geolocalisationService.getCityFromCoordinates(latitude, longitude);
+    } catch (error) {
+      this.logger.warn(`Cannot find the city of the play area of user ${uid}: ${error}`);
+      return null;
+    }
+  }
+
+  /**
+   * Remove the play area of a user
+   * @param uid - The uid of the user
+   */
+  async deletePlayArea(uid: string): Promise<void> {
+    this.logger.debug(`Deleting play area of user ${uid}`);
+
+    const existingUser = await this.userLookupService.findOne(uid, USERSELECT.checkIfUserExists);
+    if (!existingUser) {
+      this.logger.warn(`Cannot delete play area, user not found: ${uid}`);
+      throw new NotFoundException('User not found');
+    }
+
+    await this.prismaService.users.update({
+      data: {
+        playAreaLatitude: null,
+        playAreaLongitude: null,
+        playAreaRadiusKm: null,
+      },
+      where: { uid },
+    });
+    this.logger.debug(`Play area of user ${uid} deleted`);
+  }
+
+  private roundCoordinate(value: number): number {
+    const factor = 10 ** PLAY_AREA_CONFIG.COORDINATES_DECIMALS;
+    return Math.round(value * factor) / factor;
   }
 
   /**

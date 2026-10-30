@@ -6,6 +6,7 @@ import { Provider, Sex } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmailsService } from 'src/shared/emails/emails.service';
+import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { UserLookupService } from 'src/users/services/user-lookup.service';
 import { UsersService } from 'src/users/services/users.service';
@@ -72,6 +73,10 @@ describe('UsersService', () => {
     warn: jest.fn(),
   };
 
+  const mockGeolocalisationService = {
+    getCityFromCoordinates: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -88,6 +93,10 @@ describe('UsersService', () => {
         {
           provide: EmailsService,
           useValue: mockEmailsService,
+        },
+        {
+          provide: GeolocalisationService,
+          useValue: mockGeolocalisationService,
         },
         {
           provide: PinoLogger,
@@ -311,6 +320,103 @@ describe('UsersService', () => {
       mockPrismaService.users.update.mockResolvedValueOnce(null);
 
       await expect(service.update('1', updateUserDto)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('updatePlayArea', () => {
+    const updatePlayAreaDto = {
+      latitude: 48.861234,
+      longitude: 2.378956,
+      radiusKm: 10,
+    };
+
+    it('should store the play area with the coordinates rounded to 2 decimals and set the city', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce({ uid: '1' });
+      mockPrismaService.users.update.mockResolvedValueOnce({ uid: '1' });
+      mockGeolocalisationService.getCityFromCoordinates.mockResolvedValueOnce('Paris');
+
+      await service.updatePlayArea('1', updatePlayAreaDto);
+
+      expect(mockGeolocalisationService.getCityFromCoordinates).toHaveBeenCalledWith(
+        48.861234,
+        2.378956,
+      );
+      expect(mockPrismaService.users.update).toHaveBeenCalledWith({
+        data: {
+          city: 'Paris',
+          playAreaLatitude: 48.86,
+          playAreaLongitude: 2.38,
+          playAreaRadiusKm: 10,
+        },
+        where: { uid: '1' },
+      });
+    });
+
+    it('should round negative coordinates', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce({ uid: '1' });
+      mockPrismaService.users.update.mockResolvedValueOnce({ uid: '1' });
+
+      await service.updatePlayArea('1', {
+        ...updatePlayAreaDto,
+        latitude: -33.8688,
+        longitude: -0.5794,
+      });
+
+      expect(mockPrismaService.users.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ playAreaLatitude: -33.87, playAreaLongitude: -0.58 }),
+        }),
+      );
+    });
+
+    it('should keep the current city when the geocoding fails', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce({ uid: '1' });
+      mockPrismaService.users.update.mockResolvedValueOnce({ uid: '1' });
+      mockGeolocalisationService.getCityFromCoordinates.mockRejectedValueOnce(
+        new BadRequestException('No city found for these coordinates'),
+      );
+
+      await service.updatePlayArea('1', updatePlayAreaDto);
+
+      expect(mockLogger.warn).toHaveBeenCalled();
+      expect(mockPrismaService.users.update).toHaveBeenCalledWith({
+        data: { playAreaLatitude: 48.86, playAreaLongitude: 2.38, playAreaRadiusKm: 10 },
+        where: { uid: '1' },
+      });
+    });
+
+    it('should throw NotFoundException when the user does not exist', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
+
+      await expect(service.updatePlayArea('unknown', updatePlayAreaDto)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockPrismaService.users.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deletePlayArea', () => {
+    it('should clear every play area field', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce({ uid: '1' });
+      mockPrismaService.users.update.mockResolvedValueOnce({ uid: '1' });
+
+      await service.deletePlayArea('1');
+
+      expect(mockPrismaService.users.update).toHaveBeenCalledWith({
+        data: {
+          playAreaLatitude: null,
+          playAreaLongitude: null,
+          playAreaRadiusKm: null,
+        },
+        where: { uid: '1' },
+      });
+    });
+
+    it('should throw NotFoundException when the user does not exist', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
+
+      await expect(service.deletePlayArea('unknown')).rejects.toThrow(NotFoundException);
+      expect(mockPrismaService.users.update).not.toHaveBeenCalled();
     });
   });
 
