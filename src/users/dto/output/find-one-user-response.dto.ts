@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { OnBoardingStatus, Provider, Sex, UserType } from 'generated/prisma/client';
 import { ResponseTypeDto } from 'src/shared/dto/responses/response-type';
 import { SportPreferenceResponseData } from 'src/user-preferences/dto/output/sport-preference.response.dto';
+import { PlayAreaResponseData } from './play-area-response.dto';
 
 export class FindOneUserResponseData {
   @ApiProperty({ example: 'cm7hvgonx0000to0mh5maqajc', readOnly: true })
@@ -90,6 +91,14 @@ export class FindMeUserResponseData extends FindOneUserResponseData {
     readOnly: true,
   })
   readonly provider: Provider;
+
+  @ApiProperty({
+    description: 'Play area of the user, only returned to the user themself',
+    nullable: true,
+    readOnly: true,
+    type: PlayAreaResponseData,
+  })
+  readonly playArea: PlayAreaResponseData | null;
 }
 
 export class FindMeUserResponseDto extends ResponseTypeDto<FindMeUserResponseData> {

@@ -155,6 +155,44 @@ export class GeolocalisationService {
     }
   }
 
+  /**
+   * Retrieves the city (commune) containing the coordinates: "Paris" for every arrondissement
+   * @param lat - Latitude
+   * @param lng - Longitude
+   * @returns The name of the city
+   */
+  async getCityFromCoordinates(lat: number, lng: number): Promise<string> {
+    if (!this.isValidCoordinate(lat, lng)) {
+      throw new BadRequestException('Invalid GPS coordinates');
+    }
+
+    try {
+      const response = await this.client.reverseGeocode({
+        params: {
+          key: this.GOOGLE_MAPS_API_KEY,
+          language: Language.fr,
+          latlng: { lat, lng },
+          result_type: [AddressType.locality],
+        },
+      });
+
+      const city = response.data.results?.[0]?.address_components.find((component) =>
+        component.types.includes(AddressType.locality),
+      )?.long_name;
+
+      if (!city) {
+        throw new BadRequestException('No city found for these coordinates');
+      }
+
+      return city;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Error retrieving city');
+    }
+  }
+
   async getCoordinatesAndShortAddressFromAddress(address: string): Promise<ShortAddressLocation> {
     // ? fetch the coordinates from the address
     const coordinates = await this.getLatitudeAndLongitude(address);

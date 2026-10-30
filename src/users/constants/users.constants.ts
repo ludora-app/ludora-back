@@ -15,3 +15,9 @@ export const DEFAULT_USER_DATA = {
   FIRSTNAME: 'Utilisateur',
   LASTNAME: 'Supprimé',
 };
+
+export const PLAY_AREA_CONFIG = {
+  // 2 decimals ≈ 1 km: the exact position of the user is never stored
+  COORDINATES_DECIMALS: 2,
+  RADIUS_KM_VALUES: [5, 10, 20, 30],
+};

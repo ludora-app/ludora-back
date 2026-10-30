@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -8,6 +9,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
   UseInterceptors,
@@ -46,6 +48,7 @@ import {
   FindOneUserResponseData,
   FindOneUserResponseDto,
   UpdatePasswordDto,
+  UpdatePlayAreaDto,
   UpdateUserDto,
   UpdateUserEmailDto,
   UserFilterDto,
@@ -233,6 +236,50 @@ export class UsersController {
     }
     await this.usersService.update(uid, updateUserDto, createImageDto);
     return;
+  }
+
+  @Put('/play-area')
+  @Protected()
+  @ApiOperation({
+    summary:
+      'Save the play area of the connected user (coordinates rounded to 2 decimals, never shown to other users)',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid play area',
+    type: BadRequestResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
+  })
+  @ApiNoContentResponse({ description: 'Play area updated successfully' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  updatePlayArea(
+    @CurrentUser('uid') uid: string,
+    @Body() updatePlayAreaDto: UpdatePlayAreaDto,
+  ): Promise<void> {
+    return this.usersService.updatePlayArea(uid, updatePlayAreaDto);
+  }
+
+  @Delete('/play-area')
+  @Protected()
+  @ApiOperation({ summary: 'Remove the play area of the connected user' })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    type: NotFoundResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Token invalid: user missing',
+    type: UnauthorizedResponseDto,
+  })
+  @ApiNoContentResponse({ description: 'Play area deleted successfully' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deletePlayArea(@CurrentUser('uid') uid: string): Promise<void> {
+    return this.usersService.deletePlayArea(uid);
   }
 
   @Patch('/update-password')

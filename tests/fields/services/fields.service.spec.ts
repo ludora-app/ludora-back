@@ -9,6 +9,7 @@ import { Sport } from 'src/shared/constants/constants';
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import { StorageService } from 'src/shared/storage/storage.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 
 describe('FieldsService', () => {
   let service: FieldsService;
@@ -30,6 +31,12 @@ describe('FieldsService', () => {
       create: jest.fn(),
     },
     $transaction: jest.fn(),
+    $executeRawUnsafe: jest.fn(),
+    $queryRaw: jest.fn(),
+  };
+
+  const mockUserLookupService = {
+    resolveSearchLocation: jest.fn(),
   };
 
   const mockStorageService = {
@@ -67,6 +74,7 @@ describe('FieldsService', () => {
         { provide: PartnersService, useValue: mockPartnersService },
         { provide: PinoLogger, useValue: mockLogger },
         { provide: EmailsService, useValue: mockEmailsService },
+        { provide: UserLookupService, useValue: mockUserLookupService },
       ],
     }).compile();
 
@@ -263,6 +271,34 @@ describe('FieldsService', () => {
       ).rejects.toThrow(ConflictException);
 
       expect(mockLogger.error).toHaveBeenCalled();
+    });
+  });
+
+  describe('findAll', () => {
+    it('should search around the play area of the user when no position is sent', async () => {
+      const filter = { limit: 10, sports: [Sport.FOOTBALL] };
+      mockUserLookupService.resolveSearchLocation.mockResolvedValueOnce({
+        maxDistance: 10,
+        userLat: 48.86,
+        userLon: 2.38,
+      });
+      mockPrismaService.$queryRaw.mockResolvedValueOnce([]);
+
+      const result = await service.findAll(filter, 'user-uid');
+
+      expect(mockUserLookupService.resolveSearchLocation).toHaveBeenCalledWith(filter, 'user-uid');
+      const sqlValues = mockPrismaService.$queryRaw.mock.calls[0].slice(1);
+      expect(JSON.stringify(sqlValues)).toContain('48.86');
+      expect(JSON.stringify(sqlValues)).toContain('10000');
+      expect(result).toEqual({ items: [], nextCursor: null, totalCount: 0 });
+    });
+
+    it('should not look for a play area without user', async () => {
+      mockPrismaService.$queryRaw.mockResolvedValueOnce([]);
+
+      await service.findAll({ limit: 10 });
+
+      expect(mockUserLookupService.resolveSearchLocation).not.toHaveBeenCalled();
     });
   });
 
