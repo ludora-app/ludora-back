@@ -3,6 +3,9 @@ import { Prisma, Users } from 'generated/prisma/client';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { USERSELECT } from '../../shared/constants/select-user';
+import { PlayAreaResponseData } from '../dto';
+import { SearchLocation } from '../interfaces/search-location.interface';
+import { UserMapper } from '../mappers/user.mapper';
 
 /**
  * @description Read-only access to users.
@@ -87,5 +90,52 @@ export class UserLookupService {
     if (!user) return null;
 
     return user;
+  }
+
+  /**
+   * Find the play area of a user
+   * @param uid - The uid of the user
+   * @returns The play area, or null if the user has not set one
+   */
+  async findPlayArea(uid: string): Promise<PlayAreaResponseData | null> {
+    const user = await this.prismaService.users.findUnique({
+      select: {
+        playAreaLatitude: true,
+        playAreaLongitude: true,
+        playAreaRadiusKm: true,
+      },
+      where: { uid },
+    });
+
+    const playArea = user ? UserMapper.toPlayAreaDto(user) : null;
+    if (!playArea) {
+      this.logger.debug(`No play area for user ${uid}`);
+      return null;
+    }
+
+    return playArea;
+  }
+
+  /**
+   * Complete a geographic search with the play area of the user when the app sends no position:
+   * the center of the play area replaces the position, and its radius the missing max distance.
+   * A position sent by the app is always used as is.
+   * @param location - The position and max distance sent by the app
+   * @param userUid - The uid of the user making the search
+   * @returns The location to search around, unchanged if the user has no play area
+   */
+  async resolveSearchLocation(location: SearchLocation, userUid: string): Promise<SearchLocation> {
+    const { maxDistance, userLat, userLon } = location;
+    if (userLat != null && userLon != null) return location;
+
+    const playArea = await this.findPlayArea(userUid);
+    if (!playArea) return location;
+
+    this.logger.debug(`Searching around the play area of user ${userUid}`);
+    return {
+      maxDistance: maxDistance ?? playArea.radiusKm,
+      userLat: playArea.latitude,
+      userLon: playArea.longitude,
+    };
   }
 }

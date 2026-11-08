@@ -15,6 +15,7 @@ import {
   FindAllUsersResponseDataDto,
   FindMeUserResponseData,
   FindOneUserResponseData,
+  PlayAreaResponseData,
 } from '../dto';
 import { FindAllReportedUsersResponseData } from '../dto/output/find-all-reported-users-response.dto';
 import { FindOneUserWithReportsResponseData } from '../dto/output/find-one-with-reports-response.dto';
@@ -55,6 +56,9 @@ export interface RawUserFindMe extends RawUserFindOne {
   isEmailVerified: boolean;
   onBoardingStatus: OnBoardingStatus;
   provider: Provider;
+  playAreaLatitude: number | null;
+  playAreaLongitude: number | null;
+  playAreaRadiusKm: number | null;
   userHourPreferences: {
     date: Date;
     dayOfWeek: number;
@@ -139,6 +143,7 @@ export class UserMapper {
       name: `${user.firstname} ${user.lastname}`,
       onBoardingStatus: user.onBoardingStatus,
       phone: user.phone,
+      playArea: UserMapper.toPlayAreaDto(user),
       profileStatus: user.userSportPreferences.length > 0 ? 'COMPLETE' : 'INCOMPLETE',
       provider: user.provider,
       sex: user.sex,
@@ -148,6 +153,20 @@ export class UserMapper {
       stripeAccountId: user.stripeAccountId,
       type: user.type,
       uid: user.uid,
+    };
+  }
+
+  static toPlayAreaDto(
+    user: Pick<RawUserFindMe, 'playAreaLatitude' | 'playAreaLongitude' | 'playAreaRadiusKm'>,
+  ): PlayAreaResponseData | null {
+    const { playAreaLatitude, playAreaLongitude, playAreaRadiusKm } = user;
+    if (playAreaLatitude == null || playAreaLongitude == null || playAreaRadiusKm == null) {
+      return null;
+    }
+    return {
+      latitude: playAreaLatitude,
+      longitude: playAreaLongitude,
+      radiusKm: playAreaRadiusKm,
     };
   }
 

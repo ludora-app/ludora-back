@@ -1,4 +1,5 @@
 import { Global, Module } from '@nestjs/common';
+import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { UsersController } from './controllers/users.controller';
 import { UsersAdminController } from './controllers/users-admin.controller';
@@ -11,6 +12,12 @@ import { UsersAdminService } from './services/users-admin.service';
   controllers: [UsersController, UsersAdminController],
   exports: [UsersService, UserLookupService],
   imports: [],
-  providers: [UsersService, UserLookupService, StorageService, UsersAdminService],
+  providers: [
+    UsersService,
+    UserLookupService,
+    StorageService,
+    UsersAdminService,
+    GeolocalisationService,
+  ],
 })
 export class UsersModule {}

@@ -9,6 +9,7 @@ import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-t
 import { EmailsService } from 'src/shared/emails/emails.service';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import { StorageService } from 'src/shared/storage/storage.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 import { FIELD_SUGGESTION_CONFIG } from '../constants/fields.constants';
 import { CreatePrivateFieldDto } from '../dto/input/create-private-field.dto';
 import { CreatePublicFieldDto } from '../dto/input/create-public-field.dto';
@@ -29,6 +30,7 @@ export class FieldsService {
     private readonly geolocalisationService: GeolocalisationService,
     private readonly logger: PinoLogger,
     private readonly emailsService: EmailsService,
+    private readonly userLookupService: UserLookupService,
   ) {
     this.logger.setContext(FieldsService.name);
   }
@@ -240,21 +242,33 @@ export class FieldsService {
     this.logger.debug(`Field location ${address} does not exist for sports ${sports.join(', ')}`);
   }
 
-  async findAll(filter: FieldFilterDto): Promise<PaginatedDataDto<FieldResponseDto>> {
+  /**
+   * @param filter - The search filters
+   * @param userUid - When set, the play area of the user replaces a missing position
+   */
+  async findAll(
+    filter: FieldFilterDto,
+    userUid?: string,
+  ): Promise<PaginatedDataDto<FieldResponseDto>> {
     const {
       cursor,
       date,
       duration,
       gameModes,
       limit = 10,
-      maxDistance = FIELD_SUGGESTION_CONFIG.THRESHOLDS.MAX_DISTANCE_KM,
       search,
       sports,
       timezone = 'Europe/Paris',
       type,
+    } = filter;
+    const location = userUid
+      ? await this.userLookupService.resolveSearchLocation(filter, userUid)
+      : filter;
+    const {
+      maxDistance = FIELD_SUGGESTION_CONFIG.THRESHOLDS.MAX_DISTANCE_KM,
       userLat,
       userLon,
-    } = filter;
+    } = location;
 
     const { SCORES } = FIELD_SUGGESTION_CONFIG;
     const currentOffset = cursor ? parseInt(cursor, 10) : 0;

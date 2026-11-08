@@ -69,6 +69,9 @@ export class UserLifecycleService {
             lastname: DEFAULT_USER_DATA.LASTNAME,
             password: null,
             phone: null,
+            playAreaLatitude: null,
+            playAreaLongitude: null,
+            playAreaRadiusKm: null,
           },
           where: { uid },
         });

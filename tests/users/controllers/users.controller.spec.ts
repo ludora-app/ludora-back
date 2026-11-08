@@ -23,6 +23,7 @@ describe('UsersController', () => {
   const mockUsersService = {
     cancelDeletionRequest: jest.fn(),
     deactivate: jest.fn(),
+    deletePlayArea: jest.fn(),
     deletionRequest: jest.fn(),
     findAll: jest.fn(),
     remove: jest.fn(),
@@ -30,6 +31,7 @@ describe('UsersController', () => {
     update: jest.fn(),
     updateEmail: jest.fn(),
     updatePassword: jest.fn(),
+    updatePlayArea: jest.fn(),
   };
 
   const mockUser = {
@@ -184,6 +186,22 @@ describe('UsersController', () => {
       expect(result).toBeDefined();
       expect(lookupService.findOne).toHaveBeenCalledWith('1', USERSELECT.findOne, undefined);
     });
+
+    it('should never return the play area of another user', async () => {
+      mockUserLookupService.findOne.mockResolvedValue({
+        ...mockUser,
+        playAreaLatitude: 48.79,
+        playAreaLongitude: 2.46,
+        playAreaRadiusKm: 10,
+      });
+
+      const result = await controller.findOne('1', 'searcher-uid');
+
+      expect(JSON.stringify(result.data)).not.toMatch(/playArea|48\.79|2\.46/);
+      expect(Object.keys(USERSELECT.findOne)).not.toEqual(
+        expect.arrayContaining([expect.stringMatching(/^playArea/)]),
+      );
+    });
   });
 
   describe('findMe', () => {
@@ -202,6 +220,31 @@ describe('UsersController', () => {
       expect(result.data.profileStatus).toBe('INCOMPLETE');
       expect(result.message).toBe('User fetched successfully');
       expect(lookupService.findOne).toHaveBeenCalledWith('1', USERSELECT.findMe);
+    });
+
+    it('should return the play area of the authenticated user', async () => {
+      mockUserLookupService.findOne.mockResolvedValue({
+        ...mockUserFindMe,
+        playAreaLatitude: 48.86,
+        playAreaLongitude: 2.38,
+        playAreaRadiusKm: 10,
+      });
+
+      const result = await controller.findMe('1');
+
+      expect(result.data.playArea).toEqual({
+        latitude: 48.86,
+        longitude: 2.38,
+        radiusKm: 10,
+      });
+    });
+
+    it('should return a null play area when the user has not set one', async () => {
+      mockUserLookupService.findOne.mockResolvedValue(mockUserFindMe);
+
+      const result = await controller.findMe({ user: { uid: '1' } } as any);
+
+      expect(result.data.playArea).toBeNull();
     });
   });
 
@@ -252,6 +295,31 @@ describe('UsersController', () => {
         file: mockFiles[0].buffer,
         name: mockFiles[0].originalname,
       });
+    });
+  });
+
+  describe('updatePlayArea', () => {
+    it('should update the play area of the connected user', async () => {
+      const updatePlayAreaDto = {
+        latitude: 48.8612,
+        longitude: 2.3789,
+        radiusKm: 10,
+      };
+      mockUsersService.updatePlayArea.mockResolvedValue(undefined);
+
+      await controller.updatePlayArea('1', updatePlayAreaDto);
+
+      expect(service.updatePlayArea).toHaveBeenCalledWith('1', updatePlayAreaDto);
+    });
+  });
+
+  describe('deletePlayArea', () => {
+    it('should delete the play area of the connected user', async () => {
+      mockUsersService.deletePlayArea.mockResolvedValue(undefined);
+
+      await controller.deletePlayArea('1');
+
+      expect(service.deletePlayArea).toHaveBeenCalledWith('1');
     });
   });
 

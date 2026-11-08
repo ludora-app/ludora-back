@@ -62,6 +62,9 @@ model Users {
   isBanned          Boolean           @default(false) @map("is_banned")
   banReason         ReportReason?     @map("ban_reason")
   bannedAt          DateTime?         @map("banned_at")
+  playAreaLatitude  Float?            @map("play_area_latitude")
+  playAreaLongitude Float?            @map("play_area_longitude")
+  playAreaRadiusKm  Int?              @map("play_area_radius_km")
 
   messages            Messages[]
   // Event               Events[]

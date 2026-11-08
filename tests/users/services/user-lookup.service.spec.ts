@@ -172,4 +172,75 @@ describe('UserLookupService', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('findPlayArea', () => {
+    it('should return the play area of the user', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce({
+        playAreaLatitude: 48.79,
+        playAreaLongitude: 2.46,
+        playAreaRadiusKm: 20,
+      });
+
+      const result = await service.findPlayArea('1');
+
+      expect(result).toEqual({ latitude: 48.79, longitude: 2.46, radiusKm: 20 });
+    });
+
+    it('should return null when the user has no play area', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce({
+        playAreaLatitude: null,
+        playAreaLongitude: null,
+        playAreaRadiusKm: null,
+      });
+
+      expect(await service.findPlayArea('1')).toBeNull();
+    });
+
+    it('should return null when the user does not exist', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
+
+      expect(await service.findPlayArea('unknown')).toBeNull();
+    });
+  });
+
+  describe('resolveSearchLocation', () => {
+    const playArea = {
+      playAreaLatitude: 48.79,
+      playAreaLongitude: 2.46,
+      playAreaRadiusKm: 20,
+    };
+
+    it('should keep the position sent by the app', async () => {
+      const location = { maxDistance: 5, userLat: 48.84, userLon: 2.24 };
+
+      const result = await service.resolveSearchLocation(location, '1');
+
+      expect(result).toEqual(location);
+      expect(mockPrismaService.users.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('should use the center and the radius of the play area without position', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(playArea);
+
+      const result = await service.resolveSearchLocation({}, '1');
+
+      expect(result).toEqual({ maxDistance: 20, userLat: 48.79, userLon: 2.46 });
+    });
+
+    it('should keep the max distance sent by the app', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(playArea);
+
+      const result = await service.resolveSearchLocation({ maxDistance: 5 }, '1');
+
+      expect(result).toEqual({ maxDistance: 5, userLat: 48.79, userLon: 2.46 });
+    });
+
+    it('should return the location unchanged when the user has no play area', async () => {
+      mockPrismaService.users.findUnique.mockResolvedValueOnce(null);
+
+      const result = await service.resolveSearchLocation({ maxDistance: 5 }, '1');
+
+      expect(result).toEqual({ maxDistance: 5 });
+    });
+  });
 });

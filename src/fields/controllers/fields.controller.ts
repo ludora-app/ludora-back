@@ -184,9 +184,10 @@ export class FieldsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all verified fields' })
   async findAllVerified(
+    @CurrentUser('uid') userUid: string,
     @Query() filter: FieldFilterDto,
   ): Promise<PaginationResponseTypeDto<FieldResponseDto>> {
-    const data = await this.fieldsService.findAll(filter);
+    const data = await this.fieldsService.findAll(filter, userUid);
 
     return {
       data,

@@ -243,13 +243,13 @@ describe('FieldsController', () => {
 
       mockFieldsService.findAll.mockResolvedValue(mockResponse);
 
-      const result = await controller.findAllVerified(filter);
+      const result = await controller.findAllVerified('user-uid-1', filter);
 
       expect(result).toEqual({
         data: mockResponse,
         message: 'Fields fetched successfully',
       });
-      expect(mockFieldsService.findAll).toHaveBeenCalledWith(filter);
+      expect(mockFieldsService.findAll).toHaveBeenCalledWith(filter, 'user-uid-1');
     });
 
     it('should handle empty results', async () => {
@@ -265,7 +265,7 @@ describe('FieldsController', () => {
 
       mockFieldsService.findAll.mockResolvedValue(mockResponse);
 
-      const result = await controller.findAllVerified(filter);
+      const result = await controller.findAllVerified('user-uid-1', filter);
 
       expect(result).toEqual({
         data: mockResponse,
@@ -298,10 +298,10 @@ describe('FieldsController', () => {
 
       mockFieldsService.findAll.mockResolvedValue(mockResponse);
 
-      const result = await controller.findAllVerified(filter);
+      const result = await controller.findAllVerified('user-uid-1', filter);
 
       expect(result.data.nextCursor).toBe('field-3');
-      expect(mockFieldsService.findAll).toHaveBeenCalledWith(filter);
+      expect(mockFieldsService.findAll).toHaveBeenCalledWith(filter, 'user-uid-1');
     });
   });
 

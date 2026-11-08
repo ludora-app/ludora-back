@@ -1,6 +1,7 @@
 import { AddressType, Client, Language } from '@googlemaps/google-maps-services-js';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PinoLogger } from 'nestjs-pino';
 import { PaginatedDataDto } from '../dto/responses/pagination-response-type';
 import { AddressComponentsTypes } from './dto/input/address-components-types';
 import { AddressAutocompleteResponseData } from './dto/output/address-autocomplete-response.dto';
@@ -15,7 +16,12 @@ import { GeolocalisationMapper } from './mappers/geolocalisation.mapper';
 
 @Injectable()
 export class GeolocalisationService {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(GeolocalisationService.name);
+  }
 
   /**
    * the GOOGLE_MAPS_API_KEY is retrieved like this to avoid potential issues with the generation of
@@ -152,6 +158,60 @@ export class GeolocalisationService {
         throw error;
       }
       throw new BadRequestException('Error retrieving detailed information');
+    }
+  }
+
+  /**
+   * Retrieves the city (commune) containing the coordinates: "Paris" for every arrondissement
+   * @param lat - Latitude
+   * @param lng - Longitude
+   * @returns The name of the city
+   */
+  async getCityFromCoordinates(lat: number, lng: number): Promise<string> {
+    if (!this.isValidCoordinate(lat, lng)) {
+      throw new BadRequestException('Invalid GPS coordinates');
+    }
+
+    try {
+      const response = await this.client.reverseGeocode({
+        params: {
+          key: this.GOOGLE_MAPS_API_KEY,
+          language: Language.fr,
+          latlng: { lat, lng },
+          result_type: [AddressType.locality],
+        },
+      });
+
+      const city = response.data.results?.[0]?.address_components.find((component) =>
+        component.types.includes(AddressType.locality),
+      )?.long_name;
+
+      if (!city) {
+        throw new BadRequestException('No city found for these coordinates');
+      }
+
+      return city;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Error retrieving city');
+    }
+  }
+
+  /**
+   * Retrieves the city (commune) containing the coordinates without failing: a geocoding error is
+   * logged and null is returned, so that the caller can go on without the city
+   * @param lat - Latitude
+   * @param lng - Longitude
+   * @returns The name of the city, or null when it cannot be found
+   */
+  async findCityFromCoordinates(lat: number, lng: number): Promise<string | null> {
+    try {
+      return await this.getCityFromCoordinates(lat, lng);
+    } catch (error) {
+      this.logger.warn(`Cannot find the city of the coordinates: ${error}`);
+      return null;
     }
   }
 
