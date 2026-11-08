@@ -21,7 +21,7 @@ import {
 import { FindAllReportedUsersResponseData } from '../dto/output/find-all-reported-users-response.dto';
 import { FindOneUserWithReportsResponseData } from '../dto/output/find-one-with-reports-response.dto';
 
-/** Row of the compatible players query (`UserLookupService.findCompatible`) */
+/** Row of the compatible players query (`UserLookupService.findAllCompatibleUsers`) */
 export interface RawCompatibleUser {
   uid: string;
   firstname: string | null;

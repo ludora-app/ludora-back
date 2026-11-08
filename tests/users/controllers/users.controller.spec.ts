@@ -22,7 +22,7 @@ describe('UsersController', () => {
   let lookupService: UserLookupService;
 
   const mockUserLookupService = {
-    findCompatible: jest.fn(),
+    findAllCompatibleUsers: jest.fn(),
     findOne: jest.fn(),
     findOneByEmail: jest.fn(),
   };
@@ -131,7 +131,7 @@ describe('UsersController', () => {
     });
   });
 
-  describe('findCompatible', () => {
+  describe('findAllCompatibleUsers', () => {
     it('should return the players compatible with the session', async () => {
       const filter: CompatibleUserFilterDto = {
         fieldUid: 'field-1',
@@ -140,12 +140,12 @@ describe('UsersController', () => {
         startDate: '2026-11-07T09:00:00.000Z',
       };
       const data = { items: [{ distance: 3, uid: '2' }], nextCursor: null, totalCount: 1 };
-      mockUserLookupService.findCompatible.mockResolvedValue(data);
+      mockUserLookupService.findAllCompatibleUsers.mockResolvedValue(data);
 
-      const result = await controller.findCompatible('1', filter);
+      const result = await controller.findAllCompatibleUsers('1', filter);
 
       expect(result).toEqual({ data, message: 'Compatible users fetched successfully' });
-      expect(lookupService.findCompatible).toHaveBeenCalledWith('1', filter);
+      expect(lookupService.findAllCompatibleUsers).toHaveBeenCalledWith('1', filter);
     });
   });
 

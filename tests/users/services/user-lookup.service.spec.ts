@@ -255,7 +255,7 @@ describe('UserLookupService', () => {
     });
   });
 
-  describe('findCompatible', () => {
+  describe('findAllCompatibleUsers', () => {
     // Saturday 7 November 2026, 10:00 in Paris
     const filter = {
       fieldUid: 'field-1',
@@ -286,13 +286,15 @@ describe('UserLookupService', () => {
     it('should throw when the field does not exist', async () => {
       mockPrismaService.fields.findUnique.mockResolvedValueOnce(null);
 
-      await expect(service.findCompatible('user-1', filter)).rejects.toThrow(NotFoundException);
+      await expect(service.findAllCompatibleUsers('user-1', filter)).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockLogger.warn).toHaveBeenCalled();
       expect(mockPrismaService.$queryRaw).not.toHaveBeenCalled();
     });
 
     it('should return no player for a session starting before 6:00', async () => {
-      const result = await service.findCompatible('user-1', {
+      const result = await service.findAllCompatibleUsers('user-1', {
         ...filter,
         startDate: '2026-11-07T02:00:00.000Z',
       });
@@ -302,14 +304,14 @@ describe('UserLookupService', () => {
     });
 
     it('should match the day of week and the period in Paris time', async () => {
-      await service.findCompatible('user-1', filter);
+      await service.findAllCompatibleUsers('user-1', filter);
 
       const { values } = getQuery();
       expect(values).toEqual(expect.arrayContaining([TimePeriod.MORNING, 6, '2026-11-07']));
     });
 
     it('should match the date of one-time preferences only, in Paris time', async () => {
-      await service.findCompatible('user-1', filter);
+      await service.findAllCompatibleUsers('user-1', filter);
 
       const { sql, values } = getQuery();
       expect(sql).toContain("(hp.date AT TIME ZONE 'UTC' AT TIME ZONE ?)::date = ?::date");
@@ -317,7 +319,7 @@ describe('UserLookupService', () => {
     });
 
     it('should accept players one level apart', async () => {
-      await service.findCompatible('user-1', filter);
+      await service.findAllCompatibleUsers('user-1', filter);
 
       const { sql, values } = getQuery();
       expect(sql).toContain('ABS(us.level - ?) <= 1');
@@ -325,13 +327,13 @@ describe('UserLookupService', () => {
     });
 
     it('should order the players by closest level', async () => {
-      await service.findCompatible('user-1', filter);
+      await service.findAllCompatibleUsers('user-1', filter);
 
       expect(getQuery().sql).toContain('ABS(level - ?) ASC');
     });
 
     it('should accept every level for a session open to all levels, without level order', async () => {
-      await service.findCompatible('user-1', { ...filter, level: SessionSportLevel.ANY });
+      await service.findAllCompatibleUsers('user-1', { ...filter, level: SessionSportLevel.ANY });
 
       const { sql } = getQuery();
       expect(sql).not.toContain('<= 1');
@@ -339,7 +341,10 @@ describe('UserLookupService', () => {
     });
 
     it('should keep players without formats when a format is given', async () => {
-      await service.findCompatible('user-1', { ...filter, gameMode: GameModes.FIVE_V_FIVE });
+      await service.findAllCompatibleUsers('user-1', {
+        ...filter,
+        gameMode: GameModes.FIVE_V_FIVE,
+      });
 
       const { sql, values } = getQuery();
       expect(sql).toContain('NOT EXISTS');
@@ -348,13 +353,13 @@ describe('UserLookupService', () => {
     });
 
     it('should not filter on formats without a format', async () => {
-      await service.findCompatible('user-1', filter);
+      await service.findAllCompatibleUsers('user-1', filter);
 
       expect(getQuery().sql).not.toContain('User_game_mode_preferences');
     });
 
     it('should require the field inside the play area, or no play area', async () => {
-      await service.findCompatible('user-1', filter);
+      await service.findAllCompatibleUsers('user-1', filter);
 
       const { sql } = getQuery();
       expect(sql).toContain('u.play_area_latitude IS NULL');
@@ -362,7 +367,7 @@ describe('UserLookupService', () => {
     });
 
     it('should compute the distance once, after a latitude pre-filter', async () => {
-      await service.findCompatible('user-1', filter);
+      await service.findAllCompatibleUsers('user-1', filter);
 
       const { sql } = getQuery();
       expect(sql.match(/ST_DistanceSphere/g)).toHaveLength(1);
@@ -371,7 +376,7 @@ describe('UserLookupService', () => {
     });
 
     it('should exclude the current user, blocks, deleted and banned accounts', async () => {
-      await service.findCompatible('user-1', filter);
+      await service.findAllCompatibleUsers('user-1', filter);
 
       const { sql, values } = getQuery();
       expect(sql).toContain('u.uid <> ?');
@@ -397,7 +402,7 @@ describe('UserLookupService', () => {
       });
 
       it('should exclude its players and its pending or accepted invitations', async () => {
-        await service.findCompatible('user-1', { ...filter, sessionUid: 'session-1' });
+        await service.findAllCompatibleUsers('user-1', { ...filter, sessionUid: 'session-1' });
 
         const { sql, values } = getQuery();
         expect(sql).toContain('Session_players');
@@ -413,7 +418,7 @@ describe('UserLookupService', () => {
       });
 
       it('should use the characteristics of the session instead of the ones sent', async () => {
-        await service.findCompatible('user-1', { ...filter, sessionUid: 'session-1' });
+        await service.findAllCompatibleUsers('user-1', { ...filter, sessionUid: 'session-1' });
 
         expect(mockPrismaService.fields.findUnique).toHaveBeenCalledWith(
           expect.objectContaining({ where: { uid: 'field-2' } }),
@@ -437,7 +442,7 @@ describe('UserLookupService', () => {
         });
 
         await expect(
-          service.findCompatible('user-1', { ...filter, sessionUid: 'session-1' }),
+          service.findAllCompatibleUsers('user-1', { ...filter, sessionUid: 'session-1' }),
         ).resolves.toBeDefined();
       });
 
@@ -445,7 +450,7 @@ describe('UserLookupService', () => {
         mockPrismaService.sessions.findUnique.mockResolvedValueOnce(null);
 
         await expect(
-          service.findCompatible('user-1', { ...filter, sessionUid: 'session-1' }),
+          service.findAllCompatibleUsers('user-1', { ...filter, sessionUid: 'session-1' }),
         ).rejects.toThrow(NotFoundException);
         expect(mockLogger.warn).toHaveBeenCalled();
         expect(mockPrismaService.$queryRaw).not.toHaveBeenCalled();
@@ -458,7 +463,7 @@ describe('UserLookupService', () => {
         });
 
         await expect(
-          service.findCompatible('user-1', { ...filter, sessionUid: 'session-1' }),
+          service.findAllCompatibleUsers('user-1', { ...filter, sessionUid: 'session-1' }),
         ).rejects.toThrow(ForbiddenException);
         expect(mockLogger.warn).toHaveBeenCalled();
         expect(mockPrismaService.$queryRaw).not.toHaveBeenCalled();
@@ -466,14 +471,14 @@ describe('UserLookupService', () => {
     });
 
     it('should not look at sessions without a session uid', async () => {
-      await service.findCompatible('user-1', filter);
+      await service.findAllCompatibleUsers('user-1', filter);
 
       expect(mockPrismaService.sessions.findUnique).not.toHaveBeenCalled();
       expect(getQuery().sql).not.toContain('Session_invitations');
     });
 
     it('should return the distance in whole km and never the coordinates', async () => {
-      const result = await service.findCompatible('user-1', filter);
+      const result = await service.findAllCompatibleUsers('user-1', filter);
 
       expect(result.items).toEqual([
         {
@@ -491,7 +496,7 @@ describe('UserLookupService', () => {
     it('should return at least 1 km for a field next to the play area center', async () => {
       mockPrismaService.$queryRaw.mockResolvedValueOnce([{ ...row, distance_m: 120 }]);
 
-      const result = await service.findCompatible('user-1', filter);
+      const result = await service.findAllCompatibleUsers('user-1', filter);
 
       expect(result.items[0].distance).toBe(1);
     });
@@ -499,7 +504,7 @@ describe('UserLookupService', () => {
     it('should return a null distance for a player without play area', async () => {
       mockPrismaService.$queryRaw.mockResolvedValueOnce([{ ...row, distance_m: null }]);
 
-      const result = await service.findCompatible('user-1', filter);
+      const result = await service.findAllCompatibleUsers('user-1', filter);
 
       expect(result.items[0].distance).toBeNull();
     });
@@ -507,7 +512,11 @@ describe('UserLookupService', () => {
     it('should paginate with an offset cursor', async () => {
       mockPrismaService.$queryRaw.mockResolvedValueOnce([row, { ...row, uid: 'user-3' }]);
 
-      const result = await service.findCompatible('user-1', { ...filter, cursor: '10', limit: 1 });
+      const result = await service.findAllCompatibleUsers('user-1', {
+        ...filter,
+        cursor: '10',
+        limit: 1,
+      });
 
       expect(result.items).toHaveLength(1);
       expect(result.nextCursor).toBe('11');

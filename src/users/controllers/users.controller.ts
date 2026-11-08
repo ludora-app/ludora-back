@@ -134,11 +134,11 @@ export class UsersController {
   })
   @ApiNotFoundResponse({ description: 'Field or session not found', type: NotFoundResponseDto })
   @HttpCode(HttpStatus.OK)
-  async findCompatible(
+  async findAllCompatibleUsers(
     @CurrentUser('uid') userUid: string,
     @Query() filter: CompatibleUserFilterDto,
   ): Promise<PaginationResponseTypeDto<CompatibleUserCollectionItemDto>> {
-    const data = await this.userLookupService.findCompatible(userUid, filter);
+    const data = await this.userLookupService.findAllCompatibleUsers(userUid, filter);
 
     return {
       data,

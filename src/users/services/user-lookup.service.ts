@@ -138,7 +138,7 @@ export class UserLookupService {
    * @param filter - The characteristics of the session
    * @returns The compatible players, by distance then closest level
    */
-  async findCompatible(
+  async findAllCompatibleUsers(
     userUid: string,
     filter: CompatibleUserFilterDto,
   ): Promise<PaginatedDataDto<CompatibleUserCollectionItemDto>> {
