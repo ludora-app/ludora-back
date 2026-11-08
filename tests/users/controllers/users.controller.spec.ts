@@ -1,10 +1,16 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
+import { SessionSportLevel, Sport } from 'src/shared/constants/constants';
 import { USERSELECT } from 'src/shared/constants/select-user';
 import { DevOnlyGuard } from 'src/shared/guards/dev-only.guard';
 import { UsersController } from 'src/users/controllers/users.controller';
-import { UpdatePasswordDto, UpdateUserDto, UserFilterDto } from 'src/users/dto';
+import {
+  CompatibleUserFilterDto,
+  UpdatePasswordDto,
+  UpdateUserDto,
+  UserFilterDto,
+} from 'src/users/dto';
 import { PasswordResetRequestDto } from 'src/users/dto/input/password-reset-request.dto';
 import { UpdateUserEmailDto } from 'src/users/dto/input/update-user.dto';
 import { UserLookupService } from 'src/users/services/user-lookup.service';
@@ -16,6 +22,7 @@ describe('UsersController', () => {
   let lookupService: UserLookupService;
 
   const mockUserLookupService = {
+    findCompatible: jest.fn(),
     findOne: jest.fn(),
     findOneByEmail: jest.fn(),
   };
@@ -121,6 +128,24 @@ describe('UsersController', () => {
         message: 'Users fetched successfully',
       });
       expect(service.findAll).toHaveBeenCalledWith(filters, userUid);
+    });
+  });
+
+  describe('findCompatible', () => {
+    it('should return the players compatible with the session', async () => {
+      const filter: CompatibleUserFilterDto = {
+        fieldUid: 'field-1',
+        level: SessionSportLevel.INTERMEDIATE,
+        sport: Sport.FOOTBALL,
+        startDate: '2026-11-07T09:00:00.000Z',
+      };
+      const data = { items: [{ distance: 3, uid: '2' }], nextCursor: null, totalCount: 1 };
+      mockUserLookupService.findCompatible.mockResolvedValue(data);
+
+      const result = await controller.findCompatible('1', filter);
+
+      expect(result).toEqual({ data, message: 'Compatible users fetched successfully' });
+      expect(lookupService.findCompatible).toHaveBeenCalledWith('1', filter);
     });
   });
 

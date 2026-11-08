@@ -17,6 +17,7 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConsumes,
+  ApiForbiddenResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -24,6 +25,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Users } from 'generated/prisma/client';
 import { CreateImageDto } from 'src/auth/dto';
 import { AuthB2CGuard } from 'src/auth/guards/auth-b2c.guard';
@@ -32,6 +34,7 @@ import { Protected } from 'src/shared/decorators/protected.decorator';
 import { Public } from 'src/shared/decorators/public.decorator';
 import { UploadedFilesCustom } from 'src/shared/decorators/uploaded-files.decorator';
 import { BadRequestResponseDto } from 'src/shared/dto/errors/bad-request-response.dto';
+import { ForbiddenResponseDto } from 'src/shared/dto/errors/forbidden-response.dto';
 import { NotFoundResponseDto } from 'src/shared/dto/errors/not-found-response.dto';
 import { UnauthorizedResponseDto } from 'src/shared/dto/errors/unauthorized-response.dto';
 import { PaginationResponseTypeDto } from 'src/shared/dto/responses/pagination-response-type';
@@ -40,12 +43,15 @@ import { FastifyFilesInterceptor } from 'src/shared/interceptors/fastify-file.in
 import { SWAGGER_TAG_USERS } from 'src/swagger/swagger.config';
 import { USERSELECT } from '../../shared/constants/select-user';
 import {
+  CompatibleUserCollectionItemDto,
+  CompatibleUserFilterDto,
   FindAllUsersResponseDataDto,
   FindAllUsersResponseDto,
   FindMeUserResponseData,
   FindMeUserResponseDto,
   FindOneUserResponseData,
   FindOneUserResponseDto,
+  PaginatedCompatibleUserCollectionResponseDto,
   UpdatePasswordDto,
   UpdatePlayAreaDto,
   UpdateUserDto,
@@ -108,6 +114,35 @@ export class UsersController {
     return {
       data,
       message: 'Users fetched successfully',
+    };
+  }
+
+  @Get('/compatible-list/collection')
+  @Protected()
+  // Each call gives distances from a field of the caller's choice: keep the calls few
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @ApiOperation({
+    summary:
+      'Retrieves the players compatible with a session (published or not): sport, level, format, slot and play area',
+  })
+  @ApiOkResponse({ type: PaginatedCompatibleUserCollectionResponseDto })
+  @ApiBadRequestResponse({ type: BadRequestResponseDto })
+  @ApiUnauthorizedResponse({ type: UnauthorizedResponseDto })
+  @ApiForbiddenResponse({
+    description: 'The caller is neither the creator nor a player of the session',
+    type: ForbiddenResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Field or session not found', type: NotFoundResponseDto })
+  @HttpCode(HttpStatus.OK)
+  async findCompatible(
+    @CurrentUser('uid') userUid: string,
+    @Query() filter: CompatibleUserFilterDto,
+  ): Promise<PaginationResponseTypeDto<CompatibleUserCollectionItemDto>> {
+    const data = await this.userLookupService.findCompatible(userUid, filter);
+
+    return {
+      data,
+      message: 'Compatible users fetched successfully',
     };
   }
 

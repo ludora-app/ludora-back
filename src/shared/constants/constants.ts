@@ -1,3 +1,6 @@
+// Hour preferences and session slots are expressed in the players' local time
+export const LOCAL_TIME_ZONE = 'Europe/Paris';
+
 export enum SessionScope {
   PAST = 'PAST',
   UPCOMING = 'UPCOMING',

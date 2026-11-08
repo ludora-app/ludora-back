@@ -16,4 +16,21 @@ describe('DateUtils', () => {
       expect(DateUtils.getHoursForPeriod('UNKNOWN')).toEqual({ max: 24, min: 0 });
     });
   });
+
+  describe('getPeriodForHour', () => {
+    it.each([
+      [6, 'MORNING'],
+      [11, 'MORNING'],
+      [12, 'AFTERNOON'],
+      [16, 'AFTERNOON'],
+      [17, 'EVENING'],
+      [23, 'EVENING'],
+    ])('should put %i:00 in the %s', (hour, period) => {
+      expect(DateUtils.getPeriodForHour(hour)).toBe(period);
+    });
+
+    it('should return null before 6:00', () => {
+      expect(DateUtils.getPeriodForHour(5)).toBeNull();
+    });
+  });
 });
