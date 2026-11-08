@@ -410,11 +410,12 @@ export class UsersService {
 
     const existingUser = await this.userLookupService.findOne(uid, USERSELECT.checkIfUserExists);
     if (!existingUser) {
-      this.logger.warn(`Cannot update play area, user not found: ${uid}`);
+      this.logger.error(`Cannot update play area, user not found: ${uid}`);
       throw new NotFoundException('User not found');
     }
 
-    const city = await this.findPlayAreaCity(uid, latitude, longitude);
+    // ? The precise coordinates are only sent to the geocoder, never stored
+    const city = await this.geolocalisationService.findCityFromCoordinates(latitude, longitude);
 
     await this.prismaService.users.update({
       data: {
@@ -429,23 +430,6 @@ export class UsersService {
   }
 
   /**
-   * Find the city of the play area. The precise coordinates are only sent to the geocoder, never stored.
-   * A geocoding failure keeps the current city instead of blocking the play area update.
-   */
-  private async findPlayAreaCity(
-    uid: string,
-    latitude: number,
-    longitude: number,
-  ): Promise<string | null> {
-    try {
-      return await this.geolocalisationService.getCityFromCoordinates(latitude, longitude);
-    } catch (error) {
-      this.logger.warn(`Cannot find the city of the play area of user ${uid}: ${error}`);
-      return null;
-    }
-  }
-
-  /**
    * Remove the play area of a user
    * @param uid - The uid of the user
    */
@@ -454,7 +438,7 @@ export class UsersService {
 
     const existingUser = await this.userLookupService.findOne(uid, USERSELECT.checkIfUserExists);
     if (!existingUser) {
-      this.logger.warn(`Cannot delete play area, user not found: ${uid}`);
+      this.logger.error(`Cannot delete play area, user not found: ${uid}`);
       throw new NotFoundException('User not found');
     }
 

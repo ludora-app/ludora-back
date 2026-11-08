@@ -74,7 +74,7 @@ describe('UsersService', () => {
   };
 
   const mockGeolocalisationService = {
-    getCityFromCoordinates: jest.fn(),
+    findCityFromCoordinates: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -333,11 +333,11 @@ describe('UsersService', () => {
     it('should store the play area with the coordinates rounded to 2 decimals and set the city', async () => {
       mockPrismaService.users.findUnique.mockResolvedValueOnce({ uid: '1' });
       mockPrismaService.users.update.mockResolvedValueOnce({ uid: '1' });
-      mockGeolocalisationService.getCityFromCoordinates.mockResolvedValueOnce('Paris');
+      mockGeolocalisationService.findCityFromCoordinates.mockResolvedValueOnce('Paris');
 
       await service.updatePlayArea('1', updatePlayAreaDto);
 
-      expect(mockGeolocalisationService.getCityFromCoordinates).toHaveBeenCalledWith(
+      expect(mockGeolocalisationService.findCityFromCoordinates).toHaveBeenCalledWith(
         48.861234,
         2.378956,
       );
@@ -369,16 +369,13 @@ describe('UsersService', () => {
       );
     });
 
-    it('should keep the current city when the geocoding fails', async () => {
+    it('should keep the current city when no city is found', async () => {
       mockPrismaService.users.findUnique.mockResolvedValueOnce({ uid: '1' });
       mockPrismaService.users.update.mockResolvedValueOnce({ uid: '1' });
-      mockGeolocalisationService.getCityFromCoordinates.mockRejectedValueOnce(
-        new BadRequestException('No city found for these coordinates'),
-      );
+      mockGeolocalisationService.findCityFromCoordinates.mockResolvedValueOnce(null);
 
       await service.updatePlayArea('1', updatePlayAreaDto);
 
-      expect(mockLogger.warn).toHaveBeenCalled();
       expect(mockPrismaService.users.update).toHaveBeenCalledWith({
         data: { playAreaLatitude: 48.86, playAreaLongitude: 2.38, playAreaRadiusKm: 10 },
         where: { uid: '1' },

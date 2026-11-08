@@ -9,7 +9,6 @@ import {
   Param,
   Patch,
   Post,
-  Put,
   Query,
   UseGuards,
   UseInterceptors,
@@ -238,7 +237,7 @@ export class UsersController {
     return;
   }
 
-  @Put('/play-area')
+  @Patch('/play-area')
   @Protected()
   @ApiOperation({
     summary:

@@ -2,17 +2,26 @@ import { AddressType } from '@googlemaps/google-maps-services-js';
 import { BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
+import { PinoLogger } from 'nestjs-pino';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 
 describe('GeolocalisationService', () => {
   let service: GeolocalisationService;
   let reverseGeocode: jest.SpyInstance;
 
+  const mockLogger = {
+    debug: jest.fn(),
+    error: jest.fn(),
+    setContext: jest.fn(),
+    warn: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GeolocalisationService,
         { provide: ConfigService, useValue: { getOrThrow: jest.fn().mockReturnValue('key') } },
+        { provide: PinoLogger, useValue: mockLogger },
       ],
     }).compile();
 
@@ -22,6 +31,7 @@ describe('GeolocalisationService', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('getCityFromCoordinates', () => {
@@ -67,6 +77,27 @@ describe('GeolocalisationService', () => {
     it('should reject invalid coordinates without calling Google', async () => {
       await expect(service.getCityFromCoordinates(120, 2.38)).rejects.toThrow(BadRequestException);
       expect(reverseGeocode).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findCityFromCoordinates', () => {
+    it('should return the city of the coordinates', async () => {
+      reverseGeocode.mockResolvedValue({
+        data: {
+          results: [
+            { address_components: [{ long_name: 'Paris', types: [AddressType.locality] }] },
+          ],
+        },
+      });
+
+      await expect(service.findCityFromCoordinates(48.86, 2.38)).resolves.toBe('Paris');
+    });
+
+    it('should return null and log a warning when the city cannot be found', async () => {
+      reverseGeocode.mockRejectedValue(new Error('Network error'));
+
+      await expect(service.findCityFromCoordinates(48.86, 2.38)).resolves.toBeNull();
+      expect(mockLogger.warn).toHaveBeenCalled();
     });
   });
 });
