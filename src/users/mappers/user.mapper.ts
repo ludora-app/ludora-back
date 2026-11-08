@@ -9,9 +9,10 @@ import {
   UserHourPreferenceType,
   UserType,
 } from 'generated/prisma/enums';
-import { Sport } from 'src/shared/constants/constants';
+import { Sport, UserSportLevel } from 'src/shared/constants/constants';
 import { SportPreferencesMapper } from 'src/user-preferences/mappers/sport-preferences.mapper';
 import {
+  CompatibleUserCollectionItemDto,
   FindAllUsersResponseDataDto,
   FindMeUserResponseData,
   FindOneUserResponseData,
@@ -19,6 +20,17 @@ import {
 } from '../dto';
 import { FindAllReportedUsersResponseData } from '../dto/output/find-all-reported-users-response.dto';
 import { FindOneUserWithReportsResponseData } from '../dto/output/find-one-with-reports-response.dto';
+
+/** Row of the compatible players query (`UserLookupService.findAllCompatibleUsers`) */
+export interface RawCompatibleUser {
+  uid: string;
+  firstname: string | null;
+  lastname: string | null;
+  image_url: string | null;
+  level: number;
+  distance_m: number | null;
+  total_count: bigint;
+}
 
 export interface RawUserFindOne {
   bio: string;
@@ -167,6 +179,18 @@ export class UserMapper {
       latitude: playAreaLatitude,
       longitude: playAreaLongitude,
       radiusKm: playAreaRadiusKm,
+    };
+  }
+
+  static toCompatibleUserDto(user: RawCompatibleUser): CompatibleUserCollectionItemDto {
+    return {
+      // Whole km, as precise as the stored play area center (2 decimals ≈ 1 km)
+      distance: user.distance_m == null ? null : Math.max(1, Math.round(user.distance_m / 1000)),
+      firstname: user.firstname,
+      imageUrl: user.image_url,
+      lastname: user.lastname,
+      level: user.level as UserSportLevel,
+      uid: user.uid,
     };
   }
 

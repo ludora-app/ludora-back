@@ -17,6 +17,11 @@ import { SessionScope, SessionSportLevel, Sport } from 'src/shared/constants/con
 import { StorageService } from 'src/shared/storage/storage.service';
 import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
 import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
+
+const mockUserLookupService = {
+  findPlayArea: jest.fn().mockResolvedValue(null),
+};
 
 jest.mock('src/shared/utils/date.utils', () => ({
   DateUtils: {
@@ -177,6 +182,10 @@ describe('SessionsService', () => {
           useValue: {
             findOne: jest.fn(),
           },
+        },
+        {
+          provide: UserLookupService,
+          useValue: mockUserLookupService,
         },
         {
           provide: PinoLogger,
@@ -2102,6 +2111,42 @@ describe('SessionsService', () => {
       const query = getQuery();
       expect(query.sql).toContain('ST_DistanceSphere');
       expect(query.values).toEqual(expect.arrayContaining([10000]));
+    });
+
+    it('should accept sessions one level apart or open to every level', async () => {
+      mockPreferences({ sportPreferences: [footballPreference] });
+
+      await service.findRecommended({ userUid });
+
+      const query = getQuery();
+      expect(query.sql).toContain('ABS(s.level - ?) <= 1 OR s.level = ?');
+      expect(query.values).toEqual(
+        expect.arrayContaining([footballPreference.level, SessionSportLevel.ANY]),
+      );
+    });
+
+    it('should search inside the play area rather than around the position sent', async () => {
+      mockUserLookupService.findPlayArea.mockResolvedValueOnce({
+        latitude: 48.79,
+        longitude: 2.46,
+        radiusKm: 10,
+      });
+      mockPreferences({ sportPreferences: [footballPreference] });
+
+      await service.findRecommended({ maxDistance: 30, userLat: 48.84, userLon: 2.24, userUid });
+
+      const query = getQuery();
+      expect(query.values).toEqual(expect.arrayContaining([2.46, 48.79, 10000]));
+      expect(query.values).not.toContain(48.84);
+      expect(query.values).not.toContain(30000);
+    });
+
+    it('should use the position sent within the max distance without play area', async () => {
+      mockPreferences({ sportPreferences: [footballPreference] });
+
+      await service.findRecommended({ userLat: 48.84, userLon: 2.24, userUid });
+
+      expect(getQuery().values).toEqual(expect.arrayContaining([2.24, 48.84, 30000]));
     });
   });
 });

@@ -21,6 +21,7 @@ import { StorageService } from 'src/shared/storage/storage.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
 import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
 import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
+import { UserLookupService } from 'src/users/services/user-lookup.service';
 import {
   SESSION_RECOMMENDATION_CONFIG,
   SESSION_SUGGESTION_CONFIG,
@@ -55,6 +56,7 @@ export class SessionsService {
     private readonly storageService: StorageService,
     private readonly fieldSlotsService: FieldSlotsService,
     private readonly fieldsService: FieldsService,
+    private readonly userLookupService: UserLookupService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(SessionsService.name);
@@ -538,8 +540,9 @@ export class SessionsService {
   /**
    * Sessions matching the user's profile, as strict filters (unlike `findAll`, which only ranks with it):
    * a sport preference with its level and game modes, a slot among the hour preferences (local time),
-   * public, upcoming within `days`, not full, not created nor joined by the user, no block, within
-   * `maxDistance` when the location is known. Empty when the user has no preference at all.
+   * public, upcoming within `days`, not full, not created nor joined by the user, no block, inside
+   * the user's play area, or within `maxDistance` of the position sent by the app without play area.
+   * Empty when the user has no preference at all.
    */
   async findRecommended({
     cursor,
@@ -552,9 +555,10 @@ export class SessionsService {
   }: FindRecommendedSessionsDto): Promise<PaginatedDataDto<SessionCollectionItemDto>> {
     this.logger.debug(`Finding recommended sessions for user ${userUid} (days: ${days})`);
 
-    const [sportPreferencesResponse, hourPreferencesResponse] = await Promise.all([
+    const [sportPreferencesResponse, hourPreferencesResponse, playArea] = await Promise.all([
       this.sportPreferencesService.findAllByUserUid(userUid),
       this.hourPreferencesService.findAllByUserUid(userUid),
+      this.userLookupService.findPlayArea(userUid),
     ]);
     const sportPreferences = sportPreferencesResponse.items || [];
     const hourPreferences = hourPreferencesResponse.items || [];
@@ -564,12 +568,17 @@ export class SessionsService {
       return { items: [], nextCursor: null, totalCount: 0 };
     }
 
+    // The play area the user declared wins over where the phone is right now
+    const location = playArea
+      ? { maxDistance: playArea.radiusKm, userLat: playArea.latitude, userLon: playArea.longitude }
+      : { maxDistance, userLat, userLon };
+
     const currentOffset = cursor ? parseInt(cursor, 10) : 0;
     const now = new Date();
     const lastStartDate = new Date(now);
     lastStartDate.setDate(lastStartDate.getDate() + days);
 
-    // A. SPORT: each preference keeps its own level and game modes
+    // A. SPORT: each preference keeps its own level (one level apart accepted) and game modes
     let sportWhereSql = Prisma.empty;
     if (sportPreferences.length > 0) {
       const sportConditions = sportPreferences.map((preference) => {
@@ -579,7 +588,7 @@ export class SessionsService {
             : Prisma.empty;
         return Prisma.sql`(
           s.sport = ${preference.sport}
-          AND s.level IN (${preference.level}, ${SessionSportLevel.ANY})
+          AND (ABS(s.level - ${preference.level}) <= 1 OR s.level = ${SessionSportLevel.ANY})
           ${gameModeSql}
         )`;
       });
@@ -604,9 +613,12 @@ export class SessionsService {
     // C. DISTANCE
     let distanceValueSql = Prisma.sql`NULL`;
     let distanceWhereSql = Prisma.empty;
-    if (userLat != null && userLon != null) {
-      distanceValueSql = this.getDistanceValueSql({ userLat, userLon });
-      distanceWhereSql = Prisma.sql`AND (${distanceValueSql}) < ${maxDistance * 1000}`;
+    if (location.userLat != null && location.userLon != null) {
+      distanceValueSql = this.getDistanceValueSql({
+        userLat: location.userLat,
+        userLon: location.userLon,
+      });
+      distanceWhereSql = Prisma.sql`AND (${distanceValueSql}) <= ${location.maxDistance * 1000}`;
     }
 
     const rows = await this.prisma.$queryRaw<
