@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { TimePeriod } from 'generated/prisma/enums';
 import { DateTime } from 'luxon';
 
 export class DateUtils {
@@ -85,6 +86,21 @@ export class DateUtils {
     const hours = Math.floor(durationInMinutes / 60);
     const minutes = durationInMinutes % 60;
     return `${hours}h${minutes > 0 ? minutes : ''}`;
+  }
+
+  /**
+   * Returns the time period containing a given hour, the reverse of `getHoursForPeriod`
+   * @param hour - The hour (0 to 23)
+   * @returns The period (MORNING, AFTERNOON, EVENING), or null before 6:00
+   */
+  public static getPeriodForHour(hour: number): TimePeriod | null {
+    const periods = [TimePeriod.MORNING, TimePeriod.AFTERNOON, TimePeriod.EVENING];
+    return (
+      periods.find((period) => {
+        const { max, min } = DateUtils.getHoursForPeriod(period);
+        return hour >= min && hour < max;
+      }) ?? null
+    );
   }
 
   /**

@@ -1,3 +1,5 @@
+import { LOCAL_TIME_ZONE } from 'src/shared/constants/constants';
+
 /**
  * Configuration for session suggestion scoring algorithm
  * Defines weights and thresholds for generating session suggestions
@@ -37,6 +39,5 @@ export type SessionSuggestionConfig = typeof SESSION_SUGGESTION_CONFIG;
 export const SESSION_RECOMMENDATION_CONFIG = {
   DEFAULT_DAYS: 14,
   MAX_DAYS: 30,
-  // Hour preferences are expressed in the players' local time
-  TIME_ZONE: 'Europe/Paris',
+  TIME_ZONE: LOCAL_TIME_ZONE,
 };
