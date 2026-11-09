@@ -23,6 +23,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RatingsModule } from './ratings/ratings.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { SharedModule } from './shared/shared.module';
+import { SportsModule } from './sports/sports.module';
 import { UserLifecycleModule } from './user-lifecycle/user-lifecycle.module';
 import { UsersModule } from './users/users.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
@@ -127,6 +128,7 @@ const logLevel = process.env.LOG_LEVEL ?? (isDevelopment ? 'debug' : 'info');
     PrismaModule,
     SessionsModule,
     SharedModule,
+    SportsModule,
     UsersModule,
     FirebaseModule,
     DevicesModule,

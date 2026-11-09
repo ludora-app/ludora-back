@@ -1,7 +1,7 @@
-import { FieldType, VerificationStatus } from 'generated/prisma/client';
+import { FieldType, GameModes, VerificationStatus } from 'generated/prisma/client';
 import { Sport } from 'src/shared/constants/constants';
+import { getGameModeTotalPlayers } from 'src/shared/constants/game-modes.constants';
 
-import { GAME_MODE_PLAYERS_COUNT } from '../constants/fields.constants';
 import { AdminFieldCollectionResponseData } from '../dto/output/admin-field-collection-response.dto';
 import { AdminFindOneFieldResponseData } from '../dto/output/admin-find-one-field-response.dto';
 import { FieldResponseDto, PublicFieldResponseData } from '../dto/output/field-response.dto';
@@ -22,7 +22,7 @@ interface FieldInput {
     startTime: Date;
     endTime: Date;
     price: number;
-    gameMode: string;
+    gameMode: GameModes;
   }>;
   sessions?: Array<{
     uid: string;
@@ -93,7 +93,7 @@ export class FieldMapper {
                 endTime: slot.endTime,
                 price: slot.price,
                 pricePerPlayer: Number(
-                  (slot.price / GAME_MODE_PLAYERS_COUNT[slot.gameMode] || 1).toFixed(2),
+                  (slot.price / getGameModeTotalPlayers(slot.gameMode) || 1).toFixed(2),
                 ),
                 startTime: slot.startTime,
                 type: 'RESERVATION',

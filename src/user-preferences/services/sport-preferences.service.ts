@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
+import { SportsService } from 'src/sports/sports.service';
 import { CreateSportPreferenceData } from '../dto/input/create-sport-preference.dto';
 import { SportPreferenceResponseData } from '../dto/output/sport-preference.response.dto';
 import { SportPreferencesMapper } from '../mappers/sport-preferences.mapper';
@@ -10,6 +11,7 @@ import { SportPreferencesMapper } from '../mappers/sport-preferences.mapper';
 export class SportPreferencesService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly sportsService: SportsService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(SportPreferencesService.name);
@@ -81,15 +83,21 @@ export class SportPreferencesService {
   }
 
   async createManyWithGameModes(preferences: CreateSportPreferenceData[], userUid: string) {
-    await this.clearPreferences(userUid);
     // Validate that each preference has a unique sport
     const sports = preferences.map((pref) => pref.sport);
     const uniqueSports = new Set(sports);
 
     if (uniqueSports.size !== sports.length) {
-      this.logger.error(`Each sport preference must have a unique sport.`);
+      this.logger.warn(`Each sport preference must have a unique sport.`);
       throw new BadRequestException('Each sport preference must have a unique sport.');
     }
+
+    // Validate every preference before clearing the existing ones
+    for (const pref of preferences) {
+      await this.sportsService.assertAllowed(pref.sport, pref.gameModes);
+    }
+
+    await this.clearPreferences(userUid);
     await this.prisma.$transaction(async (tx) => {
       for (const pref of preferences) {
         await tx.userSportPreferences.create({

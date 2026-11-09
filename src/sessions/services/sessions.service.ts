@@ -14,11 +14,13 @@ import { FieldsService } from 'src/fields/services/fields.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SessionPlayersService } from 'src/sessions/services/session-players.service';
 import { SessionScope, SessionSportLevel, StorageFolderName } from 'src/shared/constants/constants';
+import { GAME_MODE_PLAYERS } from 'src/shared/constants/game-modes.constants';
 import { PaginatedDataDto } from 'src/shared/dto/responses/pagination-response-type';
 import { GeolocalisationService } from 'src/shared/geolocalisation/geolocalisation.service';
 import { ImageResponseDto } from 'src/shared/images/dto/output/image-response.dto';
 import { StorageService } from 'src/shared/storage/storage.service';
 import { DateUtils } from 'src/shared/utils/date.utils';
+import { SportsService } from 'src/sports/sports.service';
 import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
 import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 import { UserLookupService } from 'src/users/services/user-lookup.service';
@@ -57,6 +59,7 @@ export class SessionsService {
     private readonly fieldSlotsService: FieldSlotsService,
     private readonly fieldsService: FieldsService,
     private readonly userLookupService: UserLookupService,
+    private readonly sportsService: SportsService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(SessionsService.name);
@@ -78,6 +81,8 @@ export class SessionsService {
 
     const start = new Date(startDate);
     const end = new Date(endDate);
+
+    await this.sportsService.assertAllowed(sport, [createSessionDto.gameMode]);
 
     const field = await this.fieldsService.findOne(fieldUid);
 
@@ -964,6 +969,11 @@ export class SessionsService {
       throw new NotFoundException('Field not found');
     }
 
+    // The sport of a session cannot be changed: only a new game mode has to be checked
+    if (updateSessionDto.gameMode && updateSessionDto.gameMode !== session.gameMode) {
+      await this.sportsService.assertAllowed(session.sport, [updateSessionDto.gameMode]);
+    }
+
     await this.prisma.sessions.update({
       data: {
         description: updateSessionDto.description,
@@ -1021,28 +1031,8 @@ export class SessionsService {
   getPlayersPerTeamData(
     mode: GameModes,
   ): Required<Pick<Sessions, 'maxPlayersPerTeam' | 'minPlayersPerTeam' | 'teamsPerGame'>> {
-    switch (mode) {
-      case GameModes.ONE_V_ONE:
-        return { maxPlayersPerTeam: 1, minPlayersPerTeam: 1, teamsPerGame: 1 };
-      case GameModes.TWO_V_TWO:
-        return { maxPlayersPerTeam: 2, minPlayersPerTeam: 2, teamsPerGame: 1 };
-      case GameModes.THREE_V_THREE:
-        return { maxPlayersPerTeam: 3, minPlayersPerTeam: 3, teamsPerGame: 1 };
-      case GameModes.FOUR_V_FOUR:
-        return { maxPlayersPerTeam: 4, minPlayersPerTeam: 3, teamsPerGame: 1 };
-      case GameModes.FIVE_V_FIVE:
-        return { maxPlayersPerTeam: 5, minPlayersPerTeam: 3, teamsPerGame: 1 };
-      case GameModes.SIX_V_SIX:
-        return { maxPlayersPerTeam: 6, minPlayersPerTeam: 4, teamsPerGame: 1 };
-      case GameModes.SEVEN_V_SEVEN:
-        return { maxPlayersPerTeam: 7, minPlayersPerTeam: 5, teamsPerGame: 1 };
-      case GameModes.EIGHT_V_EIGHT:
-        return { maxPlayersPerTeam: 8, minPlayersPerTeam: 5, teamsPerGame: 1 };
-      case GameModes.TEN_V_TEN:
-        return { maxPlayersPerTeam: 10, minPlayersPerTeam: 7, teamsPerGame: 1 };
-      case GameModes.ELEVEN_V_ELEVEN:
-        return { maxPlayersPerTeam: 11, minPlayersPerTeam: 8, teamsPerGame: 1 };
-    }
+    const { maxPlayersPerTeam, minPlayersPerTeam, teamsPerGame } = GAME_MODE_PLAYERS[mode];
+    return { maxPlayersPerTeam, minPlayersPerTeam, teamsPerGame };
   }
 
   async incrementViewCount(sessionUid: string): Promise<void> {

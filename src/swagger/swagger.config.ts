@@ -26,6 +26,7 @@ export const SWAGGER_TAG_SESSION_PLAYERS = 'Session Players';
 export const SWAGGER_TAG_SESSION_TEAMS = 'Session Teams';
 export const SWAGGER_TAG_SESSIONS = 'Sessions';
 export const SWAGGER_TAG_SPORT_PREFERENCES = 'Sport Preferences';
+export const SWAGGER_TAG_SPORTS = 'Sports';
 export const SWAGGER_TAG_STORAGE = 'Storage';
 export const SWAGGER_TAG_USERS = 'Users';
 export const SWAGGER_TAG_FIELDS_ADMIN = 'Fields [ADMIN]';
@@ -65,6 +66,8 @@ export const SWAGGER_DESCRIPTION_SESSIONS =
   'Sports session creation, listing, filtering, stats, and management';
 export const SWAGGER_DESCRIPTION_SPORT_PREFERENCES =
   'User sport preferences and game mode settings';
+export const SWAGGER_DESCRIPTION_SPORTS =
+  'Opened sports and the game modes allowed for each of them';
 export const SWAGGER_DESCRIPTION_STORAGE = 'File upload and signed URL generation';
 export const SWAGGER_DESCRIPTION_USERS =
   'User profile management, password and email updates, and account lifecycle';
@@ -102,6 +105,7 @@ export function buildSwaggerDocument() {
     .addTag(SWAGGER_TAG_SESSION_TEAMS, SWAGGER_DESCRIPTION_SESSION_TEAMS)
     .addTag(SWAGGER_TAG_SESSIONS, SWAGGER_DESCRIPTION_SESSIONS)
     .addTag(SWAGGER_TAG_SPORT_PREFERENCES, SWAGGER_DESCRIPTION_SPORT_PREFERENCES)
+    .addTag(SWAGGER_TAG_SPORTS, SWAGGER_DESCRIPTION_SPORTS)
     .addTag(SWAGGER_TAG_STORAGE, SWAGGER_DESCRIPTION_STORAGE)
     .addTag(SWAGGER_TAG_USERS, SWAGGER_DESCRIPTION_USERS)
     .addBearerAuth(

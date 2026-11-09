@@ -12,6 +12,7 @@ import { FieldsModule } from 'src/fields/fields.module';
 import { SessionInvitationsService } from 'src/sessions/services/session-invitations.service';
 import { SessionsService } from 'src/sessions/services/sessions.service';
 import { SessionsModule } from 'src/sessions/sessions.module';
+import { SportsModule } from 'src/sports/sports.module';
 import { UserPreferencesModule } from 'src/user-preferences/user-preferences.module';
 import { HttpMetricsInterceptor } from './http-metrics.interceptor';
 import { MetricsController } from './metrics.controller';
@@ -31,6 +32,7 @@ import { MetricsService } from './metrics.service';
     }),
     ScheduleModule.forRoot(),
     SessionsModule,
+    SportsModule,
     UserPreferencesModule,
     ConversationsModule,
     FieldsModule,
