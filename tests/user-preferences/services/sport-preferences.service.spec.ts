@@ -4,12 +4,16 @@ import { GameModes } from 'generated/prisma/enums';
 import { PinoLogger } from 'nestjs-pino';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Sport, UserSportLevel } from 'src/shared/constants/constants';
+import { SportsService } from 'src/sports/sports.service';
 import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 
 describe('SportPreferencesService', () => {
   let service: SportPreferencesService;
   let prismaService: PrismaService;
   let logger: PinoLogger;
+  const mockSportsService = {
+    assertAllowed: jest.fn().mockResolvedValue(undefined),
+  };
 
   beforeEach(async () => {
     const mockPrismaService = {
@@ -44,6 +48,7 @@ describe('SportPreferencesService', () => {
       providers: [
         SportPreferencesService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: SportsService, useValue: mockSportsService },
         { provide: PinoLogger, useValue: mockPinoLogger },
       ],
     }).compile();
@@ -338,7 +343,7 @@ describe('SportPreferencesService', () => {
       await expect(service.createManyWithGameModes(preferences, userUid)).rejects.toThrow(
         new BadRequestException('Each sport preference must have a unique sport.'),
       );
-      expect(logger.error).toHaveBeenCalledWith('Each sport preference must have a unique sport.');
+      expect(logger.warn).toHaveBeenCalledWith('Each sport preference must have a unique sport.');
       expect(prismaService.$transaction).not.toHaveBeenCalled();
     });
 
@@ -440,6 +445,28 @@ describe('SportPreferencesService', () => {
       expect(prismaService.userGameModePreferences.deleteMany).toHaveBeenCalledWith({
         where: { userUid },
       });
+    });
+
+    it('should throw BadRequestException and keep existing preferences when a sport is not allowed', async () => {
+      const preferences = [
+        {
+          sport: Sport.VOLLEYBALL,
+          level: UserSportLevel.BEGINNER,
+          gameModes: [GameModes.SIX_V_SIX],
+        },
+      ];
+      mockSportsService.assertAllowed.mockRejectedValueOnce(
+        new BadRequestException('The sport VOLLEYBALL is not available'),
+      );
+
+      await expect(service.createManyWithGameModes(preferences, userUid)).rejects.toThrow(
+        new BadRequestException('The sport VOLLEYBALL is not available'),
+      );
+      expect(mockSportsService.assertAllowed).toHaveBeenCalledWith(Sport.VOLLEYBALL, [
+        GameModes.SIX_V_SIX,
+      ]);
+      expect(prismaService.userSportPreferences.deleteMany).not.toHaveBeenCalled();
+      expect(prismaService.$transaction).not.toHaveBeenCalled();
     });
   });
 });

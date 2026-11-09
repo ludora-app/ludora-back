@@ -140,11 +140,15 @@ model PartnerSports {
 }
 
 model Sports {
-  uid       String   @id @default(cuid())
-  name      String   @unique
-  imageUrl  String?  @map("image_url")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  uid         String      @id @default(cuid())
+  name        String      @unique
+  imageUrl    String?     @map("image_url")
+  /// null = not opened yet. Once set, a sport cannot be closed again.
+  activatedAt DateTime?   @map("activated_at")
+  /// Allowed game modes, in display order
+  gameModes   GameModes[] @map("game_modes")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
 
   userGlobalRatings       UserGlobalRatings[]
   partnerSports           PartnerSports[]

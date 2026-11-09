@@ -15,6 +15,7 @@ import { SessionTeamsService } from 'src/sessions/services/session-teams.service
 import { SessionsService } from 'src/sessions/services/sessions.service';
 import { SessionScope, SessionSportLevel, Sport } from 'src/shared/constants/constants';
 import { StorageService } from 'src/shared/storage/storage.service';
+import { SportsService } from 'src/sports/sports.service';
 import { HourPreferencesService } from 'src/user-preferences/services/hour-preferences.service';
 import { SportPreferencesService } from 'src/user-preferences/services/sport-preferences.service';
 import { UserLookupService } from 'src/users/services/user-lookup.service';
@@ -60,6 +61,10 @@ const mockUserHourPreferencesService = {
 
 const mockUserSportPreferencesService = {
   findAllByUserUid: jest.fn().mockResolvedValue({ items: [] }),
+};
+
+const mockSportsService = {
+  assertAllowed: jest.fn().mockResolvedValue(undefined),
 };
 
 /** Mock shape used in tests so we can access delegates without relying on generated client types in CI */
@@ -186,6 +191,10 @@ describe('SessionsService', () => {
         {
           provide: UserLookupService,
           useValue: mockUserLookupService,
+        },
+        {
+          provide: SportsService,
+          useValue: mockSportsService,
         },
         {
           provide: PinoLogger,
@@ -408,6 +417,20 @@ describe('SessionsService', () => {
           ],
         });
         expect(result).toEqual(expect.objectContaining({ uid: 'session-uid-1' }));
+      });
+
+      it('should check that the sport and game mode are allowed', async () => {
+        mockSportsService.assertAllowed.mockRejectedValueOnce(
+          new BadRequestException('The sport FOOTBALL is not available'),
+        );
+
+        await expect(service.create(createSessionDto)).rejects.toThrow(
+          new BadRequestException('The sport FOOTBALL is not available'),
+        );
+        expect(mockSportsService.assertAllowed).toHaveBeenCalledWith(createSessionDto.sport, [
+          createSessionDto.gameMode,
+        ]);
+        expect(fieldsService.findOne).not.toHaveBeenCalled();
       });
 
       it('should throw BadRequestException if field not found', async () => {
@@ -1290,6 +1313,52 @@ describe('SessionsService', () => {
       // Act & Assert
       await expect(service.update('session-uid-1', updateSessionDto)).rejects.toThrow(
         new NotFoundException('Field not found'),
+      );
+    });
+
+    it('should not check the sport when the game mode does not change', async () => {
+      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSessionForFindOne);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
+      (fieldsService.findOne as jest.Mock).mockResolvedValue(mockField);
+      (prismaService.sessions.update as jest.Mock).mockResolvedValue(mockUpdatedSession);
+
+      await service.update('session-uid-1', updateSessionDto);
+
+      expect(mockSportsService.assertAllowed).not.toHaveBeenCalled();
+    });
+
+    it('should check the new game mode against the session sport', async () => {
+      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSessionForFindOne);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
+      (fieldsService.findOne as jest.Mock).mockResolvedValue(mockField);
+      (prismaService.sessions.update as jest.Mock).mockResolvedValue(mockUpdatedSession);
+
+      await service.update('session-uid-1', {
+        ...updateSessionDto,
+        gameMode: GameModes.SEVEN_V_SEVEN,
+      });
+
+      expect(mockSportsService.assertAllowed).toHaveBeenCalledWith(mockSessionForFindOne.sport, [
+        GameModes.SEVEN_V_SEVEN,
+      ]);
+    });
+
+    it('should throw BadRequestException when the new game mode is not allowed', async () => {
+      (prismaService.sessions.findUnique as jest.Mock).mockResolvedValue(mockSessionForFindOne);
+      (prismaService.sessions.count as jest.Mock).mockResolvedValue(3);
+      (fieldsService.findOne as jest.Mock).mockResolvedValue(mockField);
+      mockSportsService.assertAllowed.mockRejectedValueOnce(
+        new BadRequestException('The game mode ONE_V_ONE is not allowed for the sport FOOTBALL'),
+      );
+
+      await expect(
+        service.update('session-uid-1', { ...updateSessionDto, gameMode: GameModes.ONE_V_ONE }),
+      ).rejects.toThrow(BadRequestException);
+      // findOne increments the view count: only check that the session itself is not updated
+      expect(prismaService.sessions.update).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ gameMode: GameModes.ONE_V_ONE }),
+        }),
       );
     });
   });
